@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  nickname     String?
+  avatar       String?
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  studyRecords     UserStudyRecord[]
+  questionProgress UserQuestionProgress[]
+  dailyStats       UserDailyStat[]
+  settings         UserSettings?
+}
+
+model UserSettings {
+  id       String @id @default(uuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id])
+  unitSize Int    @default(20)
+  theme    String @default("system")
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+}
+
+model Category {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  parentId  BigInt?
+  sortOrder Int      @default(0)
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  questions Question[]
+
+  @@index([parentId])
+}
+
+model Question {
+  id         BigInt   @id @default(autoincrement())
+  categoryId BigInt
+  category   Category @relation(fields: [categoryId], references: [id])
+  type       Int
+  content    String   @db.VarChar(500)
+  analysis   String?  @db.VarChar(1000)
+  difficulty Int      @default(1)
+  score      Int      @default(1)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  options  QuestionOption[]
+  progress UserQuestionProgress[]
+
+  @@index([categoryId])
+}
+
+model QuestionOption {
+  id         BigInt   @id @default(autoincrement())
+  questionId BigInt
+  question   Question @relation(fields: [questionId], references: [id])
+  optionKey  String   @db.Char(1)
+  content    String   @db.VarChar(500)
+  isCorrect  Boolean  @default(false)
+  sortNo     Int      @default(0)
+
+  @@index([questionId])
+}
+
+model UserStudyRecord {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  categoryId      BigInt
+  unitIndex       Int
+  startedAt       DateTime @default(now())
+  finishedAt      DateTime?
+  totalQuestions  Int
+  correctCount    Int      @default(0)
+  wrongCount      Int      @default(0)
+  durationSeconds Int      @default(0)
+
+  @@index([userId])
+  @@index([categoryId])
+}
+
+model UserQuestionProgress {
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  questionId      BigInt
+  question        Question @relation(fields: [questionId], references: [id])
+  categoryId      BigInt
+  status          String   @default("unseen")
+  lastPracticedAt DateTime?
+  correctCount    Int      @default(0)
+  wrongCount      Int      @default(0)
+
+  @@id([userId, questionId])
+  @@index([categoryId])
+}
+
+model UserDailyStat {
+  userId           String
+  user             User   @relation(fields: [userId], references: [id])
+  date             DateTime @db.Date
+  questionsAnswered Int     @default(0)
+  unitsCompleted   Int     @default(0)
+  studyDuration    Int     @default(0)
+
+  @@id([userId, date])
+}

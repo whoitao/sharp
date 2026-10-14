@@ -1,0 +1,23 @@
+{
+  "name": "sharp",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "overrides": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "scripts": {
+    "admin:dev": "npm run dev --workspace=apps/admin",
+    "admin:build": "npm run build --workspace=apps/admin",
+    "mobile:dev": "npm run dev --workspace=apps/mobile",
+    "db:generate": "npm run db:generate --workspace=apps/admin",
+    "db:push": "npm run db:push --workspace=apps/admin",
+    "db:seed": "npm run db:seed --workspace=apps/admin"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
