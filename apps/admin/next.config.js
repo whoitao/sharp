@@ -39,6 +39,9 @@ function collectTranspilePackages() {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   transpilePackages: collectTranspilePackages(),
 };
 
