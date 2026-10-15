@@ -48,7 +48,7 @@ app.use(async (ctx) => {
       prisma.question.count(),
     ]);
 
-    // BigInt 序列化
+    // BigInt 序列化（prisma generate 后类型会自动推导，无需显式注解）
     ctx.body = {
       count: questions.length,
       total,
