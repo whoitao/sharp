@@ -43,7 +43,7 @@ export async function GET(
   );
 
   const serialize = (q: any) => {
-    const p = progressMap.get(q.id.toString());
+    const p = progressMap.get(q.id.toString()) as any;
     return {
       id: q.id.toString(),
       categoryId: q.categoryId.toString(),

@@ -55,7 +55,7 @@ export async function GET(
     let correctCount = 0;
 
     for (const q of unitQuestions) {
-      const p = progressMap.get(q.id.toString());
+      const p = progressMap.get(q.id.toString()) as any;
       if (p && p.status !== "unseen") {
         answeredCount++;
         correctCount += p.correctCount;
