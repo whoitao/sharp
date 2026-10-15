@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
-  const serialized = progressRecords.map((p) => ({
+  const serialized = progressRecords.map((p: any) => ({
     questionId: p.questionId.toString(),
     categoryId: p.categoryId.toString(),
     status: p.status,
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       analysis: p.question.analysis,
       difficulty: p.question.difficulty,
       score: p.question.score,
-      options: p.question.options.map((o) => ({
+      options: p.question.options.map((o: any) => ({
         id: o.id.toString(),
         questionId: o.questionId.toString(),
         optionKey: o.optionKey,

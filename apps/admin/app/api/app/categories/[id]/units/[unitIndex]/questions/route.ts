@@ -30,7 +30,7 @@ export async function GET(
   });
 
   // Get user progress for these questions
-  const questionIds = questions.map((q) => q.id);
+  const questionIds = questions.map((q: any) => q.id);
   const progress = await prisma.userQuestionProgress.findMany({
     where: {
       userId: appUser.id,
@@ -39,7 +39,7 @@ export async function GET(
   });
 
   const progressMap = new Map(
-    progress.map((p) => [p.questionId.toString(), p])
+    progress.map((p: any) => [p.questionId.toString(), p])
   );
 
   const serialize = (q: any) => {

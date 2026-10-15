@@ -32,7 +32,7 @@ export async function GET(
   });
 
   const progressMap = new Map(
-    progress.map((p) => [p.questionId.toString(), p])
+    progress.map((p: any) => [p.questionId.toString(), p])
   );
 
   // Get all question IDs in order

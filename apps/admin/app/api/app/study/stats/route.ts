@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     totalUnitsCompleted,
     totalStudyDuration: totalStudyDuration._sum.durationSeconds || 0,
     accuracy: totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0,
-    recentStats: recentStats.map((s) => ({
+    recentStats: recentStats.map((s: any) => ({
       date: s.date,
       questionsAnswered: s.questionsAnswered,
       unitsCompleted: s.unitsCompleted,

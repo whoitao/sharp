@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
           { key: "B", content: row.option_b },
           { key: "C", content: row.option_c },
           { key: "D", content: row.option_d },
-        ].filter((o) => o.content && o.content.trim() !== "");
+        ].filter((o: any) => o.content && o.content.trim() !== "");
 
         if (optionEntries.length === 0) {
           errors.push(`Row ${i + 1}: No options provided`);

@@ -30,14 +30,14 @@ export async function POST(request: NextRequest) {
   }
 
   const correctKeys = question.options
-    .filter((o) => o.isCorrect)
-    .map((o) => o.optionKey)
+    .filter((o: any) => o.isCorrect)
+    .map((o: any) => o.optionKey)
     .sort();
 
   const submittedKeys = [...selectedKeys].sort();
   const isCorrect =
     correctKeys.length === submittedKeys.length &&
-    correctKeys.every((k, i) => k === submittedKeys[i]);
+    correctKeys.every((k: string, i: number) => k === submittedKeys[i]);
 
   // Update progress
   const progress = await prisma.userQuestionProgress.upsert({

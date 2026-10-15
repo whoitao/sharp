@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
-  const serialized = records.map((r) => ({
+  const serialized = records.map((r: any) => ({
     id: r.id,
     userId: r.userId,
     categoryId: r.categoryId.toString(),
