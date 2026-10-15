@@ -101,7 +101,7 @@ async function getSortedCategoryIds(ids: bigint[]): Promise<bigint[]> {
 
   // Build a map for quick lookup
   const catMap = new Map<bigint, { id: bigint; parentId: bigint | null }>();
-  categories.forEach(c => catMap.set(c.id, c));
+  categories.forEach((c: { id: bigint; parentId: bigint | null }) => catMap.set(c.id, c));
 
   // Calculate depth for each category
   const depthMap = new Map<bigint, number>();
@@ -122,7 +122,7 @@ async function getSortedCategoryIds(ids: bigint[]): Promise<bigint[]> {
     return depth;
   };
 
-  ids.forEach(id => getDepth(id));
+  ids.forEach((id: bigint) => getDepth(id));
 
   // Sort by depth descending (deepest first)
   return [...ids].sort((a, b) => (depthMap.get(b) || 0) - (depthMap.get(a) || 0));
