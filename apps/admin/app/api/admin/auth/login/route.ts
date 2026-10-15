@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
         role: admin.role,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("[admin/auth/login] failed:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

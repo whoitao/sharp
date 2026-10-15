@@ -12,7 +12,8 @@ import type {
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { storage } from '../utils/storage';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
 // ─── Mock data for offline/demo mode ───────────────────────────────────────────
 
