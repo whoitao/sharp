@@ -1,0 +1,429 @@
+diff --git a/node_modules/react-native-screens/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt b/node_modules/react-native-screens/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
+index e83dbf5..4254b0b 100644
+--- a/node_modules/react-native-screens/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
++++ b/node_modules/react-native-screens/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
+@@ -2,7 +2,6 @@ package com.swmansion.rnscreens.utils
+ 
+ import com.facebook.react.common.annotations.UnstableReactNativeAPI
+ import com.facebook.react.uimanager.BackgroundStyleApplicator
+-import com.facebook.react.uimanager.drawable.CSSBackgroundDrawable
+ import com.facebook.react.views.view.ReactViewGroup
+ 
+ internal fun ReactViewGroup.resolveBackgroundColor(): Int? = BackgroundStyleApplicator.getBackgroundColor(this)
+diff --git a/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp b/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
+index 9e93139..90f5a5b 100644
+--- a/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
++++ b/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
+@@ -1,165 +1,185 @@
+ #include "RNSScreenShadowNode.h"
+ 
+-namespace facebook {
+-namespace react {
+-
+-namespace yoga = facebook::yoga;
+-using namespace rnscreens;
+-
+-extern const char RNSScreenComponentName[] = "RNSScreen";
+-
+-Point RNSScreenShadowNode::getContentOriginOffset(
+-    bool /*includeTransform*/) const {
+-  auto stateData = getStateData();
+-  return stateData.contentOffset;
+-}
+-
+-std::optional<std::reference_wrapper<const ShadowNode::Shared>>
+-findHeaderConfigChild(const YogaLayoutableShadowNode &screenShadowNode) {
+-  for (const ShadowNode::Shared &child : screenShadowNode.getChildren()) {
+-    if (std::strcmp(child->getComponentName(), "RNSScreenStackHeaderConfig") ==
+-        0) {
+-      return {std::cref(child)};
++namespace facebook
++{
++  namespace react
++  {
++
++    namespace yoga = facebook::yoga;
++    using namespace rnscreens;
++
++    extern const char RNSScreenComponentName[] = "RNSScreen";
++
++    Point RNSScreenShadowNode::getContentOriginOffset(
++        bool /*includeTransform*/) const
++    {
++      auto stateData = getStateData();
++      return stateData.contentOffset;
++    }
++
++    std::optional<std::reference_wrapper<const std::shared_ptr<const ShadowNode>>>
++    findHeaderConfigChild(const YogaLayoutableShadowNode &screenShadowNode)
++    {
++      for (const std::shared_ptr<const ShadowNode> &child : screenShadowNode.getChildren())
++      {
++        if (std::strcmp(child->getComponentName(), "RNSScreenStackHeaderConfig") ==
++            0)
++        {
++          return {std::cref(child)};
++        }
++      }
++      return {};
+     }
+-  }
+-  return {};
+-}
+ 
+ #ifdef ANDROID
+-static constexpr const char *kScreenDummyLayoutHelperClass =
+-    "com/swmansion/rnscreens/utils/ScreenDummyLayoutHelper";
+-
+-std::optional<float> findHeaderHeight(
+-    const int fontSize,
+-    const bool isTitleEmpty) {
+-  JNIEnv *env = facebook::jni::Environment::current();
+-
+-  if (env == nullptr) {
+-    LOG(ERROR) << "[RNScreens] Failed to retrieve env\n";
+-    return {};
+-  }
+-
+-  jclass layoutHelperClass = env->FindClass(kScreenDummyLayoutHelperClass);
+-
+-  if (layoutHelperClass == nullptr) {
+-    LOG(ERROR) << "[RNScreens] Failed to find class with id "
+-               << kScreenDummyLayoutHelperClass;
+-    return {};
+-  }
+-
+-  jmethodID computeDummyLayoutID =
+-      env->GetMethodID(layoutHelperClass, "computeDummyLayout", "(IZ)F");
+-
+-  if (computeDummyLayoutID == nullptr) {
+-    LOG(ERROR) << "[RNScreens] Failed to retrieve computeDummyLayout method ID";
+-    return {};
+-  }
+-
+-  jmethodID getInstanceMethodID = env->GetStaticMethodID(
+-      layoutHelperClass,
+-      "getInstance",
+-      "()Lcom/swmansion/rnscreens/utils/ScreenDummyLayoutHelper;");
+-
+-  if (getInstanceMethodID == nullptr) {
+-    LOG(ERROR) << "[RNScreens] Failed to retrieve getInstanceMethodID";
+-    return {};
+-  }
+-
+-  jobject packageInstance =
+-      env->CallStaticObjectMethod(layoutHelperClass, getInstanceMethodID);
+-
+-  if (packageInstance == nullptr) {
+-    LOG(ERROR)
+-        << "[RNScreens] Failed to retrieve packageInstance or the package instance was null on JVM side";
+-    return {};
+-  }
+-
+-  jfloat headerHeight = env->CallFloatMethod(
+-      packageInstance, computeDummyLayoutID, fontSize, isTitleEmpty);
+-
+-  return {headerHeight};
+-}
++    static constexpr const char *kScreenDummyLayoutHelperClass =
++        "com/swmansion/rnscreens/utils/ScreenDummyLayoutHelper";
++
++    std::optional<float> findHeaderHeight(
++        const int fontSize,
++        const bool isTitleEmpty)
++    {
++      JNIEnv *env = facebook::jni::Environment::current();
++
++      if (env == nullptr)
++      {
++        LOG(ERROR) << "[RNScreens] Failed to retrieve env\n";
++        return {};
++      }
++
++      jclass layoutHelperClass = env->FindClass(kScreenDummyLayoutHelperClass);
++
++      if (layoutHelperClass == nullptr)
++      {
++        LOG(ERROR) << "[RNScreens] Failed to find class with id "
++                   << kScreenDummyLayoutHelperClass;
++        return {};
++      }
++
++      jmethodID computeDummyLayoutID =
++          env->GetMethodID(layoutHelperClass, "computeDummyLayout", "(IZ)F");
++
++      if (computeDummyLayoutID == nullptr)
++      {
++        LOG(ERROR) << "[RNScreens] Failed to retrieve computeDummyLayout method ID";
++        return {};
++      }
++
++      jmethodID getInstanceMethodID = env->GetStaticMethodID(
++          layoutHelperClass,
++          "getInstance",
++          "()Lcom/swmansion/rnscreens/utils/ScreenDummyLayoutHelper;");
++
++      if (getInstanceMethodID == nullptr)
++      {
++        LOG(ERROR) << "[RNScreens] Failed to retrieve getInstanceMethodID";
++        return {};
++      }
++
++      jobject packageInstance =
++          env->CallStaticObjectMethod(layoutHelperClass, getInstanceMethodID);
++
++      if (packageInstance == nullptr)
++      {
++        LOG(ERROR)
++            << "[RNScreens] Failed to retrieve packageInstance or the package instance was null on JVM side";
++        return {};
++      }
++
++      jfloat headerHeight = env->CallFloatMethod(
++          packageInstance, computeDummyLayoutID, fontSize, isTitleEmpty);
++
++      return {headerHeight};
++    }
+ #endif // ANDROID
+ 
+-void RNSScreenShadowNode::appendChild(const ShadowNode::Shared &child) {
+-  YogaLayoutableShadowNode::appendChild(child);
++    void RNSScreenShadowNode::appendChild(const std::shared_ptr<const ShadowNode> &child)
++    {
++      YogaLayoutableShadowNode::appendChild(child);
+ #ifdef ANDROID
+-  const auto &stateData = getStateData();
+-  if (stateData.frameSize.width == 0 || stateData.frameSize.height == 0) {
+-    // This code path should be executed only on the very first (few)
+-    // layout(s), when we haven't received state update from JVM side yet.
+-    auto headerConfigChildOpt = findHeaderConfigChild(*this);
+-    auto &screenShadowNode = static_cast<RNSScreenShadowNode &>(*this);
+-
+-    // During creation of the shadow node children are not attached yet.
+-    // We also do not want to set any padding in case.
+-    if (headerConfigChildOpt) {
+-      const auto &headerConfigChild = headerConfigChildOpt->get();
+-      const auto &headerProps =
+-          *std::static_pointer_cast<const RNSScreenStackHeaderConfigProps>(
+-              headerConfigChild->getProps());
+-
+-      const auto headerHeight = headerProps.hidden
+-          ? 0.f
+-          : findHeaderHeight(
+-                headerProps.titleFontSize, headerProps.title.empty())
+-                .value_or(0.f);
+-
+-      screenShadowNode.setPadding({0, 0, 0, headerHeight});
+-      screenShadowNode.setHeaderHeight(headerHeight);
+-      screenShadowNode.getFrameCorrectionModes().set(FrameCorrectionModes::Mode(
+-          FrameCorrectionModes::Mode::FrameHeightCorrection |
+-          FrameCorrectionModes::Mode::FrameOriginCorrection));
+-    }
+-  }
++      const auto &stateData = getStateData();
++      if (stateData.frameSize.width == 0 || stateData.frameSize.height == 0)
++      {
++        // This code path should be executed only on the very first (few)
++        // layout(s), when we haven't received state update from JVM side yet.
++        auto headerConfigChildOpt = findHeaderConfigChild(*this);
++        auto &screenShadowNode = static_cast<RNSScreenShadowNode &>(*this);
++
++        // During creation of the shadow node children are not attached yet.
++        // We also do not want to set any padding in case.
++        if (headerConfigChildOpt)
++        {
++          const auto &headerConfigChild = headerConfigChildOpt->get();
++          const auto &headerProps =
++              *std::static_pointer_cast<const RNSScreenStackHeaderConfigProps>(
++                  headerConfigChild->getProps());
++
++          const auto headerHeight = headerProps.hidden
++                                        ? 0.f
++                                        : findHeaderHeight(
++                                              headerProps.titleFontSize, headerProps.title.empty())
++                                              .value_or(0.f);
++
++          screenShadowNode.setPadding({0, 0, 0, headerHeight});
++          screenShadowNode.setHeaderHeight(headerHeight);
++          screenShadowNode.getFrameCorrectionModes().set(FrameCorrectionModes::Mode(
++              FrameCorrectionModes::Mode::FrameHeightCorrection |
++              FrameCorrectionModes::Mode::FrameOriginCorrection));
++        }
++      }
+ #endif // ANDROID
+-}
++    }
+ 
+-void RNSScreenShadowNode::layout(facebook::react::LayoutContext layoutContext) {
+-  YogaLayoutableShadowNode::layout(layoutContext);
++    void RNSScreenShadowNode::layout(facebook::react::LayoutContext layoutContext)
++    {
++      YogaLayoutableShadowNode::layout(layoutContext);
+ 
+ #ifdef ANDROID
+-  applyFrameCorrections();
++      applyFrameCorrections();
+ #endif // ANDROID
+-}
++    }
+ 
+ #ifdef ANDROID
+-void RNSScreenShadowNode::applyFrameCorrections() {
+-  ensureUnsealed();
+-
+-  // On the very first layout we want to correct both Y offset and frame size.
+-  // On consecutive layouts we want to correct only Y offset, as the frame size
+-  // is received from JVM side. This is done so if the Screen dimensions are
+-  // read from ShadowTree (e.g by reanimated) they have chance of being
+-  // accurate. On JVM side we do ignore this frame anyway, because
+-  // ScreenStackViewManager.needsCustomLayoutForChildren() == true.
+-  const auto &stateData = getStateData();
+-  const float lastKnownHeaderHeight = stateData.getLastKnownHeaderHeight();
+-  const auto &headerCorrectionModes = stateData.getHeaderCorrectionModes();
+-  layoutMetrics_.frame.origin.y += lastKnownHeaderHeight *
+-      headerCorrectionModes.check(
+-          FrameCorrectionModes::Mode::FrameOriginCorrection);
+-  layoutMetrics_.frame.size.height -= lastKnownHeaderHeight *
+-      headerCorrectionModes.check(
+-          FrameCorrectionModes::Mode::FrameHeightCorrection);
+-}
+-
+-void RNSScreenShadowNode::setHeaderHeight(float headerHeight) {
+-  getStateDataMutable().setHeaderHeight(headerHeight);
+-}
+-
+-FrameCorrectionModes &RNSScreenShadowNode::getFrameCorrectionModes() {
+-  return getStateDataMutable().getFrameCorrectionModes();
+-}
+-
+-RNSScreenShadowNode::StateData &RNSScreenShadowNode::getStateDataMutable() {
+-  // We assume that this method is called to mutate the data, so we ensure
+-  // we're unsealed.
+-  ensureUnsealed();
+-  return const_cast<RNSScreenShadowNode::StateData &>(getStateData());
+-}
++    void RNSScreenShadowNode::applyFrameCorrections()
++    {
++      ensureUnsealed();
++
++      // On the very first layout we want to correct both Y offset and frame size.
++      // On consecutive layouts we want to correct only Y offset, as the frame size
++      // is received from JVM side. This is done so if the Screen dimensions are
++      // read from ShadowTree (e.g by reanimated) they have chance of being
++      // accurate. On JVM side we do ignore this frame anyway, because
++      // ScreenStackViewManager.needsCustomLayoutForChildren() == true.
++      const auto &stateData = getStateData();
++      const float lastKnownHeaderHeight = stateData.getLastKnownHeaderHeight();
++      const auto &headerCorrectionModes = stateData.getHeaderCorrectionModes();
++      layoutMetrics_.frame.origin.y += lastKnownHeaderHeight *
++                                       headerCorrectionModes.check(
++                                           FrameCorrectionModes::Mode::FrameOriginCorrection);
++      layoutMetrics_.frame.size.height -= lastKnownHeaderHeight *
++                                          headerCorrectionModes.check(
++                                              FrameCorrectionModes::Mode::FrameHeightCorrection);
++    }
++
++    void RNSScreenShadowNode::setHeaderHeight(float headerHeight)
++    {
++      getStateDataMutable().setHeaderHeight(headerHeight);
++    }
++
++    FrameCorrectionModes &RNSScreenShadowNode::getFrameCorrectionModes()
++    {
++      return getStateDataMutable().getFrameCorrectionModes();
++    }
++
++    RNSScreenShadowNode::StateData &RNSScreenShadowNode::getStateDataMutable()
++    {
++      // We assume that this method is called to mutate the data, so we ensure
++      // we're unsealed.
++      ensureUnsealed();
++      return const_cast<RNSScreenShadowNode::StateData &>(getStateData());
++    }
+ 
+ #endif // ANDROID
+ 
+-} // namespace react
++  } // namespace react
+ } // namespace facebook
+diff --git a/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h b/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
+index 6b4b72e..41156a1 100644
+--- a/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
++++ b/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
+@@ -1,6 +1,7 @@
+ #pragma once
+ 
+ #include <jsi/jsi.h>
++#include <memory>
+ #include <react/renderer/components/rnscreens/EventEmitters.h>
+ #include <react/renderer/components/rnscreens/Props.h>
+ #include <react/renderer/components/view/ConcreteViewShadowNode.h>
+@@ -8,43 +9,46 @@
+ #include "FrameCorrectionModes.h"
+ #include "RNSScreenState.h"
+ 
+-namespace facebook {
+-namespace react {
++namespace facebook
++{
++  namespace react
++  {
+ 
+-using namespace rnscreens;
++    using namespace rnscreens;
+ 
+-JSI_EXPORT extern const char RNSScreenComponentName[];
++    JSI_EXPORT extern const char RNSScreenComponentName[];
+ 
+-class JSI_EXPORT RNSScreenShadowNode final : public ConcreteViewShadowNode<
+-                                                 RNSScreenComponentName,
+-                                                 RNSScreenProps,
+-                                                 RNSScreenEventEmitter,
+-                                                 RNSScreenState> {
+- public:
+-  using ConcreteViewShadowNode::ConcreteViewShadowNode;
+-  using StateData = ConcreteViewShadowNode::ConcreteStateData;
++    class JSI_EXPORT RNSScreenShadowNode final : public ConcreteViewShadowNode<
++                                                     RNSScreenComponentName,
++                                                     RNSScreenProps,
++                                                     RNSScreenEventEmitter,
++                                                     RNSScreenState>
++    {
++    public:
++      using ConcreteViewShadowNode::ConcreteViewShadowNode;
++      using StateData = ConcreteViewShadowNode::ConcreteStateData;
+ 
+ #pragma mark - ShadowNode overrides
+ 
+-  Point getContentOriginOffset(bool includeTransform) const override;
++      Point getContentOriginOffset(bool includeTransform) const override;
+ 
+-  void appendChild(const ShadowNode::Shared &child) override;
++      void appendChild(const std::shared_ptr<const ShadowNode> &child) override;
+ 
+-  void layout(LayoutContext layoutContext) override;
++      void layout(LayoutContext layoutContext) override;
+ 
+ #pragma mark - Custom interface
+ 
+-  void setHeaderHeight(float headerHeight);
++      void setHeaderHeight(float headerHeight);
+ 
+-  FrameCorrectionModes &getFrameCorrectionModes();
++      FrameCorrectionModes &getFrameCorrectionModes();
+ 
+- private:
++    private:
+ #ifdef ANDROID
+-  void applyFrameCorrections();
++      void applyFrameCorrections();
+ 
+-  StateData &getStateDataMutable();
++      StateData &getStateDataMutable();
+ #endif // ANDROID
+-};
++    };
+ 
+-} // namespace react
++  } // namespace react
+ } // namespace facebook
