@@ -6,6 +6,7 @@
     "dev": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ioss": "expo start --ios",
     "web": "expo start --web",
     "postinstall": "cd ../.. && npx patch-package --patch-dir patches"
   },
@@ -30,7 +31,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
-    "@types/react": "~19.0.0",
+    "@types/react": "~19.3.0",
     "expo-build-properties": "^55.0.7",
     "patch-package": "^8.0.1",
     "postinstall-postinstall": "^2.1.0",
