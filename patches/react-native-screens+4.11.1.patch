@@ -1,7 +1,7 @@
-diff --git a/node_modules/react-native-screens/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt b/node_modules/react-native-screens/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
+diff --git a/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt b/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
 index e83dbf5..4254b0b 100644
---- a/node_modules/react-native-screens/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
-+++ b/node_modules/react-native-screens/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
+--- a/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
++++ b/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
 @@ -2,7 +2,6 @@ package com.swmansion.rnscreens.utils
  
  import com.facebook.react.common.annotations.UnstableReactNativeAPI
@@ -10,10 +10,10 @@ index e83dbf5..4254b0b 100644
  import com.facebook.react.views.view.ReactViewGroup
  
  internal fun ReactViewGroup.resolveBackgroundColor(): Int? = BackgroundStyleApplicator.getBackgroundColor(this)
-diff --git a/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp b/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
+diff --git a/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp b/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
 index 9e93139..90f5a5b 100644
---- a/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
-+++ b/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
+--- a/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
++++ b/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
 @@ -1,165 +1,185 @@
  #include "RNSScreenShadowNode.h"
  
@@ -346,10 +346,10 @@ index 9e93139..90f5a5b 100644
 -} // namespace react
 +  } // namespace react
  } // namespace facebook
-diff --git a/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h b/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
+diff --git a/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h b/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
 index 6b4b72e..41156a1 100644
---- a/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
-+++ b/node_modules/react-native-screens/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
+--- a/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
++++ b/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
 @@ -1,6 +1,7 @@
  #pragma once
  

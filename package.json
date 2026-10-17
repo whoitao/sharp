@@ -9,6 +9,21 @@
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
+  "pnpm": {
+    "overrides": {
+      "react": "19.3.0",
+      "react-dom": "19.3.0"
+    },
+    "patchedDependencies": {
+      "react-native-screens@4.11.1": "patches/react-native-screens+4.11.1.patch"
+    },
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ]
+  },
   "scripts": {
     "admin:dev": "npm run dev --workspace=apps/admin",
     "admin:build": "npm run build --workspace=apps/admin",
