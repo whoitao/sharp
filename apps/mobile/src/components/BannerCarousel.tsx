@@ -51,7 +51,7 @@ const BannerCarousel: React.FC = () => {
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const scrollX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollX / SCREEN_WIDTH);
+    const index = Math.round(scrollX / (SCREEN_WIDTH - 32));
     if (index !== activeIndex && index >= 0 && index < BANNERS.length) {
       setActiveIndex(index);
     }

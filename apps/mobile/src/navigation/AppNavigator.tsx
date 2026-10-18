@@ -179,8 +179,8 @@ const MainTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#FFFFFF',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: '#10B981',
+        tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
           position: 'absolute',
           backgroundColor: '#FFFFFF',
@@ -265,9 +265,11 @@ const styles = StyleSheet.create({
   },
   tabIcon: {
     fontSize: 18,
+    color: '#9CA3AF',
   },
   tabIconActive: {
     fontSize: 18,
+    color: '#FFFFFF',
   },
 });
 
