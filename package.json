@@ -12,7 +12,8 @@
   "pnpm": {
     "overrides": {
       "react": "19.3.0",
-      "react-dom": "19.3.0"
+      "react-dom": "19.3.0",
+      "electron-to-chromium": "1.5.458"
     },
     "patchedDependencies": {
       "react-native-screens@4.11.1": "patches/react-native-screens+4.11.1.patch"
