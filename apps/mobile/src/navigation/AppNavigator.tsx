@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSelector } from 'react-redux';
 import { Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Category } from '@sharp/shared';
 import type { RootState } from '../stores';
 
@@ -165,44 +166,48 @@ const TabIcon: React.FC<{ label: string; focused: boolean }> = ({ label, focused
 
 // ─── Main Tab Navigator ───────────────────────────────────────────────────────
 
-const MainTabNavigator: React.FC = () => (
-  <Tab.Navigator
-    screenOptions={{
-      tabBarActiveTintColor: '#3B82F6',
-      tabBarInactiveTintColor: '#9CA3AF',
-      tabBarStyle: {
-        backgroundColor: '#FFFFFF',
-        borderTopColor: '#E5E7EB',
-        borderTopWidth: 1,
-        height: 60,
-        paddingBottom: 8,
-        paddingTop: 8,
-      },
-      tabBarLabelStyle: {
-        fontSize: 12,
-        fontWeight: '500',
-      },
-      headerShown: false,
-    }}
-  >
-    <Tab.Screen
-      name="HomeTab"
-      component={HomeStackNavigator as any}
-      options={{
-        title: '学习',
-        tabBarIcon: ({ focused }) => <TabIcon label="📚" focused={focused} />,
+const MainTabNavigator: React.FC = () => {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#3B82F6',
+        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#E5E7EB',
+          borderTopWidth: 1,
+          height: 60 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
+        headerShown: false,
       }}
-    />
-    <Tab.Screen
-      name="ProfileTab"
-      component={ProfileStackNavigator as any}
-      options={{
-        title: '我的',
-        tabBarIcon: ({ focused }) => <TabIcon label="👤" focused={focused} />,
-      }}
-    />
-  </Tab.Navigator>
-);
+    >
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeStackNavigator as any}
+        options={{
+          title: '学习',
+          tabBarIcon: ({ focused }) => <TabIcon label="" focused={focused} />,
+        }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileStackNavigator as any}
+        options={{
+          title: '我的',
+          tabBarIcon: ({ focused }) => <TabIcon label="👤" focused={focused} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 // ─── Root Navigator ───────────────────────────────────────────────────────────
 
