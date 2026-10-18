@@ -11,6 +11,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Category } from '@sharp/shared';
 import { api } from '../../services/api';
 import CategoryCard from '../../components/CategoryCard';
+import BannerCarousel from '../../components/BannerCarousel';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -56,7 +57,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color="#10B981" />
       </View>
     );
   }
@@ -69,17 +70,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10B981" />
         }
         ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.greeting}>开始学习</Text>
-            <Text style={styles.subGreeting}>选择一个分类开始练习</Text>
+          <View>
+            <View style={styles.header}>
+              <Text style={styles.greeting}>开始学习</Text>
+              <Text style={styles.subGreeting}>选择一个分类开始练习</Text>
+            </View>
+            <BannerCarousel />
           </View>
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>📭</Text>
+            <Text style={styles.emptyIcon}></Text>
             <Text style={styles.emptyText}>暂无分类</Text>
           </View>
         }
@@ -91,20 +95,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F0FDF4',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F0FDF4',
   },
   list: {
     padding: 16,
     paddingBottom: 24,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   greeting: {
     fontSize: 28,

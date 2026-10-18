@@ -62,19 +62,19 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     },
     {
       label: '错题本',
-      icon: '❌',
+      icon: '',
       onPress: () => navigation.navigate('WrongQuestions'),
     },
     {
       label: '设置',
-      icon: '⚙️',
+      icon: '',
       onPress: () => navigation.navigate('Settings'),
     },
   ];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* User info */}
+      {/* User info with gradient */}
       <View style={styles.userCard}>
         <View style={styles.avatarContainer}>
           <Text style={styles.avatar}>
@@ -88,13 +88,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       {/* Stats */}
       {loading ? (
         <View style={styles.statsLoading}>
-          <ActivityIndicator size="small" color="#3B82F6" />
+          <ActivityIndicator size="small" color="#10B981" />
         </View>
       ) : (
         <View style={styles.statsRow}>
-          <StatCard title="学习天数" value={stats.totalDays} icon="📅" color="#3B82F6" />
-          <StatCard title="答题总数" value={stats.totalQuestions} icon="✏️" color="#059669" />
-          <StatCard title="连续打卡" value={`${stats.streak}天`} icon="🔥" color="#D97706" />
+          <StatCard title="学习天数" value={stats.totalDays} icon="" color="#10B981" />
+          <StatCard title="答题总数" value={stats.totalQuestions} icon="" color="#3B82F6" />
+          <StatCard title="连续打卡" value={`${stats.streak}天`} icon="" color="#F59E0B" />
         </View>
       )}
 
@@ -110,7 +110,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             onPress={item.onPress}
             activeOpacity={0.6}
           >
-            <Text style={styles.menuIcon}>{item.icon}</Text>
+            <View style={styles.menuIconContainer}>
+              <Text style={styles.menuIcon}>{item.icon}</Text>
+            </View>
             <Text style={styles.menuLabel}>{item.label}</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
@@ -128,37 +130,42 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F0FDF4',
   },
   content: {
     padding: 16,
     paddingBottom: 40,
   },
   userCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#A7F3D0',
+    borderRadius: 20,
     padding: 28,
     alignItems: 'center',
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   avatarContainer: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#3B82F6',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   avatar: {
     fontSize: 30,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#10B981',
   },
   username: {
     fontSize: 20,
@@ -168,7 +175,7 @@ const styles = StyleSheet.create({
   },
   userSub: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#4B5563',
   },
   statsLoading: {
     paddingVertical: 30,
@@ -181,13 +188,13 @@ const styles = StyleSheet.create({
   },
   menuSection: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
     overflow: 'hidden',
   },
   menuItem: {
@@ -200,9 +207,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
+  menuIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   menuIcon: {
-    fontSize: 20,
-    marginRight: 14,
+    fontSize: 18,
   },
   menuLabel: {
     flex: 1,
@@ -217,11 +232,16 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: '#FECACA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   logoutText: {
     color: '#DC2626',

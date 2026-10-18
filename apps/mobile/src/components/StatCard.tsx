@@ -8,7 +8,7 @@ interface StatCardProps {
   color?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = '#3B82F6' }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = '#10B981' }) => {
   return (
     <View style={[styles.card, { borderLeftColor: color }]}>
       <Text style={styles.icon}>{icon}</Text>
@@ -22,15 +22,15 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     borderLeftWidth: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
     marginHorizontal: 4,
   },
   icon: {

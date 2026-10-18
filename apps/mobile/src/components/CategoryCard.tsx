@@ -11,7 +11,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>📚</Text>
+        <Text style={styles.icon}></Text>
       </View>
       <View style={styles.content}>
         <Text style={styles.name}>{category.name}</Text>
@@ -29,26 +29,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
     elevation: 2,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#EFF6FF',
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#D1FAE5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
   },
   icon: {
-    fontSize: 24,
+    fontSize: 26,
   },
   content: {
     flex: 1,

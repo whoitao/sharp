@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSelector } from 'react-redux';
-import { Text } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Category } from '@sharp/shared';
 import type { RootState } from '../stores';
@@ -25,7 +25,7 @@ import SettingsScreen from '../screens/profile/SettingsScreen';
 import RecordsScreen from '../screens/profile/RecordsScreen';
 import WrongQuestionsScreen from '../screens/profile/WrongQuestionsScreen';
 
-// ─── Navigation param types ───────────────────────────────────────────────────
+// ─── Navigation param types ──────────────────────────────────────────────────
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -52,7 +52,7 @@ export type MainTabParamList = {
   ProfileTab: undefined;
 };
 
-// ── Navigators ───────────────────────────────────────────────────────────────
+// ─ Navigators ───────────────────────────────────────────────────────────────
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -78,7 +78,7 @@ const AuthNavigator: React.FC = () => (
 const HomeStackNavigator: React.FC = () => (
   <HomeStack.Navigator
     screenOptions={{
-      headerStyle: { backgroundColor: '#FFFFFF' },
+      headerStyle: { backgroundColor: '#F0FDF4' },
       headerShadowVisible: false,
       headerTintColor: '#1F2937',
       headerTitleStyle: { fontWeight: '600' },
@@ -128,7 +128,7 @@ const HomeStackNavigator: React.FC = () => (
 const ProfileStackNavigator: React.FC = () => (
   <ProfileStack.Navigator
     screenOptions={{
-      headerStyle: { backgroundColor: '#FFFFFF' },
+      headerStyle: { backgroundColor: '#F0FDF4' },
       headerShadowVisible: false,
       headerTintColor: '#1F2937',
       headerTitleStyle: { fontWeight: '600' },
@@ -158,10 +158,17 @@ const ProfileStackNavigator: React.FC = () => (
   </ProfileStack.Navigator>
 );
 
-// ─── Tab icon component ───────────────────────────────────────────────────────
+// ─── Tab icon component ──────────────────────────────────────────────────────
 
-const TabIcon: React.FC<{ label: string; focused: boolean }> = ({ label, focused }) => (
-  <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{label}</Text>
+interface TabIconProps {
+  label: string;
+  focused: boolean;
+}
+
+const TabIcon: React.FC<TabIconProps> = ({ label, focused }) => (
+  <View style={[styles.tabIconContainer, focused && styles.tabIconContainerActive]}>
+    <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{label}</Text>
+  </View>
 );
 
 // ─── Main Tab Navigator ───────────────────────────────────────────────────────
@@ -172,19 +179,31 @@ const MainTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: '#6B7280',
         tabBarStyle: {
+          position: 'absolute',
           backgroundColor: '#FFFFFF',
-          borderTopColor: '#E5E7EB',
-          borderTopWidth: 1,
-          height: 60 + insets.bottom,
-          paddingBottom: 8 + insets.bottom,
+          borderRadius: 24,
+          marginHorizontal: 16,
+          marginBottom: 16 + insets.bottom,
+          height: 64,
+          paddingBottom: 8,
           paddingTop: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+          elevation: 8,
+          borderTopWidth: 0,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '500',
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarItemStyle: {
+          flex: 1,
         },
         headerShown: false,
       }}
@@ -193,7 +212,7 @@ const MainTabNavigator: React.FC = () => {
         name="HomeTab"
         component={HomeStackNavigator as any}
         options={{
-          title: '学习',
+          title: '首页',
           tabBarIcon: ({ focused }) => <TabIcon label="" focused={focused} />,
         }}
       />
@@ -202,14 +221,14 @@ const MainTabNavigator: React.FC = () => {
         component={ProfileStackNavigator as any}
         options={{
           title: '我的',
-          tabBarIcon: ({ focused }) => <TabIcon label="👤" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon label="" focused={focused} />,
         }}
       />
     </Tab.Navigator>
   );
 };
 
-// ─── Root Navigator ───────────────────────────────────────────────────────────
+// ─── Root Navigator ──────────────────────────────────────────────────────────
 
 const RootStack = createNativeStackNavigator();
 
@@ -232,5 +251,24 @@ const AppNavigator: React.FC = () => {
     </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  tabIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabIconContainerActive: {
+    backgroundColor: '#10B981',
+  },
+  tabIcon: {
+    fontSize: 18,
+  },
+  tabIconActive: {
+    fontSize: 18,
+  },
+});
 
 export default AppNavigator;
