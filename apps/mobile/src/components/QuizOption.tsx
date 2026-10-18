@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 interface QuizOptionProps {
   optionKey: string;
@@ -10,16 +11,18 @@ interface QuizOptionProps {
 }
 
 const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, disabled, onPress }) => {
+  const { colors } = useTheme();
+
   const getBackgroundColor = (): string => {
     switch (status) {
       case 'correct':
-        return '#D1FAE5';
+        return colors.accentLight;
       case 'wrong':
-        return '#FEE2E2';
+        return colors.errorLight;
       case 'revealed':
-        return '#D1FAE5';
+        return colors.accentLight;
       default:
-        return '#FFFFFF';
+        return colors.surface;
     }
   };
 
@@ -28,11 +31,11 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
       case 'correct':
         return '#059669';
       case 'wrong':
-        return '#DC2626';
+        return colors.error;
       case 'revealed':
         return '#059669';
       default:
-        return '#E5E7EB';
+        return colors.border;
     }
   };
 
@@ -41,11 +44,11 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
       case 'correct':
         return '#059669';
       case 'wrong':
-        return '#DC2626';
+        return colors.error;
       case 'revealed':
         return '#059669';
       default:
-        return '#3B82F6';
+        return colors.primary;
     }
   };
 
@@ -58,7 +61,7 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
       case 'revealed':
         return '#065F46';
       default:
-        return '#1F2937';
+        return colors.text;
     }
   };
 
@@ -81,8 +84,8 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
       <Text style={[styles.content, { color: getContentColor() }]} numberOfLines={3}>
         {content}
       </Text>
-      {status === 'correct' && <Text style={styles.indicator}>✓</Text>}
-      {status === 'wrong' && <Text style={styles.indicator}>✗</Text>}
+      {status === 'correct' && <Text style={[styles.indicator, { color: '#059669' }]}>✓</Text>}
+      {status === 'wrong' && <Text style={[styles.indicator, { color: colors.error }]}>✗</Text>}
       {status === 'revealed' && <Text style={[styles.indicator, { color: '#059669' }]}>✓</Text>}
     </TouchableOpacity>
   );
@@ -118,7 +121,6 @@ const styles = StyleSheet.create({
   indicator: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#DC2626',
     marginLeft: 8,
   },
 });

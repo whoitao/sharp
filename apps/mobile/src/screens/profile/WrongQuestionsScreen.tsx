@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { api } from '../../services/api';
 import type { Question } from '@sharp/shared';
+import { useTheme } from '../../hooks/useTheme';
 
 const WrongQuestionsScreen: React.FC = () => {
+  const { colors } = useTheme();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,22 +51,22 @@ const WrongQuestionsScreen: React.FC = () => {
 
     return (
       <TouchableOpacity
-        style={styles.questionCard}
+        style={[styles.questionCard, { backgroundColor: colors.surface }]}
         onPress={() => toggleExpand(item.id)}
         activeOpacity={0.7}
       >
         <View style={styles.questionHeader}>
-          <View style={styles.questionIndex}>
-            <Text style={styles.questionIndexText}>{index + 1}</Text>
+          <View style={[styles.questionIndex, { backgroundColor: colors.errorLight }]}>
+            <Text style={[styles.questionIndexText, { color: colors.error }]}>{index + 1}</Text>
           </View>
-          <Text style={styles.questionContent} numberOfLines={2}>
+          <Text style={[styles.questionContent, { color: colors.textSecondary }]} numberOfLines={2}>
             {item.content}
           </Text>
-          <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
+          <Text style={[styles.expandIcon, { color: colors.textTertiary }]}>{isExpanded ? '▲' : '▼'}</Text>
         </View>
 
         {isExpanded && (
-          <View style={styles.questionDetail}>
+          <View style={[styles.questionDetail, { borderTopColor: colors.borderLight }]}>
             {item.options
               .sort((a, b) => a.sortNo - b.sortNo)
               .map((option) => (
@@ -72,13 +74,14 @@ const WrongQuestionsScreen: React.FC = () => {
                   key={option.id}
                   style={[
                     styles.optionRow,
-                    option.isCorrect && styles.correctOptionRow,
+                    option.isCorrect && { backgroundColor: colors.accentLight },
                   ]}
                 >
                   <Text
                     style={[
                       styles.optionKey,
-                      option.isCorrect && styles.correctOptionKey,
+                      { color: colors.textSecondary },
+                      option.isCorrect && { borderColor: colors.accent, color: colors.accent },
                     ]}
                   >
                     {option.optionKey}
@@ -86,32 +89,33 @@ const WrongQuestionsScreen: React.FC = () => {
                   <Text
                     style={[
                       styles.optionContent,
+                      { color: colors.textSecondary },
                       option.isCorrect && styles.correctOptionContent,
                     ]}
                   >
                     {option.content}
                   </Text>
                   {option.isCorrect && (
-                    <Text style={styles.correctMark}>✓</Text>
+                    <Text style={[styles.correctMark, { color: colors.accent }]}>✓</Text>
                   )}
                 </View>
               ))}
 
             {item.analysis && (
-              <View style={styles.analysisBox}>
-                <Text style={styles.analysisLabel}>解析</Text>
-                <Text style={styles.analysisText}>{item.analysis}</Text>
+              <View style={[styles.analysisBox, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary }]}>
+                <Text style={[styles.analysisLabel, { color: colors.primary }]}>解析</Text>
+                <Text style={[styles.analysisText, { color: colors.textSecondary }]}>{item.analysis}</Text>
               </View>
             )}
 
             <View style={styles.difficultyRow}>
-              <Text style={styles.difficultyLabel}>难度：</Text>
+              <Text style={[styles.difficultyLabel, { color: colors.textSecondary }]}>难度：</Text>
               {Array.from({ length: 5 }, (_, i) => (
                 <Text
                   key={i}
                   style={[
                     styles.difficultyStar,
-                    { color: i < item.difficulty ? '#F59E0B' : '#E5E7EB' },
+                    { color: i < item.difficulty ? '#F59E0B' : colors.border },
                   ]}
                 >
                   ★
@@ -126,33 +130,33 @@ const WrongQuestionsScreen: React.FC = () => {
 
   if (loading && questions.length === 0) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={questions}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.title}>错题本</Text>
-            <Text style={styles.subtitle}>共 {questions.length} 道错题</Text>
+            <Text style={[styles.title, { color: colors.text }]}>错题本</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>共 {questions.length} 道错题</Text>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>🎉</Text>
-            <Text style={styles.emptyText}>暂无错题</Text>
-            <Text style={styles.emptySub}>继续保持，错题会显示在这里</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>暂无错题</Text>
+            <Text style={[styles.emptySub, { color: colors.textTertiary }]}>继续保持，错题会显示在这里</Text>
           </View>
         }
       />
@@ -163,13 +167,11 @@ const WrongQuestionsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
   list: {
     padding: 16,
@@ -181,15 +183,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
   },
   questionCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     marginBottom: 10,
     overflow: 'hidden',
@@ -208,7 +207,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#FEE2E2',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -216,24 +214,20 @@ const styles = StyleSheet.create({
   questionIndexText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#DC2626',
   },
   questionContent: {
     flex: 1,
     fontSize: 14,
-    color: '#374151',
     lineHeight: 20,
   },
   expandIcon: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginLeft: 8,
   },
   questionDetail: {
     paddingHorizontal: 14,
     paddingBottom: 14,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
     paddingTop: 12,
   },
   optionRow: {
@@ -243,9 +237,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 8,
     marginBottom: 4,
-  },
-  correctOptionRow: {
-    backgroundColor: '#D1FAE5',
   },
   optionKey: {
     width: 24,
@@ -257,18 +248,12 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
     marginRight: 10,
     overflow: 'hidden',
-  },
-  correctOptionKey: {
-    borderColor: '#059669',
-    color: '#059669',
   },
   optionContent: {
     flex: 1,
     fontSize: 14,
-    color: '#374151',
   },
   correctOptionContent: {
     color: '#065F46',
@@ -277,26 +262,21 @@ const styles = StyleSheet.create({
   correctMark: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#059669',
     marginLeft: 8,
   },
   analysisBox: {
     marginTop: 10,
     padding: 12,
-    backgroundColor: '#EFF6FF',
     borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#3B82F6',
   },
   analysisLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#3B82F6',
     marginBottom: 4,
   },
   analysisText: {
     fontSize: 13,
-    color: '#374151',
     lineHeight: 20,
   },
   difficultyRow: {
@@ -306,7 +286,6 @@ const styles = StyleSheet.create({
   },
   difficultyLabel: {
     fontSize: 12,
-    color: '#6B7280',
   },
   difficultyStar: {
     fontSize: 14,
@@ -322,12 +301,10 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#6B7280',
     marginBottom: 4,
   },
   emptySub: {
     fontSize: 14,
-    color: '#9CA3AF',
   },
 });
 

@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { login, clearError } from '../../stores/authSlice';
 import type { RootState, AppDispatch } from '../../stores';
 import type { AuthStackParamList } from '../../navigation/AppNavigator';
+import { useTheme } from '../../hooks/useTheme';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -23,6 +24,7 @@ interface LoginScreenProps {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+  const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
 
@@ -43,22 +45,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: '#F0FDF4' }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.inner}>
         <View style={styles.header}>
           <Text style={styles.logo}>📖</Text>
-          <Text style={styles.title}>Sharp</Text>
-          <Text style={styles.subtitle}>智能刷题，高效学习</Text>
+          <Text style={[styles.title, { color: '#10B981' }]}>Sharp</Text>
+          <Text style={[styles.subtitle, { color: '#6B7280' }]}>智能刷题，高效学习</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>用户名</Text>
+            <Text style={[styles.label, { color: '#374151' }]}>用户名</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
               placeholder="请输入用户名"
+              placeholderTextColor="#9CA3AF"
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -68,10 +71,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>密码</Text>
+            <Text style={[styles.label, { color: '#374151' }]}>密码</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
               placeholder="请输入密码"
+              placeholderTextColor="#9CA3AF"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -80,10 +84,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             />
           </View>
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? <Text style={[styles.errorText, { color: '#DC2626' }]}>{error}</Text> : null}
 
           <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
+            style={[styles.button, { backgroundColor: '#10B981' }, isLoading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={isLoading}
             activeOpacity={0.8}
@@ -100,8 +104,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             onPress={() => navigation.navigate('Register')}
             disabled={isLoading}
           >
-            <Text style={styles.linkText}>
-              没有账号？<Text style={styles.linkBold}>立即注册</Text>
+            <Text style={[styles.linkText, { color: '#6B7280' }]}>
+              没有账号？<Text style={[styles.linkBold, { color: '#10B981' }]}>立即注册</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -113,7 +117,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   inner: {
     flex: 1,
@@ -131,12 +134,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
   },
   form: {
     gap: 16,
@@ -147,26 +148,20 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#374151',
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#1F2937',
   },
   errorText: {
-    color: '#DC2626',
     fontSize: 13,
     textAlign: 'center',
   },
   button: {
-    backgroundColor: '#3B82F6',
     borderRadius: 10,
     paddingVertical: 16,
     alignItems: 'center',
@@ -186,10 +181,8 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
-    color: '#6B7280',
   },
   linkBold: {
-    color: '#3B82F6',
     fontWeight: '600',
   },
 });

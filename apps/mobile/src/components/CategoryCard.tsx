@@ -1,6 +1,7 @@
 import type { Category } from '@sharp/shared';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 interface CategoryCardProps {
   category: Category;
@@ -8,18 +9,20 @@ interface CategoryCardProps {
 }
 
 const CategoryCard: React.FC<CategoryCardProps> = ({ category, onPress }) => {
+  const { colors } = useTheme();
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.iconContainer}>
+    <TouchableOpacity style={[styles.card, { backgroundColor: colors.surface }]} onPress={onPress} activeOpacity={0.7}>
+      <View style={[styles.iconContainer, { backgroundColor: colors.accentLight }]}>
         <Text style={styles.icon}></Text>
       </View>
       <View style={styles.content}>
-        <Text style={styles.name}>{category.name}</Text>
+        <Text style={[styles.name, { color: colors.text }]}>{category.name}</Text>
         {category.questionCount !== undefined && category.parentId !== '0' && (
-          <Text style={styles.count}>{category.questionCount} 题</Text>
+          <Text style={[styles.count, { color: colors.textSecondary }]}>{category.questionCount} 题</Text>
         )}
       </View>
-      <Text style={styles.arrow}>›</Text>
+      <Text style={[styles.arrow, { color: colors.textTertiary }]}>›</Text>
     </TouchableOpacity>
   );
 };
@@ -28,7 +31,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 8,
@@ -42,7 +44,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#D1FAE5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -56,16 +57,13 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 4,
   },
   count: {
     fontSize: 13,
-    color: '#6B7280',
   },
   arrow: {
     fontSize: 24,
-    color: '#9CA3AF',
     fontWeight: '300',
   },
 });

@@ -1,18 +1,19 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Category } from '@sharp/shared';
-import { api } from '../../services/api';
-import CategoryCard from '../../components/CategoryCard';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import BannerCarousel from '../../components/BannerCarousel';
+import CategoryCard from '../../components/CategoryCard';
+import { useTheme } from '../../hooks/useTheme';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
+import { api } from '../../services/api';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -21,6 +22,7 @@ interface HomeScreenProps {
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+  const { colors } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -56,35 +58,27 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#10B981" />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10B981" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
         }
-        ListHeaderComponent={
-          <View>
-            <View style={styles.header}>
-              <Text style={styles.greeting}>开始学习</Text>
-              <Text style={styles.subGreeting}>选择一个分类开始练习</Text>
-            </View>
-            <BannerCarousel />
-          </View>
-        }
+        ListHeaderComponent={<BannerCarousel />}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}></Text>
-            <Text style={styles.emptyText}>暂无分类</Text>
+            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>暂无分类</Text>
           </View>
         }
       />
@@ -95,30 +89,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0FDF4',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
   },
   list: {
     padding: 16,
     paddingBottom: 24,
-  },
-  header: {
-    marginBottom: 16,
-  },
-  greeting: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  subGreeting: {
-    fontSize: 15,
-    color: '#6B7280',
   },
   empty: {
     alignItems: 'center',
@@ -130,7 +109,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#9CA3AF',
   },
 });
 

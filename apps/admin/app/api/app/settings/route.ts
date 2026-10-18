@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     userId: appUser.id,
     unitSize: settings?.unitSize ?? 20,
     theme: settings?.theme ?? "system",
+    language: settings?.language ?? "zh",
   });
 }
 
@@ -22,7 +23,7 @@ export async function PUT(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { unitSize, theme } = body;
+  const { unitSize, theme, language } = body;
 
   const data: Record<string, any> = {};
   if (unitSize !== undefined) {
@@ -43,6 +44,15 @@ export async function PUT(request: NextRequest) {
     }
     data.theme = theme;
   }
+  if (language !== undefined) {
+    if (!["zh", "en"].includes(language)) {
+      return NextResponse.json(
+        { error: "language must be 'zh' or 'en'" },
+        { status: 400 }
+      );
+    }
+    data.language = language;
+  }
 
   const settings = await prisma.userSettings.upsert({
     where: { userId: appUser.id },
@@ -57,5 +67,6 @@ export async function PUT(request: NextRequest) {
     userId: settings.userId,
     unitSize: settings.unitSize,
     theme: settings.theme,
+    language: settings.language,
   });
 }

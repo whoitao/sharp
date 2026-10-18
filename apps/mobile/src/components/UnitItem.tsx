@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { UnitInfo } from '@sharp/shared';
+import { useTheme } from '../hooks/useTheme';
 
 interface UnitItemProps {
   unit: UnitInfo;
@@ -14,6 +15,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 };
 
 const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress }) => {
+  const { colors } = useTheme();
   const status = statusConfig[unit.status] ?? statusConfig.not_started;
   const progress =
     unit.totalQuestions > 0
@@ -21,26 +23,26 @@ const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress }) => {
       : 0;
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.container, { backgroundColor: colors.surface }]} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.header}>
-        <Text style={styles.title}>第 {unit.unitIndex + 1} 单元</Text>
+        <Text style={[styles.title, { color: colors.text }]}>第 {unit.unitIndex + 1} 单元</Text>
         <View style={[styles.badge, { backgroundColor: status.bg }]}>
           <Text style={[styles.badgeText, { color: status.color }]}>{status.label}</Text>
         </View>
       </View>
       <View style={styles.info}>
-        <Text style={styles.infoText}>
+        <Text style={[styles.infoText, { color: colors.textSecondary }]}>
           {unit.startIndex + 1} - {unit.endIndex + 1} 题 · 共 {unit.totalQuestions} 题
         </Text>
       </View>
       <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+        <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+          <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
         </View>
-        <Text style={styles.progressText}>{progress}%</Text>
+        <Text style={[styles.progressText, { color: colors.textSecondary }]}>{progress}%</Text>
       </View>
       {unit.status === 'completed' && (
-        <Text style={styles.score}>
+        <Text style={[styles.score, { color: colors.accent }]}>
           正确率: {unit.totalQuestions > 0 ? Math.round((unit.correctCount / unit.totalQuestions) * 100) : 0}%
         </Text>
       )}
@@ -50,7 +52,6 @@ const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
@@ -69,7 +70,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
   },
   badge: {
     paddingHorizontal: 10,
@@ -85,7 +85,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 13,
-    color: '#6B7280',
   },
   progressContainer: {
     flexDirection: 'row',
@@ -94,25 +93,21 @@ const styles = StyleSheet.create({
   progressBar: {
     flex: 1,
     height: 6,
-    backgroundColor: '#E5E7EB',
     borderRadius: 3,
     overflow: 'hidden',
     marginRight: 10,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#3B82F6',
     borderRadius: 3,
   },
   progressText: {
     fontSize: 12,
-    color: '#6B7280',
     minWidth: 36,
     textAlign: 'right',
   },
   score: {
     fontSize: 13,
-    color: '#059669',
     marginTop: 8,
     fontWeight: '500',
   },

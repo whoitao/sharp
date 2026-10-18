@@ -15,6 +15,7 @@ import { api } from '../../services/api';
 import { fetchQuestions } from '../../stores/studySlice';
 import type { RootState, AppDispatch } from '../../stores';
 import UnitItem from '../../components/UnitItem';
+import { useTheme } from '../../hooks/useTheme';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'UnitList'>;
@@ -26,6 +27,7 @@ interface UnitListScreenProps {
 }
 
 const UnitListScreen: React.FC<UnitListScreenProps> = ({ navigation, route }) => {
+  const { colors } = useTheme();
   const { category } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { unitSize } = useSelector((state: RootState) => state.settings);
@@ -80,26 +82,26 @@ const UnitListScreen: React.FC<UnitListScreenProps> = ({ navigation, route }) =>
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={units}
         keyExtractor={(item) => item.unitIndex.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.title}>{category.name}</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: colors.text }]}>{category.name}</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               每单元 {unitSize} 题 · 共 {units.length} 个单元
             </Text>
           </View>
@@ -107,7 +109,7 @@ const UnitListScreen: React.FC<UnitListScreenProps> = ({ navigation, route }) =>
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>📋</Text>
-            <Text style={styles.emptyText}>暂无单元</Text>
+            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>暂无单元</Text>
           </View>
         }
       />
@@ -118,13 +120,11 @@ const UnitListScreen: React.FC<UnitListScreenProps> = ({ navigation, route }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
   list: {
     padding: 16,
@@ -136,12 +136,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
   },
   empty: {
     alignItems: 'center',
@@ -153,7 +151,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#9CA3AF',
   },
 });
 

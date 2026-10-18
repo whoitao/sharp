@@ -12,6 +12,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { RootState, AppDispatch } from '../../stores';
 import { resetStudy } from '../../stores/studySlice';
 import { fetchQuestions } from '../../stores/studySlice';
+import { useTheme } from '../../hooks/useTheme';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'QuizResult'>;
@@ -23,6 +24,7 @@ interface QuizResultScreenProps {
 }
 
 const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }) => {
+  const { colors } = useTheme();
   const { categoryId, unitIndex, categoryName } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { result, currentQuestions } = useSelector((state: RootState) => state.study);
@@ -31,10 +33,10 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
 
   if (!result) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.noResultText}>暂无结果数据</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Text style={[styles.noResultText, { color: colors.textSecondary }]}>暂无结果数据</Text>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: colors.primary }]}
           onPress={() => navigation.goBack()}
         >
           <Text style={styles.backButtonText}>返回</Text>
@@ -60,7 +62,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   const getScoreColor = (): string => {
     if (percentage >= 80) return '#059669';
     if (percentage >= 60) return '#D97706';
-    return '#DC2626';
+    return colors.error;
   };
 
   const getScoreEmoji = (): string => {
@@ -94,36 +96,36 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       {/* Score card */}
-      <View style={styles.scoreCard}>
+      <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
         <Text style={styles.scoreEmoji}>{getScoreEmoji()}</Text>
         <Text style={[styles.percentage, { color: getScoreColor() }]}>
           {percentage}%
         </Text>
-        <Text style={styles.scoreLabel}>正确率</Text>
+        <Text style={[styles.scoreLabel, { color: colors.textSecondary }]}>正确率</Text>
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{result.correctCount}</Text>
-            <Text style={styles.statLabel}>正确</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{result.correctCount}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>正确</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: '#DC2626' }]}>
+            <Text style={[styles.statValue, { color: colors.error }]}>
               {result.wrongCount}
             </Text>
-            <Text style={styles.statLabel}>错误</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>错误</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{result.totalQuestions}</Text>
-            <Text style={styles.statLabel}>总题数</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{result.totalQuestions}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>总题数</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{formatTime(result.durationSeconds)}</Text>
-            <Text style={styles.statLabel}>用时</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{formatTime(result.durationSeconds)}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>用时</Text>
           </View>
         </View>
       </View>
@@ -131,7 +133,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
       {/* Wrong questions */}
       {result.wrongAnswers.length > 0 && (
         <View style={styles.wrongSection}>
-          <Text style={styles.wrongTitle}>
+          <Text style={[styles.wrongTitle, { color: colors.text }]}>
             错题回顾 ({result.wrongAnswers.length}题)
           </Text>
           {result.wrongAnswers.map((wa, idx) => {
@@ -139,30 +141,32 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
             return (
               <TouchableOpacity
                 key={wa.question.id}
-                style={styles.wrongItem}
+                style={[styles.wrongItem, { backgroundColor: colors.surface }]}
                 onPress={() => toggleWrong(wa.question.id)}
                 activeOpacity={0.7}
               >
                 <View style={styles.wrongHeader}>
-                  <Text style={styles.wrongIndex}>{idx + 1}</Text>
-                  <Text style={styles.wrongContent} numberOfLines={1}>
+                  <View style={[styles.wrongIndex, { backgroundColor: colors.errorLight, color: colors.error }]}>
+                    <Text style={{ color: colors.error, fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 28 }}>{idx + 1}</Text>
+                  </View>
+                  <Text style={[styles.wrongContent, { color: colors.text }]} numberOfLines={1}>
                     {wa.question.content}
                   </Text>
-                  <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
+                  <Text style={[styles.expandIcon, { color: colors.textTertiary }]}>{isExpanded ? '▲' : '▼'}</Text>
                 </View>
                 {isExpanded && (
-                  <View style={styles.wrongDetail}>
+                  <View style={[styles.wrongDetail, { borderTopColor: colors.borderLight }]}>
                     <View style={styles.wrongRow}>
-                      <Text style={styles.wrongLabel}>你的答案：</Text>
-                      <Text style={styles.wrongAnswer}>{wa.selectedKeys.join(', ')}</Text>
+                      <Text style={[styles.wrongLabel, { color: colors.textSecondary }]}>你的答案：</Text>
+                      <Text style={[styles.wrongAnswer, { color: colors.error }]}>{wa.selectedKeys.join(', ')}</Text>
                     </View>
                     <View style={styles.wrongRow}>
-                      <Text style={styles.wrongLabel}>正确答案：</Text>
+                      <Text style={[styles.wrongLabel, { color: colors.textSecondary }]}>正确答案：</Text>
                       <Text style={styles.correctAnswer}>{wa.correctKeys.join(', ')}</Text>
                     </View>
                     {wa.question.analysis && (
-                      <View style={styles.analysisBox}>
-                        <Text style={styles.analysisText}>{wa.question.analysis}</Text>
+                      <View style={[styles.analysisBox, { backgroundColor: colors.background }]}>
+                        <Text style={[styles.analysisText, { color: colors.text }]}>{wa.question.analysis}</Text>
                       </View>
                     )}
                   </View>
@@ -175,10 +179,10 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
 
       {/* Action buttons */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.retryButton} onPress={handleRetry} activeOpacity={0.8}>
-          <Text style={styles.retryText}>再练一次</Text>
+        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.surface, borderColor: colors.primary }]} onPress={handleRetry} activeOpacity={0.8}>
+          <Text style={[styles.retryText, { color: colors.primary }]}>再练一次</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.continueButton, { backgroundColor: colors.primary }]} onPress={handleContinue} activeOpacity={0.8}>
           <Text style={styles.continueText}>继续学习</Text>
         </TouchableOpacity>
       </View>
@@ -189,7 +193,6 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   content: {
     padding: 16,
@@ -199,15 +202,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
   noResultText: {
     fontSize: 16,
-    color: '#6B7280',
     marginBottom: 16,
   },
   backButton: {
-    backgroundColor: '#3B82F6',
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 32,
@@ -218,7 +218,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   scoreCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 32,
     alignItems: 'center',
@@ -240,7 +239,6 @@ const styles = StyleSheet.create({
   },
   scoreLabel: {
     fontSize: 15,
-    color: '#6B7280',
     marginBottom: 24,
   },
   statsRow: {
@@ -256,17 +254,14 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#6B7280',
   },
   statDivider: {
     width: 1,
     height: 32,
-    backgroundColor: '#E5E7EB',
   },
   wrongSection: {
     marginBottom: 20,
@@ -274,11 +269,9 @@ const styles = StyleSheet.create({
   wrongTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 12,
   },
   wrongItem: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     marginBottom: 8,
     overflow: 'hidden',
@@ -297,8 +290,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#FEE2E2',
-    color: '#DC2626',
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -309,18 +300,15 @@ const styles = StyleSheet.create({
   wrongContent: {
     flex: 1,
     fontSize: 14,
-    color: '#374151',
   },
   expandIcon: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginLeft: 8,
   },
   wrongDetail: {
     paddingHorizontal: 14,
     paddingBottom: 14,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
     paddingTop: 12,
   },
   wrongRow: {
@@ -329,12 +317,10 @@ const styles = StyleSheet.create({
   },
   wrongLabel: {
     fontSize: 13,
-    color: '#6B7280',
     width: 75,
   },
   wrongAnswer: {
     fontSize: 13,
-    color: '#DC2626',
     fontWeight: '500',
   },
   correctAnswer: {
@@ -345,12 +331,10 @@ const styles = StyleSheet.create({
   analysisBox: {
     marginTop: 8,
     padding: 10,
-    backgroundColor: '#F9FAFB',
     borderRadius: 8,
   },
   analysisText: {
     fontSize: 13,
-    color: '#374151',
     lineHeight: 20,
   },
   actions: {
@@ -359,21 +343,17 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     borderWidth: 2,
-    borderColor: '#3B82F6',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
   },
   retryText: {
-    color: '#3B82F6',
     fontSize: 16,
     fontWeight: '600',
   },
   continueButton: {
     flex: 1,
-    backgroundColor: '#3B82F6',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

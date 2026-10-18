@@ -30,6 +30,7 @@ model UserSettings {
   user     User   @relation(fields: [userId], references: [id])
   unitSize Int    @default(20)
   theme    String @default("system")
+  language String @default("zh")
 }
 
 model Admin {

@@ -22,6 +22,11 @@ export enum Theme {
   SYSTEM = 'system',
 }
 
+export enum Language {
+  ZH = 'zh',
+  EN = 'en',
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -70,6 +75,7 @@ export interface UserSettings {
   userId: string;
   unitSize: number;
   theme: Theme;
+  language: Language;
 }
 
 export interface Admin {
@@ -223,4 +229,5 @@ export interface UpdateQuestionRequest {
 export interface UpdateSettingsRequest {
   unitSize?: number;
   theme?: Theme;
+  language?: Language;
 }

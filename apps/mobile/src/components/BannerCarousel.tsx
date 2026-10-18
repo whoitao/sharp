@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Dimensions, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import React, { useEffect, useRef, useState } from 'react';
+import { FlatList, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 interface BannerItem {
   id: string;
@@ -23,8 +22,8 @@ const BANNERS: BannerItem[] = [
     id: '2',
     title: '错题回顾',
     subtitle: '智能分析错题，针对性强化训练',
-    gradient: ['#BFDBFE', '#93C5FD'],
     icon: '',
+    gradient: ['#BFDBFE', '#93C5FD'],
   },
   {
     id: '3',
@@ -36,10 +35,15 @@ const BANNERS: BannerItem[] = [
 ];
 
 const BannerCarousel: React.FC = () => {
+  const { colors } = useTheme();
   const flatListRef = useRef<FlatList>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  const slideWidth = containerWidth;
 
   useEffect(() => {
+    if (slideWidth === 0) return;
     const interval = setInterval(() => {
       const nextIndex = (activeIndex + 1) % BANNERS.length;
       flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
@@ -47,28 +51,40 @@ const BannerCarousel: React.FC = () => {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [activeIndex]);
+  }, [activeIndex, slideWidth]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (slideWidth === 0) return;
     const scrollX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(scrollX / (SCREEN_WIDTH - 32));
+    const index = Math.round(scrollX / slideWidth);
     if (index !== activeIndex && index >= 0 && index < BANNERS.length) {
       setActiveIndex(index);
     }
   };
 
+  const onLayout = (event: LayoutChangeEvent) => {
+    const width = event.nativeEvent.layout.width;
+    if (width !== containerWidth) {
+      setContainerWidth(width);
+    }
+  };
+
   const renderItem = ({ item }: { item: BannerItem }) => (
-    <View style={[styles.slide, { backgroundColor: item.gradient[0] }]}>
+    <View style={[styles.slide, { width: slideWidth, backgroundColor: item.gradient[0] }]}>
       <View style={styles.slideContent}>
         <Text style={styles.icon}>{item.icon}</Text>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.subtitle}>{item.subtitle}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
       </View>
     </View>
   );
 
+  if (slideWidth === 0) {
+    return <View style={styles.container} onLayout={onLayout} />;
+  }
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={onLayout}>
       <FlatList
         ref={flatListRef}
         data={BANNERS}
@@ -80,13 +96,10 @@ const BannerCarousel: React.FC = () => {
         scrollEventThrottle={16}
         keyExtractor={(item) => item.id}
         getItemLayout={(_, index) => ({
-          length: SCREEN_WIDTH - 32,
-          offset: (SCREEN_WIDTH - 32) * index,
+          length: slideWidth,
+          offset: slideWidth * index,
           index,
         })}
-        snapToInterval={SCREEN_WIDTH - 32}
-        decelerationRate="fast"
-        contentContainerStyle={styles.listContent}
       />
       <View style={styles.dots}>
         {BANNERS.map((_, index) => (
@@ -94,6 +107,7 @@ const BannerCarousel: React.FC = () => {
             key={index}
             style={[
               styles.dot,
+              { backgroundColor: index === activeIndex ? colors.accent : colors.border },
               index === activeIndex && styles.dotActive,
             ]}
           />
@@ -107,14 +121,9 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
   },
-  listContent: {
-    paddingHorizontal: 16,
-  },
   slide: {
-    width: SCREEN_WIDTH - 32,
     height: 140,
     borderRadius: 20,
-    marginHorizontal: 0,
     justifyContent: 'center',
     overflow: 'hidden',
   },
@@ -128,12 +137,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: '#4B5563',
   },
   dots: {
     flexDirection: 'row',
@@ -145,10 +152,8 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#D1D5DB',
   },
   dotActive: {
-    backgroundColor: '#10B981',
     width: 18,
   },
 });

@@ -13,6 +13,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { Category } from '@sharp/shared';
 import { api } from '../../services/api';
 import CategoryCard from '../../components/CategoryCard';
+import { useTheme } from '../../hooks/useTheme';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Category'>;
@@ -24,6 +25,7 @@ interface CategoryScreenProps {
 }
 
 const CategoryScreen: React.FC<CategoryScreenProps> = ({ navigation, route }) => {
+  const { colors } = useTheme();
   const { category } = route.params;
   const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,22 +74,22 @@ const CategoryScreen: React.FC<CategoryScreenProps> = ({ navigation, route }) =>
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   if (isLeaf) {
     return (
-      <View style={styles.leafContainer}>
-        <View style={styles.leafContent}>
+      <View style={[styles.leafContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.leafContent, { backgroundColor: colors.surface }]}>
           <Text style={styles.leafIcon}>📝</Text>
-          <Text style={styles.leafTitle}>{category.name}</Text>
-          <Text style={styles.leafDescription}>
+          <Text style={[styles.leafTitle, { color: colors.text }]}>{category.name}</Text>
+          <Text style={[styles.leafDescription, { color: colors.textSecondary }]}>
             {category.questionCount ? `共 ${category.questionCount} 道题目` : '准备开始学习'}
           </Text>
-          <TouchableOpacity style={styles.startButton} onPress={handleStartLearning} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.startButton, { backgroundColor: colors.primary }]} onPress={handleStartLearning} activeOpacity={0.8}>
             <Text style={styles.startButtonText}>进入学习</Text>
           </TouchableOpacity>
         </View>
@@ -96,25 +98,25 @@ const CategoryScreen: React.FC<CategoryScreenProps> = ({ navigation, route }) =>
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={subCategories}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.title}>{category.name}</Text>
-            <Text style={styles.subtitle}>选择子分类</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{category.name}</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>选择子分类</Text>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>📭</Text>
-            <Text style={styles.emptyText}>暂无子分类</Text>
+            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>暂无子分类</Text>
           </View>
         }
       />
@@ -125,13 +127,11 @@ const CategoryScreen: React.FC<CategoryScreenProps> = ({ navigation, route }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
   list: {
     padding: 16,
@@ -143,12 +143,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
   },
   empty: {
     alignItems: 'center',
@@ -160,18 +158,15 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#9CA3AF',
   },
   leafContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
     padding: 32,
   },
   leafContent: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 40,
     shadowColor: '#000',
@@ -188,16 +183,13 @@ const styles = StyleSheet.create({
   leafTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 8,
   },
   leafDescription: {
     fontSize: 15,
-    color: '#6B7280',
     marginBottom: 32,
   },
   startButton: {
-    backgroundColor: '#3B82F6',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 48,

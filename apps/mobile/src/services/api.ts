@@ -1,5 +1,6 @@
 import type {
   Category,
+  Language,
   LoginResponse,
   PaginatedResponse,
   Question,
@@ -413,6 +414,7 @@ export const api = {
         userId: '1',
         unitSize: 20,
         theme: 'light' as Theme,
+        language: 'zh' as Language,
       };
     }
   },
@@ -426,6 +428,7 @@ export const api = {
         userId: '1',
         unitSize: settings.unitSize ?? 20,
         theme: settings.theme ?? ('light' as Theme),
+        language: settings.language ?? ('zh' as Language),
       };
     }
   },

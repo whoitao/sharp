@@ -5,10 +5,12 @@ import { Provider, useDispatch, useSelector } from 'react-redux';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AppDispatch, RootState, store } from './src/stores';
 import { initializeAuth } from './src/stores/authSlice';
+import { useTheme } from './src/hooks/useTheme';
 
 const AppContent: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading } = useSelector((state: RootState) => state.auth);
+  const { colors } = useTheme();
 
   useEffect(() => {
     dispatch(initializeAuth());
@@ -16,15 +18,15 @@ const AppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.splash}>
-        <ActivityIndicator size="large" color="#F63B86" />
+      <View style={[styles.splash, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
     <>
-      <StatusBar style="auto" />
+      <StatusBar style={colors.statusBar} />
       <AppNavigator />
     </>
   );

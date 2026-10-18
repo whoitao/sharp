@@ -1,11 +1,14 @@
-import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSelector } from 'react-redux';
-import { Text, View, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Category } from '@sharp/shared';
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
+import { useTheme } from '../hooks/useTheme';
+import { useTranslation } from '../i18n/useTranslation';
 import type { RootState } from '../stores';
 
 // Auth screens
@@ -13,16 +16,16 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 
 // Home screens
-import HomeScreen from '../screens/home/HomeScreen';
 import CategoryScreen from '../screens/home/CategoryScreen';
-import UnitListScreen from '../screens/home/UnitListScreen';
-import QuizScreen from '../screens/home/QuizScreen';
+import HomeScreen from '../screens/home/HomeScreen';
 import QuizResultScreen from '../screens/home/QuizResultScreen';
+import QuizScreen from '../screens/home/QuizScreen';
+import UnitListScreen from '../screens/home/UnitListScreen';
 
 // Profile screens
 import ProfileScreen from '../screens/profile/ProfileScreen';
-import SettingsScreen from '../screens/profile/SettingsScreen';
 import RecordsScreen from '../screens/profile/RecordsScreen';
+import SettingsScreen from '../screens/profile/SettingsScreen';
 import WrongQuestionsScreen from '../screens/profile/WrongQuestionsScreen';
 
 // ─── Navigation param types ──────────────────────────────────────────────────
@@ -75,16 +78,20 @@ const AuthNavigator: React.FC = () => (
 
 // ── Home Stack Navigator ─────────────────────────────────────────────────────
 
-const HomeStackNavigator: React.FC = () => (
-  <HomeStack.Navigator
-    screenOptions={{
-      headerStyle: { backgroundColor: '#F0FDF4' },
-      headerShadowVisible: false,
-      headerTintColor: '#1F2937',
-      headerTitleStyle: { fontWeight: '600' },
-      animation: 'slide_from_right',
-    }}
-  >
+const HomeStackNavigator: React.FC = () => {
+  const { colors } = useTheme();
+
+  return (
+    <HomeStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.background },
+        headerShadowVisible: false,
+        headerTintColor: colors.text,
+        headerTitleStyle: { fontWeight: '600' },
+        headerBackButtonDisplayMode: 'minimal',
+        animation: 'slide_from_right',
+      }}
+    >
     <HomeStack.Screen
       name="Home"
       component={HomeScreen as any}
@@ -120,21 +127,26 @@ const HomeStackNavigator: React.FC = () => (
         title: '练习结果',
       }}
     />
-  </HomeStack.Navigator>
-);
+    </HomeStack.Navigator>
+  );
+};
 
 // ─── Profile Stack Navigator ──────────────────────────────────────────────────
 
-const ProfileStackNavigator: React.FC = () => (
-  <ProfileStack.Navigator
-    screenOptions={{
-      headerStyle: { backgroundColor: '#F0FDF4' },
-      headerShadowVisible: false,
-      headerTintColor: '#1F2937',
-      headerTitleStyle: { fontWeight: '600' },
-      animation: 'slide_from_right',
-    }}
-  >
+const ProfileStackNavigator: React.FC = () => {
+  const { colors } = useTheme();
+
+  return (
+    <ProfileStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.background },
+        headerShadowVisible: false,
+        headerTintColor: colors.text,
+        headerTitleStyle: { fontWeight: '600' },
+        headerBackButtonDisplayMode: 'minimal',
+        animation: 'slide_from_right',
+      }}
+    >
     <ProfileStack.Screen
       name="Profile"
       component={ProfileScreen as any}
@@ -155,42 +167,51 @@ const ProfileStackNavigator: React.FC = () => (
       component={WrongQuestionsScreen as any}
       options={{ title: '错题本' }}
     />
-  </ProfileStack.Navigator>
-);
+    </ProfileStack.Navigator>
+  );
+};
 
-// ─── Tab icon component ──────────────────────────────────────────────────────
+// ─── Tab icon component ─────────────────────────────────────────────────────
 
 interface TabIconProps {
-  label: string;
+  name: string;
   focused: boolean;
 }
 
-const TabIcon: React.FC<TabIconProps> = ({ label, focused }) => (
-  <View style={[styles.tabIconContainer, focused && styles.tabIconContainerActive]}>
-    <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{label}</Text>
-  </View>
-);
+const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
+  const { colors } = useTheme();
+
+  return (
+    <Ionicons
+      name={name}
+      size={24}
+      color={focused ? colors.accent : colors.textTertiary}
+    />
+  );
+};
 
 // ─── Main Tab Navigator ───────────────────────────────────────────────────────
 
 const MainTabNavigator: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#10B981',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: colors.surface,
           borderRadius: 24,
           marginHorizontal: 16,
           marginBottom: 16 + insets.bottom,
           height: 64,
           paddingBottom: 8,
           paddingTop: 8,
-          shadowColor: '#000',
+          shadowColor: colors.cardShadow,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.1,
           shadowRadius: 12,
@@ -212,16 +233,16 @@ const MainTabNavigator: React.FC = () => {
         name="HomeTab"
         component={HomeStackNavigator as any}
         options={{
-          title: '首页',
-          tabBarIcon: ({ focused }) => <TabIcon label="" focused={focused} />,
+          title: t.home,
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />,
         }}
       />
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStackNavigator as any}
         options={{
-          title: '我的',
-          tabBarIcon: ({ focused }) => <TabIcon label="" focused={focused} />,
+          title: t.profile,
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />,
         }}
       />
     </Tab.Navigator>
@@ -252,25 +273,6 @@ const AppNavigator: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  tabIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tabIconContainerActive: {
-    backgroundColor: '#10B981',
-  },
-  tabIcon: {
-    fontSize: 18,
-    color: '#9CA3AF',
-  },
-  tabIconActive: {
-    fontSize: 18,
-    color: '#FFFFFF',
-  },
-});
+const styles = StyleSheet.create({});
 
 export default AppNavigator;

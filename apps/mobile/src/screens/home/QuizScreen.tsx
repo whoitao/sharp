@@ -16,6 +16,7 @@ import { store as reduxStore } from '../../stores';
 import type { RootState, AppDispatch } from '../../stores';
 import ProgressBar from '../../components/ProgressBar';
 import QuizOption from '../../components/QuizOption';
+import { useTheme } from '../../hooks/useTheme';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Quiz'>;
@@ -29,6 +30,7 @@ interface QuizScreenProps {
 type OptionStatus = 'default' | 'correct' | 'wrong' | 'revealed';
 
 const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
+  const { colors } = useTheme();
   const { categoryId, unitIndex, categoryName } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { currentQuestions, currentIndex, answers, isLoading } = useSelector(
@@ -193,21 +195,21 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
   if (isLoading || !currentQuestion) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text style={styles.loadingText}>加载题目中...</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>加载题目中...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={handleQuit} style={styles.quitButton}>
-          <Text style={styles.quitText}>退出</Text>
+          <Text style={[styles.quitText, { color: colors.error }]}>退出</Text>
         </TouchableOpacity>
-        <Text style={styles.timer}>{formatTime(elapsedSeconds)}</Text>
+        <Text style={[styles.timer, { color: colors.text }]}>{formatTime(elapsedSeconds)}</Text>
         <View style={styles.quitButton} />
       </View>
 
@@ -215,8 +217,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       <ProgressBar current={currentIndex + 1} total={totalQuestions} />
 
       {/* Question content */}
-      <View style={styles.questionContainer}>
-        <Text style={styles.questionContent}>{currentQuestion.content}</Text>
+      <View style={[styles.questionContainer, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.questionContent, { color: colors.text }]}>{currentQuestion.content}</Text>
       </View>
 
       {/* Options */}
@@ -238,7 +240,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       {/* Next button (shown only on wrong answer) */}
       {showNextButton && (
         <View style={styles.nextContainer}>
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.nextButton, { backgroundColor: colors.primary }]} onPress={handleNext} activeOpacity={0.8}>
             <Text style={styles.nextButtonText}>
               {isLastQuestion ? '查看结果' : '下一题 →'}
             </Text>
@@ -248,9 +250,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
       {/* Analysis (shown after answering) */}
       {answered && currentQuestion.analysis && (
-        <View style={styles.analysisContainer}>
-          <Text style={styles.analysisLabel}>解析</Text>
-          <Text style={styles.analysisText}>{currentQuestion.analysis}</Text>
+        <View style={[styles.analysisContainer, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary }]}>
+          <Text style={[styles.analysisLabel, { color: colors.primary }]}>解析</Text>
+          <Text style={[styles.analysisText, { color: colors.text }]}>{currentQuestion.analysis}</Text>
         </View>
       )}
     </View>
@@ -260,18 +262,15 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 15,
-    color: '#6B7280',
   },
   header: {
     flexDirection: 'row',
@@ -279,9 +278,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   quitButton: {
     paddingVertical: 6,
@@ -290,19 +287,16 @@ const styles = StyleSheet.create({
   },
   quitText: {
     fontSize: 15,
-    color: '#DC2626',
     fontWeight: '500',
   },
   timer: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
     fontVariant: ['tabular-nums'],
   },
   questionContainer: {
     paddingHorizontal: 20,
     paddingVertical: 24,
-    backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
     marginTop: 12,
     borderRadius: 12,
@@ -315,7 +309,6 @@ const styles = StyleSheet.create({
   questionContent: {
     fontSize: 18,
     lineHeight: 28,
-    color: '#1F2937',
     fontWeight: '500',
   },
   optionsContainer: {
@@ -328,7 +321,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextButton: {
-    backgroundColor: '#3B82F6',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 48,
@@ -342,21 +334,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 16,
     padding: 14,
-    backgroundColor: '#EFF6FF',
     borderRadius: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#3B82F6',
   },
   analysisLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#3B82F6',
     marginBottom: 6,
   },
   analysisText: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#374151',
   },
 });
 

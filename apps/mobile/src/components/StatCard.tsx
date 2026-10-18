@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 interface StatCardProps {
   title: string;
@@ -9,11 +10,13 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = '#10B981' }) => {
+  const { colors } = useTheme();
+
   return (
-    <View style={[styles.card, { borderLeftColor: color }]}>
+    <View style={[styles.card, { borderLeftColor: color, backgroundColor: colors.surface }]}>
       <Text style={styles.icon}>{icon}</Text>
       <Text style={[styles.value, { color }]}>{value}</Text>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={[styles.title, { color: colors.textSecondary }]}>{title}</Text>
     </View>
   );
 };
@@ -21,7 +24,6 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color = '#10B98
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
@@ -44,7 +46,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 12,
-    color: '#6B7280',
     textAlign: 'center',
   },
 });

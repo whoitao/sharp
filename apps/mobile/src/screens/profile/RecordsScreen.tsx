@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import { api } from '../../services/api';
 import type { StudyRecord } from '@sharp/shared';
+import { useTheme } from '../../hooks/useTheme';
 
 const RecordsScreen: React.FC = () => {
+  const { colors } = useTheme();
   const [records, setRecords] = useState<StudyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,15 +76,15 @@ const RecordsScreen: React.FC = () => {
         : 0;
 
     return (
-      <View style={styles.recordCard}>
+      <View style={[styles.recordCard, { backgroundColor: colors.surface }]}>
         <View style={styles.recordHeader}>
-          <Text style={styles.recordDate}>{formatDate(item.startedAt)}</Text>
+          <Text style={[styles.recordDate, { color: colors.textSecondary }]}>{formatDate(item.startedAt)}</Text>
           <View
             style={[
               styles.scoreBadge,
               {
                 backgroundColor:
-                  percentage >= 80 ? '#D1FAE5' : percentage >= 60 ? '#FEF3C7' : '#FEE2E2',
+                  percentage >= 80 ? colors.accentLight : percentage >= 60 ? '#FEF3C7' : colors.errorLight,
               },
             ]}
           >
@@ -91,7 +93,7 @@ const RecordsScreen: React.FC = () => {
                 styles.scoreBadgeText,
                 {
                   color:
-                    percentage >= 80 ? '#059669' : percentage >= 60 ? '#D97706' : '#DC2626',
+                    percentage >= 80 ? colors.accent : percentage >= 60 ? '#D97706' : colors.error,
                 },
               ]}
             >
@@ -101,24 +103,24 @@ const RecordsScreen: React.FC = () => {
         </View>
         <View style={styles.recordBody}>
           <View style={styles.recordStat}>
-            <Text style={styles.recordStatLabel}>题目</Text>
-            <Text style={styles.recordStatValue}>{item.totalQuestions}</Text>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary }]}>题目</Text>
+            <Text style={[styles.recordStatValue, { color: colors.text }]}>{item.totalQuestions}</Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={styles.recordStatLabel}>正确</Text>
-            <Text style={[styles.recordStatValue, { color: '#059669' }]}>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary }]}>正确</Text>
+            <Text style={[styles.recordStatValue, { color: colors.accent }]}>
               {item.correctCount}
             </Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={styles.recordStatLabel}>错误</Text>
-            <Text style={[styles.recordStatValue, { color: '#DC2626' }]}>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary }]}>错误</Text>
+            <Text style={[styles.recordStatValue, { color: colors.error }]}>
               {item.wrongCount}
             </Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={styles.recordStatLabel}>用时</Text>
-            <Text style={styles.recordStatValue}>{formatDuration(item.durationSeconds)}</Text>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary }]}>用时</Text>
+            <Text style={[styles.recordStatValue, { color: colors.text }]}>{formatDuration(item.durationSeconds)}</Text>
           </View>
         </View>
       </View>
@@ -127,41 +129,41 @@ const RecordsScreen: React.FC = () => {
 
   if (loading && records.length === 0) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={records}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.title}>学习记录</Text>
-            <Text style={styles.subtitle}>查看你的学习历史</Text>
+            <Text style={[styles.title, { color: colors.text }]}>学习记录</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>查看你的学习历史</Text>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>📊</Text>
-            <Text style={styles.emptyText}>暂无学习记录</Text>
-            <Text style={styles.emptySub}>开始学习后记录将显示在这里</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>暂无学习记录</Text>
+            <Text style={[styles.emptySub, { color: colors.textTertiary }]}>开始学习后记录将显示在这里</Text>
           </View>
         }
         ListFooterComponent={
           loading && records.length > 0 ? (
             <View style={styles.loadingMore}>
-              <ActivityIndicator size="small" color="#3B82F6" />
+              <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : null
         }
@@ -173,13 +175,11 @@ const RecordsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
   list: {
     padding: 16,
@@ -191,15 +191,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1F2937',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
   },
   recordCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
@@ -217,7 +214,6 @@ const styles = StyleSheet.create({
   },
   recordDate: {
     fontSize: 14,
-    color: '#6B7280',
     fontWeight: '500',
   },
   scoreBadge: {
@@ -238,13 +234,11 @@ const styles = StyleSheet.create({
   },
   recordStatLabel: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginBottom: 4,
   },
   recordStatValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
   },
   empty: {
     alignItems: 'center',
@@ -256,12 +250,10 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#6B7280',
     marginBottom: 4,
   },
   emptySub: {
     fontSize: 14,
-    color: '#9CA3AF',
   },
   loadingMore: {
     paddingVertical: 16,
