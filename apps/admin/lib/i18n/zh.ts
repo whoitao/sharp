@@ -21,6 +21,7 @@ export const zh: Messages = {
     appearance: "外观",
     language: "语言",
     theme: "主题",
+    pageSize: "分页",
     light: "浅色",
     dark: "深色",
     system: "跟随系统",

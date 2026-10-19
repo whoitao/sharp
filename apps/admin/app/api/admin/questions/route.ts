@@ -13,11 +13,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "categoryId is required" }, { status: 400 });
   }
 
-  const questions = await prisma.question.findMany({
-    where: { categoryId: BigInt(categoryId) },
-    include: { options: { orderBy: { sortNo: "asc" } } },
-    orderBy: { sortOrder: "asc" },
-  });
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+  const pageSize = Math.min(
+    100,
+    Math.max(1, parseInt(searchParams.get("pageSize") ?? "10", 10) || 10)
+  );
+
+  const where = { categoryId: BigInt(categoryId) };
+
+  const [questions, total] = await Promise.all([
+    prisma.question.findMany({
+      where,
+      include: { options: { orderBy: { sortNo: "asc" } } },
+      orderBy: { sortOrder: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.question.count({ where }),
+  ]);
 
   const serialize = (q: any) => ({
     ...q,
@@ -30,7 +43,12 @@ export async function GET(request: NextRequest) {
     })),
   });
 
-  return NextResponse.json(questions.map(serialize));
+  return NextResponse.json({
+    items: questions.map(serialize),
+    total,
+    page,
+    pageSize,
+  });
 }
 
 export async function POST(request: NextRequest) {

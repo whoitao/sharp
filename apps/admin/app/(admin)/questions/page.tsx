@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageSize } from "@/components/antd-providers";
 import { useLocale } from "@/lib/i18n";
 import {
   DeleteOutlined,
@@ -75,6 +76,9 @@ export default function QuestionsPage() {
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>();
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const { pageSize } = usePageSize();
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -116,6 +120,7 @@ export default function QuestionsPage() {
   const fetchQuestions = async () => {
     if (!selectedCategoryId) {
       setQuestions([]);
+      setTotal(0);
       setLoading(false);
       return;
     }
@@ -123,11 +128,12 @@ export default function QuestionsPage() {
     const token = localStorage.getItem("admin_token");
     try {
       const res = await fetch(
-        `/api/admin/questions?categoryId=${selectedCategoryId}`,
+        `/api/admin/questions?categoryId=${selectedCategoryId}&page=${page}&pageSize=${pageSize}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
-      setQuestions(Array.isArray(data) ? data : []);
+      setQuestions(Array.isArray(data.items) ? data.items : []);
+      setTotal(typeof data.total === "number" ? data.total : 0);
     } catch {
       setQuestions([]);
     } finally {
@@ -143,7 +149,7 @@ export default function QuestionsPage() {
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategoryId]);
+  }, [selectedCategoryId, page, pageSize]);
 
   const resetForm = () => {
     questionForm.setFieldsValue({
@@ -511,7 +517,10 @@ export default function QuestionsPage() {
             style={{ width: 360 }}
             placeholder={t("questions.chooseCategory")}
             value={selectedCategoryId}
-            onChange={(value) => setSelectedCategoryId(value)}
+            onChange={(value) => {
+              setSelectedCategoryId(value);
+              setPage(1);
+            }}
             options={categoryOptions}
           />
         </Space>
@@ -550,7 +559,13 @@ export default function QuestionsPage() {
         loading={loading}
         columns={columns}
         dataSource={questions}
-        pagination={false}
+        pagination={{
+          current: page,
+          pageSize,
+          total,
+          showSizeChanger: false,
+          onChange: (p) => setPage(p),
+        }}
         locale={{
           emptyText: selectedCategoryId
             ? t("questions.emptySelected")

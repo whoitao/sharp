@@ -19,6 +19,7 @@ export const en = {
     appearance: "Appearance",
     language: "Language",
     theme: "Theme",
+    pageSize: "Page Size",
     light: "Light",
     dark: "Dark",
     system: "System",

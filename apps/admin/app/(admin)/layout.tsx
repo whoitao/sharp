@@ -1,6 +1,6 @@
 "use client";
 
-import { useThemeMode, type ThemeMode } from "@/components/antd-providers";
+import { PAGE_SIZE_OPTIONS, usePageSize, useThemeMode, type ThemeMode } from "@/components/antd-providers";
 import { useLocale, type Locale, type MessageKey } from "@/lib/i18n";
 import {
   AppstoreOutlined,
@@ -12,6 +12,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MoonOutlined,
+  OrderedListOutlined,
   QuestionCircleOutlined,
   SettingOutlined,
   SunOutlined,
@@ -62,6 +63,7 @@ export default function AdminLayout({
   const router = useRouter();
   const { modal } = App.useApp();
   const { mode, setMode } = useThemeMode();
+  const { pageSize, setPageSize } = usePageSize();
   const { locale, setLocale, t } = useLocale();
   const {
     token: { colorBgContainer, colorBorderSecondary, colorBgLayout },
@@ -142,6 +144,17 @@ export default function AdminLayout({
             onClick: () => setMode(opt.value),
           })),
         },
+        {
+          key: "pagesize-sub",
+          type: "submenu",
+          icon: <OrderedListOutlined />,
+          label: t("settings.pageSize"),
+          children: PAGE_SIZE_OPTIONS.map((size) => ({
+            key: `size-${size}`,
+            label: String(size),
+            onClick: () => setPageSize(size),
+          })),
+        },
       ],
     },
     { type: "divider" },
@@ -205,7 +218,7 @@ export default function AdminLayout({
 
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 12, borderTop: `1px solid ${colorBorderSecondary}`, background: colorBgContainer }}>
           <Dropdown
-            menu={{ items: userMenuItems, selectedKeys: [`theme-${mode}`, `locale-${locale}`] }}
+            menu={{ items: userMenuItems, selectedKeys: [`theme-${mode}`, `locale-${locale}`, `size-${pageSize}`] }}
             trigger={["click"]}
             placement="topLeft"
           >
