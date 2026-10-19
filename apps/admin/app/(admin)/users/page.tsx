@@ -145,11 +145,7 @@ export default function UsersPage() {
 
   return (
     <div style={{ marginTop: -8 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 16 }}>
-        <span style={{ opacity: 0.55 }}>{t("common.total", { n: total })}</span>
-      </div>
-
-      <Space style={{ marginBottom: 16 }}>
+      <Space style={{ marginBottom: 10 }}>
         <Input.Search
           allowClear
           placeholder={t("users.searchPlaceholder")}

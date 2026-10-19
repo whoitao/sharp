@@ -8,7 +8,7 @@ import {
   UserAddOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { App, Card, Col, Result, Row, Spin, Statistic } from "antd";
+import { App, Card, Col, Result, Row, Spin } from "antd";
 import { useEffect, useState } from "react";
 
 interface DashboardStats {
@@ -73,15 +73,39 @@ export default function DashboardPage() {
 
   return (
     <div style={{ marginTop: -8 }}>
-      <Row gutter={[24, 24]}>
+      <Row gutter={[20, 20]}>
         {cards.map((card) => (
           <Col key={card.titleKey} xs={24} sm={12} lg={8} xl={6}>
-            <Card>
-              <Statistic
-                title={t(card.titleKey)}
-                value={card.value}
-                prefix={<span style={{ color: card.color }}>{card.icon}</span>}
-              />
+            <Card
+              styles={{ body: { padding: 20 } }}
+              style={{ borderRadius: 12 }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2, color: "rgba(0,0,0,0.88)" }}>
+                    {card.value.toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: 13, color: "rgba(0,0,0,0.55)", marginTop: 4 }}>
+                    {t(card.titleKey)}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    background: card.color + "15",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 18,
+                    color: card.color,
+                    flexShrink: 0,
+                  }}
+                >
+                  {card.icon}
+                </div>
+              </div>
             </Card>
           </Col>
         ))}

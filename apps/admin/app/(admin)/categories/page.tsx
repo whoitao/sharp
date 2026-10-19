@@ -112,7 +112,7 @@ export default function CategoriesPage() {
     const mapNode = (node: CategoryNode): TreeDataNode => ({
       key: node.id,
       title: (
-        <Space size={8} style={{ width: "100%", justifyContent: "space-between", paddingRight: 8 }}>
+        <Space size={8} style={{ width: "100%", justifyContent: "space-between", paddingRight: 8, paddingTop: 6, paddingBottom: 6 }}>
           <Typography.Text strong>{node.name}</Typography.Text>
           <Space size={4}>
             <Tag>{t("categories.questionsTag", { n: node._count?.questions ?? 0 })}</Tag>
@@ -251,7 +251,7 @@ export default function CategoriesPage() {
 
   return (
     <div style={{ marginTop: -8 }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
         <Button
           type="primary"
           icon={<PlusOutlined />}

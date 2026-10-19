@@ -142,14 +142,10 @@ export default function StudyRecordsPage() {
 
   return (
     <div style={{ marginTop: -8 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 16 }}>
-        <span style={{ opacity: 0.55 }}>{t("common.total", { n: total })}</span>
-      </div>
-
       <Input.Search
         allowClear
         placeholder={t("studyRecords.searchPlaceholder")}
-        style={{ width: 320, marginBottom: 16 }}
+        style={{ width: 320, marginBottom: 10 }}
         onSearch={handleSearch}
       />
 

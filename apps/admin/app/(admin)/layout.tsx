@@ -25,6 +25,7 @@ import {
   Layout,
   Menu,
   Space,
+  Spin,
   theme as antdTheme,
   type MenuProps
 } from "antd";
@@ -63,15 +64,28 @@ export default function AdminLayout({
   const { mode, setMode } = useThemeMode();
   const { locale, setLocale, t } = useLocale();
   const {
-    token: { colorBgContainer, colorBorderSecondary },
+    token: { colorBgContainer, colorBorderSecondary, colorBgLayout },
   } = antdTheme.useToken();
 
   const [username, setUsername] = useState("");
   const [collapsed, setCollapsed] = useState(false);
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
 
   useEffect(() => {
     setUsername(localStorage.getItem("admin_username") || "");
   }, []);
+
+  useEffect(() => {
+    setPendingKey(null);
+  }, [pathname]);
+
+  const handleNavClick = ({ key }: { key: string }) => {
+    if (key === pathname) return;
+    setPendingKey(key);
+    router.push(key);
+  };
+
+  const activeKey = pendingKey ?? pathname;
 
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
@@ -165,6 +179,7 @@ export default function AdminLayout({
             display: "flex",
             alignItems: "center",
             padding: "0 12px",
+            marginLeft: 12,
             borderBottom: `1px solid ${colorBorderSecondary}`,
             gap: 8,
             justifyContent: "space-between",
@@ -182,9 +197,9 @@ export default function AdminLayout({
 
         <Menu
           mode="inline"
-          selectedKeys={[pathname]}
+          selectedKeys={[activeKey]}
           items={navItems}
-          onClick={({ key }: { key: string }) => router.push(key)}
+          onClick={handleNavClick}
           style={{ borderInlineEnd: "none", padding: 8, paddingBottom: 72 }}
         />
 
@@ -233,11 +248,28 @@ export default function AdminLayout({
           }}
         >
           <span style={{ fontSize: 18, fontWeight: 600 }}>
-            {t("nav." + (pathname.replace(/^\//, "") || "dashboard").split("/")[0] as MessageKey)}
+            {t(NAV_ITEMS.find((item) => activeKey.startsWith(item.key))?.labelKey ?? "nav.dashboard")}
           </span>
         </div>
 
-        <Content style={{ padding: 16, overflow: "auto" }}>{children}</Content>
+        <Content style={{ padding: 16, overflow: "auto", position: "relative" }}>
+          {pendingKey && pendingKey !== pathname && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 20,
+                background: colorBgLayout,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Spin size="large" />
+            </div>
+          )}
+          {children}
+        </Content>
       </Layout>
     </Layout>
   );

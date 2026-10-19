@@ -502,7 +502,7 @@ export default function QuestionsPage() {
 
   return (
     <div style={{ marginTop: -8 }}>
-      <Card size="small" style={{ marginBottom: 16 }} bodyStyle={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+      <Card size="small" style={{ marginBottom: 10 }} styles={{ body: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 } }}>
         <Space>
           <span>{t("questions.selectCategory")}</span>
           <Select
