@@ -9,6 +9,8 @@ import {
   GlobalOutlined,
   InfoCircleOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   MoonOutlined,
   QuestionCircleOutlined,
   SettingOutlined,
@@ -18,12 +20,13 @@ import {
 import {
   App,
   Avatar,
+  Button,
   Dropdown,
   Layout,
   Menu,
   Space,
   theme as antdTheme,
-  type MenuProps,
+  type MenuProps
 } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -64,6 +67,7 @@ export default function AdminLayout({
   } = antdTheme.useToken();
 
   const [username, setUsername] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     setUsername(localStorage.getItem("admin_username") || "");
@@ -96,26 +100,35 @@ export default function AdminLayout({
 
   const userMenuItems: MenuProps["items"] = [
     {
-      key: "settings-group",
-      type: "group",
-      label: t("settings.settings"),
-      children: THEME_OPTIONS.map((opt) => ({
-        key: `theme-${opt.value}`,
-        icon: opt.icon,
-        label: t(opt.labelKey),
-        onClick: () => setMode(opt.value),
-      })),
-    },
-    {
-      key: "language-group",
-      type: "group",
-      label: t("settings.language"),
-      children: LOCALE_OPTIONS.map((opt) => ({
-        key: `locale-${opt.value}`,
-        icon: <GlobalOutlined />,
-        label: opt.label,
-        onClick: () => setLocale(opt.value),
-      })),
+      key: "appearance",
+      type: "submenu",
+      icon: <SettingOutlined />,
+      label: t("settings.appearance"),
+      children: [
+        {
+          key: "language-sub",
+          type: "submenu",
+          icon: <GlobalOutlined />,
+          label: t("settings.language"),
+          children: LOCALE_OPTIONS.map((opt) => ({
+            key: `locale-${opt.value}`,
+            label: opt.label,
+            onClick: () => setLocale(opt.value),
+          })),
+        },
+        {
+          key: "theme-sub",
+          type: "submenu",
+          icon: <SunOutlined />,
+          label: t("settings.theme"),
+          children: THEME_OPTIONS.map((opt) => ({
+            key: `theme-${opt.value}`,
+            icon: opt.icon,
+            label: t(opt.labelKey),
+            onClick: () => setMode(opt.value),
+          })),
+        },
+      ],
     },
     { type: "divider" },
     { key: "about", icon: <InfoCircleOutlined />, label: t("settings.about"), onClick: showAbout },
@@ -132,6 +145,9 @@ export default function AdminLayout({
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
         width={256}
         style={{
           position: "relative",
@@ -140,18 +156,28 @@ export default function AdminLayout({
           background: colorBgContainer,
           borderRight: `1px solid ${colorBorderSecondary}`,
         }}
+        breakpoint="lg"
+        trigger={null}
       >
         <div
           style={{
             height: 50,
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "0 24px",
+            alignItems: "center",
+            padding: "0 12px",
             borderBottom: `1px solid ${colorBorderSecondary}`,
+            gap: 8,
+            justifyContent: "space-between",
           }}
         >
-          <span style={{ fontSize: 20, fontWeight: 700 }}>Sharp Admin</span>
+          {!collapsed && <span style={{ fontSize: 18, fontWeight: 700 }}>Sharp Admin</span>}
+          {collapsed && <span style={{ fontSize: 16, fontWeight: 700 }}>S</span>}
+          <Button
+            type="text"
+            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => setCollapsed(!collapsed)}
+            style={{ fontSize: 16, width: 32, height: 32 }}
+          />
         </div>
 
         <Menu
@@ -190,7 +216,29 @@ export default function AdminLayout({
         </div>
       </Sider>
 
-      <Content style={{ padding: 16, overflow: "auto" }}>{children}</Content>
+      <Layout>
+        {/* Global top bar: page title (sticky) */}
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            height: 50,
+            background: colorBgContainer,
+            borderBottom: `1px solid ${colorBorderSecondary}`,
+            display: "flex",
+            alignItems: "center",
+            paddingLeft: 24,
+            paddingRight: 24,
+          }}
+        >
+          <span style={{ fontSize: 18, fontWeight: 600 }}>
+            {t("nav." + (pathname.replace(/^\//, "") || "dashboard").split("/")[0] as MessageKey)}
+          </span>
+        </div>
+
+        <Content style={{ padding: 16, overflow: "auto" }}>{children}</Content>
+      </Layout>
     </Layout>
   );
 }

@@ -501,9 +501,20 @@ export default function QuestionsPage() {
   );
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{t("questions.title")}</h1>
+    <div style={{ marginTop: -8 }}>
+      <Card size="small" style={{ marginBottom: 16 }} bodyStyle={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+        <Space>
+          <span>{t("questions.selectCategory")}</span>
+          <Select
+            showSearch
+            allowClear
+            style={{ width: 360 }}
+            placeholder={t("questions.chooseCategory")}
+            value={selectedCategoryId}
+            onChange={(value) => setSelectedCategoryId(value)}
+            options={categoryOptions}
+          />
+        </Space>
         <Space>
           <Button
             icon={<DownloadOutlined />}
@@ -531,21 +542,6 @@ export default function QuestionsPage() {
           >
             {t("questions.addQuestion")}
           </Button>
-        </Space>
-      </div>
-
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Space>
-          <span>{t("questions.selectCategory")}</span>
-          <Select
-            showSearch
-            allowClear
-            style={{ width: 360 }}
-            placeholder={t("questions.chooseCategory")}
-            value={selectedCategoryId}
-            onChange={(value) => setSelectedCategoryId(value)}
-            options={categoryOptions}
-          />
         </Space>
       </Card>
 

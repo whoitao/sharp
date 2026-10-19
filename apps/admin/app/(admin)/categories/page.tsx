@@ -250,9 +250,8 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{t("categories.title")}</h1>
+    <div style={{ marginTop: -8 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
         <Button
           type="primary"
           icon={<PlusOutlined />}

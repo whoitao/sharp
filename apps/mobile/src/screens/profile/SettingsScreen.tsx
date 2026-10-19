@@ -248,12 +248,16 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   themeOptions: {
+    flexDirection: 'row',
     gap: 10,
   },
   themeButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
     borderRadius: 10,
     borderWidth: 2,
     borderColor: 'transparent',

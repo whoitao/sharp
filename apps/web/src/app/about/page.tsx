@@ -32,9 +32,9 @@ export default function About() {
         </p>
       </div>
 
-      <div className="mx-auto mt-12 max-w-[58rem] space-y-8">
+      <div className="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Mission */}
-        <div className="rounded-lg border bg-card p-8 shadow-sm">
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h2 className="text-2xl font-bold mb-4">{t("about.missionTitle")}</h2>
           <p className="text-muted-foreground leading-relaxed">
             {t("about.missionText")}
@@ -42,12 +42,12 @@ export default function About() {
         </div>
 
         {/* Features Highlight */}
-        <div className="rounded-lg border bg-card p-8 shadow-sm">
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h2 className="text-2xl font-bold mb-4">{t("about.whyTitle")}</h2>
-          <ul className="space-y-3 text-muted-foreground">
+          <ul className="space-y-2 text-muted-foreground text-sm">
             {dict.about.whyItems.map((item) => (
               <li key={item.label} className="flex items-start gap-2">
-                <span className="text-primary font-bold">•</span>
+                <span className="text-primary font-bold shrink-0">•</span>
                 <span>
                   <strong>{item.label}</strong> {item.text}
                 </span>
@@ -56,24 +56,11 @@ export default function About() {
           </ul>
         </div>
 
-        {/* Tech Stack */}
-        <div className="rounded-lg border bg-card p-8 shadow-sm">
-          <h2 className="text-2xl font-bold mb-4">{t("about.builtTitle")}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-            {dict.about.techItems.map((item) => (
-              <div key={item.name} className="rounded-md bg-muted p-3 text-center">
-                <div className="font-semibold">{item.name}</div>
-                <div className="text-muted-foreground">{item.role}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Contact */}
-        <div className="rounded-lg border bg-card p-8 shadow-sm text-center">
+        <div className="rounded-lg border bg-card p-6 shadow-sm text-center">
           <h2 className="text-2xl font-bold mb-4">{t("about.contactTitle")}</h2>
-          <p className="text-muted-foreground mb-6">{t("about.contactText")}</p>
-          <div className="flex justify-center gap-4">
+          <p className="text-muted-foreground mb-5 text-sm">{t("about.contactText")}</p>
+          <div className="flex flex-col gap-2">
             <Button variant="outline" size="lg" asChild>
               <a
                 href="https://github.com/whoitao/sharp"

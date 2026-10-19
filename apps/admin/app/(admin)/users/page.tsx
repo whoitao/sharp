@@ -144,9 +144,8 @@ export default function UsersPage() {
   ];
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{t("users.title")}</h1>
+    <div style={{ marginTop: -8 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: 16 }}>
         <span style={{ opacity: 0.55 }}>{t("common.total", { n: total })}</span>
       </div>
 
