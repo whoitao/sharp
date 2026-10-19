@@ -11,9 +11,10 @@ export async function PUT(
 
   const { id } = await params;
   const body = await request.json();
-  const { type, content, analysis, difficulty, score, sortOrder, options } = body;
+  const { categoryId, type, content, analysis, difficulty, score, sortOrder, options } = body;
 
   const data: Record<string, any> = {};
+  if (categoryId !== undefined) data.categoryId = BigInt(categoryId);
   if (type !== undefined) data.type = type;
   if (content !== undefined) data.content = content;
   if (analysis !== undefined) data.analysis = analysis || null;

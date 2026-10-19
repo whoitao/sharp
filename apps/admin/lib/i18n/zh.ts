@@ -110,6 +110,7 @@ export const zh: Messages = {
   questions: {
     title: "题目",
     addQuestion: "新建题目",
+    downloadTemplate: "下载导入模版",
     csvImport: "CSV 导入",
     selectCategory: "选择分类",
     chooseCategory: "请选择分类...",
@@ -150,7 +151,7 @@ export const zh: Messages = {
     importTitle: "CSV 导入",
     import: "导入",
     importFormat:
-      "格式：type,content,option_a,option_b,option_c,option_d,correct_keys,analysis,difficulty,score,sort_order",
+      "格式：category_id,type,content,option_a,option_b,option_c,option_d,correct_keys,analysis,difficulty,score,sort_order（category_id 留空则使用当前选中分类）",
     csvRequired: "请粘贴 CSV 数据",
     selectCategoryWarning: "请先选择分类",
     createFailed: "创建题目失败",
@@ -160,5 +161,6 @@ export const zh: Messages = {
     updated: "题目已更新",
     deleted: "题目已删除",
     imported: "题目已导入",
+    downloadTemplateFailed: "下载模版失败",
   },
 };

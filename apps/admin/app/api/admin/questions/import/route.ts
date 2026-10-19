@@ -3,6 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/middleware";
 import { parse } from "csv-parse/sync";
 
+async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
+  const ids: bigint[] = [categoryId];
+  const children = await prisma.category.findMany({
+    where: { parentId: categoryId },
+    select: { id: true },
+  });
+  for (const child of children) {
+    const childIds = await getAllCategoryIds(child.id);
+    ids.push(...childIds);
+  }
+  return ids;
+}
+
 export async function POST(request: NextRequest) {
   const admin = requireAdmin(request);
   if (admin instanceof NextResponse) return admin;
@@ -18,8 +31,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const allCategoryIds = await getAllCategoryIds(BigInt(categoryId));
+
     const records = parse(csv, {
       columns: [
+        "category_id",
         "type",
         "content",
         "option_a",
@@ -48,6 +64,17 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+        let targetCategoryId = BigInt(categoryId);
+        if (row.category_id && row.category_id.trim() !== "") {
+          const cid = BigInt(row.category_id.trim());
+          if (allCategoryIds.includes(cid)) {
+            targetCategoryId = cid;
+          } else {
+            errors.push(`Row ${i + 1}: category_id "${row.category_id}" not found in selected category tree`);
+            continue;
+          }
+        }
+
         const correctKeys = row.correct_keys
           .split(",")
           .map((k: string) => k.trim().toUpperCase());
@@ -66,7 +93,7 @@ export async function POST(request: NextRequest) {
 
         await prisma.question.create({
           data: {
-            categoryId: BigInt(categoryId),
+            categoryId: targetCategoryId,
             type,
             content: row.content,
             analysis: row.analysis || null,

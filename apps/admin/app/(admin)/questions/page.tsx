@@ -3,6 +3,7 @@
 import { useLocale } from "@/lib/i18n";
 import {
   DeleteOutlined,
+  DownloadOutlined,
   EditOutlined,
   PlusOutlined,
   UploadOutlined,
@@ -158,6 +159,7 @@ export default function QuestionsPage() {
   };
 
   const buildPayload = (values: QuestionFormValues) => ({
+    categoryId: Number(values.categoryId || selectedCategoryId),
     type: Number(values.type),
     content: values.content,
     analysis: values.analysis || undefined,
@@ -188,7 +190,7 @@ export default function QuestionsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ categoryId: Number(categoryId), ...buildPayload(values) }),
+        body: JSON.stringify(buildPayload(values)),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -286,12 +288,41 @@ export default function QuestionsPage() {
         message.error(data?.error || t("questions.importFailed"));
         return;
       }
-      message.success(t("questions.imported"));
+      const result = await res.json();
+      if (result.errors?.length > 0) {
+        message.warning(`${t("questions.imported")} (${result.errors.length} errors)`);
+      } else {
+        message.success(t("questions.imported"));
+      }
       setImportOpen(false);
       importForm.resetFields();
       fetchQuestions();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch("/api/admin/questions/template", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        message.error(t("questions.downloadTemplateFailed"));
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "questions_template.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      message.error(t("questions.downloadTemplateFailed"));
     }
   };
 
@@ -371,19 +402,17 @@ export default function QuestionsPage() {
       layout="vertical"
       onFinish={isEdit ? handleUpdate : handleCreate}
     >
-      {!isEdit && (
-        <Form.Item
-          label={t("questions.category")}
-          name="categoryId"
-          rules={[{ required: true, message: t("questions.categoryRequired") }]}
-        >
-          <Select
-            showSearch
-            options={categoryOptions}
-            placeholder={t("questions.chooseCategory")}
-          />
-        </Form.Item>
-      )}
+      <Form.Item
+        label={t("questions.category")}
+        name="categoryId"
+        rules={[{ required: true, message: t("questions.categoryRequired") }]}
+      >
+        <Select
+          showSearch
+          options={categoryOptions}
+          placeholder={t("questions.chooseCategory")}
+        />
+      </Form.Item>
 
       <Row gutter={16}>
         <Col span={12}>
@@ -476,6 +505,12 @@ export default function QuestionsPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{t("questions.title")}</h1>
         <Space>
+          <Button
+            icon={<DownloadOutlined />}
+            onClick={handleDownloadTemplate}
+          >
+            {t("questions.downloadTemplate")}
+          </Button>
           <Button
             icon={<UploadOutlined />}
             disabled={!selectedCategoryId}
@@ -595,7 +630,7 @@ export default function QuestionsPage() {
             <Input.TextArea
               rows={10}
               style={{ fontFamily: "monospace" }}
-              placeholder={"1,What is the capital of France?,Paris,London,Berlin,Madrid,A,Paris is the capital of France.,1,1,0"}
+              placeholder={"1,1,What is the capital of France?,Paris,London,Berlin,Madrid,A,Paris is the capital of France.,1,1,0"}
             />
           </Form.Item>
         </Form>

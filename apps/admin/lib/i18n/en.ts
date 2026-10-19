@@ -108,6 +108,7 @@ export const en = {
   questions: {
     title: "Questions",
     addQuestion: "Add Question",
+    downloadTemplate: "Download Template",
     csvImport: "CSV Import",
     selectCategory: "Select Category",
     chooseCategory: "Choose a category...",
@@ -149,7 +150,7 @@ export const en = {
     importTitle: "CSV Import",
     import: "Import",
     importFormat:
-      "Format: type,content,option_a,option_b,option_c,option_d,correct_keys,analysis,difficulty,score,sort_order",
+      "Format: category_id,type,content,option_a,option_b,option_c,option_d,correct_keys,analysis,difficulty,score,sort_order (leave category_id blank to use selected category)",
     csvRequired: "Please paste CSV data",
     selectCategoryWarning: "Please select a category",
     createFailed: "Failed to create question",
@@ -159,6 +160,7 @@ export const en = {
     updated: "Question updated",
     deleted: "Question deleted",
     imported: "Questions imported",
+    downloadTemplateFailed: "Failed to download template",
   },
 };
 
