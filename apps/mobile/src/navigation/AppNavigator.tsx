@@ -16,7 +16,6 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 
 // Home screens
-import CategoryScreen from '../screens/home/CategoryScreen';
 import HomeScreen from '../screens/home/HomeScreen';
 import QuizResultScreen from '../screens/home/QuizResultScreen';
 import QuizScreen from '../screens/home/QuizScreen';
@@ -37,7 +36,6 @@ export type AuthStackParamList = {
 
 export type HomeStackParamList = {
   Home: undefined;
-  Category: { category: Category };
   UnitList: { category: Category };
   Quiz: { categoryId: string; unitIndex: number; categoryName: string };
   QuizResult: { categoryId: string; unitIndex: number; categoryName: string };
@@ -96,13 +94,6 @@ const HomeStackNavigator: React.FC = () => {
       name="Home"
       component={HomeScreen as any}
       options={{ title: 'Sharp' }}
-    />
-    <HomeStack.Screen
-      name="Category"
-      component={CategoryScreen as any}
-      options={({ route }) => ({
-        title: route.params.category.name,
-      })}
     />
     <HomeStack.Screen
       name="UnitList"
@@ -203,20 +194,12 @@ const MainTabNavigator: React.FC = () => {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          position: 'absolute',
           backgroundColor: colors.surface,
-          borderRadius: 24,
-          marginHorizontal: 16,
-          marginBottom: 16 + insets.bottom,
-          height: 64,
-          paddingBottom: 8,
+          borderTopColor: colors.borderLight,
+          borderTopWidth: 1,
+          height: 60 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
-          shadowColor: colors.cardShadow,
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 12,
-          elevation: 8,
-          borderTopWidth: 0,
         },
         tabBarLabelStyle: {
           fontSize: 12,

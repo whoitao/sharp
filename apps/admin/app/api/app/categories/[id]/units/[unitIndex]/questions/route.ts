@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAppUser } from "@/lib/middleware";
 
+async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
+  const ids: bigint[] = [categoryId];
+  const children = await prisma.category.findMany({
+    where: { parentId: categoryId },
+    select: { id: true },
+  });
+  for (const child of children) {
+    const childIds = await getAllCategoryIds(child.id);
+    ids.push(...childIds);
+  }
+  return ids;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; unitIndex: string }> }
@@ -17,8 +30,10 @@ export async function GET(
   const unitSize = settings?.unitSize ?? 20;
   const unitIndex = parseInt(unitIndexParam);
 
+  const allCategoryIds = await getAllCategoryIds(BigInt(id));
+
   const questions = await prisma.question.findMany({
-    where: { categoryId: BigInt(id) },
+    where: { categoryId: { in: allCategoryIds } },
     include: {
       options: {
         orderBy: { sortNo: "asc" },

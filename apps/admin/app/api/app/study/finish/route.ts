@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { categoryId, unitIndex, correctCount, wrongCount, durationSeconds } = body;
+  const { categoryId, unitIndex, correctCount, wrongCount, durationSeconds, answers } = body;
 
   if (
     categoryId === undefined ||
@@ -45,7 +45,39 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // Update daily stats for unit completion
+  // Batch update question progress from answers
+  if (answers && Array.isArray(answers)) {
+    for (const answer of answers) {
+      const { questionId, selectedKeys, isCorrect } = answer;
+      if (!questionId) continue;
+
+      await prisma.userQuestionProgress.upsert({
+        where: {
+          userId_questionId: {
+            userId: appUser.id,
+            questionId: BigInt(questionId),
+          },
+        },
+        update: {
+          lastPracticedAt: new Date(),
+          correctCount: { increment: isCorrect ? 1 : 0 },
+          wrongCount: { increment: isCorrect ? 0 : 1 },
+          status: isCorrect ? "correct" : "wrong",
+        },
+        create: {
+          userId: appUser.id,
+          questionId: BigInt(questionId),
+          categoryId: BigInt(categoryId),
+          status: isCorrect ? "correct" : "wrong",
+          lastPracticedAt: new Date(),
+          correctCount: isCorrect ? 1 : 0,
+          wrongCount: isCorrect ? 0 : 1,
+        },
+      });
+    }
+  }
+
+  // Update daily stats
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -57,12 +89,14 @@ export async function POST(request: NextRequest) {
       },
     },
     update: {
+      questionsAnswered: { increment: correctCount + wrongCount },
       unitsCompleted: { increment: 1 },
       studyDuration: { increment: durationSeconds },
     },
     create: {
       userId: appUser.id,
       date: today,
+      questionsAnswered: correctCount + wrongCount,
       unitsCompleted: 1,
       studyDuration: durationSeconds,
     },

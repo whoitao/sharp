@@ -49,7 +49,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const handleCategoryPress = (category: Category) => {
-    navigation.navigate('Category', { category });
+    navigation.navigate('UnitList', { category });
   };
 
   const renderItem = ({ item }: { item: Category }) => (
@@ -97,6 +97,7 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
+    paddingTop: 0,
     paddingBottom: 24,
   },
   empty: {

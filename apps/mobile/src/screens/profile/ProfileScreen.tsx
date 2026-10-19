@@ -1,18 +1,18 @@
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { loadSettings } from '../../stores/settingsSlice';
-import type { RootState, AppDispatch } from '../../stores';
-import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
+import type { ProfileStackParamList } from '../../navigation/AppNavigator';
+import type { AppDispatch, RootState } from '../../stores';
+import { loadSettings } from '../../stores/settingsSlice';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
@@ -91,11 +91,12 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+    paddingTop: 0,
     paddingBottom: 40,
   },
   userCard: {
-    borderRadius: 20,
-    padding: 28,
+    borderRadius: 12,
+    padding: 24,
     alignItems: 'center',
     marginBottom: 20,
     shadowColor: '#000',
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   menuSection: {
-    borderRadius: 16,
+    borderRadius: 12,
     marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -142,8 +143,8 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   menuIconContainer: {
     width: 36,

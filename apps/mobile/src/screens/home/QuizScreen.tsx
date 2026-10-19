@@ -71,59 +71,36 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   };
 
   const handleOptionPress = useCallback(
-    async (optionKey: string) => {
+    (optionKey: string) => {
       if (answered || !currentQuestion) return;
       setAnswered(true);
 
       const correctOption = currentQuestion.options.find((o) => o.isCorrect);
       const correctKey = correctOption?.optionKey ?? '';
+      const isCorrect = optionKey === correctKey;
 
-      try {
-        const result = await api.submitAnswer(currentQuestion.id, [optionKey]);
+      if (isCorrect) {
+        setOptionStatuses({ [optionKey]: 'correct' });
+        dispatch(
+          recordAnswer({
+            questionId: currentQuestion.id,
+            selectedKeys: [optionKey],
+            correct: true,
+          })
+        );
 
-        if (result.isCorrect) {
-          // Correct answer
-          setOptionStatuses({ [optionKey]: 'correct' });
-          dispatch(
-            recordAnswer({
-              questionId: currentQuestion.id,
-              selectedKeys: [optionKey],
-              correct: true,
-            })
-          );
-
-          // Auto-advance after 500ms
-          setTimeout(() => {
-            if (isLastQuestion) {
-              handleFinish();
-            } else {
-              dispatch(setCurrentIndex(currentIndex + 1));
-            }
-          }, 500);
-        } else {
-          // Wrong answer
-          const statuses: Record<string, OptionStatus> = {
-            [optionKey]: 'wrong',
-            [correctKey]: 'revealed',
-          };
-          setOptionStatuses(statuses);
-          setShowNextButton(true);
-          dispatch(
-            recordAnswer({
-              questionId: currentQuestion.id,
-              selectedKeys: [optionKey],
-              correct: false,
-            })
-          );
-        }
-      } catch {
-        // On error, treat as wrong
+        setTimeout(() => {
+          if (isLastQuestion) {
+            handleFinish();
+          } else {
+            dispatch(setCurrentIndex(currentIndex + 1));
+          }
+        }, 500);
+      } else {
         const statuses: Record<string, OptionStatus> = {
           [optionKey]: 'wrong',
+          [correctKey]: 'revealed',
         };
-        if (correctKey) {
-          statuses[correctKey] = 'revealed';
-        }
         setOptionStatuses(statuses);
         setShowNextButton(true);
         dispatch(
@@ -142,16 +119,20 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     if (timerRef.current) clearInterval(timerRef.current);
     dispatch(finishQuiz());
 
-    // Get latest state from Redux store to avoid stale closure
     const latestState = reduxStore.getState().study;
     const latestAnswers = latestState.answers;
     const latestQuestions = latestState.currentQuestions;
 
-    // Submit study results to backend
+    const answerItems: { questionId: string; selectedKeys: string[]; isCorrect: boolean }[] = [];
     const stats = latestQuestions.reduce(
       (acc, q) => {
         const answer = latestAnswers[q.id];
         if (answer) {
+          answerItems.push({
+            questionId: q.id,
+            selectedKeys: answer.selectedKeys,
+            isCorrect: answer.correct,
+          });
           if (answer.correct) acc.correctCount++;
           else acc.wrongCount++;
         }
@@ -164,6 +145,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       .finishStudy(categoryId, unitIndex, {
         ...stats,
         durationSeconds: elapsedSeconds,
+        answers: answerItems,
       })
       .catch(() => {});
 

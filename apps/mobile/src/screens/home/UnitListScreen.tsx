@@ -1,22 +1,22 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { UnitInfo } from '@sharp/shared';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
   ActivityIndicator,
+  FlatList,
   RefreshControl,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import type { UnitInfo } from '@sharp/shared';
-import { api } from '../../services/api';
-import { fetchQuestions } from '../../stores/studySlice';
-import type { RootState, AppDispatch } from '../../stores';
 import UnitItem from '../../components/UnitItem';
 import { useTheme } from '../../hooks/useTheme';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
+import { api } from '../../services/api';
+import type { AppDispatch, RootState } from '../../stores';
+import { fetchQuestions } from '../../stores/studySlice';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'UnitList'>;
 type UnitListRouteProp = RouteProp<HomeStackParamList, 'UnitList'>;
@@ -128,6 +128,7 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
+    paddingTop: 0,
     paddingBottom: 24,
   },
   header: {

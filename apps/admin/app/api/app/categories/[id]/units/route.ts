@@ -2,6 +2,19 @@ import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
+  const ids: bigint[] = [categoryId];
+  const children = await prisma.category.findMany({
+    where: { parentId: categoryId },
+    select: { id: true },
+  });
+  for (const child of children) {
+    const childIds = await getAllCategoryIds(child.id);
+    ids.push(...childIds);
+  }
+  return ids;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -10,6 +23,10 @@ export async function GET(
   if (appUser instanceof NextResponse) return appUser;
 
   const { id } = await params;
+  const categoryId = BigInt(id);
+
+  // Get all category IDs (this category + all subcategories)
+  const allCategoryIds = await getAllCategoryIds(categoryId);
 
   // Get user settings for unit size
   const settings = await prisma.userSettings.findUnique({
@@ -17,16 +34,16 @@ export async function GET(
   });
   const unitSize = settings?.unitSize ?? 20;
 
-  // Count total questions in this category
+  // Count total questions in this category and all subcategories
   const totalQuestions = await prisma.question.count({
-    where: { categoryId: BigInt(id) },
+    where: { categoryId: { in: allCategoryIds } },
   });
 
-  // Get progress for this user and category
+  // Get progress for this user across all subcategories
   const progress = await prisma.userQuestionProgress.findMany({
     where: {
       userId: appUser.id,
-      categoryId: BigInt(id),
+      categoryId: { in: allCategoryIds },
     },
     select: { questionId: true, status: true, correctCount: true },
   });
@@ -37,7 +54,7 @@ export async function GET(
 
   // Get all question IDs in order
   const allQuestions = await prisma.question.findMany({
-    where: { categoryId: BigInt(id) },
+    where: { categoryId: { in: allCategoryIds } },
     select: { id: true, sortOrder: true },
     orderBy: { sortOrder: "asc" },
   });

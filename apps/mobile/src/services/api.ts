@@ -1,4 +1,5 @@
 import type {
+  AnswerItem,
   Category,
   Language,
   LoginResponse,
@@ -17,7 +18,7 @@ const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://admin.sharp.whoitao.top/";
 
 // ─── Mock data for offline/demo mode ───────────────────────────────────────────
-
+console.log('API_BASE_URL:', API_BASE_URL);
 const mockUser: User = {
   id: '1',
   username: 'demo',
@@ -280,26 +281,6 @@ export const api = {
     }
   },
 
-  // Answer submission
-  async submitAnswer(
-    questionId: string,
-    selectedKeys: string[]
-  ): Promise<{ isCorrect: boolean; correctKeys: string[]; analysis: string }> {
-    try {
-      const response = await apiClient.post<{ isCorrect: boolean; correctKeys: string[]; analysis: string }>(
-        '/api/app/study/submit',
-        { questionId, selectedKeys }
-      );
-      return response.data;
-    } catch {
-      return {
-        isCorrect: Math.random() > 0.3,
-        correctKeys: ['A'],
-        analysis: 'Mock analysis',
-      };
-    }
-  },
-
   // Study sessions
   async startStudy(categoryId: string, unitIndex: number): Promise<void> {
     try {
@@ -312,7 +293,7 @@ export const api = {
   async finishStudy(
     categoryId: string,
     unitIndex: number,
-    stats: { correctCount: number; wrongCount: number; durationSeconds: number }
+    stats: { correctCount: number; wrongCount: number; durationSeconds: number; answers: AnswerItem[] }
   ): Promise<void> {
     try {
       await apiClient.post('/api/app/study/finish', {

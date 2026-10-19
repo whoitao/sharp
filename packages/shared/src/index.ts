@@ -176,12 +176,19 @@ export interface StartStudyRequest {
   unitIndex: number;
 }
 
+export interface AnswerItem {
+  questionId: string;
+  selectedKeys: string[];
+  isCorrect: boolean;
+}
+
 export interface FinishStudyRequest {
   categoryId: string;
   unitIndex: number;
   correctCount: number;
   wrongCount: number;
   durationSeconds: number;
+  answers: AnswerItem[];
 }
 
 export interface CreateCategoryRequest {

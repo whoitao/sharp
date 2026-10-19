@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   slide: {
     height: 140,
-    borderRadius: 20,
+    borderRadius: 12,
     justifyContent: 'center',
     overflow: 'hidden',
   },
