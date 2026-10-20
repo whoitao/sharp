@@ -16,10 +16,10 @@ import { logout } from '../../stores/authSlice';
 import { setLanguage, setTheme, setUnitSize, updateSettings } from '../../stores/settingsSlice';
 
 const UNIT_SIZE_OPTIONS = [20, 30, 50, 100];
-const THEME_OPTIONS: { value: Theme; labelKey: string; icon: string }[] = [
-  { value: 'light' as Theme, labelKey: 'light', icon: '️' },
-  { value: 'dark' as Theme, labelKey: 'dark', icon: '' },
-  { value: 'system' as Theme, labelKey: 'system', icon: '📱' },
+const THEME_OPTIONS: { value: Theme; labelKey: string }[] = [
+  { value: 'light' as Theme, labelKey: 'light' },
+  { value: 'dark' as Theme, labelKey: 'dark' },
+  { value: 'system' as Theme, labelKey: 'system' },
 ];
 const LANGUAGE_OPTIONS: { value: Language; labelKey: string }[] = [
   { value: 'zh' as Language, labelKey: 'chinese' },
@@ -67,7 +67,6 @@ const SettingsScreen: React.FC = () => {
       {/* Unit size section */}
       <View style={[styles.section, { backgroundColor: colors.surface }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.unitSize}</Text>
-        <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t.unitSizeDesc}</Text>
 
         <View style={styles.optionsGrid}>
           {UNIT_SIZE_OPTIONS.map((size) => (
@@ -98,7 +97,6 @@ const SettingsScreen: React.FC = () => {
       {/* Theme section */}
       <View style={[styles.section, { backgroundColor: colors.surface }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.theme}</Text>
-        <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t.themeDesc}</Text>
 
         <View style={styles.themeOptions}>
           {THEME_OPTIONS.map((opt) => (
@@ -112,7 +110,6 @@ const SettingsScreen: React.FC = () => {
               onPress={() => handleThemeChange(opt.value)}
               activeOpacity={0.7}
             >
-              <Text style={styles.themeIcon}>{opt.icon}</Text>
               <Text
                 style={[
                   styles.themeText,
@@ -122,9 +119,6 @@ const SettingsScreen: React.FC = () => {
               >
                 {t[opt.labelKey as keyof typeof t]}
               </Text>
-              {theme === opt.value && (
-                <Text style={[styles.checkMark, { color: colors.accent }]}>✓</Text>
-              )}
             </TouchableOpacity>
           ))}
         </View>
@@ -133,7 +127,6 @@ const SettingsScreen: React.FC = () => {
       {/* Language section */}
       <View style={[styles.section, { backgroundColor: colors.surface }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.language}</Text>
-        <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>{t.languageDesc}</Text>
 
         <View style={styles.optionsGrid}>
           {LANGUAGE_OPTIONS.map((opt) => (
@@ -192,7 +185,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 120,
+    paddingTop: 0,
+    paddingBottom: 80,
   },
   section: {
     borderRadius: 16,
@@ -207,7 +201,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 10,
   },
   sectionDesc: {
     fontSize: 13,
@@ -215,14 +209,12 @@ const styles = StyleSheet.create({
   },
   optionsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
   },
   optionButton: {
-    paddingHorizontal: 24,
+    flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    minWidth: 70,
     alignItems: 'center',
   },
   optionText: {
@@ -262,18 +254,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  themeIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
   themeText: {
-    flex: 1,
     fontSize: 15,
     fontWeight: '500',
-  },
-  checkMark: {
-    fontSize: 16,
-    fontWeight: '700',
+    textAlign: 'center',
   },
   aboutRow: {
     flexDirection: 'row',

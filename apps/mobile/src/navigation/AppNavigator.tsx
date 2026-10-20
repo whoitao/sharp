@@ -181,7 +181,7 @@ const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
   return (
     <Ionicons
       name={name}
-      size={20}
+      size={16}
       color={focused ? colors.accent : colors.textTertiary}
     />
   );
@@ -203,17 +203,14 @@ const MainTabNavigator: React.FC = () => {
           backgroundColor: colors.surface,
           borderTopColor: colors.borderLight,
           borderTopWidth: 1,
-          height: 50 + insets.bottom,
+          height: 64 + insets.bottom,
           paddingBottom: 4 + insets.bottom,
           paddingTop: 4,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '400',
-          marginTop: 4,
-        },
-        tabBarItemStyle: {
-          flex: 1,
+          marginTop: 2,
         },
         headerShown: false,
       }}
