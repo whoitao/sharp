@@ -22,15 +22,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Find the most recent study record for this session
-  const record = await prisma.userStudyRecord.findFirst({
+  // Find the study record for this (user, category, unit).
+  // A unique constraint guarantees at most one record, so we don't filter by
+  // finishedAt — re-practicing a finished unit ("再练一次") must overwrite it.
+  const record = await prisma.userStudyRecord.findUnique({
     where: {
-      userId: appUser.id,
-      categoryId: BigInt(categoryId),
-      unitIndex,
-      finishedAt: null,
+      userId_categoryId_unitIndex: {
+        userId: appUser.id,
+        categoryId: BigInt(categoryId),
+        unitIndex,
+      },
     },
-    orderBy: { startedAt: "desc" },
   });
 
   if (record) {

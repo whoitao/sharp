@@ -1,11 +1,13 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { UnitInfo } from '@sharp/shared';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 
 interface UnitItemProps {
   unit: UnitInfo;
   onPress: () => void;
+  loading?: boolean;
+  disabled?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -14,7 +16,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
   completed: { label: '已完成', color: '#059669', bg: '#D1FAE5' },
 };
 
-const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress }) => {
+const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress, loading = false, disabled = false }) => {
   const { colors } = useTheme();
   const status = statusConfig[unit.status] ?? statusConfig.not_started;
   const progress =
@@ -23,11 +25,28 @@ const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress }) => {
       : 0;
 
   return (
-    <TouchableOpacity style={[styles.container, { backgroundColor: colors.surface }]} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.surface,
+          borderColor: loading ? colors.primary : 'transparent',
+          opacity: disabled && !loading ? 0.5 : 1,
+        },
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={loading ? 1 : 0.7}
+    >
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>第 {unit.unitIndex + 1} 单元</Text>
-        <View style={[styles.badge, { backgroundColor: status.bg }]}>
-          <Text style={[styles.badgeText, { color: status.color }]}>{status.label}</Text>
+        <View style={styles.headerRight}>
+          {loading && (
+            <ActivityIndicator size="small" color={colors.primary} style={styles.spinner} />
+          )}
+          <View style={[styles.badge, { backgroundColor: status.bg }]}>
+            <Text style={[styles.badgeText, { color: status.color }]}>{status.label}</Text>
+          </View>
         </View>
       </View>
       <View style={styles.info}>
@@ -53,6 +72,7 @@ const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress }) => {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
+    borderWidth: 2,
     padding: 16,
     marginBottom: 10,
     shadowColor: '#000',
@@ -66,6 +86,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  spinner: {
+    marginRight: 8,
   },
   title: {
     fontSize: 16,

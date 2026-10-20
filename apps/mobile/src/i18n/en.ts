@@ -3,6 +3,7 @@ import type { TranslationKeys } from './zh';
 export const en: TranslationKeys = {
   // Navigation
   home: 'Home',
+  study: 'Study',
   profile: 'Profile',
 
   // Settings

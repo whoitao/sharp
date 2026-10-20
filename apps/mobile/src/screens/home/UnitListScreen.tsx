@@ -35,6 +35,7 @@ const UnitListScreen: React.FC<UnitListScreenProps> = ({ navigation, route }) =>
   const [units, setUnits] = useState<UnitInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [pressingUnitIndex, setPressingUnitIndex] = useState<number | null>(null);
 
   const fetchUnits = useCallback(async () => {
     try {
@@ -59,25 +60,37 @@ const UnitListScreen: React.FC<UnitListScreenProps> = ({ navigation, route }) =>
   };
 
   const handleUnitPress = async (unit: UnitInfo) => {
+    // Prevent duplicate requests while a unit is being loaded.
+    if (pressingUnitIndex !== null) return;
+    setPressingUnitIndex(unit.unitIndex);
     try {
-      await api.startStudy(category.id, unit.unitIndex);
-    } catch {
-      // silently proceed even if start fails
-    }
-    const result = await dispatch(
-      fetchQuestions({ categoryId: category.id, unitIndex: unit.unitIndex })
-    );
-    if (fetchQuestions.fulfilled.match(result)) {
-      navigation.navigate('Quiz', {
-        categoryId: category.id,
-        unitIndex: unit.unitIndex,
-        categoryName: category.name,
-      });
+      try {
+        await api.startStudy(category.id, unit.unitIndex);
+      } catch {
+        // silently proceed even if start fails
+      }
+      const result = await dispatch(
+        fetchQuestions({ categoryId: category.id, unitIndex: unit.unitIndex })
+      );
+      if (fetchQuestions.fulfilled.match(result)) {
+        navigation.navigate('Quiz', {
+          categoryId: category.id,
+          unitIndex: unit.unitIndex,
+          categoryName: category.name,
+        });
+      }
+    } finally {
+      setPressingUnitIndex(null);
     }
   };
 
   const renderItem = ({ item }: { item: UnitInfo }) => (
-    <UnitItem unit={item} onPress={() => handleUnitPress(item)} />
+    <UnitItem
+      unit={item}
+      onPress={() => handleUnitPress(item)}
+      loading={pressingUnitIndex === item.unitIndex}
+      disabled={pressingUnitIndex !== null}
+    />
   );
 
   if (loading) {

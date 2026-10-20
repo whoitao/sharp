@@ -21,6 +21,9 @@ import QuizResultScreen from '../screens/home/QuizResultScreen';
 import QuizScreen from '../screens/home/QuizScreen';
 import UnitListScreen from '../screens/home/UnitListScreen';
 
+// Study screens
+import StudyScreen from '../screens/study/StudyScreen';
+
 // Profile screens
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import RecordsScreen from '../screens/profile/RecordsScreen';
@@ -50,6 +53,7 @@ export type ProfileStackParamList = {
 
 export type MainTabParamList = {
   HomeTab: undefined;
+  StudyTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -85,7 +89,8 @@ const HomeStackNavigator: React.FC = () => {
         headerStyle: { backgroundColor: colors.background },
         headerShadowVisible: false,
         headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: '600' },
+        headerTitleAlign: 'center',
+        headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
         animation: 'slide_from_right',
       }}
@@ -133,7 +138,8 @@ const ProfileStackNavigator: React.FC = () => {
         headerStyle: { backgroundColor: colors.background },
         headerShadowVisible: false,
         headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: '600' },
+        headerTitleAlign: 'center',
+        headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
         animation: 'slide_from_right',
       }}
@@ -175,7 +181,7 @@ const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
   return (
     <Ionicons
       name={name}
-      size={24}
+      size={20}
       color={focused ? colors.accent : colors.textTertiary}
     />
   );
@@ -197,13 +203,13 @@ const MainTabNavigator: React.FC = () => {
           backgroundColor: colors.surface,
           borderTopColor: colors.borderLight,
           borderTopWidth: 1,
-          height: 60 + insets.bottom,
-          paddingBottom: 8 + insets.bottom,
-          paddingTop: 8,
+          height: 50 + insets.bottom,
+          paddingBottom: 4 + insets.bottom,
+          paddingTop: 4,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '600',
+          fontWeight: '400',
           marginTop: 4,
         },
         tabBarItemStyle: {
@@ -218,6 +224,20 @@ const MainTabNavigator: React.FC = () => {
         options={{
           title: t.home,
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />,
+        }}
+      />
+      <Tab.Screen
+        name="StudyTab"
+        component={StudyScreen as any}
+        options={{
+          title: t.study,
+          headerShown: true,
+          headerStyle: { backgroundColor: colors.background },
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+          headerTitleAlign: 'center',
+          headerTitleStyle: { fontWeight: '400' },
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'book' : 'book-outline'} focused={focused} />,
         }}
       />
       <Tab.Screen

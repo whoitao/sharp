@@ -1,6 +1,7 @@
 export const zh = {
   // Navigation
   home: '首页',
+  study: '学习',
   profile: '我的',
 
   // Settings

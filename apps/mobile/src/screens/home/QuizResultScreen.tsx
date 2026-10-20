@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import type { RootState, AppDispatch } from '../../stores';
-import { resetStudy } from '../../stores/studySlice';
-import { fetchQuestions } from '../../stores/studySlice';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React, { useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../hooks/useTheme';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
+import { api } from '../../services/api';
+import type { AppDispatch, RootState } from '../../stores';
+import { fetchQuestions, resetStudy } from '../../stores/studySlice';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'QuizResult'>;
 type QuizResultRouteProp = RouteProp<HomeStackParamList, 'QuizResult'>;
@@ -74,6 +74,11 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
 
   const handleRetry = async () => {
     dispatch(resetStudy());
+    try {
+      await api.startStudy(categoryId, unitIndex);
+    } catch {
+      // silently proceed even if start fails
+    }
     const fetchResult = await dispatch(
       fetchQuestions({ categoryId, unitIndex })
     );
