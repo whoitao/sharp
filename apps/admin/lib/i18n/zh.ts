@@ -13,6 +13,7 @@ export const zh: Messages = {
   nav: {
     dashboard: "仪表盘",
     users: "用户",
+    admins: "管理员",
     categories: "分类",
     questions: "题目",
     studyRecords: "学习记录",
@@ -70,11 +71,17 @@ export const zh: Messages = {
     disable: "禁用",
     enable: "启用",
   },
+  admins: {
+    searchPlaceholder: "按用户名或角色搜索...",
+    colUsername: "用户名",
+    colRole: "角色",
+    colCreatedAt: "创建时间",
+  },
   studyRecords: {
     title: "学习记录",
     searchPlaceholder: "按用户名搜索...",
     colUser: "用户",
-    colCategoryId: "分类 ID",
+    colCategory: "分类",
     colUnit: "单元",
     colStarted: "开始时间",
     colFinished: "完成时间",
@@ -83,6 +90,7 @@ export const zh: Messages = {
     colWrong: "错误",
     colDuration: "用时",
     inProgress: "进行中",
+    unknownCategory: "未知分类",
     unit: "第 {n} 单元",
   },
   categories: {

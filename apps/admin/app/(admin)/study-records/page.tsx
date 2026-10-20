@@ -12,6 +12,7 @@ interface StudyRecord {
     nickname: string | null;
   };
   categoryId: string;
+  categoryName: string | null;
   unitIndex: number;
   startedAt: string;
   finishedAt: string | null;
@@ -93,18 +94,15 @@ export default function StudyRecordsPage() {
       ),
     },
     {
-      title: t("studyRecords.colCategoryId"),
-      dataIndex: "categoryId",
-      key: "categoryId",
-      render: (value: string) => (
-        <span style={{ fontFamily: "monospace", fontSize: 12 }}>{value}</span>
-      ),
+      title: t("studyRecords.colCategory"),
+      key: "categoryName",
+      render: (_, record) => record.categoryName ?? t("studyRecords.unknownCategory"),
     },
     {
       title: t("studyRecords.colUnit"),
       dataIndex: "unitIndex",
       key: "unitIndex",
-      render: (value: number) => t("studyRecords.unit", { n: value }),
+      render: (value: number) => t("studyRecords.unit", { n: value + 1 }),
     },
     {
       title: t("studyRecords.colStarted"),

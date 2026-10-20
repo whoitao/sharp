@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/middleware";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const admin = requireAdmin(request);
@@ -37,10 +37,19 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
+  // UserStudyRecord has no relation to Category, so resolve names separately.
+  const categoryIds = [...new Set(records.map((r: { categoryId: bigint }) => r.categoryId))];
+  const categories = await prisma.category.findMany({
+    where: { id: { in: categoryIds } },
+    select: { id: true, name: true },
+  });
+  const categoryNameMap = new Map(categories.map((c: { id: bigint; name: string }) => [c.id.toString(), c.name]));
+
   const serialized = records.map((r: any) => ({
     ...r,
     id: r.id,
     categoryId: r.categoryId.toString(),
+    categoryName: categoryNameMap.get(r.categoryId.toString()) ?? null,
   }));
 
   return NextResponse.json({

@@ -16,6 +16,7 @@ import {
   QuestionCircleOutlined,
   SettingOutlined,
   SunOutlined,
+  TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import {
@@ -38,6 +39,7 @@ const { Sider, Content } = Layout;
 const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] = [
   { key: "/dashboard", icon: <DashboardOutlined />, labelKey: "nav.dashboard" },
   { key: "/users", icon: <UserOutlined />, labelKey: "nav.users" },
+  { key: "/admins", icon: <TeamOutlined />, labelKey: "nav.admins" },
   { key: "/categories", icon: <AppstoreOutlined />, labelKey: "nav.categories" },
   { key: "/questions", icon: <QuestionCircleOutlined />, labelKey: "nav.questions" },
   { key: "/study-records", icon: <BookOutlined />, labelKey: "nav.studyRecords" },

@@ -2,10 +2,10 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Provider, useDispatch, useSelector } from 'react-redux';
+import { useTheme } from './src/hooks/useTheme';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AppDispatch, RootState, store } from './src/stores';
 import { initializeAuth } from './src/stores/authSlice';
-import { useTheme } from './src/hooks/useTheme';
 
 const AppContent: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();

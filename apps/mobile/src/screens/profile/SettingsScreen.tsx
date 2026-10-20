@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import type { Language, Theme } from '@sharp/shared';
+import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import type { Theme, Language } from '@sharp/shared';
-import { updateSettings, setUnitSize, setTheme, setLanguage } from '../../stores/settingsSlice';
-import { logout } from '../../stores/authSlice';
-import type { RootState, AppDispatch } from '../../stores';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
+import type { AppDispatch, RootState } from '../../stores';
+import { logout } from '../../stores/authSlice';
+import { setLanguage, setTheme, setUnitSize, updateSettings } from '../../stores/settingsSlice';
 
 const UNIT_SIZE_OPTIONS = [20, 30, 50, 100];
 const THEME_OPTIONS: { value: Theme; labelKey: string; icon: string }[] = [

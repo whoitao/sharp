@@ -52,9 +52,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Create study record
-  const record = await prisma.userStudyRecord.create({
-    data: {
+  // One record per (user, category, unit): re-entering a unit resets it instead of creating a duplicate.
+  const record = await prisma.userStudyRecord.upsert({
+    where: {
+      userId_categoryId_unitIndex: {
+        userId: appUser.id,
+        categoryId: BigInt(categoryId),
+        unitIndex,
+      },
+    },
+    update: {
+      startedAt: new Date(),
+      finishedAt: null,
+      totalQuestions: questions.length,
+      correctCount: 0,
+      wrongCount: 0,
+      durationSeconds: 0,
+    },
+    create: {
       userId: appUser.id,
       categoryId: BigInt(categoryId),
       unitIndex,

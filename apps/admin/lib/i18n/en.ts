@@ -11,6 +11,7 @@ export const en = {
   nav: {
     dashboard: "Dashboard",
     users: "Users",
+    admins: "Admins",
     categories: "Categories",
     questions: "Questions",
     studyRecords: "Study Records",
@@ -68,11 +69,17 @@ export const en = {
     disable: "Disable",
     enable: "Enable",
   },
+  admins: {
+    searchPlaceholder: "Search by username or role...",
+    colUsername: "Username",
+    colRole: "Role",
+    colCreatedAt: "Created At",
+  },
   studyRecords: {
     title: "Study Records",
     searchPlaceholder: "Search by username...",
     colUser: "User",
-    colCategoryId: "Category ID",
+    colCategory: "Category",
     colUnit: "Unit",
     colStarted: "Started",
     colFinished: "Finished",
@@ -80,7 +87,8 @@ export const en = {
     colCorrect: "Correct",
     colWrong: "Wrong",
     colDuration: "Duration",
-    inProgress: "In progress",
+    inProgress: "In Progress",
+    unknownCategory: "Unknown Category",
     unit: "Unit {n}",
   },
   categories: {

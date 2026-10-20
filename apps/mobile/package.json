@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "expo start --go",
     "android": "expo run:android",
+    "buildAndroidLocal": "eas build --platform android --local --profile preview",
     "ios": "expo run:ios",
     "ioss": "expo start --ios",
     "web": "expo start --web"

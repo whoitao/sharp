@@ -1,15 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
-import { api } from '../../services/api';
 import type { StudyRecord } from '@sharp/shared';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { api } from '../../services/api';
 
 const RecordsScreen: React.FC = () => {
   const { colors } = useTheme();
@@ -147,12 +147,12 @@ const RecordsScreen: React.FC = () => {
         }
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>学习记录</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>查看你的学习历史</Text>
-          </View>
-        }
+        // ListHeaderComponent={
+        //   <View style={styles.header}>
+        //     <Text style={[styles.title, { color: colors.text }]}>学习记录</Text>
+        //     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>查看你的学习历史</Text>
+        //   </View>
+        // }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>📊</Text>

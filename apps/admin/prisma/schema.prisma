@@ -100,6 +100,7 @@ model UserStudyRecord {
   wrongCount      Int      @default(0)
   durationSeconds Int      @default(0)
 
+  @@unique([userId, categoryId, unitIndex])
   @@index([userId])
   @@index([categoryId])
 }
