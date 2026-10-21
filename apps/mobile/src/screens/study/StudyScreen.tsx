@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import TreePickerModal from '../../components/TreePickerModal';
 import UnitItem from '../../components/UnitItem';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -125,20 +126,15 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     }
   };
 
-  const categoryOptions: DropdownOption[] = categories.map((c) => ({
-    value: c.id,
-    label: c.name,
-  }));
-
   const subjectOptions: DropdownOption[] = subjects.map((s) => ({
     value: s.id,
     label: s.name,
   }));
 
-  const kpOptions: DropdownOption[] = knowledgePoints.map((kp) => ({
-    value: kp.id,
-    label: kp.name,
-  }));
+  const loadCategoryChildren = useCallback(
+    (node: Category) => api.getCategories(node.id),
+    []
+  );
 
   const renderItem = ({ item }: { item: UnitInfo }) => (
     <UnitItem
@@ -193,28 +189,20 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
         />
       )}
 
-      <Modal visible={categoryModalVisible} transparent animationType="fade" onRequestClose={() => setCategoryModalVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setCategoryModalVisible(false)}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>{t.studySelectCategory}</Text>
-            <ScrollView style={styles.modalList}>
-              {categoryOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[styles.modalOption, selectedCategory?.id === option.value && { backgroundColor: colors.accentLight }]}
-                  onPress={() => {
-                    const cat = categories.find((c) => c.id === option.value);
-                    setSelectedCategory(cat || null);
-                    setCategoryModalVisible(false);
-                  }}
-                >
-                  <Text style={[styles.modalOptionText, { color: colors.text }]}>{option.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <TreePickerModal<Category>
+        visible={categoryModalVisible}
+        title={t.studySelectCategory}
+        roots={categories}
+        selectedId={selectedCategory?.id ?? null}
+        colors={colors}
+        emptyText={t.noData}
+        onClose={() => setCategoryModalVisible(false)}
+        onSelect={(node) => {
+          setSelectedCategory(node);
+          setCategoryModalVisible(false);
+        }}
+        loadChildren={loadCategoryChildren}
+      />
 
       <Modal visible={subjectModalVisible} transparent animationType="fade" onRequestClose={() => setSubjectModalVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setSubjectModalVisible(false)}>
@@ -239,28 +227,19 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
         </TouchableOpacity>
       </Modal>
 
-      <Modal visible={kpModalVisible} transparent animationType="fade" onRequestClose={() => setKpModalVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setKpModalVisible(false)}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>{t.studySelectKnowledgePoint}</Text>
-            <ScrollView style={styles.modalList}>
-              {kpOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[styles.modalOption, selectedKP?.id === option.value && { backgroundColor: colors.accentLight }]}
-                  onPress={() => {
-                    const kp = knowledgePoints.find((k) => k.id === option.value);
-                    setSelectedKP(kp || null);
-                    setKpModalVisible(false);
-                  }}
-                >
-                  <Text style={[styles.modalOptionText, { color: colors.text }]}>{option.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <TreePickerModal<KnowledgePoint>
+        visible={kpModalVisible}
+        title={t.studySelectKnowledgePoint}
+        roots={knowledgePoints}
+        selectedId={selectedKP?.id ?? null}
+        colors={colors}
+        emptyText={t.noData}
+        onClose={() => setKpModalVisible(false)}
+        onSelect={(node) => {
+          setSelectedKP(node);
+          setKpModalVisible(false);
+        }}
+      />
     </View>
   );
 };

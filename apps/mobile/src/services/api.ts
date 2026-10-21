@@ -267,7 +267,10 @@ export const api = {
       if (parentId === '0') {
         return mockCategories;
       }
-      return mockSubCategories;
+      if (parentId === '1') {
+        return mockSubCategories;
+      }
+      return [];
     }
   },
 

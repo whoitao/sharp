@@ -10,13 +10,13 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../hooks/useTheme';
-import type { HomeStackParamList } from '../../navigation/AppNavigator';
+import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { fetchQuestions, resetStudy } from '../../stores/studySlice';
 
-type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'QuizResult'>;
-type QuizResultRouteProp = RouteProp<HomeStackParamList, 'QuizResult'>;
+type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'QuizResult'>;
+type QuizResultRouteProp = RouteProp<StudyStackParamList, 'QuizResult'>;
 
 interface QuizResultScreenProps {
   navigation: NavigationProp;
@@ -93,7 +93,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
 
   const handleContinue = () => {
     dispatch(resetStudy());
-    navigation.popTo('UnitList', { category: { id: categoryId, name: categoryName } as any });
+    navigation.popTo('Study');
   };
 
   const toggleWrong = (questionId: string) => {
@@ -151,7 +151,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
                 activeOpacity={0.7}
               >
                 <View style={styles.wrongHeader}>
-                  <View style={[styles.wrongIndex, { backgroundColor: colors.errorLight, color: colors.error }]}>
+                  <View style={[styles.wrongIndex, { backgroundColor: colors.errorLight }]}>
                     <Text style={{ color: colors.error, fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 28 }}>{idx + 1}</Text>
                   </View>
                   <Text style={[styles.wrongContent, { color: colors.text }]} numberOfLines={1}>

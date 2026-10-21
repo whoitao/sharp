@@ -1,26 +1,26 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import { setCurrentIndex, recordAnswer, finishQuiz } from '../../stores/studySlice';
-import { api } from '../../services/api';
-import { store as reduxStore } from '../../stores';
-import type { RootState, AppDispatch } from '../../stores';
 import ProgressBar from '../../components/ProgressBar';
 import QuizOption from '../../components/QuizOption';
 import { useTheme } from '../../hooks/useTheme';
-import type { HomeStackParamList } from '../../navigation/AppNavigator';
+import type { StudyStackParamList } from '../../navigation/AppNavigator';
+import { api } from '../../services/api';
+import type { AppDispatch, RootState } from '../../stores';
+import { store as reduxStore } from '../../stores';
+import { finishQuiz, recordAnswer, setCurrentIndex } from '../../stores/studySlice';
 
-type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Quiz'>;
-type QuizRouteProp = RouteProp<HomeStackParamList, 'Quiz'>;
+type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'Quiz'>;
+type QuizRouteProp = RouteProp<StudyStackParamList, 'Quiz'>;
 
 interface QuizScreenProps {
   navigation: NavigationProp;
