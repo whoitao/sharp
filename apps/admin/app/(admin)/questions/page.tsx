@@ -24,6 +24,7 @@ import {
   Space,
   Table,
   Tag,
+  TreeSelect,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
@@ -37,6 +38,7 @@ interface QuestionOption {
 interface QuestionItem {
   id: string;
   categoryId: string;
+  subjectId: string | null;
   type: number;
   content: string;
   analysis: string | null;
@@ -45,6 +47,7 @@ interface QuestionItem {
   sortOrder: number;
   createdAt: string;
   options: QuestionOption[];
+  knowledgePoints: { id: string; name: string; parentId: string | null }[];
 }
 
 interface CategoryOption {
@@ -53,8 +56,22 @@ interface CategoryOption {
   children: CategoryOption[];
 }
 
+interface SubjectOption {
+  id: string;
+  name: string;
+}
+
+interface KPNode {
+  id: string;
+  name: string;
+  parentId: string | null;
+  children: KPNode[];
+}
+
 interface QuestionFormValues {
   categoryId?: string;
+  subjectId?: string;
+  knowledgePointIds?: string[];
   type: string;
   content: string;
   analysis?: string;
@@ -75,7 +92,10 @@ export default function QuestionsPage() {
   const { t } = useLocale();
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
+  const [kpTree, setKpTree] = useState<KPNode[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>();
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>();
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const { pageSize } = usePageSize();
@@ -117,6 +137,32 @@ export default function QuestionsPage() {
     }
   };
 
+  const fetchSubjects = async () => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch("/api/admin/subjects", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setSubjects(Array.isArray(data) ? data : []);
+    } catch {
+      setSubjects([]);
+    }
+  };
+
+  const fetchKnowledgePoints = async () => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch("/api/admin/knowledge-points", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setKpTree(Array.isArray(data) ? data : []);
+    } catch {
+      setKpTree([]);
+    }
+  };
+
   const fetchQuestions = async () => {
     if (!selectedCategoryId) {
       setQuestions([]);
@@ -126,9 +172,15 @@ export default function QuestionsPage() {
     }
     setLoading(true);
     const token = localStorage.getItem("admin_token");
+    const params = new URLSearchParams({
+      categoryId: selectedCategoryId,
+      page: String(page),
+      pageSize: String(pageSize),
+    });
+    if (selectedSubjectId) params.append("subjectId", selectedSubjectId);
     try {
       const res = await fetch(
-        `/api/admin/questions?categoryId=${selectedCategoryId}&page=${page}&pageSize=${pageSize}`,
+        `/api/admin/questions?${params.toString()}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
@@ -143,17 +195,21 @@ export default function QuestionsPage() {
 
   useEffect(() => {
     fetchCategories();
+    fetchSubjects();
+    fetchKnowledgePoints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategoryId, page, pageSize]);
+  }, [selectedCategoryId, selectedSubjectId, page, pageSize]);
 
   const resetForm = () => {
     questionForm.setFieldsValue({
       categoryId: selectedCategoryId,
+      subjectId: undefined,
+      knowledgePointIds: [],
       type: "1",
       content: "",
       analysis: "",
@@ -166,6 +222,8 @@ export default function QuestionsPage() {
 
   const buildPayload = (values: QuestionFormValues) => ({
     categoryId: Number(values.categoryId || selectedCategoryId),
+    subjectId: values.subjectId || undefined,
+    knowledgePointIds: values.knowledgePointIds || [],
     type: Number(values.type),
     content: values.content,
     analysis: values.analysis || undefined,
@@ -215,6 +273,8 @@ export default function QuestionsPage() {
     setSelectedQuestion(q);
     questionForm.setFieldsValue({
       categoryId: q.categoryId,
+      subjectId: q.subjectId || undefined,
+      knowledgePointIds: q.knowledgePoints?.map((kp) => kp.id) || [],
       type: String(q.type),
       content: q.content,
       analysis: q.analysis || "",
@@ -371,6 +431,23 @@ export default function QuestionsPage() {
       key: "content",
       ellipsis: true,
     },
+    {
+      title: t("questions.knowledgePointsLabel"),
+      key: "knowledgePoints",
+      width: 180,
+      render: (_, record) =>
+        record.knowledgePoints?.length ? (
+          <Space size={2} wrap>
+            {record.knowledgePoints.map((kp) => (
+              <Tag key={kp.id} color="geekblue" style={{ fontSize: 11 }}>
+                {kp.name}
+              </Tag>
+            ))}
+          </Space>
+        ) : (
+          <span style={{ color: "rgba(0,0,0,0.25)" }}>-</span>
+        ),
+    },
     { title: t("questions.colDifficulty"), dataIndex: "difficulty", key: "difficulty", width: 100 },
     { title: t("questions.colScore"), dataIndex: "score", key: "score", width: 80 },
     {
@@ -417,6 +494,41 @@ export default function QuestionsPage() {
           showSearch
           options={categoryOptions}
           placeholder={t("questions.chooseCategory")}
+        />
+      </Form.Item>
+
+      <Form.Item
+        label={t("questions.subjectOptional")}
+        name="subjectId"
+      >
+        <Select
+          showSearch
+          allowClear
+          options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+          placeholder={t("questions.subjectPlaceholder")}
+        />
+      </Form.Item>
+
+      <Form.Item
+        label={t("questions.knowledgePointsOptional")}
+        name="knowledgePointIds"
+      >
+        <TreeSelect
+          treeData={kpTree.map(function convert(node: KPNode): any {
+            return {
+              value: node.id,
+              title: node.name,
+              key: node.id,
+              children: node.children?.map(convert) || [],
+            };
+          })}
+          treeCheckable
+          multiple
+          showSearch
+          treeNodeFilterProp="title"
+          placeholder={t("questions.knowledgePointsPlaceholder")}
+          treeDefaultExpandAll
+          style={{ width: "100%" }}
         />
       </Form.Item>
 
@@ -510,21 +622,38 @@ export default function QuestionsPage() {
     <div style={{ marginTop: -8 }}>
       <Card size="small" style={{ marginBottom: 10 }} styles={{ body: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 } }}>
         <Space>
-          <span>{t("questions.selectCategory")}</span>
+          <span>
+            <span style={{ color: "#ff4d4f", marginRight: 4 }}>*</span>
+            {t("questions.selectCategory")}
+          </span>
           <Select
             showSearch
             allowClear
-            style={{ width: 360 }}
+            style={{ width: 160 }}
             placeholder={t("questions.chooseCategory")}
             value={selectedCategoryId}
             onChange={(value) => {
               setSelectedCategoryId(value);
+              setSelectedSubjectId(undefined);
               setPage(1);
             }}
             options={categoryOptions}
           />
         </Space>
         <Space>
+          <span>{t("questions.subject")}</span>
+          <Select
+            showSearch
+            allowClear
+            style={{ width: 160 }}
+            placeholder={t("questions.subjectPlaceholder")}
+            value={selectedSubjectId}
+            onChange={(value) => {
+              setSelectedSubjectId(value);
+              setPage(1);
+            }}
+            options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+          />
           <Button
             icon={<DownloadOutlined />}
             onClick={handleDownloadTemplate}

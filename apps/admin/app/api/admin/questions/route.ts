@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const categoryId = searchParams.get("categoryId");
+  const subjectId = searchParams.get("subjectId");
 
   if (!categoryId) {
     return NextResponse.json({ error: "categoryId is required" }, { status: 400 });
@@ -19,12 +20,20 @@ export async function GET(request: NextRequest) {
     Math.max(1, parseInt(searchParams.get("pageSize") ?? "10", 10) || 10)
   );
 
-  const where = { categoryId: BigInt(categoryId) };
+  const where: any = { categoryId: BigInt(categoryId) };
+  if (subjectId) {
+    where.subjectId = BigInt(subjectId);
+  }
 
   const [questions, total] = await Promise.all([
     prisma.question.findMany({
       where,
-      include: { options: { orderBy: { sortNo: "asc" } } },
+      include: {
+        options: { orderBy: { sortNo: "asc" } },
+        knowledgePoints: {
+          include: { knowledgePoint: true },
+        },
+      },
       orderBy: { sortOrder: "asc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -36,10 +45,16 @@ export async function GET(request: NextRequest) {
     ...q,
     id: q.id.toString(),
     categoryId: q.categoryId.toString(),
+    subjectId: q.subjectId?.toString() ?? null,
     options: q.options.map((o: any) => ({
       ...o,
       id: o.id.toString(),
       questionId: o.questionId.toString(),
+    })),
+    knowledgePoints: q.knowledgePoints.map((qkp: any) => ({
+      id: qkp.knowledgePoint.id.toString(),
+      name: qkp.knowledgePoint.name,
+      parentId: qkp.knowledgePoint.parentId?.toString() ?? null,
     })),
   });
 
@@ -58,6 +73,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const {
     categoryId,
+    subjectId,
     type,
     content,
     analysis,
@@ -65,6 +81,7 @@ export async function POST(request: NextRequest) {
     score = 1,
     sortOrder = 0,
     options,
+    knowledgePointIds,
   } = body;
 
   if (!categoryId || !type || !content) {
@@ -84,6 +101,7 @@ export async function POST(request: NextRequest) {
   const question = await prisma.question.create({
     data: {
       categoryId: BigInt(categoryId),
+      subjectId: subjectId ? BigInt(subjectId) : null,
       type,
       content,
       analysis: analysis || null,
@@ -98,18 +116,38 @@ export async function POST(request: NextRequest) {
           sortNo: idx,
         })),
       },
+      ...(Array.isArray(knowledgePointIds) && knowledgePointIds.length > 0
+        ? {
+            knowledgePoints: {
+              create: knowledgePointIds.map((kpId: string) => ({
+                knowledgePointId: BigInt(kpId),
+              })),
+            },
+          }
+        : {}),
     },
-    include: { options: true },
+    include: {
+      options: true,
+      knowledgePoints: {
+        include: { knowledgePoint: true },
+      },
+    },
   });
 
   const serialize = (q: any) => ({
     ...q,
     id: q.id.toString(),
     categoryId: q.categoryId.toString(),
+    subjectId: q.subjectId?.toString() ?? null,
     options: q.options.map((o: any) => ({
       ...o,
       id: o.id.toString(),
       questionId: o.questionId.toString(),
+    })),
+    knowledgePoints: q.knowledgePoints.map((qkp: any) => ({
+      id: qkp.knowledgePoint.id.toString(),
+      name: qkp.knowledgePoint.name,
+      parentId: qkp.knowledgePoint.parentId?.toString() ?? null,
     })),
   });
 

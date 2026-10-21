@@ -57,10 +57,26 @@ model Category {
   @@index([parentId])
 }
 
+model Subject {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @unique
+  icon      String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions       Question[]
+  knowledgePoints KnowledgePoint[]
+
+  @@index([sortOrder])
+}
+
 model Question {
   id         BigInt   @id @default(autoincrement())
   categoryId BigInt
   category   Category @relation(fields: [categoryId], references: [id])
+  subjectId  BigInt?
+  subject    Subject? @relation(fields: [subjectId], references: [id])
   type       Int
   content    String   @db.VarChar(500)
   analysis   String?  @db.VarChar(1000)
@@ -69,10 +85,12 @@ model Question {
   sortOrder  Int      @default(0)
   createdAt  DateTime @default(now())
 
-  options  QuestionOption[]
-  progress UserQuestionProgress[]
+  options           QuestionOption[]
+  progress          UserQuestionProgress[]
+  knowledgePoints   QuestionKnowledgePoint[]
 
   @@index([categoryId])
+  @@index([subjectId])
 }
 
 model QuestionOption {
@@ -129,4 +147,33 @@ model UserDailyStat {
   studyDuration    Int     @default(0)
 
   @@id([userId, date])
+}
+
+model KnowledgePoint {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  parentId  BigInt?
+  subjectId BigInt?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent    KnowledgePoint?  @relation("KnowledgePointTree", fields: [parentId], references: [id])
+  children  KnowledgePoint[] @relation("KnowledgePointTree")
+  subject   Subject?         @relation(fields: [subjectId], references: [id])
+  questions QuestionKnowledgePoint[]
+
+  @@index([parentId])
+  @@index([subjectId])
+}
+
+model QuestionKnowledgePoint {
+  questionId       BigInt
+  knowledgePointId BigInt
+
+  question         Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  knowledgePoint   KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, knowledgePointId])
+  @@index([knowledgePointId])
 }

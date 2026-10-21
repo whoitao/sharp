@@ -42,6 +42,7 @@ export interface Category {
 export interface Question {
   id: string;
   categoryId: string;
+  subjectId: string | null;
   type: QuestionType;
   content: string;
   analysis: string | null;
@@ -50,6 +51,7 @@ export interface Question {
   sortOrder: number;
   createdAt: string;
   options: QuestionOption[];
+  knowledgePoints?: { id: string; name: string; parentId: string | null }[];
 }
 
 export interface QuestionOption {
@@ -83,6 +85,27 @@ export interface Admin {
   username: string;
   role: string;
   createdAt: string;
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  icon: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KnowledgePoint {
+  id: string;
+  name: string;
+  parentId: string | null;
+  subjectId: string | null;
+  sortOrder: number;
+  questionCount?: number;
+  children?: KnowledgePoint[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UnitInfo {
@@ -206,6 +229,8 @@ export interface UpdateCategoryRequest {
 
 export interface CreateQuestionRequest {
   categoryId: string;
+  subjectId?: string;
+  knowledgePointIds?: string[];
   type: QuestionType;
   content: string;
   analysis?: string;
@@ -220,6 +245,8 @@ export interface CreateQuestionRequest {
 }
 
 export interface UpdateQuestionRequest {
+  subjectId?: string;
+  knowledgePointIds?: string[];
   type?: QuestionType;
   content?: string;
   analysis?: string;

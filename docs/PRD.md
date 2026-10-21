@@ -1,8 +1,8 @@
 # 记单词 App 产品需求文档（PRD）
 
-> 版本：v2.0  
-> 日期：2026-10-11  
-> 状态：重大更新（通用题目模型替代单词模型，支持多学科）
+> 版本：v2.1  
+> 日期：2026-10-21  
+> 状态：新增知识点标签功能（树状知识点 + 多对多关联题目 + 递归搜索）
 
 ---
 
@@ -94,7 +94,8 @@ word-app/
 │   │   │   ├── dashboard/        # 数据概览
 │   │   │   ├── users/            # 用户管理
 │   │   │   ├── categories/       # 词库分类管理
-│   │   │   ├── questions/          # 题目管理
+│   │   │   ├── questions/        # 题目管理
+│   │   │   ├── knowledge-points/ # 知识点管理
 │   │   │   └── study-records/    # 学习记录查看
 │   │   ├── api/                  # Next.js Route Handlers
 │   │   │   ├── auth/             # 认证接口
@@ -154,6 +155,7 @@ word-app/
     ├── 管理员认证
     ├── 用户管理（查看/搜索/禁用）
     ├── 词库管理（分类 CRUD、题目 CRUD、批量导入、单元划分设置）
+    ├── 知识点管理（树状知识点 CRUD、题目关联知识点）
     └── 学习数据查看（统计概览、用户学习记录）
 ```
 
@@ -276,6 +278,114 @@ word-app/
 | sort_no | Int | 排序序号，默认 0 |
 
 > 单选题有且仅有 1 个 `is_correct = true` 的选项；多选题可有多个正确选项。
+
+---
+
+### 4.2.3 知识点标签（树状结构）
+
+#### 概述
+
+每道题目可以关联一个或多个知识点。知识点采用树状层级结构，支持按任意层级（父类或子类）搜索关联题目。
+
+**示例：**
+
+```
+数学（科目）
+├── 函数（知识点）
+│   ├── 一次函数
+│   ├── 二次函数
+│   └── 三角函数
+├── 图形
+│   ├── 三角形
+│   ├── 四边形
+│   └── 圆形
+└── 概率统计
+    ├── 排列组合
+    └── 概率
+
+一道数学题可能同时关联"二次函数"和"三角形"两个知识点。
+搜索"函数"时，能找到关联了"一次函数""二次函数""三角函数"的所有题目（递归搜索）。
+```
+
+#### 数据模型
+
+**知识点表（KnowledgePoint）**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BigInt | 主键，自增 |
+| name | String | 知识点名称（如"函数"、"二次函数"） |
+| parentId | BigInt? | 父知识点 ID，**null 表示顶级知识点** |
+| subjectId | BigInt? | 所属科目 ID（可选，外键 → Subject），用于按科目筛选知识点 |
+| sortOrder | Int | 排序序号，默认 0 |
+| createdAt | DateTime | 创建时间 |
+| updatedAt | DateTime | 更新时间 |
+
+> 与 Category 类似采用自引用树状结构，但区别在于：
+> - Category 的 `parentId = 0` 表示顶级；KnowledgePoint 使用 `parentId = null` 表示顶级（更符合 Prisma 惯例）
+> - KnowledgePoint 可选关联 Subject（科目），便于按科目管理知识点体系
+> - 知识点与题目是**多对多**关系（通过中间表），而分类与题目是**一对多**关系
+
+**题目-知识点关联表（QuestionKnowledgePoint）**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| questionId | BigInt | 外键 → Question |
+| knowledgePointId | BigInt | 外键 → KnowledgePoint |
+
+> 联合主键：`(questionId, knowledgePointId)`。一道题目可关联多个知识点，一个知识点可关联多道题目。
+
+#### 搜索逻辑（递归查询）
+
+按知识点搜索题目时，需要递归查找该知识点及其所有后代节点关联的题目：
+
+```
+搜索"函数"的题目 →
+  1. 找到"函数"节点本身
+  2. 递归找到所有子节点：一次函数、二次函数、三角函数
+  3. 查询 QuestionKnowledgePoint 中 knowledgePointId 属于 {函数, 一次函数, 二次函数, 三角函数} 的所有题目
+  4. 去重后返回
+```
+
+**实现方式：** 在 API 层通过递归获取所有后代 ID 列表，再用 `IN` 查询关联表。对于大数据量场景，可考虑使用 PostgreSQL 的 `WITH RECURSIVE` CTE 查询。
+
+#### Prisma Schema
+
+```prisma
+model KnowledgePoint {
+  id         BigInt   @id @default(autoincrement())
+  name       String
+  parentId   BigInt?  @map("parent_id")
+  subjectId  BigInt?  @map("subject_id")
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  parent     KnowledgePoint?  @relation("KnowledgePointTree", fields: [parentId], references: [id])
+  children   KnowledgePoint[] @relation("KnowledgePointTree")
+  subject    Subject?         @relation(fields: [subjectId], references: [id])
+  questions  QuestionKnowledgePoint[]
+
+  @@index([parentId])
+  @@index([subjectId])
+  @@map("knowledge_points")
+}
+
+model QuestionKnowledgePoint {
+  questionId       BigInt         @map("question_id")
+  knowledgePointId BigInt         @map("knowledge_point_id")
+
+  question         Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  knowledgePoint   KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, knowledgePointId])
+  @@index([knowledgePointId])
+  @@map("question_knowledge_points")
+}
+
+// Question 模型新增关联：
+//   knowledgePoints QuestionKnowledgePoint[]
+```
 
 ---
 
@@ -444,6 +554,25 @@ word-app/
 | **批量导入格式** | CSV 列：`type,content,option_a,option_b,option_c,option_d,correct_keys,analysis,difficulty,score,sort_order` |
 | **correct_keys 格式** | 单选题如 `A`，多选题如 `AC`，判断题如 `A`（A=对/B=错） |
 
+#### 5.4.3 知识点管理
+
+| 功能 | 说明 |
+|------|------|
+| **树状展示** | 以树形结构展示所有知识点，支持展开/折叠，可按科目筛选 |
+| **新增知识点** | 选择父知识点（或顶级）、所属科目（可选），填写名称、排序 |
+| **编辑知识点** | 修改名称、父级关系、所属科目、排序 |
+| **删除知识点** | 删除知识点及其所有子知识点，同时清除关联的题目-知识点关系（需二次确认） |
+| **拖拽排序** | 支持拖拽调整知识点顺序和层级 |
+| **题目关联** | 在题目编辑界面增加知识点多选字段，支持搜索和树形选择 |
+
+#### 5.4.4 题目-知识点关联
+
+| 功能 | 说明 |
+|------|------|
+| **创建/编辑题目时选择知识点** | 在题目表单中增加"知识点"多选字段（TreeSelect 组件），支持搜索 |
+| **按知识点筛选题目** | 题目列表页增加知识点筛选条件，选择某知识点后递归搜索其及子知识点关联的所有题目 |
+| **批量关联** | 支持批量为多道题目添加/移除知识点标签 |
+
 **批量导入 CSV 示例（英语单选题）：**
 
 ```csv
@@ -520,6 +649,8 @@ type,content,option_a,option_b,option_c,option_d,correct_keys,analysis,difficult
 | 个人信息编辑 | /profile/edit | 编辑个人信息 |
 | 学习记录 | /profile/records | 学习历史记录 |
 | 错题本 | /profile/wrong-questions | 错题汇总 |
+| 知识点浏览 | /knowledge-points | 按科目浏览知识点树 |
+| 知识点题目 | /knowledge-points/:id/questions | 按知识点搜索关联题目 |
 | 设置 | /profile/settings | 用户设置（单元题目数、主题模式） |
 
 ### 7.2 管理后台页面（Next.js Web）
@@ -533,6 +664,8 @@ type,content,option_a,option_b,option_c,option_d,correct_keys,analysis,difficult
 | 分类管理 | /admin/categories | 词库分类树状管理 |
 | 题目管理 | /admin/questions?categoryId=xxx | 按叶子分类管理题目 |
 | 题目批量导入 | /admin/questions/import | CSV/Excel 批量导入 |
+| 知识点管理 | /admin/knowledge-points | 树状知识点管理（CRUD、按科目筛选） |
+| 知识点题目搜索 | /admin/knowledge-points/:id/questions | 按知识点递归搜索关联题目 |
 | 学习记录 | /admin/study-records | 全局学习记录查看 |
 | 错题统计 | /admin/wrong-stats | 高频错题统计 |
 
@@ -553,13 +686,24 @@ User (用户)
 ├── Category (分类 — 树状结构，parent_id=0 为一级分类)
 │   ├── id, name, parent_id(0=顶级), sort_order, icon, created_at, updated_at
 │
+├── Subject (科目)
+│   ├── id, name, icon, sort_order, created_at, updated_at
+│
+├── KnowledgePoint (知识点 — 树状结构，parent_id=null 为顶级)
+│   ├── id, name, parent_id(FK→KnowledgePoint, null=顶级), subject_id(FK→Subject, 可选)
+│   ├── sort_order, created_at, updated_at
+│
 ├── Question (题目 — 关联到叶子分类，通用设计支持多学科)
-│   ├── id, category_id(FK→Category), type(1单选/2多选/3判断/4填空)
+│   ├── id, category_id(FK→Category), subject_id(FK→Subject, 可选), type(1单选/2多选/3判断/4填空)
 │   ├── content, analysis, difficulty, score, sort_order, created_at
 │
 ├── QuestionOption (题目选项)
 │   ├── id, question_id(FK→Question), option_key(A/B/C/D)
 │   ├── content, is_correct, sort_no
+│
+├── QuestionKnowledgePoint (题目-知识点关联 — 多对多)
+│   ├── question_id(FK→Question), knowledge_point_id(FK→KnowledgePoint)
+│   └── 联合主键：(question_id, knowledge_point_id)
 │
 ├── UserWordLibrary (用户词库选择)
 │   ├── user_id, library_id, selected_at
@@ -639,6 +783,7 @@ model Category {
 model Question {
   id            BigInt   @id @default(autoincrement())
   categoryId    BigInt   @map("category_id")
+  subjectId     BigInt?  @map("subject_id")
   type          Int                          // 1=单选, 2=多选, 3=判断, 4=填空
   content       String   @db.VarChar(500)
   analysis      String?  @db.VarChar(1000)
@@ -647,8 +792,10 @@ model Question {
   sortOrder     Int      @default(0) @map("sort_order")
   createdAt     DateTime @default(now()) @map("created_at")
 
-  category      Category  @relation(fields: [categoryId], references: [id])
-  options       QuestionOption[]
+  category          Category              @relation(fields: [categoryId], references: [id])
+  subject           Subject?              @relation(fields: [subjectId], references: [id])
+  options           QuestionOption[]
+  knowledgePoints   QuestionKnowledgePoint[]
 
   @@map("questions")
 }
@@ -665,6 +812,51 @@ model QuestionOption {
 
   @@index([questionId])
   @@map("question_options")
+}
+
+model Subject {
+  id         BigInt   @id @default(autoincrement())
+  name       String   @unique
+  icon       String?
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  questions       Question[]
+  knowledgePoints KnowledgePoint[]
+
+  @@map("subjects")
+}
+
+model KnowledgePoint {
+  id         BigInt   @id @default(autoincrement())
+  name       String
+  parentId   BigInt?  @map("parent_id")
+  subjectId  BigInt?  @map("subject_id")
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  parent     KnowledgePoint?  @relation("KnowledgePointTree", fields: [parentId], references: [id])
+  children   KnowledgePoint[] @relation("KnowledgePointTree")
+  subject    Subject?         @relation(fields: [subjectId], references: [id])
+  questions  QuestionKnowledgePoint[]
+
+  @@index([parentId])
+  @@index([subjectId])
+  @@map("knowledge_points")
+}
+
+model QuestionKnowledgePoint {
+  questionId       BigInt         @map("question_id")
+  knowledgePointId BigInt         @map("knowledge_point_id")
+
+  question         Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  knowledgePoint   KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, knowledgePointId])
+  @@index([knowledgePointId])
+  @@map("question_knowledge_points")
 }
 
 model UserStudyRecord {
@@ -759,6 +951,13 @@ React Native 移动端调用，需用户 JWT Token 认证。
 | /api/app/study/wrong-questions | GET | 获取错题本（query: category_id 筛选） |
 | /api/app/study/daily | GET | 获取每日学习统计（query: days） |
 
+#### 知识点相关
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| /api/app/knowledge-points | GET | 获取知识点树（query: subjectId 可选筛选） |
+| /api/app/knowledge-points/:id/questions | GET | 按知识点搜索题目（递归搜索，返回题目摘要列表） |
+
 ### 9.2 管理后台接口（/api/admin/*）
 
 管理后台 Web 前端调用，需管理员 JWT Token 认证。
@@ -799,6 +998,17 @@ React Native 移动端调用，需用户 JWT Token 认证。
 | /api/admin/questions/:id | PUT | 编辑题目（含选项） |
 | /api/admin/questions/:id | DELETE | 删除题目（级联删除选项） |
 | /api/admin/questions/import | POST | 批量导入题目（multipart: CSV 文件 + categoryId） |
+
+#### 知识点管理
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| /api/admin/knowledge-points | GET | 获取完整知识点树（query: subjectId 可选筛选） |
+| /api/admin/knowledge-points | POST | 新增知识点（body: name, parentId?, subjectId?, sortOrder?） |
+| /api/admin/knowledge-points/:id | PUT | 编辑知识点（body: name?, parentId?, subjectId?, sortOrder?） |
+| /api/admin/knowledge-points/:id | DELETE | 删除知识点（级联删除子知识点和关联关系） |
+| /api/admin/knowledge-points/:id/questions | GET | 按知识点搜索题目（递归搜索子知识点，query: page, pageSize） |
+| /api/admin/questions/:id/knowledge-points | PUT | 更新题目的知识点关联（body: knowledgePointIds: number[]） |
 
 #### 学习数据
 
@@ -853,6 +1063,17 @@ React Native 移动端调用，需用户 JWT Token 认证。
 | 10 | 题目模型通用化 | 使用 Question + QuestionOption 替代原 Word + WrongOption，支持单选/多选/判断/填空，可覆盖英语、数学等多学科场景 |
 | 11 | 词库数据管理 | 管理后台支持单个添加题目和 CSV/Excel 批量导入两种方式 |
 | 12 | Category.parent_id = 0 表示一级分类 | 顶级分类的 parent_id 为 0（非 null） |
+| 13 | 知识点采用树状结构 + 多对多关联 | KnowledgePoint 自引用树（parentId=null 为顶级），通过 QuestionKnowledgePoint 中间表与 Question 多对多关联。搜索时递归查找所有后代节点 |
+| 14 | 知识点可选关联科目 | KnowledgePoint.subjectId 为可选字段，便于按科目管理知识点体系 |
+
+---
+
+## 版本变更记录
+
+| 版本 | 日期 | 变更内容 |
+|------|------|----------|
+| v2.0 | 2026-10-11 | 通用题目模型替代单词模型，支持多学科 |
+| v2.1 | 2026-10-21 | 新增知识点标签功能：树状知识点数据模型、多对多关联题目、递归搜索、管理后台知识点 CRUD、移动端知识点浏览 |
 
 ---
 
