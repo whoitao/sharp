@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
   DeleteOutlined,
@@ -289,21 +290,32 @@ export default function KnowledgePointsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tree, t]);
 
-  return (
-    <div style={{ marginTop: -8 }}>
-      <Card
-        size="small"
-        style={{ marginBottom: 10 }}
-        styles={{
-          body: {
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 12,
-          },
+  const headerActions = useMemo(
+    () => (
+      <Button
+        type="primary"
+        icon={<PlusOutlined />}
+        onClick={() => {
+          createForm.setFieldsValue({
+            name: "",
+            parentId: "0",
+            subjectId: selectedSubjectId,
+            sortOrder: 0,
+          });
+          setCreateOpen(true);
         }}
       >
+        {t("knowledgePoints.addKnowledgePoint")}
+      </Button>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, selectedSubjectId]
+  );
+  usePageActions(headerActions);
+
+  return (
+    <div>
+      <Card size="small" style={{ marginBottom: 10 }}>
         <Space>
           <span>{t("knowledgePoints.selectSubject")}</span>
           <Select
@@ -315,21 +327,6 @@ export default function KnowledgePointsPage() {
             options={subjectOptions}
           />
         </Space>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            createForm.setFieldsValue({
-              name: "",
-              parentId: "0",
-              subjectId: selectedSubjectId,
-              sortOrder: 0,
-            });
-            setCreateOpen(true);
-          }}
-        >
-          {t("knowledgePoints.addKnowledgePoint")}
-        </Button>
       </Card>
 
       <Card>

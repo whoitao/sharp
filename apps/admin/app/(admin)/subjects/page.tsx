@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
   DeleteOutlined,
@@ -18,7 +19,7 @@ import {
   Tag,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface SubjectItem {
   id: string;
@@ -206,22 +207,26 @@ export default function SubjectsPage() {
     },
   ];
 
+  const headerActions = useMemo(
+    () => (
+      <Button
+        type="primary"
+        icon={<PlusOutlined />}
+        onClick={() => {
+          createForm.resetFields();
+          setCreateOpen(true);
+        }}
+      >
+        {t("subjects.addSubject")}
+      </Button>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t]
+  );
+  usePageActions(headerActions);
+
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{t("subjects.title")}</h1>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            createForm.resetFields();
-            setCreateOpen(true);
-          }}
-        >
-          {t("subjects.addSubject")}
-        </Button>
-      </div>
-
       <Table<SubjectItem>
         rowKey="id"
         loading={loading}
@@ -301,7 +306,7 @@ export default function SubjectsPage() {
         okButtonProps={{ danger: true }}
         onOk={handleDelete}
       >
-        <p>{t("subjects.deleteConfirm", { name: selectedSubject?.name })}</p>
+        <p>{t("subjects.deleteConfirm", { name: selectedSubject?.name ?? "" })}</p>
       </Modal>
     </div>
   );

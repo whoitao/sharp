@@ -1,13 +1,15 @@
 "use client";
 
 import { usePageSize } from "@/components/antd-providers";
+import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
   DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
+  InboxOutlined,
   PlusOutlined,
-  UploadOutlined,
+  UploadOutlined
 } from "@ant-design/icons";
 import {
   App,
@@ -25,9 +27,10 @@ import {
   Table,
   Tag,
   TreeSelect,
+  Upload
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface QuestionOption {
   optionKey: string;
@@ -39,6 +42,7 @@ interface QuestionItem {
   id: string;
   categoryId: string;
   subjectId: string | null;
+  subjectName: string | null;
   type: number;
   content: string;
   analysis: string | null;
@@ -94,8 +98,10 @@ export default function QuestionsPage() {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
   const [kpTree, setKpTree] = useState<KPNode[]>([]);
+  const [filterKpTree, setFilterKpTree] = useState<KPNode[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>();
+  const [selectedKPId, setSelectedKPId] = useState<string>();
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const { pageSize } = usePageSize();
@@ -107,7 +113,8 @@ export default function QuestionsPage() {
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionItem | null>(null);
   const [saving, setSaving] = useState(false);
   const [questionForm] = Form.useForm<QuestionFormValues>();
-  const [importForm] = Form.useForm<{ csv: string }>();
+  const [importForm] = Form.useForm<{ file: any }>();
+  const [formSubjectId, setFormSubjectId] = useState<string>();
 
   const typeLabel = (type: number) => {
     switch (type) {
@@ -150,10 +157,13 @@ export default function QuestionsPage() {
     }
   };
 
-  const fetchKnowledgePoints = async () => {
+  const fetchKnowledgePoints = async (subjectId?: string) => {
     const token = localStorage.getItem("admin_token");
     try {
-      const res = await fetch("/api/admin/knowledge-points", {
+      const url = subjectId
+        ? `/api/admin/knowledge-points?subjectId=${subjectId}`
+        : "/api/admin/knowledge-points";
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -163,21 +173,32 @@ export default function QuestionsPage() {
     }
   };
 
-  const fetchQuestions = async () => {
-    if (!selectedCategoryId) {
-      setQuestions([]);
-      setTotal(0);
-      setLoading(false);
-      return;
+  const fetchFilterKnowledgePoints = async (subjectId?: string) => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const url = subjectId
+        ? `/api/admin/knowledge-points?subjectId=${subjectId}`
+        : "/api/admin/knowledge-points";
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setFilterKpTree(Array.isArray(data) ? data : []);
+    } catch {
+      setFilterKpTree([]);
     }
+  };
+
+  const fetchQuestions = async () => {
     setLoading(true);
     const token = localStorage.getItem("admin_token");
     const params = new URLSearchParams({
-      categoryId: selectedCategoryId,
       page: String(page),
       pageSize: String(pageSize),
     });
+    if (selectedCategoryId) params.append("categoryId", selectedCategoryId);
     if (selectedSubjectId) params.append("subjectId", selectedSubjectId);
+    if (selectedKPId) params.append("knowledgePointId", selectedKPId);
     try {
       const res = await fetch(
         `/api/admin/questions?${params.toString()}`,
@@ -197,15 +218,31 @@ export default function QuestionsPage() {
     fetchCategories();
     fetchSubjects();
     fetchKnowledgePoints();
+    fetchFilterKnowledgePoints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 知识点按选中的科目联动过滤，切换科目时清空已选知识点
+  useEffect(() => {
+    fetchKnowledgePoints(formSubjectId);
+    questionForm.setFieldsValue({ knowledgePointIds: [] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formSubjectId]);
+
+  // 顶部筛选：科目切换时联动知识点下拉，并清空已选知识点
+  useEffect(() => {
+    fetchFilterKnowledgePoints(selectedSubjectId);
+    setSelectedKPId(undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSubjectId]);
 
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategoryId, selectedSubjectId, page, pageSize]);
+  }, [selectedCategoryId, selectedSubjectId, selectedKPId, page, pageSize]);
 
   const resetForm = () => {
+    setFormSubjectId(undefined);
     questionForm.setFieldsValue({
       categoryId: selectedCategoryId,
       subjectId: undefined,
@@ -271,6 +308,7 @@ export default function QuestionsPage() {
 
   const openEdit = (q: QuestionItem) => {
     setSelectedQuestion(q);
+    setFormSubjectId(q.subjectId || undefined);
     questionForm.setFieldsValue({
       categoryId: q.categoryId,
       subjectId: q.subjectId || undefined,
@@ -334,20 +372,31 @@ export default function QuestionsPage() {
     }
   };
 
-  const handleImport = async (values: { csv: string }) => {
+  const handleImport = async (values: { file: any }) => {
+    if (!selectedCategoryId) {
+      message.error(t("questions.categoryRequired"));
+      return;
+    }
+    const fileObj: File | undefined =
+      values.file?.file?.originFileObj ??
+      values.file?.[0]?.originFileObj ??
+      values.file?.originFileObj;
+    if (!fileObj) {
+      message.error(t("questions.fileRequired"));
+      return;
+    }
     setSaving(true);
     try {
       const token = localStorage.getItem("admin_token");
+      const fd = new FormData();
+      fd.append("categoryId", String(selectedCategoryId));
+      fd.append("file", fileObj);
       const res = await fetch("/api/admin/questions/import", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          categoryId: Number(selectedCategoryId),
-          csv: values.csv,
-        }),
+        body: fd,
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -356,9 +405,12 @@ export default function QuestionsPage() {
       }
       const result = await res.json();
       if (result.errors?.length > 0) {
-        message.warning(`${t("questions.imported")} (${result.errors.length} errors)`);
+        message.warning(
+          `${t("questions.imported")} ${result.imported}/${result.total} (${result.errors.length} errors)`
+        );
+        console.warn("Import errors:", result.errors);
       } else {
-        message.success(t("questions.imported"));
+        message.success(`${t("questions.imported")} ${result.imported}/${result.total}`);
       }
       setImportOpen(false);
       importForm.resetFields();
@@ -382,7 +434,7 @@ export default function QuestionsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "questions_template.csv";
+      a.download = "questions_template.xlsx";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -448,6 +500,17 @@ export default function QuestionsPage() {
           <span style={{ color: "rgba(0,0,0,0.25)" }}>-</span>
         ),
     },
+    {
+      title: t("questions.subject"),
+      key: "subject",
+      width: 120,
+      render: (_, record) =>
+        record.subjectName ? (
+          <span>{record.subjectName}</span>
+        ) : (
+          <span style={{ color: "rgba(0,0,0,0.25)" }}>-</span>
+        ),
+    },
     { title: t("questions.colDifficulty"), dataIndex: "difficulty", key: "difficulty", width: 100 },
     { title: t("questions.colScore"), dataIndex: "score", key: "score", width: 80 },
     {
@@ -497,40 +560,52 @@ export default function QuestionsPage() {
         />
       </Form.Item>
 
-      <Form.Item
-        label={t("questions.subjectOptional")}
-        name="subjectId"
-      >
-        <Select
-          showSearch
-          allowClear
-          options={subjects.map((s) => ({ value: s.id, label: s.name }))}
-          placeholder={t("questions.subjectPlaceholder")}
-        />
-      </Form.Item>
-
-      <Form.Item
-        label={t("questions.knowledgePointsOptional")}
-        name="knowledgePointIds"
-      >
-        <TreeSelect
-          treeData={kpTree.map(function convert(node: KPNode): any {
-            return {
-              value: node.id,
-              title: node.name,
-              key: node.id,
-              children: node.children?.map(convert) || [],
-            };
-          })}
-          treeCheckable
-          multiple
-          showSearch
-          treeNodeFilterProp="title"
-          placeholder={t("questions.knowledgePointsPlaceholder")}
-          treeDefaultExpandAll
-          style={{ width: "100%" }}
-        />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item
+            label={t("questions.subject")}
+            name="subjectId"
+          >
+            <Select
+              showSearch
+              allowClear
+              options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+              placeholder={t("questions.subjectPlaceholder")}
+              onChange={(v) => setFormSubjectId(v)}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            label={t("questions.knowledgePointsLabel")}
+            name="knowledgePointIds"
+          >
+            <TreeSelect
+              treeData={kpTree.map(function convert(node: KPNode): any {
+                return {
+                  value: node.id,
+                  title: node.name,
+                  key: node.id,
+                  disabled: !formSubjectId,
+                  children: node.children?.map(convert) || [],
+                };
+              })}
+              treeCheckable
+              multiple
+              showSearch
+              treeNodeFilterProp="title"
+              placeholder={
+                formSubjectId
+                  ? t("questions.knowledgePointsPlaceholder")
+                  : t("questions.selectSubjectFirst")
+              }
+              disabled={!formSubjectId}
+              treeDefaultExpandAll
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
 
       <Row gutter={16}>
         <Col span={12}>
@@ -618,14 +693,43 @@ export default function QuestionsPage() {
     </Form>
   );
 
+  const headerActions = useMemo(
+    () => (
+      <Space>
+        <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+          {t("questions.downloadTemplate")}
+        </Button>
+        <Button
+          icon={<UploadOutlined />}
+          onClick={() => {
+            importForm.resetFields();
+            setImportOpen(true);
+          }}
+        >
+          {t("questions.import")}
+        </Button>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            resetForm();
+            setCreateOpen(true);
+          }}
+        >
+          {t("questions.addQuestion")}
+        </Button>
+      </Space>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t]
+  );
+  usePageActions(headerActions);
+
   return (
-    <div style={{ marginTop: -8 }}>
-      <Card size="small" style={{ marginBottom: 10 }} styles={{ body: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 } }}>
+    <div>
+      <Card size="small" style={{ marginBottom: 10 }} styles={{ body: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 } }}>
         <Space>
-          <span>
-            <span style={{ color: "#ff4d4f", marginRight: 4 }}>*</span>
-            {t("questions.selectCategory")}
-          </span>
+          <span>{t("questions.selectCategory")}</span>
           <Select
             showSearch
             allowClear
@@ -654,32 +758,29 @@ export default function QuestionsPage() {
             }}
             options={subjects.map((s) => ({ value: s.id, label: s.name }))}
           />
-          <Button
-            icon={<DownloadOutlined />}
-            onClick={handleDownloadTemplate}
-          >
-            {t("questions.downloadTemplate")}
-          </Button>
-          <Button
-            icon={<UploadOutlined />}
-            disabled={!selectedCategoryId}
-            onClick={() => {
-              importForm.resetFields();
-              setImportOpen(true);
+        </Space>
+        <Space>
+          <span>{t("questions.knowledgePointsLabel")}</span>
+          <TreeSelect
+            showSearch
+            allowClear
+            style={{ width: 200 }}
+            placeholder={t("questions.knowledgePointsPlaceholder")}
+            value={selectedKPId}
+            onChange={(value) => {
+              setSelectedKPId(value);
+              setPage(1);
             }}
-          >
-            {t("questions.csvImport")}
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              resetForm();
-              setCreateOpen(true);
-            }}
-          >
-            {t("questions.addQuestion")}
-          </Button>
+            treeData={filterKpTree.map(function convert(node: KPNode): any {
+              return {
+                value: node.id,
+                title: node.name,
+                key: node.id,
+                children: node.children?.map(convert) || [],
+              };
+            })}
+            treeDefaultExpandAll
+          />
         </Space>
       </Card>
 
@@ -696,9 +797,7 @@ export default function QuestionsPage() {
           onChange: (p) => setPage(p),
         }}
         locale={{
-          emptyText: selectedCategoryId
-            ? t("questions.emptySelected")
-            : t("questions.emptyUnselected"),
+          emptyText: t("questions.emptySelected"),
         }}
       />
 
@@ -711,7 +810,8 @@ export default function QuestionsPage() {
         confirmLoading={saving}
         okText={t("questions.createQuestion")}
         onOk={() => questionForm.submit()}
-        destroyOnHidden
+        destroyOnHidden={false}
+        forceRender
       >
         {renderQuestionForm(false)}
       </Modal>
@@ -728,7 +828,8 @@ export default function QuestionsPage() {
         confirmLoading={saving}
         okText={t("common.saveChanges")}
         onOk={() => questionForm.submit()}
-        destroyOnHidden
+        destroyOnHidden={false}
+        forceRender
       >
         {renderQuestionForm(true)}
       </Modal>
@@ -749,7 +850,7 @@ export default function QuestionsPage() {
         <p>{t("questions.deleteConfirm")}</p>
       </Modal>
 
-      {/* CSV Import Modal */}
+      {/* Excel Import Modal */}
       <Modal
         title={t("questions.importTitle")}
         open={importOpen}
@@ -757,21 +858,31 @@ export default function QuestionsPage() {
         confirmLoading={saving}
         okText={t("questions.import")}
         onOk={() => importForm.submit()}
-        destroyOnHidden
+        destroyOnHidden={false}
+        forceRender
       >
         <Form form={importForm} layout="vertical" onFinish={handleImport}>
           <p style={{ color: "rgba(0,0,0,0.45)" }}>
             {t("questions.importFormat")}
           </p>
           <Form.Item
-            name="csv"
-            rules={[{ required: true, message: t("questions.csvRequired") }]}
+            name="file"
+            valuePropName="fileList"
+            getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+            rules={[{ required: true, message: t("questions.fileRequired") }]}
           >
-            <Input.TextArea
-              rows={10}
-              style={{ fontFamily: "monospace" }}
-              placeholder={"1,1,What is the capital of France?,Paris,London,Berlin,Madrid,A,Paris is the capital of France.,1,1,0"}
-            />
+            <Upload.Dragger
+              name="file"
+              accept=".xlsx,.xls"
+              maxCount={1}
+              beforeUpload={() => false}
+            >
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">{t("questions.uploadHint")}</p>
+              <p className="ant-upload-hint">{t("questions.uploadHintTypes")}</p>
+            </Upload.Dragger>
           </Form.Item>
         </Form>
       </Modal>

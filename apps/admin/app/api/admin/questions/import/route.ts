@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/middleware";
-import { parse } from "csv-parse/sync";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import * as XLSX from "xlsx";
 
 async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
   const ids: bigint[] = [categoryId];
@@ -20,86 +20,152 @@ export async function POST(request: NextRequest) {
   const admin = requireAdmin(request);
   if (admin instanceof NextResponse) return admin;
 
-  const body = await request.json();
-  const { categoryId, csv } = body;
+  const formData = await request.formData().catch(() => null);
+  if (!formData) {
+    return NextResponse.json({ error: "multipart form data required" }, { status: 400 });
+  }
+  const file = formData.get("file") as File | null;
+  const categoryIdRaw = formData.get("categoryId");
 
-  if (!categoryId || !csv) {
+  if (!file || !categoryIdRaw) {
     return NextResponse.json(
-      { error: "categoryId and csv are required" },
+      { error: "categoryId and file are required" },
       { status: 400 }
     );
   }
 
-  try {
-    const allCategoryIds = await getAllCategoryIds(BigInt(categoryId));
+  const selectedCategoryId = BigInt(String(categoryIdRaw));
 
-    const records = parse(csv, {
-      columns: [
-        "category_id",
-        "type",
-        "content",
-        "option_a",
-        "option_b",
-        "option_c",
-        "option_d",
-        "correct_keys",
-        "analysis",
-        "difficulty",
-        "score",
-        "sort_order",
-      ],
-      skip_empty_lines: true,
-      trim: true,
+  try {
+    const allCategoryIds = await getAllCategoryIds(selectedCategoryId);
+
+    const buf = Buffer.from(await file.arrayBuffer());
+    const wb = XLSX.read(buf, { type: "buffer" });
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, {
+      defval: "",
+      raw: false,
     });
 
+    // 跳过表头示例：sheet_to_json 默认把第一行当 header
     let imported = 0;
     const errors: string[] = [];
 
-    for (let i = 0; i < records.length; i++) {
-      const row = records[i];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNo = i + 2; // excel 行号（1=header）
       try {
-        const type = parseInt(row.type);
+        // type
+        const typeRaw = String(row.type ?? "").trim();
+        const type = parseInt(typeRaw, 10);
         if (![1, 2, 3, 4].includes(type)) {
-          errors.push(`Row ${i + 1}: Invalid type "${row.type}"`);
+          errors.push(`Row ${rowNo}: Invalid type "${typeRaw}"`);
           continue;
         }
 
-        let targetCategoryId = BigInt(categoryId);
-        if (row.category_id && row.category_id.trim() !== "") {
-          const cid = BigInt(row.category_id.trim());
+        // content
+        const content = String(row.content ?? "").trim();
+        if (!content) {
+          errors.push(`Row ${rowNo}: content is required`);
+          continue;
+        }
+
+        // category_id（可选，默认使用导入时选中的分类）
+        let targetCategoryId = selectedCategoryId;
+        const cidRaw = String(row.category_id ?? "").trim();
+        if (cidRaw) {
+          const cid = BigInt(cidRaw);
           if (allCategoryIds.includes(cid)) {
             targetCategoryId = cid;
           } else {
-            errors.push(`Row ${i + 1}: category_id "${row.category_id}" not found in selected category tree`);
+            errors.push(
+              `Row ${rowNo}: category_id "${cidRaw}" not in selected category tree`
+            );
             continue;
           }
         }
 
-        const correctKeys = row.correct_keys
-          .split(",")
-          .map((k: string) => k.trim().toUpperCase());
+        // subject_id（可选）
+        let subjectId: bigint | null = null;
+        const subRaw = String(row.subject_id ?? "").trim();
+        if (subRaw) {
+          const sid = BigInt(subRaw);
+          const exists = await prisma.subject.findUnique({ where: { id: sid } });
+          if (!exists) {
+            errors.push(`Row ${rowNo}: subject_id "${subRaw}" not found`);
+            continue;
+          }
+          subjectId = sid;
+        }
 
-        const optionEntries = [
-          { key: "A", content: row.option_a },
-          { key: "B", content: row.option_b },
-          { key: "C", content: row.option_c },
-          { key: "D", content: row.option_d },
-        ].filter((o: any) => o.content && o.content.trim() !== "");
+        // knowledge_point_ids（可选，多个用 | 分隔）
+        let kpIds: bigint[] = [];
+        const kpRaw = String(row.knowledge_point_ids ?? "").trim();
+        if (kpRaw) {
+          const parts = kpRaw.split("|").map((s) => s.trim()).filter(Boolean);
+          kpIds = parts.map((p) => BigInt(p));
+          const existing = await prisma.knowledgePoint.findMany({
+            where: { id: { in: kpIds } },
+            select: { id: true },
+          });
+          if (existing.length !== kpIds.length) {
+            const foundSet = new Set(existing.map((k: { id: bigint }) => k.id.toString()));
+            const missing = kpIds.filter((id) => !foundSet.has(id.toString()));
+            errors.push(
+              `Row ${rowNo}: knowledge_point_ids not found: ${missing.join(",")}`
+            );
+            continue;
+          }
+        }
+
+        // 选项
+        const correctKeys = String(row.correct_keys ?? "")
+          .split(",")
+          .map((k) => k.trim().toUpperCase())
+          .filter(Boolean);
+
+        const optionEntries = (["A", "B", "C", "D", "E", "F"] as const)
+          .map((key) => {
+            const lower = key.toLowerCase() as "a" | "b" | "c" | "d" | "e" | "f";
+            const col = `option_${lower}` as const;
+            return {
+              key,
+              content: String(row[col] ?? "").trim(),
+            };
+          })
+          .filter((o) => o.content !== "");
 
         if (optionEntries.length === 0) {
-          errors.push(`Row ${i + 1}: No options provided`);
+          errors.push(`Row ${rowNo}: No options provided`);
           continue;
         }
+
+        // 校验 correct_keys 都在已存在的选项中
+        const validKeys = new Set<string>(optionEntries.map((o) => o.key as string));
+        const invalidKeys = correctKeys.filter((k) => !validKeys.has(k));
+        if (invalidKeys.length > 0) {
+          errors.push(
+            `Row ${rowNo}: correct_keys [${invalidKeys.join(",")}] not in options`
+          );
+          continue;
+        }
+
+        const difficulty = parseInt(String(row.difficulty ?? "").trim(), 10) || 1;
+        const score = parseInt(String(row.score ?? "").trim(), 10) || 1;
+        const sortOrder = parseInt(String(row.sort_order ?? "").trim(), 10) || 0;
+        const analysis = String(row.analysis ?? "").trim() || null;
 
         await prisma.question.create({
           data: {
             categoryId: targetCategoryId,
+            subjectId,
             type,
-            content: row.content,
-            analysis: row.analysis || null,
-            difficulty: parseInt(row.difficulty) || 1,
-            score: parseInt(row.score) || 1,
-            sortOrder: parseInt(row.sort_order) || 0,
+            content,
+            analysis,
+            difficulty,
+            score,
+            sortOrder,
             options: {
               create: optionEntries.map((o, idx) => ({
                 optionKey: o.key,
@@ -108,22 +174,27 @@ export async function POST(request: NextRequest) {
                 sortNo: idx,
               })),
             },
+            knowledgePoints: kpIds.length
+              ? {
+                  create: kpIds.map((id) => ({ knowledgePointId: id })),
+                }
+              : undefined,
           },
         });
         imported++;
       } catch (err: any) {
-        errors.push(`Row ${i + 1}: ${err.message}`);
+        errors.push(`Row ${rowNo}: ${err.message}`);
       }
     }
 
     return NextResponse.json({
       imported,
-      total: records.length,
+      total: rows.length,
       errors,
     });
   } catch (err: any) {
     return NextResponse.json(
-      { error: `CSV parse error: ${err.message}` },
+      { error: `Excel parse error: ${err.message}` },
       { status: 400 }
     );
   }

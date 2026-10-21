@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
   DeleteOutlined,
@@ -249,21 +250,26 @@ export default function CategoriesPage() {
     setDeleteOpen(true);
   };
 
-  return (
-    <div style={{ marginTop: -8 }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            createForm.setFieldsValue({ name: "", parentId: "0", sortOrder: 0, icon: "" });
-            setCreateOpen(true);
-          }}
-        >
-          {t("categories.addCategory")}
-        </Button>
-      </div>
+  const headerActions = useMemo(
+    () => (
+      <Button
+        type="primary"
+        icon={<PlusOutlined />}
+        onClick={() => {
+          createForm.setFieldsValue({ name: "", parentId: "0", sortOrder: 0, icon: "" });
+          setCreateOpen(true);
+        }}
+      >
+        {t("categories.addCategory")}
+      </Button>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t]
+  );
+  usePageActions(headerActions);
 
+  return (
+    <div>
       <Card>
         {loading ? (
           <div style={{ textAlign: "center", padding: "48px 0" }}>

@@ -96,7 +96,7 @@ export default function AdminsPage() {
   ];
 
   return (
-    <div style={{ marginTop: -8 }}>
+    <div>
       <Input.Search
         allowClear
         placeholder={t("admins.searchPlaceholder")}

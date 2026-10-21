@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/middleware";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const admin = requireAdmin(request);
@@ -9,10 +9,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const categoryId = searchParams.get("categoryId");
   const subjectId = searchParams.get("subjectId");
-
-  if (!categoryId) {
-    return NextResponse.json({ error: "categoryId is required" }, { status: 400 });
-  }
+  const knowledgePointId = searchParams.get("knowledgePointId");
 
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const pageSize = Math.min(
@@ -20,9 +17,17 @@ export async function GET(request: NextRequest) {
     Math.max(1, parseInt(searchParams.get("pageSize") ?? "10", 10) || 10)
   );
 
-  const where: any = { categoryId: BigInt(categoryId) };
+  const where: any = {};
+  if (categoryId) {
+    where.categoryId = BigInt(categoryId);
+  }
   if (subjectId) {
     where.subjectId = BigInt(subjectId);
+  }
+  if (knowledgePointId) {
+    where.knowledgePoints = {
+      some: { knowledgePointId: BigInt(knowledgePointId) },
+    };
   }
 
   const [questions, total] = await Promise.all([
@@ -30,6 +35,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         options: { orderBy: { sortNo: "asc" } },
+        subject: true,
         knowledgePoints: {
           include: { knowledgePoint: true },
         },
@@ -42,14 +48,24 @@ export async function GET(request: NextRequest) {
   ]);
 
   const serialize = (q: any) => ({
-    ...q,
     id: q.id.toString(),
     categoryId: q.categoryId.toString(),
     subjectId: q.subjectId?.toString() ?? null,
+    subjectName: q.subject?.name ?? null,
+    type: q.type,
+    content: q.content,
+    analysis: q.analysis,
+    difficulty: q.difficulty,
+    score: q.score,
+    sortOrder: q.sortOrder,
+    createdAt: q.createdAt,
     options: q.options.map((o: any) => ({
-      ...o,
       id: o.id.toString(),
       questionId: o.questionId.toString(),
+      optionKey: o.optionKey,
+      content: o.content,
+      isCorrect: o.isCorrect,
+      sortNo: o.sortNo,
     })),
     knowledgePoints: q.knowledgePoints.map((qkp: any) => ({
       id: qkp.knowledgePoint.id.toString(),

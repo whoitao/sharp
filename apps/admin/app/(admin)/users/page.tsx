@@ -144,7 +144,7 @@ export default function UsersPage() {
   ];
 
   return (
-    <div style={{ marginTop: -8 }}>
+    <div>
       <Space style={{ marginBottom: 10 }}>
         <Input.Search
           allowClear

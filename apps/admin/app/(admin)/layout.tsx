@@ -1,6 +1,7 @@
 "use client";
 
 import { PAGE_SIZE_OPTIONS, usePageSize, useThemeMode, type ThemeMode } from "@/components/antd-providers";
+import { PageActionsContext } from "@/components/page-actions";
 import { useLocale, type Locale, type MessageKey } from "@/lib/i18n";
 import {
   AppstoreOutlined,
@@ -33,7 +34,7 @@ import {
   type MenuProps
 } from "antd";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 const { Sider, Content } = Layout;
 
@@ -77,6 +78,13 @@ export default function AdminLayout({
   const [username, setUsername] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [pageActions, setPageActions] = useState<React.ReactNode>(null);
+
+  // 路由切换时同步清空顶栏按钮，避免上一个页面的按钮残留。
+  // useLayoutEffect 早于子页面的 useEffect 执行，确保新页面 setup 前先清掉旧的。
+  useLayoutEffect(() => {
+    setPageActions(null);
+  }, [pathname]);
 
   useEffect(() => {
     setUsername(localStorage.getItem("admin_username") || "");
@@ -175,6 +183,7 @@ export default function AdminLayout({
   ];
 
   return (
+    <PageActionsContext.Provider value={{ setActions: setPageActions }}>
     <Layout style={{ minHeight: "100vh" }}>
       <Sider
         collapsible
@@ -261,16 +270,21 @@ export default function AdminLayout({
             borderBottom: `1px solid ${colorBorderSecondary}`,
             display: "flex",
             alignItems: "center",
+            justifyContent: "space-between",
             paddingLeft: 24,
             paddingRight: 24,
+            gap: 16,
           }}
         >
-          <span style={{ fontSize: 18, fontWeight: 600 }}>
+          <span style={{ fontSize: 18, fontWeight: 600, flex: "0 0 auto" }}>
             {t(NAV_ITEMS.find((item) => activeKey.startsWith(item.key))?.labelKey ?? "nav.dashboard")}
           </span>
+          <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", minWidth: 0 }}>
+            {pageActions}
+          </div>
         </div>
 
-        <Content style={{ padding: 16, overflow: "auto", position: "relative" }}>
+        <Content style={{ padding: 8, overflow: "auto", position: "relative" }}>
           {pendingKey && pendingKey !== pathname && (
             <div
               style={{
@@ -290,5 +304,6 @@ export default function AdminLayout({
         </Content>
       </Layout>
     </Layout>
+    </PageActionsContext.Provider>
   );
 }

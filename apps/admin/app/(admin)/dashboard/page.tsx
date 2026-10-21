@@ -72,7 +72,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div style={{ marginTop: -8 }}>
+    <div>
       <Row gutter={[20, 20]}>
         {cards.map((card) => (
           <Col key={card.titleKey} xs={24} sm={12} lg={8} xl={6}>

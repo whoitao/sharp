@@ -139,7 +139,7 @@ export default function StudyRecordsPage() {
   ];
 
   return (
-    <div style={{ marginTop: -8 }}>
+    <div>
       <Input.Search
         allowClear
         placeholder={t("studyRecords.searchPlaceholder")}
