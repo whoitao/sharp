@@ -1,11 +1,11 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 
 interface QuizOptionProps {
   optionKey: string;
   content: string;
-  status: 'default' | 'correct' | 'wrong' | 'revealed';
+  status: 'default' | 'selected' | 'correct' | 'wrong' | 'revealed';
   disabled: boolean;
   onPress: () => void;
 }
@@ -15,6 +15,8 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
 
   const getBackgroundColor = (): string => {
     switch (status) {
+      case 'selected':
+        return colors.primaryLight;
       case 'correct':
         return colors.accentLight;
       case 'wrong':
@@ -28,6 +30,8 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
 
   const getBorderColor = (): string => {
     switch (status) {
+      case 'selected':
+        return colors.primary;
       case 'correct':
         return '#059669';
       case 'wrong':
@@ -41,6 +45,8 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
 
   const getKeyColor = (): string => {
     switch (status) {
+      case 'selected':
+        return colors.primary;
       case 'correct':
         return '#059669';
       case 'wrong':

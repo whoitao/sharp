@@ -27,7 +27,7 @@ interface QuizScreenProps {
   route: QuizRouteProp;
 }
 
-type OptionStatus = 'default' | 'correct' | 'wrong' | 'revealed';
+type OptionStatus = 'default' | 'selected' | 'correct' | 'wrong' | 'revealed';
 
 const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -38,6 +38,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   );
 
   const [optionStatuses, setOptionStatuses] = useState<Record<string, OptionStatus>>({});
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [answered, setAnswered] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -46,6 +47,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const currentQuestion = currentQuestions[currentIndex] ?? null;
   const totalQuestions = currentQuestions.length;
   const isLastQuestion = currentIndex >= totalQuestions - 1;
+  // QuestionType.MULTIPLE_CHOICE = 2
+  const isMultipleChoice = currentQuestion?.type === 2;
 
   // Timer
   useEffect(() => {
@@ -60,6 +63,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   // Reset option statuses when question changes
   useEffect(() => {
     setOptionStatuses({});
+    setSelectedKeys([]);
     setAnswered(false);
     setShowNextButton(false);
   }, [currentIndex]);
@@ -69,51 +73,6 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
-  const handleOptionPress = useCallback(
-    (optionKey: string) => {
-      if (answered || !currentQuestion) return;
-      setAnswered(true);
-
-      const correctOption = currentQuestion.options.find((o) => o.isCorrect);
-      const correctKey = correctOption?.optionKey ?? '';
-      const isCorrect = optionKey === correctKey;
-
-      if (isCorrect) {
-        setOptionStatuses({ [optionKey]: 'correct' });
-        dispatch(
-          recordAnswer({
-            questionId: currentQuestion.id,
-            selectedKeys: [optionKey],
-            correct: true,
-          })
-        );
-
-        setTimeout(() => {
-          if (isLastQuestion) {
-            handleFinish();
-          } else {
-            dispatch(setCurrentIndex(currentIndex + 1));
-          }
-        }, 500);
-      } else {
-        const statuses: Record<string, OptionStatus> = {
-          [optionKey]: 'wrong',
-          [correctKey]: 'revealed',
-        };
-        setOptionStatuses(statuses);
-        setShowNextButton(true);
-        dispatch(
-          recordAnswer({
-            questionId: currentQuestion.id,
-            selectedKeys: [optionKey],
-            correct: false,
-          })
-        );
-      }
-    },
-    [answered, currentQuestion, currentIndex, isLastQuestion, dispatch]
-  );
 
   const handleFinish = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -156,13 +115,107 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     });
   }, [dispatch, navigation, categoryId, unitIndex, categoryName, elapsedSeconds]);
 
-  const handleNext = () => {
+  const goNextQuestion = useCallback(() => {
     if (isLastQuestion) {
       handleFinish();
     } else {
       dispatch(setCurrentIndex(currentIndex + 1));
     }
+  }, [isLastQuestion, currentIndex, dispatch, handleFinish]);
+
+  const handleNext = () => {
+    goNextQuestion();
   };
+
+  const handleOptionPress = useCallback(
+    (optionKey: string) => {
+      if (answered || !currentQuestion) return;
+
+      // 多选题：点击切换选中状态，统一提交后再判分
+      if (isMultipleChoice) {
+        setSelectedKeys((prev) =>
+          prev.includes(optionKey)
+            ? prev.filter((key) => key !== optionKey)
+            : [...prev, optionKey]
+        );
+        return;
+      }
+
+      setAnswered(true);
+
+      const correctOption = currentQuestion.options.find((o) => o.isCorrect);
+      const correctKey = correctOption?.optionKey ?? '';
+      const isCorrect = optionKey === correctKey;
+
+      if (isCorrect) {
+        setOptionStatuses({ [optionKey]: 'correct' });
+        dispatch(
+          recordAnswer({
+            questionId: currentQuestion.id,
+            selectedKeys: [optionKey],
+            correct: true,
+          })
+        );
+
+        setTimeout(() => {
+          goNextQuestion();
+        }, 500);
+      } else {
+        const statuses: Record<string, OptionStatus> = {
+          [optionKey]: 'wrong',
+          [correctKey]: 'revealed',
+        };
+        setOptionStatuses(statuses);
+        setShowNextButton(true);
+        dispatch(
+          recordAnswer({
+            questionId: currentQuestion.id,
+            selectedKeys: [optionKey],
+            correct: false,
+          })
+        );
+      }
+    },
+    [answered, currentQuestion, isMultipleChoice, goNextQuestion, dispatch]
+  );
+
+  const handleSubmitMultiple = useCallback(() => {
+    if (answered || !currentQuestion || selectedKeys.length === 0) return;
+
+    const correctKeys = currentQuestion.options
+      .filter((o) => o.isCorrect)
+      .map((o) => o.optionKey);
+    const isCorrect =
+      selectedKeys.length === correctKeys.length &&
+      selectedKeys.every((key) => correctKeys.includes(key));
+
+    const statuses: Record<string, OptionStatus> = {};
+    currentQuestion.options.forEach((o) => {
+      if (correctKeys.includes(o.optionKey)) {
+        statuses[o.optionKey] = 'correct';
+      } else if (selectedKeys.includes(o.optionKey)) {
+        statuses[o.optionKey] = 'wrong';
+      }
+    });
+
+    setAnswered(true);
+    setOptionStatuses(statuses);
+    dispatch(
+      recordAnswer({
+        questionId: currentQuestion.id,
+        selectedKeys,
+        correct: isCorrect,
+      })
+    );
+
+    if (isCorrect) {
+      setTimeout(() => {
+        goNextQuestion();
+      }, 500);
+    } else {
+      setShowNextButton(true);
+    }
+  }, [answered, currentQuestion, selectedKeys, goNextQuestion, dispatch]);
 
   const handleQuit = () => {
     Alert.alert('退出练习', '确定要退出当前练习吗？进度将不会保存。', [
@@ -207,17 +260,51 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       <View style={styles.optionsContainer}>
         {currentQuestion.options
           .sort((a, b) => a.sortNo - b.sortNo)
-          .map((option) => (
-            <QuizOption
-              key={option.id}
-              optionKey={option.optionKey}
-              content={option.content}
-              status={optionStatuses[option.optionKey] ?? 'default'}
-              disabled={answered}
-              onPress={() => handleOptionPress(option.optionKey)}
-            />
-          ))}
+          .map((option) => {
+            const status: OptionStatus =
+              optionStatuses[option.optionKey] ??
+              (isMultipleChoice && !answered && selectedKeys.includes(option.optionKey)
+                ? 'selected'
+                : 'default');
+            return (
+              <QuizOption
+                key={option.id}
+                optionKey={option.optionKey}
+                content={option.content}
+                status={status}
+                disabled={answered}
+                onPress={() => handleOptionPress(option.optionKey)}
+              />
+            );
+          })}
       </View>
+
+      {/* Submit button for multiple choice questions */}
+      {isMultipleChoice && !answered && (
+        <View style={styles.nextContainer}>
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              {
+                backgroundColor:
+                  selectedKeys.length === 0 ? colors.border : colors.primary,
+              },
+            ]}
+            onPress={handleSubmitMultiple}
+            disabled={selectedKeys.length === 0}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.nextButtonText,
+                selectedKeys.length === 0 && { color: colors.textTertiary },
+              ]}
+            >
+              提交答案{selectedKeys.length > 0 ? `（已选 ${selectedKeys.length} 项）` : ''}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Next button (shown only on wrong answer) */}
       {showNextButton && (
