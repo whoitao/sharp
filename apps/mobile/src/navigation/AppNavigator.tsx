@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { Category } from '@sharp/shared';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,11 +16,10 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 
 // Home screens
 import HomeScreen from '../screens/home/HomeScreen';
-import QuizResultScreen from '../screens/home/QuizResultScreen';
-import QuizScreen from '../screens/home/QuizScreen';
-import UnitListScreen from '../screens/home/UnitListScreen';
 
 // Study screens
+import QuizResultScreen from '../screens/home/QuizResultScreen';
+import QuizScreen from '../screens/home/QuizScreen';
 import StudyScreen from '../screens/study/StudyScreen';
 
 // Profile screens
@@ -39,7 +37,10 @@ export type AuthStackParamList = {
 
 export type HomeStackParamList = {
   Home: undefined;
-  UnitList: { category: Category };
+};
+
+export type StudyStackParamList = {
+  Study: undefined;
   Quiz: { categoryId: string; unitIndex: number; categoryName: string };
   QuizResult: { categoryId: string; unitIndex: number; categoryName: string };
 };
@@ -61,6 +62,7 @@ export type MainTabParamList = {
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const StudyStack = createNativeStackNavigator<StudyStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -100,14 +102,33 @@ const HomeStackNavigator: React.FC = () => {
       component={HomeScreen as any}
       options={{ title: 'Sharp' }}
     />
-    <HomeStack.Screen
-      name="UnitList"
-      component={UnitListScreen as any}
-      options={({ route }) => ({
-        title: route.params.category.name,
-      })}
+    </HomeStack.Navigator>
+  );
+};
+
+// ── Study Stack Navigator ────────────────────────────────────────────────────
+
+const StudyStackNavigator: React.FC = () => {
+  const { colors } = useTheme();
+
+  return (
+    <StudyStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.background },
+        headerShadowVisible: false,
+        headerTintColor: colors.text,
+        headerTitleAlign: 'center',
+        headerTitleStyle: { fontWeight: '400' },
+        headerBackButtonDisplayMode: 'minimal',
+        animation: 'slide_from_right',
+      }}
+    >
+    <StudyStack.Screen
+      name="Study"
+      component={StudyScreen as any}
+      options={{ title: '学习' }}
     />
-    <HomeStack.Screen
+    <StudyStack.Screen
       name="Quiz"
       component={QuizScreen as any}
       options={({ route }) => ({
@@ -116,14 +137,14 @@ const HomeStackNavigator: React.FC = () => {
         headerLeft: () => null,
       })}
     />
-    <HomeStack.Screen
+    <StudyStack.Screen
       name="QuizResult"
       component={QuizResultScreen as any}
       options={{
         title: '练习结果',
       }}
     />
-    </HomeStack.Navigator>
+    </StudyStack.Navigator>
   );
 };
 
@@ -225,15 +246,9 @@ const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="StudyTab"
-        component={StudyScreen as any}
+        component={StudyStackNavigator as any}
         options={{
           title: t.study,
-          headerShown: true,
-          headerStyle: { backgroundColor: colors.background },
-          headerShadowVisible: false,
-          headerTintColor: colors.text,
-          headerTitleAlign: 'center',
-          headerTitleStyle: { fontWeight: '400' },
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'book' : 'book-outline'} focused={focused} />,
         }}
       />

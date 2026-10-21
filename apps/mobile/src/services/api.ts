@@ -1,11 +1,13 @@
 import type {
   AnswerItem,
   Category,
+  KnowledgePoint,
   Language,
   LoginResponse,
   PaginatedResponse,
   Question,
   StudyRecord,
+  Subject,
   Theme,
   UnitInfo,
   User,
@@ -93,6 +95,18 @@ const mockSubCategories: Category[] = [
     updatedAt: new Date().toISOString(),
     questionCount: 50,
   },
+];
+
+const mockSubjects: Subject[] = [
+  { id: '1', name: '英语', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '2', name: '数学', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '3', name: '语文', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+];
+
+const mockKnowledgePoints: KnowledgePoint[] = [
+  { id: '1', name: '词汇', parentId: null, children: [], questionCount: 0 },
+  { id: '2', name: '语法', parentId: null, children: [], questionCount: 0 },
+  { id: '3', name: '阅读理解', parentId: null, children: [], questionCount: 0 },
 ];
 
 function generateMockQuestions(categoryId: string, unitIndex: number, count: number): Question[] {
@@ -254,6 +268,27 @@ export const api = {
         return mockCategories;
       }
       return mockSubCategories;
+    }
+  },
+
+  // Subjects
+  async getSubjects(): Promise<Subject[]> {
+    try {
+      const response = await apiClient.get<Subject[]>('/api/app/subjects');
+      return response.data;
+    } catch {
+      return mockSubjects;
+    }
+  },
+
+  // Knowledge Points
+  async getKnowledgePoints(subjectId?: string): Promise<KnowledgePoint[]> {
+    try {
+      const params = subjectId ? { subjectId } : {};
+      const response = await apiClient.get<KnowledgePoint[]>('/api/app/knowledge-points', { params });
+      return response.data;
+    } catch {
+      return mockKnowledgePoints;
     }
   },
 

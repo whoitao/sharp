@@ -38,8 +38,15 @@ export const en: TranslationKeys = {
 
   // Home
   startLearning: 'Start Learning',
-  selectCategory: 'Select a category to start practicing',
+  selectCategory: 'Choose a category to start',
   noCategories: 'No categories yet',
+
+  // Study
+  studySelectCategory: 'Select Category',
+  studySelectSubject: 'Select Subject',
+  studySelectKnowledgePoint: 'Select Knowledge Point',
+  studySelectCategoryFirst: 'Please select a category first',
+  studyNoUnits: 'No units in this category',
 
   // Common
   loading: 'Loading...',

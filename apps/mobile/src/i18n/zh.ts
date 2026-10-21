@@ -39,6 +39,13 @@ export const zh = {
   selectCategory: '选择一个分类开始练习',
   noCategories: '暂无分类',
 
+  // Study
+  studySelectCategory: '选择分类',
+  studySelectSubject: '选择科目',
+  studySelectKnowledgePoint: '选择知识点',
+  studySelectCategoryFirst: '请先选择分类',
+  studyNoUnits: '该分类暂无单元',
+
   // Common
   loading: '加载中...',
   noData: '暂无数据',
