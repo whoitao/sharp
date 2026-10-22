@@ -58,12 +58,8 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   const [dataRefreshing, setDataRefreshing] = useState(false);
   const [pressingUnitIndex, setPressingUnitIndex] = useState<number | null>(null);
 
-  // 分页
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
-  const [totalUnits, setTotalUnits] = useState(0);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const hasMore = units.length < totalUnits;
+  // 一次性加载单元列表，不做触底分页
+  const pageSize = 200;
 
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [subjectModalVisible, setSubjectModalVisible] = useState(false);
@@ -110,62 +106,41 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     }
   }, [dataRefreshing]);
 
-  const fetchUnits = useCallback(async (reset = false) => {
+  const fetchUnits = useCallback(async () => {
     if (!selectedCategory || !selectedSubject || !selectedKP) {
       setUnits([]);
-      setTotalUnits(0);
-      setPage(1);
       setLoading(false);
       return;
     }
-    if (reset) {
-      setPage(1);
-      setUnits([]);
-      setLoading(true);
-    } else {
-      setLoadingMore(true);
-    }
-    const targetPage = reset ? 1 : page;
+    setLoading(true);
     try {
-      const { units: newUnits, totalUnits: total } = await api.getUnits(
+      const { units: newUnits } = await api.getUnits(
         selectedCategory.id,
         selectedSubject.id,
         selectedKP.id,
-        targetPage,
+        1,
         pageSize,
       );
-      setTotalUnits(total);
-      setUnits(reset ? newUnits : (prev) => [...prev, ...newUnits]);
-      setPage(targetPage + 1);
+      setUnits(newUnits);
     } catch {
-      if (reset) {
-        setUnits([]);
-        setTotalUnits(0);
-      }
+      setUnits([]);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [selectedCategory, selectedSubject, selectedKP, page]);
+  }, [selectedCategory, selectedSubject, selectedKP]);
 
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
 
   useEffect(() => {
-    fetchUnits(true);
+    fetchUnits();
   }, [fetchUnits]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchUnits(true);
-  };
-
-  const onEndReached = () => {
-    if (!loadingMore && hasMore) {
-      fetchUnits(false);
-    }
+    fetchUnits();
   };
 
   const handleUnitPress = async (unit: UnitInfo) => {
@@ -288,15 +263,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
           contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingTop: 8 * spacing, paddingBottom: 24 * spacing }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
-          }
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.3}
-          ListFooterComponent={
-            loadingMore ? (
-              <View style={{ paddingVertical: 16 * spacing, alignItems: 'center' }}>
-                <ActivityIndicator size="small" color={colors.accent} />
-              </View>
-            ) : null
           }
           ListEmptyComponent={
             <View style={[styles.empty, { paddingTop: 60 * spacing }]}>

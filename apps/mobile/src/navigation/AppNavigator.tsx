@@ -229,9 +229,10 @@ const MainTabNavigator: React.FC = () => {
           backgroundColor: colors.surface,
           borderTopColor: colors.borderLight,
           borderTopWidth: 1,
-          height: 64 * spacing + insets.bottom,
-          paddingBottom: 4 * spacing + insets.bottom,
-          paddingTop: 4 * spacing,
+          // 高度保持固定：随 spacing 缩放会导致 compact 下标签底部被裁切
+          height: 64 + insets.bottom,
+          paddingBottom: 4 + insets.bottom,
+          paddingTop: 4,
         },
         tabBarLabelStyle: {
           fontSize: 12 * font,
