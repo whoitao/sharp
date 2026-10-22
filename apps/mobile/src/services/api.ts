@@ -16,6 +16,7 @@ import type {
 } from '@sharp/shared';
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { storage } from '../utils/storage';
+import { getCached, setCached } from '../utils/studyCache';
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://admin.sharp.whoitao.top/";
@@ -226,15 +227,15 @@ const mockSubCategories: Category[] = [
 ];
 
 const mockSubjects: Subject[] = [
-  { id: '1', name: '英语', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '2', name: '数学', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '3', name: '语文', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '1', name: '英语', icon: null, sortOrder: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '2', name: '数学', icon: null, sortOrder: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '3', name: '语文', icon: null, sortOrder: 3, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
 const mockKnowledgePoints: KnowledgePoint[] = [
-  { id: '1', name: '词汇', parentId: null, children: [], questionCount: 0 },
-  { id: '2', name: '语法', parentId: null, children: [], questionCount: 0 },
-  { id: '3', name: '阅读理解', parentId: null, children: [], questionCount: 0 },
+  { id: '1', name: '词汇', parentId: null, subjectId: '1', sortOrder: 0, children: [], questionCount: 0 },
+  { id: '2', name: '语法', parentId: null, subjectId: '1', sortOrder: 1, children: [], questionCount: 0 },
+  { id: '3', name: '阅读理解', parentId: null, subjectId: '1', sortOrder: 2, children: [], questionCount: 0 },
 ];
 
 function generateMockQuestions(categoryId: string, unitIndex: number, count: number): Question[] {
@@ -245,6 +246,7 @@ function generateMockQuestions(categoryId: string, unitIndex: number, count: num
     questions.push({
       id: `${catId * 1000 + qIndex}`,
       categoryId,
+      subjectId: null,
       type: 1,
       content: `第${qIndex}题：以下哪个是 "elucidate" 的正确释义？`,
       analysis: '"elucidate" 意为阐明、解释。',
@@ -386,7 +388,7 @@ export const api = {
 
   // Categories
   async getCategories(parentId: string): Promise<Category[]> {
-    // 1. 优先读本地缓存
+    // 1. 优先读本地缓存（仅缓存真实接口数据）
     const cached = await getCached<Category[]>('categories', parentId);
     if (cached) return cached;
 
@@ -395,16 +397,16 @@ export const api = {
       const response = await apiClient.get<Category[]>('/api/app/categories', {
         params: { parentId },
       });
-      await setCached('categories', response.data, parentId);
+      // 仅缓存非空数据，避免异常空响应固化 24 小时
+      if (response.data.length > 0) {
+        await setCached('categories', response.data, parentId);
+      }
       return response.data;
     } catch {
-      // 接口失败时使用 mock，并也写入缓存，避免重复请求
-      const fallback =
-        parentId === '0'
-          ? mockCategories
-          : mockSubCategories.filter((c) => c.parentId === parentId);
-      await setCached('categories', fallback, parentId);
-      return fallback;
+      // 接口失败时临时返回 mock，但不写入缓存，下次仍会重试接口
+      return parentId === '0'
+        ? mockCategories
+        : mockSubCategories.filter((c) => c.parentId === parentId);
     }
   },
 
@@ -415,10 +417,11 @@ export const api = {
 
     try {
       const response = await apiClient.get<Subject[]>('/api/app/subjects');
-      await setCached('subjects', response.data);
+      if (response.data.length > 0) {
+        await setCached('subjects', response.data);
+      }
       return response.data;
     } catch {
-      await setCached('subjects', mockSubjects);
       return mockSubjects;
     }
   },
@@ -431,10 +434,11 @@ export const api = {
     try {
       const params = subjectId ? { subjectId } : {};
       const response = await apiClient.get<KnowledgePoint[]>('/api/app/knowledge-points', { params });
-      await setCached('knowledgePoints', response.data, subjectId);
+      if (response.data.length > 0) {
+        await setCached('knowledgePoints', response.data, subjectId);
+      }
       return response.data;
     } catch {
-      await setCached('knowledgePoints', mockKnowledgePoints, subjectId);
       return mockKnowledgePoints;
     }
   },

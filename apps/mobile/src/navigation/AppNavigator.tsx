@@ -192,7 +192,7 @@ const ProfileStackNavigator: React.FC = () => {
 // ─── Tab icon component ─────────────────────────────────────────────────────
 
 interface TabIconProps {
-  name: string;
+  name: keyof typeof Ionicons.glyphMap;
   focused: boolean;
 }
 

@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /** 缓存有效期：24 小时 */
 export const STUDY_CACHE_TTL = 24 * 60 * 60 * 1000;
 
-const CACHE_PREFIX = '@sharp/study/';
+const CACHE_PREFIX = '@sharp/study/v2/';
 
 interface CacheEntry<T> {
   data: T;

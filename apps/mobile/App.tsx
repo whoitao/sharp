@@ -26,7 +26,7 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      <StatusBar style={colors.statusBar} />
+      <StatusBar style={colors.statusBar === 'light-content' ? 'light' : 'dark'} />
       <AppNavigator />
     </>
   );

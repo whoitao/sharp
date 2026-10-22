@@ -19,7 +19,7 @@ export const lightColors = {
   warning: '#D97706',
   warningLight: '#FEF3C7',
   cardShadow: '#000000',
-  statusBar: 'dark-content' as const,
+  statusBar: 'dark-content' as 'dark-content' | 'light-content',
 };
 
 export const darkColors = {
