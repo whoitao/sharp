@@ -260,7 +260,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
       {/* Options */}
       <View style={[styles.optionsContainer, { paddingHorizontal: 16 * spacing, paddingTop: 20 * spacing }]}>
-        {currentQuestion.options
+        {[...currentQuestion.options]
           .sort((a, b) => a.sortNo - b.sortNo)
           .map((option) => {
             const status: OptionStatus =

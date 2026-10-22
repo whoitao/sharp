@@ -67,7 +67,7 @@ const WrongQuestionsScreen: React.FC = () => {
 
         {isExpanded && (
           <View style={[styles.questionDetail, { borderTopColor: colors.borderLight }]}>
-            {item.options
+            {[...item.options]
               .sort((a, b) => a.sortNo - b.sortNo)
               .map((option) => (
                 <View

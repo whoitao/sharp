@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Category, KnowledgePoint, Subject, UnitInfo } from '@sharp/shared';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -22,7 +23,7 @@ import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { fetchQuestions } from '../../stores/studySlice';
-import { hasStudyCache } from '../../utils/studyCache';
+import { clearStudyCache, hasStudyCache } from '../../utils/studyCache';
 
 type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'Study'>;
 
