@@ -6,6 +6,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
+import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
 import type { RootState } from '../stores';
@@ -110,6 +111,7 @@ const HomeStackNavigator: React.FC = () => {
 
 const StudyStackNavigator: React.FC = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <StudyStack.Navigator
@@ -126,7 +128,7 @@ const StudyStackNavigator: React.FC = () => {
     <StudyStack.Screen
       name="Study"
       component={StudyScreen as any}
-      options={{ title: '学习' }}
+      options={{ title: t.study }}
     />
     <StudyStack.Screen
       name="Quiz"
@@ -141,7 +143,7 @@ const StudyStackNavigator: React.FC = () => {
       name="QuizResult"
       component={QuizResultScreen as any}
       options={{
-        title: '练习结果',
+        title: t.quizResultTitle,
       }}
     />
     </StudyStack.Navigator>
@@ -152,6 +154,7 @@ const StudyStackNavigator: React.FC = () => {
 
 const ProfileStackNavigator: React.FC = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <ProfileStack.Navigator
@@ -168,22 +171,22 @@ const ProfileStackNavigator: React.FC = () => {
     <ProfileStack.Screen
       name="Profile"
       component={ProfileScreen as any}
-      options={{ title: '我的' }}
+      options={{ title: t.profile }}
     />
     <ProfileStack.Screen
       name="Settings"
       component={SettingsScreen as any}
-      options={{ title: '设置' }}
+      options={{ title: t.settings }}
     />
     <ProfileStack.Screen
       name="Records"
       component={RecordsScreen as any}
-      options={{ title: '学习记录' }}
+      options={{ title: t.studyRecords }}
     />
     <ProfileStack.Screen
       name="WrongQuestions"
       component={WrongQuestionsScreen as any}
-      options={{ title: '错题本' }}
+      options={{ title: t.wrongQuestions }}
     />
     </ProfileStack.Navigator>
   );
@@ -198,11 +201,12 @@ interface TabIconProps {
 
 const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
   const { colors } = useTheme();
+  const { font } = useDensity();
 
   return (
     <Ionicons
       name={name}
-      size={16}
+      size={16 * font}
       color={focused ? colors.accent : colors.textTertiary}
     />
   );
@@ -213,6 +217,7 @@ const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
 const MainTabNavigator: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { spacing, font } = useDensity();
   const { t } = useTranslation();
 
   return (
@@ -224,14 +229,14 @@ const MainTabNavigator: React.FC = () => {
           backgroundColor: colors.surface,
           borderTopColor: colors.borderLight,
           borderTopWidth: 1,
-          height: 64 + insets.bottom,
-          paddingBottom: 4 + insets.bottom,
-          paddingTop: 4,
+          height: 64 * spacing + insets.bottom,
+          paddingBottom: 4 * spacing + insets.bottom,
+          paddingTop: 4 * spacing,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 12 * font,
           fontWeight: '400',
-          marginTop: 2,
+          marginTop: 2 * spacing,
         },
         headerShown: false,
       }}

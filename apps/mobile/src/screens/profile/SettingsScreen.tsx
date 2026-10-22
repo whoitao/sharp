@@ -12,21 +12,22 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
+import type { StringTranslationKey } from '../../i18n/zh';
 import type { AppDispatch, RootState } from '../../stores';
 import { logout } from '../../stores/authSlice';
 import { setDensity, setLanguage, setTheme, setUnitSize, updateSettings } from '../../stores/settingsSlice';
 
 const UNIT_SIZE_OPTIONS = [20, 30, 50, 100];
-const THEME_OPTIONS: { value: Theme; labelKey: string }[] = [
+const THEME_OPTIONS: { value: Theme; labelKey: StringTranslationKey }[] = [
   { value: 'light' as Theme, labelKey: 'light' },
   { value: 'dark' as Theme, labelKey: 'dark' },
   { value: 'system' as Theme, labelKey: 'system' },
 ];
-const LANGUAGE_OPTIONS: { value: Language; labelKey: string }[] = [
+const LANGUAGE_OPTIONS: { value: Language; labelKey: StringTranslationKey }[] = [
   { value: 'zh' as Language, labelKey: 'chinese' },
   { value: 'en' as Language, labelKey: 'english' },
 ];
-const DENSITY_OPTIONS: { value: Density; labelKey: string }[] = [
+const DENSITY_OPTIONS: { value: Density; labelKey: StringTranslationKey }[] = [
   { value: 'compact' as Density, labelKey: 'densityCompact' },
   { value: 'comfortable' as Density, labelKey: 'densityComfortable' },
   { value: 'spacious' as Density, labelKey: 'densitySpacious' },
@@ -105,7 +106,7 @@ const SettingsScreen: React.FC = () => {
                   density === opt.value && { color: colors.surface },
                 ]}
               >
-                {t[opt.labelKey as keyof typeof t]}
+                {t[opt.labelKey]}
               </Text>
             </TouchableOpacity>
           ))}
@@ -165,7 +166,7 @@ const SettingsScreen: React.FC = () => {
                   theme === opt.value && { color: colors.accent },
                 ]}
               >
-                {t[opt.labelKey as keyof typeof t]}
+                {t[opt.labelKey]}
               </Text>
             </TouchableOpacity>
           ))}
@@ -195,7 +196,7 @@ const SettingsScreen: React.FC = () => {
                   language === opt.value && { color: colors.surface },
                 ]}
               >
-                {t[opt.labelKey as keyof typeof t]}
+                {t[opt.labelKey]}
               </Text>
             </TouchableOpacity>
           ))}

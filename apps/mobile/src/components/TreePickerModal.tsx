@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useDensity } from '../hooks/useDensity';
 import type { ThemeColors } from '../theme/colors';
 
 export interface TreeNode {
@@ -41,6 +42,7 @@ function TreePickerModal<T extends TreeNode>({
   onSelect,
   loadChildren,
 }: TreePickerModalProps<T>) {
+  const { spacing, font, radius } = useDensity();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [lazyChildren, setLazyChildren] = useState<Record<string, T[]>>({});
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
@@ -103,7 +105,7 @@ function TreePickerModal<T extends TreeNode>({
           key={node.id}
           style={[
             styles.row,
-            { paddingLeft: 8 + depth * 20 },
+            { paddingVertical: 12 * spacing, paddingRight: 12 * spacing, borderRadius: 8 * radius, paddingLeft: (8 + depth * 20) * spacing },
             selected && { backgroundColor: colors.accentLight },
           ]}
           onPress={() => onSelect(node)}
@@ -120,15 +122,15 @@ function TreePickerModal<T extends TreeNode>({
               ) : (
                 <Ionicons
                   name={expanded ? 'chevron-down' : 'chevron-forward'}
-                  size={16}
+                  size={16 * font}
                   color={colors.textTertiary}
                 />
               )}
             </TouchableOpacity>
           ) : (
-            <View style={styles.arrowButton} />
+            <View style={[styles.arrowButton, { width: 28 * spacing, height: 28 * spacing }]} />
           )}
-          <Text style={[styles.rowText, { color: colors.text }]} numberOfLines={1}>
+          <Text style={[styles.rowText, { color: colors.text, fontSize: 16 * font, marginLeft: 4 * spacing }]} numberOfLines={1}>
             {node.name}
           </Text>
         </TouchableOpacity>,
@@ -139,18 +141,18 @@ function TreePickerModal<T extends TreeNode>({
   const content = useMemo(
     () => renderNodes(roots, 0, new Set()),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [roots, expandedIds, lazyChildren, loadingIds, selectedId, colors]
+    [roots, expandedIds, lazyChildren, loadingIds, selectedId, colors, spacing, font, radius]
   );
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <View style={[styles.content, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      <TouchableOpacity style={[styles.overlay, { padding: 20 * spacing }]} activeOpacity={1} onPress={onClose}>
+        <View style={[styles.content, { backgroundColor: colors.surface, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]}>
+          <Text style={[styles.title, { color: colors.text, fontSize: 18 * font, marginBottom: 12 * spacing }]}>{title}</Text>
           {roots.length === 0 ? (
-            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>{emptyText}</Text>
+            <Text style={[styles.emptyText, { color: colors.textTertiary, fontSize: 15 * font, paddingVertical: 24 * spacing }]}>{emptyText}</Text>
           ) : (
-            <ScrollView style={styles.list}>{content}</ScrollView>
+            <ScrollView style={[styles.list, { paddingHorizontal: 8 * spacing }]}>{content}</ScrollView>
           )}
         </View>
       </TouchableOpacity>

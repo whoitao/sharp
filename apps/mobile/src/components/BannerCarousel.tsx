@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from 'react-native';
+import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface BannerItem {
   id: string;
@@ -10,32 +12,24 @@ interface BannerItem {
   icon: string;
 }
 
-const BANNERS: BannerItem[] = [
-  {
-    id: '1',
-    title: '每日挑战',
-    subtitle: '坚持每天练习，提升学习效率',
-    gradient: ['#A7F3D0', '#6EE7B7'],
-    icon: '🎯',
-  },
-  {
-    id: '2',
-    title: '错题回顾',
-    subtitle: '智能分析错题，针对性强化训练',
-    icon: '',
-    gradient: ['#BFDBFE', '#93C5FD'],
-  },
-  {
-    id: '3',
-    title: '学习报告',
-    subtitle: '查看学习进度和数据分析',
-    gradient: ['#FDE68A', '#FCD34D'],
-    icon: '📊',
-  },
+const bannerStyles: Array<Pick<BannerItem, 'id' | 'gradient' | 'icon'>> = [
+  { id: '1', gradient: ['#A7F3D0', '#6EE7B7'], icon: '🎯' },
+  { id: '2', gradient: ['#BFDBFE', '#93C5FD'], icon: '' },
+  { id: '3', gradient: ['#FDE68A', '#FCD34D'], icon: '📊' },
 ];
 
 const BannerCarousel: React.FC = () => {
   const { colors } = useTheme();
+  const { spacing, font, radius } = useDensity();
+  const { t } = useTranslation();
+  const BANNERS: BannerItem[] = useMemo(
+    () => [
+      { ...bannerStyles[0], title: t.bannerDailyTitle, subtitle: t.bannerDailySubtitle },
+      { ...bannerStyles[1], title: t.bannerWrongTitle, subtitle: t.bannerWrongSubtitle },
+      { ...bannerStyles[2], title: t.bannerReportTitle, subtitle: t.bannerReportSubtitle },
+    ],
+    [t]
+  );
   const flatListRef = useRef<FlatList>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -70,11 +64,11 @@ const BannerCarousel: React.FC = () => {
   };
 
   const renderItem = ({ item }: { item: BannerItem }) => (
-    <View style={[styles.slide, { width: slideWidth, backgroundColor: item.gradient[0] }]}>
-      <View style={styles.slideContent}>
-        <Text style={styles.icon}>{item.icon}</Text>
-        <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
+    <View style={[styles.slide, { width: slideWidth, height: 140 * spacing, borderRadius: 12 * radius, backgroundColor: item.gradient[0] }]}>
+      <View style={[styles.slideContent, { padding: 24 * spacing }]}>
+        <Text style={[styles.icon, { fontSize: 32 * font, marginBottom: 8 * spacing }]}>{item.icon}</Text>
+        <Text style={[styles.title, { color: colors.text, fontSize: 22 * font, marginBottom: 4 * spacing }]}>{item.title}</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary, fontSize: 14 * font }]}>{item.subtitle}</Text>
       </View>
     </View>
   );
@@ -101,7 +95,7 @@ const BannerCarousel: React.FC = () => {
           index,
         })}
       />
-      <View style={styles.dots}>
+      <View style={[styles.dots, { marginTop: 12 * spacing }]}>
         {BANNERS.map((_, index) => (
           <View
             key={index}

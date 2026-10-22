@@ -58,6 +58,13 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   const [dataRefreshing, setDataRefreshing] = useState(false);
   const [pressingUnitIndex, setPressingUnitIndex] = useState<number | null>(null);
 
+  // 分页
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [totalUnits, setTotalUnits] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const hasMore = units.length < totalUnits;
+
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [subjectModalVisible, setSubjectModalVisible] = useState(false);
   const [kpModalVisible, setKpModalVisible] = useState(false);
@@ -103,39 +110,62 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     }
   }, [dataRefreshing]);
 
-  const fetchUnits = useCallback(async () => {
-    if (!selectedCategory) {
+  const fetchUnits = useCallback(async (reset = false) => {
+    if (!selectedCategory || !selectedSubject || !selectedKP) {
       setUnits([]);
+      setTotalUnits(0);
+      setPage(1);
       setLoading(false);
       return;
     }
-    setLoading(true);
-    try {
-      const data = await api.getUnits(
-        selectedCategory.id,
-        selectedSubject?.id,
-        selectedKP?.id,
-      );
-      setUnits(data);
-    } catch {
+    if (reset) {
+      setPage(1);
       setUnits([]);
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+    const targetPage = reset ? 1 : page;
+    try {
+      const { units: newUnits, totalUnits: total } = await api.getUnits(
+        selectedCategory.id,
+        selectedSubject.id,
+        selectedKP.id,
+        targetPage,
+        pageSize,
+      );
+      setTotalUnits(total);
+      setUnits(reset ? newUnits : (prev) => [...prev, ...newUnits]);
+      setPage(targetPage + 1);
+    } catch {
+      if (reset) {
+        setUnits([]);
+        setTotalUnits(0);
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [selectedCategory, selectedSubject, selectedKP]);
+  }, [selectedCategory, selectedSubject, selectedKP, page]);
 
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
 
   useEffect(() => {
-    fetchUnits();
+    fetchUnits(true);
   }, [fetchUnits]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchUnits();
+    fetchUnits(true);
+  };
+
+  const onEndReached = () => {
+    if (!loadingMore && hasMore) {
+      fetchUnits(false);
+    }
   };
 
   const handleUnitPress = async (unit: UnitInfo) => {
@@ -191,6 +221,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
       <View style={[styles.dropdownsContainer, { padding: 12 * spacing, gap: 8 * spacing }]}>
         <DropdownButton
           label={selectedCategory?.name || t.studySelectCategory}
+          placeholder={!selectedCategory}
           onPress={() => setCategoryModalVisible(true)}
           colors={colors}
           spacing={spacing}
@@ -199,6 +230,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
         />
         <DropdownButton
           label={selectedSubject?.name || t.studySelectSubject}
+          placeholder={!selectedSubject}
           onPress={() => setSubjectModalVisible(true)}
           colors={colors}
           spacing={spacing}
@@ -207,6 +239,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
         />
         <DropdownButton
           label={selectedKP?.name || t.studySelectKnowledgePoint}
+          placeholder={!selectedKP}
           onPress={() => setKpModalVisible(true)}
           colors={colors}
           spacing={spacing}
@@ -237,7 +270,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
           <View style={[styles.initialLoadingOverlay, { borderRadius: 8 * radius }]}>
             <ActivityIndicator size="small" color={colors.accent} />
             <Text style={[styles.initialLoadingText, { fontSize: 13 * font, color: colors.textSecondary }]}>
-              加载中...
+              {t.loading}
             </Text>
           </View>
         )}
@@ -256,11 +289,20 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
           }
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={{ paddingVertical: 16 * spacing, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
               <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📋</Text>
               <Text style={[styles.emptyText, { color: colors.textTertiary, fontSize: 16 * font }]}>
-                {selectedCategory ? t.studyNoUnits : t.studySelectCategoryFirst}
+                {selectedCategory && selectedSubject && selectedKP ? t.studyNoUnits : t.studySelectAllFilters}
               </Text>
             </View>
           }
@@ -324,6 +366,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
 
 interface DropdownButtonProps {
   label: string;
+  placeholder?: boolean;
   onPress: () => void;
   colors: any;
   spacing: number;
@@ -331,11 +374,11 @@ interface DropdownButtonProps {
   radius: number;
 }
 
-const DropdownButton: React.FC<DropdownButtonProps> = ({ label, onPress, colors, spacing, font, radius }) => {
+const DropdownButton: React.FC<DropdownButtonProps> = ({ label, placeholder = false, onPress, colors, spacing, font, radius }) => {
   const text = label ?? '';
   return (
     <TouchableOpacity style={[styles.dropdownButton, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 10 * spacing, paddingHorizontal: 12 * spacing, borderRadius: 8 * radius }]} onPress={onPress}>
-      <Text style={[styles.dropdownButtonText, { color: text.includes('选择') ? colors.textTertiary : colors.text, fontSize: 13 * font }]} numberOfLines={1}>
+      <Text style={[styles.dropdownButtonText, { color: placeholder ? colors.textTertiary : colors.text, fontSize: 13 * font }]} numberOfLines={1}>
         {text}
       </Text>
     </TouchableOpacity>

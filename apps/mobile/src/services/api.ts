@@ -447,24 +447,29 @@ export const api = {
   async getUnits(
     categoryId: string,
     subjectId?: string,
-    knowledgePointId?: string
-  ): Promise<UnitInfo[]> {
+    knowledgePointId?: string,
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<{ units: UnitInfo[]; totalUnits: number }> {
     try {
-      const params: Record<string, string> = {};
+      const params: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
       if (subjectId) params.subjectId = subjectId;
       if (knowledgePointId) params.knowledgePointId = knowledgePointId;
-      const response = await apiClient.get<{ units: UnitInfo[] }>(
+      const response = await apiClient.get<{ units: UnitInfo[]; totalUnits: number }>(
         `/api/app/categories/${categoryId}/units`,
         { params },
       );
-      return response.data.units;
+      return { units: response.data.units, totalUnits: response.data.totalUnits };
     } catch {
       // mock 数据均为英语题，选择非英语科目时返回空
-      if (subjectId && subjectId !== '1') return [];
+      if (subjectId && subjectId !== '1') return { units: [], totalUnits: 0 };
       const allCategories = [...mockCategories, ...mockSubCategories];
       const category = allCategories.find((c) => c.id === categoryId);
       const total = category?.questionCount ?? 100;
-      return generateMockUnits(categoryId, total, 20);
+      const totalUnits = Math.ceil(total / 20);
+      const all = generateMockUnits(categoryId, total, 20);
+      const start = (page - 1) * pageSize;
+      return { units: all.slice(start, start + pageSize), totalUnits };
     }
   },
 

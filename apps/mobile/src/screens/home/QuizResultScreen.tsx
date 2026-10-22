@@ -9,7 +9,9 @@ import {
   View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from '../../i18n/useTranslation';
 import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
@@ -25,6 +27,8 @@ interface QuizResultScreenProps {
 
 const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { spacing, font, radius } = useDensity();
+  const { t } = useTranslation();
   const { categoryId, unitIndex, categoryName } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { result, currentQuestions } = useSelector((state: RootState) => state.study);
@@ -34,12 +38,12 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   if (!result) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={[styles.noResultText, { color: colors.textSecondary }]}>暂无结果数据</Text>
+        <Text style={[styles.noResultText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 16 * spacing }]}>{t.noResultData}</Text>
         <TouchableOpacity
-          style={[styles.backButton, { backgroundColor: colors.primary }]}
+          style={[styles.backButton, { backgroundColor: colors.primary, borderRadius: 10 * radius, paddingVertical: 12 * spacing, paddingHorizontal: 32 * spacing }]}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>返回</Text>
+          <Text style={[styles.backButtonText, { fontSize: 15 * font }]}>{t.back}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -54,9 +58,9 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     if (mins > 0) {
-      return `${mins}分${secs}秒`;
+      return `${mins}${t.minuteShort}${secs}${t.secondShort}`;
     }
-    return `${secs}秒`;
+    return `${secs}${t.secondShort}`;
   };
 
   const getScoreColor = (): string => {
@@ -101,77 +105,77 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[styles.content, { padding: 16 * spacing, paddingBottom: 32 * spacing }]}>
       {/* Score card */}
-      <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
-        <Text style={styles.scoreEmoji}>{getScoreEmoji()}</Text>
-        <Text style={[styles.percentage, { color: getScoreColor() }]}>
+      <View style={[styles.scoreCard, { backgroundColor: colors.surface, borderRadius: 16 * radius, padding: 32 * spacing, marginBottom: 20 * spacing }]}>
+        <Text style={[styles.scoreEmoji, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>{getScoreEmoji()}</Text>
+        <Text style={[styles.percentage, { color: getScoreColor(), fontSize: 48 * font, marginBottom: 4 * spacing }]}>
           {percentage}%
         </Text>
-        <Text style={[styles.scoreLabel, { color: colors.textSecondary }]}>正确率</Text>
+        <Text style={[styles.scoreLabel, { color: colors.textSecondary, fontSize: 15 * font, marginBottom: 24 * spacing }]}>{t.accuracyRate}</Text>
 
         <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{result.correctCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>正确</Text>
+          <View style={[styles.statItem, { paddingHorizontal: 16 * spacing }]}>
+            <Text style={[styles.statValue, { color: colors.text, fontSize: 20 * font, marginBottom: 4 * spacing }]}>{result.correctCount}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>{t.statCorrect}</Text>
           </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.error }]}>
+          <View style={[styles.statDivider, { backgroundColor: colors.border, height: 32 * spacing }]} />
+          <View style={[styles.statItem, { paddingHorizontal: 16 * spacing }]}>
+            <Text style={[styles.statValue, { color: colors.error, fontSize: 20 * font, marginBottom: 4 * spacing }]}>
               {result.wrongCount}
             </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>错误</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>{t.statWrong}</Text>
           </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{result.totalQuestions}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>总题数</Text>
+          <View style={[styles.statDivider, { backgroundColor: colors.border, height: 32 * spacing }]} />
+          <View style={[styles.statItem, { paddingHorizontal: 16 * spacing }]}>
+            <Text style={[styles.statValue, { color: colors.text, fontSize: 20 * font, marginBottom: 4 * spacing }]}>{result.totalQuestions}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>{t.statTotal}</Text>
           </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{formatTime(result.durationSeconds)}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>用时</Text>
+          <View style={[styles.statDivider, { backgroundColor: colors.border, height: 32 * spacing }]} />
+          <View style={[styles.statItem, { paddingHorizontal: 16 * spacing }]}>
+            <Text style={[styles.statValue, { color: colors.text, fontSize: 20 * font, marginBottom: 4 * spacing }]}>{formatTime(result.durationSeconds)}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>{t.statDuration}</Text>
           </View>
         </View>
       </View>
 
       {/* Wrong questions */}
       {result.wrongAnswers.length > 0 && (
-        <View style={styles.wrongSection}>
-          <Text style={[styles.wrongTitle, { color: colors.text }]}>
-            错题回顾 ({result.wrongAnswers.length}题)
+        <View style={[styles.wrongSection, { marginBottom: 20 * spacing }]}>
+          <Text style={[styles.wrongTitle, { color: colors.text, fontSize: 18 * font, marginBottom: 12 * spacing }]}>
+            {t.wrongReviewTitle(result.wrongAnswers.length)}
           </Text>
           {result.wrongAnswers.map((wa, idx) => {
             const isExpanded = expandedWrong[wa.question.id];
             return (
               <TouchableOpacity
                 key={wa.question.id}
-                style={[styles.wrongItem, { backgroundColor: colors.surface }]}
+                style={[styles.wrongItem, { backgroundColor: colors.surface, borderRadius: 10 * radius, marginBottom: 8 * spacing }]}
                 onPress={() => toggleWrong(wa.question.id)}
                 activeOpacity={0.7}
               >
-                <View style={styles.wrongHeader}>
-                  <View style={[styles.wrongIndex, { backgroundColor: colors.errorLight }]}>
-                    <Text style={{ color: colors.error, fontSize: 13, fontWeight: '600', textAlign: 'center', lineHeight: 28 }}>{idx + 1}</Text>
+                <View style={[styles.wrongHeader, { padding: 14 * spacing }]}>
+                  <View style={[styles.wrongIndex, { backgroundColor: colors.errorLight, width: 28 * spacing, height: 28 * spacing, borderRadius: 14 * spacing, marginRight: 10 * spacing }]}>
+                    <Text style={{ color: colors.error, fontSize: 13 * font, fontWeight: '600', textAlign: 'center', lineHeight: 28 * spacing }}>{idx + 1}</Text>
                   </View>
-                  <Text style={[styles.wrongContent, { color: colors.text }]} numberOfLines={1}>
+                  <Text style={[styles.wrongContent, { color: colors.text, fontSize: 14 * font }]} numberOfLines={1}>
                     {wa.question.content}
                   </Text>
-                  <Text style={[styles.expandIcon, { color: colors.textTertiary }]}>{isExpanded ? '▲' : '▼'}</Text>
+                  <Text style={[styles.expandIcon, { color: colors.textTertiary, fontSize: 12 * font, marginLeft: 8 * spacing }]}>{isExpanded ? '▲' : '▼'}</Text>
                 </View>
                 {isExpanded && (
-                  <View style={[styles.wrongDetail, { borderTopColor: colors.borderLight }]}>
-                    <View style={styles.wrongRow}>
-                      <Text style={[styles.wrongLabel, { color: colors.textSecondary }]}>你的答案：</Text>
-                      <Text style={[styles.wrongAnswer, { color: colors.error }]}>{wa.selectedKeys.join(', ')}</Text>
+                  <View style={[styles.wrongDetail, { borderTopColor: colors.borderLight, paddingHorizontal: 14 * spacing, paddingBottom: 14 * spacing, paddingTop: 12 * spacing }]}>
+                    <View style={[styles.wrongRow, { marginBottom: 6 * spacing }]}>
+                      <Text style={[styles.wrongLabel, { color: colors.textSecondary, fontSize: 13 * font, width: 75 * font }]}>{t.yourAnswer}</Text>
+                      <Text style={[styles.wrongAnswer, { color: colors.error, fontSize: 13 * font }]}>{wa.selectedKeys.join(', ')}</Text>
                     </View>
-                    <View style={styles.wrongRow}>
-                      <Text style={[styles.wrongLabel, { color: colors.textSecondary }]}>正确答案：</Text>
-                      <Text style={styles.correctAnswer}>{wa.correctKeys.join(', ')}</Text>
+                    <View style={[styles.wrongRow, { marginBottom: 6 * spacing }]}>
+                      <Text style={[styles.wrongLabel, { color: colors.textSecondary, fontSize: 13 * font, width: 75 * font }]}>{t.correctAnswerLabel}</Text>
+                      <Text style={[styles.correctAnswer, { fontSize: 13 * font }]}>{wa.correctKeys.join(', ')}</Text>
                     </View>
                     {wa.question.analysis && (
-                      <View style={[styles.analysisBox, { backgroundColor: colors.background }]}>
-                        <Text style={[styles.analysisText, { color: colors.text }]}>{wa.question.analysis}</Text>
+                      <View style={[styles.analysisBox, { backgroundColor: colors.background, marginTop: 8 * spacing, padding: 10 * spacing, borderRadius: 8 * radius }]}>
+                        <Text style={[styles.analysisText, { color: colors.text, fontSize: 13 * font, lineHeight: 20 * font }]}>{wa.question.analysis}</Text>
                       </View>
                     )}
                   </View>
@@ -183,12 +187,12 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
       )}
 
       {/* Action buttons */}
-      <View style={styles.actions}>
-        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.surface, borderColor: colors.primary }]} onPress={handleRetry} activeOpacity={0.8}>
-          <Text style={[styles.retryText, { color: colors.primary }]}>再练一次</Text>
+      <View style={[styles.actions, { gap: 12 * spacing }]}>
+        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleRetry} activeOpacity={0.8}>
+          <Text style={[styles.retryText, { color: colors.primary, fontSize: 16 * font }]}>{t.retry}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.continueButton, { backgroundColor: colors.primary }]} onPress={handleContinue} activeOpacity={0.8}>
-          <Text style={styles.continueText}>继续学习</Text>
+        <TouchableOpacity style={[styles.continueButton, { backgroundColor: colors.primary, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleContinue} activeOpacity={0.8}>
+          <Text style={[styles.continueText, { fontSize: 16 * font }]}>{t.continueStudy}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

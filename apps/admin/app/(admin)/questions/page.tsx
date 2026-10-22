@@ -738,7 +738,6 @@ export default function QuestionsPage() {
             value={selectedCategoryId}
             onChange={(value) => {
               setSelectedCategoryId(value);
-              setSelectedSubjectId(undefined);
               setPage(1);
             }}
             options={categoryOptions}

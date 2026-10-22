@@ -1,19 +1,23 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
-import { api } from '../../services/api';
 import type { Question } from '@sharp/shared';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from '../../i18n/useTranslation';
+import { api } from '../../services/api';
 
 const WrongQuestionsScreen: React.FC = () => {
   const { colors } = useTheme();
+  const { spacing, font, radius } = useDensity();
+  const { t } = useTranslation();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,22 +55,22 @@ const WrongQuestionsScreen: React.FC = () => {
 
     return (
       <TouchableOpacity
-        style={[styles.questionCard, { backgroundColor: colors.surface }]}
+        style={[styles.questionCard, { backgroundColor: colors.surface, borderRadius: 12 * radius, marginBottom: 10 * spacing }]}
         onPress={() => toggleExpand(item.id)}
         activeOpacity={0.7}
       >
-        <View style={styles.questionHeader}>
-          <View style={[styles.questionIndex, { backgroundColor: colors.errorLight }]}>
-            <Text style={[styles.questionIndexText, { color: colors.error }]}>{index + 1}</Text>
+        <View style={[styles.questionHeader, { padding: 14 * spacing }]}>
+          <View style={[styles.questionIndex, { backgroundColor: colors.errorLight, width: 28 * spacing, height: 28 * spacing, borderRadius: 14 * spacing, marginRight: 10 * spacing }]}>
+            <Text style={[styles.questionIndexText, { color: colors.error, fontSize: 12 * font }]}>{index + 1}</Text>
           </View>
-          <Text style={[styles.questionContent, { color: colors.textSecondary }]} numberOfLines={2}>
+          <Text style={[styles.questionContent, { color: colors.textSecondary, fontSize: 14 * font, lineHeight: 20 * font }]} numberOfLines={2}>
             {item.content}
           </Text>
-          <Text style={[styles.expandIcon, { color: colors.textTertiary }]}>{isExpanded ? '▲' : '▼'}</Text>
+          <Text style={[styles.expandIcon, { color: colors.textTertiary, fontSize: 12 * font, marginLeft: 8 * spacing }]}>{isExpanded ? '▲' : '▼'}</Text>
         </View>
 
         {isExpanded && (
-          <View style={[styles.questionDetail, { borderTopColor: colors.borderLight }]}>
+          <View style={[styles.questionDetail, { borderTopColor: colors.borderLight, paddingHorizontal: 14 * spacing, paddingBottom: 14 * spacing, paddingTop: 12 * spacing }]}>
             {[...item.options]
               .sort((a, b) => a.sortNo - b.sortNo)
               .map((option) => (
@@ -74,13 +78,14 @@ const WrongQuestionsScreen: React.FC = () => {
                   key={option.id}
                   style={[
                     styles.optionRow,
+                    { paddingVertical: 8 * spacing, paddingHorizontal: 10 * spacing, borderRadius: 8 * radius, marginBottom: 4 * spacing },
                     option.isCorrect && { backgroundColor: colors.accentLight },
                   ]}
                 >
                   <Text
                     style={[
                       styles.optionKey,
-                      { color: colors.textSecondary },
+                      { color: colors.textSecondary, width: 24 * spacing, height: 24 * spacing, borderRadius: 12 * spacing, lineHeight: 22 * spacing, fontSize: 12 * font, marginRight: 10 * spacing },
                       option.isCorrect && { borderColor: colors.accent, color: colors.accent },
                     ]}
                   >
@@ -89,33 +94,33 @@ const WrongQuestionsScreen: React.FC = () => {
                   <Text
                     style={[
                       styles.optionContent,
-                      { color: colors.textSecondary },
+                      { color: colors.textSecondary, fontSize: 14 * font },
                       option.isCorrect && styles.correctOptionContent,
                     ]}
                   >
                     {option.content}
                   </Text>
                   {option.isCorrect && (
-                    <Text style={[styles.correctMark, { color: colors.accent }]}>✓</Text>
+                    <Text style={[styles.correctMark, { color: colors.accent, fontSize: 14 * font, marginLeft: 8 * spacing }]}>✓</Text>
                   )}
                 </View>
               ))}
 
             {item.analysis && (
-              <View style={[styles.analysisBox, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary }]}>
-                <Text style={[styles.analysisLabel, { color: colors.primary }]}>解析</Text>
-                <Text style={[styles.analysisText, { color: colors.textSecondary }]}>{item.analysis}</Text>
+              <View style={[styles.analysisBox, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary, marginTop: 10 * spacing, padding: 12 * spacing, borderRadius: 8 * radius }]}>
+                <Text style={[styles.analysisLabel, { color: colors.primary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.analysis}</Text>
+                <Text style={[styles.analysisText, { color: colors.textSecondary, fontSize: 13 * font, lineHeight: 20 * font }]}>{item.analysis}</Text>
               </View>
             )}
 
-            <View style={styles.difficultyRow}>
-              <Text style={[styles.difficultyLabel, { color: colors.textSecondary }]}>难度：</Text>
+            <View style={[styles.difficultyRow, { marginTop: 10 * spacing }]}>
+              <Text style={[styles.difficultyLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>{t.difficultyLabel}</Text>
               {Array.from({ length: 5 }, (_, i) => (
                 <Text
                   key={i}
                   style={[
                     styles.difficultyStar,
-                    { color: i < item.difficulty ? '#F59E0B' : colors.border },
+                    { fontSize: 14 * font, marginRight: 2 * spacing, color: i < item.difficulty ? '#F59E0B' : colors.border },
                   ]}
                 >
                   ★
@@ -142,21 +147,15 @@ const WrongQuestionsScreen: React.FC = () => {
         data={questions}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingBottom: 24 * spacing }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>错题本</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>共 {questions.length} 道错题</Text>
-          </View>
-        }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🎉</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>暂无错题</Text>
-            <Text style={[styles.emptySub, { color: colors.textTertiary }]}>继续保持，错题会显示在这里</Text>
+          <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
+            <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>🎉</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 4 * spacing }]}>{t.wrongEmpty}</Text>
+            <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 14 * font }]}>{t.wrongEmptySub}</Text>
           </View>
         }
       />

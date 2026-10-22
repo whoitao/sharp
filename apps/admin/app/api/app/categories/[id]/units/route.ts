@@ -25,10 +25,12 @@ export async function GET(
   const { id } = await params;
   const categoryId = BigInt(id);
 
-  // 可选过滤：科目 / 知识点
+  // 可选过滤：科目 / 知识点 / 分页
   const url = new URL(request.url);
   const subjectIdRaw = url.searchParams.get("subjectId");
   const knowledgePointIdRaw = url.searchParams.get("knowledgePointId");
+  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") ?? "10", 10) || 10));
 
   // Get all category IDs (this category + all subcategories)
   const allCategoryIds = await getAllCategoryIds(categoryId);
@@ -76,7 +78,7 @@ export async function GET(
 
   // Calculate units
   const totalUnits = Math.ceil(totalQuestions / unitSize);
-  const units = [];
+  const allUnits: any[] = [];
 
   for (let i = 0; i < totalUnits; i++) {
     const startIndex = i * unitSize;
@@ -101,7 +103,7 @@ export async function GET(
       status = "in_progress";
     }
 
-    units.push({
+    allUnits.push({
       unitIndex: i,
       startIndex,
       endIndex: endIndex - 1,
@@ -112,11 +114,17 @@ export async function GET(
     });
   }
 
+  // Slice for pagination
+  const start = (page - 1) * pageSize;
+  const units = allUnits.slice(start, start + pageSize);
+
   return NextResponse.json({
     categoryId: id,
     unitSize,
     totalQuestions,
     totalUnits,
+    page,
+    pageSize,
     units,
   });
 }

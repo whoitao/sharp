@@ -8,11 +8,15 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from '../../i18n/useTranslation';
 import { api } from '../../services/api';
 
 const RecordsScreen: React.FC = () => {
   const { colors } = useTheme();
+  const { spacing, font, radius } = useDensity();
+  const { t } = useTranslation();
   const [records, setRecords] = useState<StudyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -59,14 +63,14 @@ const RecordsScreen: React.FC = () => {
     const day = date.getDate();
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${month}月${day}日 ${hours}:${minutes}`;
+    return `${t.monthDay(month, day)} ${t.clockTime(hours, minutes)}`;
   };
 
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    if (mins > 0) return `${mins}分${secs}秒`;
-    return `${secs}秒`;
+    if (mins > 0) return `${mins}${t.minuteShort}${secs}${t.secondShort}`;
+    return `${secs}${t.secondShort}`;
   };
 
   const renderItem = ({ item }: { item: StudyRecord }) => {
@@ -76,15 +80,18 @@ const RecordsScreen: React.FC = () => {
         : 0;
 
     return (
-      <View style={[styles.recordCard, { backgroundColor: colors.surface }]}>
-        <View style={styles.recordHeader}>
-          <Text style={[styles.recordDate, { color: colors.textSecondary }]}>{formatDate(item.startedAt)}</Text>
+      <View style={[styles.recordCard, { backgroundColor: colors.surface, padding: 16 * spacing, borderRadius: 12 * radius, marginBottom: 10 * spacing }]}>
+        <View style={[styles.recordHeader, { marginBottom: 14 * spacing }]}>
+          <Text style={[styles.recordDate, { color: colors.textSecondary, fontSize: 14 * font }]}>{formatDate(item.startedAt)}</Text>
           <View
             style={[
               styles.scoreBadge,
               {
                 backgroundColor:
                   percentage >= 80 ? colors.accentLight : percentage >= 60 ? '#FEF3C7' : colors.errorLight,
+                paddingHorizontal: 10 * spacing,
+                paddingVertical: 4 * spacing,
+                borderRadius: 12 * radius,
               },
             ]}
           >
@@ -92,6 +99,7 @@ const RecordsScreen: React.FC = () => {
               style={[
                 styles.scoreBadgeText,
                 {
+                  fontSize: 13 * font,
                   color:
                     percentage >= 80 ? colors.accent : percentage >= 60 ? '#D97706' : colors.error,
                 },
@@ -103,24 +111,24 @@ const RecordsScreen: React.FC = () => {
         </View>
         <View style={styles.recordBody}>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary }]}>题目</Text>
-            <Text style={[styles.recordStatValue, { color: colors.text }]}>{item.totalQuestions}</Text>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.statQuestions}</Text>
+            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 16 * font }]}>{item.totalQuestions}</Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary }]}>正确</Text>
-            <Text style={[styles.recordStatValue, { color: colors.accent }]}>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.statCorrect}</Text>
+            <Text style={[styles.recordStatValue, { color: colors.accent, fontSize: 16 * font }]}>
               {item.correctCount}
             </Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary }]}>错误</Text>
-            <Text style={[styles.recordStatValue, { color: colors.error }]}>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.statWrong}</Text>
+            <Text style={[styles.recordStatValue, { color: colors.error, fontSize: 16 * font }]}>
               {item.wrongCount}
             </Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary }]}>用时</Text>
-            <Text style={[styles.recordStatValue, { color: colors.text }]}>{formatDuration(item.durationSeconds)}</Text>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.statDuration}</Text>
+            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 16 * font }]}>{formatDuration(item.durationSeconds)}</Text>
           </View>
         </View>
       </View>
@@ -141,23 +149,17 @@ const RecordsScreen: React.FC = () => {
         data={records}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingBottom: 24 * spacing }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
-        // ListHeaderComponent={
-        //   <View style={styles.header}>
-        //     <Text style={[styles.title, { color: colors.text }]}>学习记录</Text>
-        //     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>查看你的学习历史</Text>
-        //   </View>
-        // }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>📊</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>暂无学习记录</Text>
-            <Text style={[styles.emptySub, { color: colors.textTertiary }]}>开始学习后记录将显示在这里</Text>
+          <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
+            <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📊</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 4 * spacing }]}>{t.recordsEmpty}</Text>
+            <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 14 * font }]}>{t.recordsEmptySub}</Text>
           </View>
         }
         ListFooterComponent={

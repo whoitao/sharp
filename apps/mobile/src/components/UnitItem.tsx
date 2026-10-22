@@ -3,6 +3,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface UnitItemProps {
   unit: UnitInfo;
@@ -11,14 +12,15 @@ interface UnitItemProps {
   disabled?: boolean;
 }
 
-const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  not_started: { label: '未开始', color: '#6B7280', bg: '#F3F4F6' },
-  in_progress: { label: '进行中', color: '#D97706', bg: '#FEF3C7' },
-  completed: { label: '已完成', color: '#059669', bg: '#D1FAE5' },
+const statusConfig: Record<string, { labelKey: 'statusNotStarted' | 'statusInProgress' | 'statusCompleted'; color: string; bg: string }> = {
+  not_started: { labelKey: 'statusNotStarted', color: '#6B7280', bg: '#F3F4F6' },
+  in_progress: { labelKey: 'statusInProgress', color: '#D97706', bg: '#FEF3C7' },
+  completed: { labelKey: 'statusCompleted', color: '#059669', bg: '#D1FAE5' },
 };
 
 const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress, loading = false, disabled = false }) => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { spacing, font, radius } = useDensity();
   const status = statusConfig[unit.status] ?? statusConfig.not_started;
   const progress =
@@ -44,19 +46,19 @@ const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress, loading = false, dis
       activeOpacity={loading ? 1 : 0.7}
     >
       <View style={[styles.header, { marginBottom: 8 * spacing }]}>
-        <Text style={[styles.title, { color: colors.text, fontSize: 16 * font }]}>第 {unit.unitIndex + 1} 单元</Text>
+        <Text style={[styles.title, { color: colors.text, fontSize: 16 * font }]}>{t.unitNumber(unit.unitIndex + 1)}</Text>
         <View style={styles.headerRight}>
           {loading && (
             <ActivityIndicator size="small" color={colors.primary} style={[styles.spinner, { marginRight: 8 * spacing }]} />
           )}
           <View style={[styles.badge, { backgroundColor: status.bg, paddingHorizontal: 10 * spacing, paddingVertical: 4 * spacing, borderRadius: 12 * radius }]}>
-            <Text style={[styles.badgeText, { color: status.color, fontSize: 12 * font }]}>{status.label}</Text>
+            <Text style={[styles.badgeText, { color: status.color, fontSize: 12 * font }]}>{t[status.labelKey]}</Text>
           </View>
         </View>
       </View>
       <View style={[styles.info, { marginBottom: 10 * spacing }]}>
         <Text style={[styles.infoText, { color: colors.textSecondary, fontSize: 13 * font }]}>
-          {unit.startIndex + 1} - {unit.endIndex + 1} 题 · 共 {unit.totalQuestions} 题
+          {t.unitQuestionRange(unit.startIndex + 1, unit.endIndex + 1, unit.totalQuestions)}
         </Text>
       </View>
       <View style={styles.progressContainer}>
@@ -67,7 +69,7 @@ const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress, loading = false, dis
       </View>
       {unit.status === 'completed' && (
         <Text style={[styles.score, { color: colors.accent, fontSize: 13 * font, marginTop: 8 * spacing }]}>
-          正确率: {unit.totalQuestions > 0 ? Math.round((unit.correctCount / unit.totalQuestions) * 100) : 0}%
+          {t.unitAccuracy}: {unit.totalQuestions > 0 ? Math.round((unit.correctCount / unit.totalQuestions) * 100) : 0}%
         </Text>
       )}
     </TouchableOpacity>

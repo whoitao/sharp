@@ -16,6 +16,7 @@ import { login, clearError } from '../../stores/authSlice';
 import type { RootState, AppDispatch } from '../../stores';
 import type { AuthStackParamList } from '../../navigation/AppNavigator';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from '../../i18n/useTranslation';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -25,6 +26,7 @@ interface LoginScreenProps {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
 
@@ -33,13 +35,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert('提示', '请输入用户名和密码');
+      Alert.alert(t.alertTitle, t.fillUsernamePassword);
       return;
     }
     dispatch(clearError());
     const result = await dispatch(login({ username: username.trim(), password }));
     if (login.rejected.match(result)) {
-      Alert.alert('登录失败', (result.payload as string) || '请重试');
+      Alert.alert(t.loginFailed, (result.payload as string) || t.retryLater);
     }
   };
 
@@ -52,15 +54,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         <View style={styles.header}>
           <Text style={styles.logo}>📖</Text>
           <Text style={[styles.title, { color: '#10B981' }]}>Sharp</Text>
-          <Text style={[styles.subtitle, { color: '#6B7280' }]}>智能刷题，高效学习</Text>
+          <Text style={[styles.subtitle, { color: '#6B7280' }]}>{t.appTagline}</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: '#374151' }]}>用户名</Text>
+            <Text style={[styles.label, { color: '#374151' }]}>{t.username}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
-              placeholder="请输入用户名"
+              placeholder={t.usernamePlaceholder}
               placeholderTextColor="#9CA3AF"
               value={username}
               onChangeText={setUsername}
@@ -71,10 +73,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: '#374151' }]}>密码</Text>
+            <Text style={[styles.label, { color: '#374151' }]}>{t.password}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
-              placeholder="请输入密码"
+              placeholder={t.passwordPlaceholder}
               placeholderTextColor="#9CA3AF"
               value={password}
               onChangeText={setPassword}
@@ -95,7 +97,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.buttonText}>登 录</Text>
+              <Text style={styles.buttonText}>{t.loginButton}</Text>
             )}
           </TouchableOpacity>
 
@@ -105,7 +107,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             disabled={isLoading}
           >
             <Text style={[styles.linkText, { color: '#6B7280' }]}>
-              没有账号？<Text style={[styles.linkBold, { color: '#10B981' }]}>立即注册</Text>
+              {t.noAccount}
+              <Text style={[styles.linkBold, { color: '#10B981' }]}>{t.registerNow}</Text>
             </Text>
           </TouchableOpacity>
         </View>

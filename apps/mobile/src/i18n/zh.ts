@@ -49,11 +49,102 @@ export const zh = {
   studySelectSubject: '选择科目',
   studySelectKnowledgePoint: '选择知识点',
   studySelectCategoryFirst: '请先选择分类',
-  studyNoUnits: '该分类暂无单元',
+  studyNoUnits: '该条件下暂无单元',
+  studySelectAllFilters: '请同时选择分类、科目和知识点',
 
   // Common
   loading: '加载中...',
   noData: '暂无数据',
+  back: '返回',
+  minuteShort: '分',
+  secondShort: '秒',
+  monthDay: (month: number, day: number) => `${month}月${day}日`,
+  clockTime: (h: string, m: string) => `${h}:${m}`,
+
+  // Nav titles
+  quizResultTitle: '练习结果',
+  defaultUser: '用户',
+
+  // Unit list (UnitItem)
+  unitNumber: (num: number) => `第 ${num} 单元`,
+  unitQuestionRange: (start: number, end: number, total: number) =>
+    `${start} - ${end} 题 · 共 ${total} 题`,
+  unitAccuracy: '正确率',
+  statusNotStarted: '未开始',
+  statusInProgress: '进行中',
+  statusCompleted: '已完成',
+
+  // Banner carousel
+  bannerDailyTitle: '每日挑战',
+  bannerDailySubtitle: '坚持每天练习，提升学习效率',
+  bannerWrongTitle: '错题回顾',
+  bannerWrongSubtitle: '智能分析错题，针对性强化训练',
+  bannerReportTitle: '学习报告',
+  bannerReportSubtitle: '查看学习进度和数据分析',
+
+  // Study records
+  recordsEmpty: '暂无学习记录',
+  recordsEmptySub: '开始学习后记录将显示在这里',
+  statQuestions: '题目',
+  statCorrect: '正确',
+  statWrong: '错误',
+  statDuration: '用时',
+  statTotal: '总题数',
+
+  // Wrong questions
+  wrongEmpty: '暂无错题',
+  wrongEmptySub: '继续保持，错题会显示在这里',
+  analysis: '解析',
+  difficultyLabel: '难度：',
+
+  // Quiz
+  quit: '退出',
+  quitQuizTitle: '退出练习',
+  quitQuizConfirm: '确定要退出当前练习吗？进度将不会保存。',
+  quitConfirm: '确定退出',
+  loadingQuestions: '加载题目中...',
+  submitAnswer: '提交答案',
+  selectedCount: (num: number) => `（已选 ${num} 项）`,
+  viewResult: '查看结果',
+  nextQuestion: '下一题 →',
+
+  // Quiz result
+  noResultData: '暂无结果数据',
+  accuracyRate: '正确率',
+  wrongReviewTitle: (num: number) => `错题回顾 (${num}题)`,
+  yourAnswer: '你的答案：',
+  correctAnswerLabel: '正确答案：',
+  retry: '再练一次',
+  continueStudy: '继续学习',
+
+  // Auth
+  appTagline: '智能刷题，高效学习',
+  alertTitle: '提示',
+  retryLater: '请重试',
+  username: '用户名',
+  password: '密码',
+  usernamePlaceholder: '请输入用户名',
+  passwordPlaceholder: '请输入密码',
+  loginButton: '登 录',
+  loginFailed: '登录失败',
+  noAccount: '没有账号？ ',
+  registerNow: '立即注册',
+  fillUsernamePassword: '请输入用户名和密码',
+  createAccount: '创建账号',
+  startLearningJourney: '开始你的学习之旅',
+  confirmPassword: '确认密码',
+  passwordMinLengthPlaceholder: '请输入密码（至少6位）',
+  confirmPasswordPlaceholder: '请再次输入密码',
+  passwordMismatch: '两次输入的密码不一致',
+  passwordTooShort: '密码长度不能少于6位',
+  registerButton: '注 册',
+  registerFailed: '注册失败',
+  hasAccount: '已有账号？ ',
+  backToLogin: '返回登录',
 };
 
 export type TranslationKeys = typeof zh;
+
+export type StringTranslationKey = {
+  [K in keyof TranslationKeys]: TranslationKeys[K] extends string ? K : never;
+}[keyof TranslationKeys];

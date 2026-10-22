@@ -16,6 +16,7 @@ import type { AuthStackParamList } from '../../navigation/AppNavigator';
 import type { AppDispatch, RootState } from '../../stores';
 import { clearError, register } from '../../stores/authSlice';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from '../../i18n/useTranslation';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -25,6 +26,7 @@ interface RegisterScreenProps {
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
 
@@ -34,21 +36,21 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
   const handleRegister = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert('提示', '请输入用户名和密码');
+      Alert.alert(t.alertTitle, t.fillUsernamePassword);
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('提示', '两次输入的密码不一致');
+      Alert.alert(t.alertTitle, t.passwordMismatch);
       return;
     }
     if (password.length < 6) {
-      Alert.alert('提示', '密码长度不能少于6位');
+      Alert.alert(t.alertTitle, t.passwordTooShort);
       return;
     }
     dispatch(clearError());
     const result = await dispatch(register({ username: username.trim(), password }));
     if (register.rejected.match(result)) {
-      Alert.alert('注册失败', (result.payload as string) || '请重试');
+      Alert.alert(t.registerFailed, (result.payload as string) || t.retryLater);
     }
   };
 
@@ -60,16 +62,16 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       <View style={styles.inner}>
         <View style={styles.header}>
           <Text style={styles.logo}>📖</Text>
-          <Text style={[styles.title, { color: '#10B981' }]}>创建账号</Text>
-          <Text style={[styles.subtitle, { color: '#6B7280' }]}>开始你的学习之旅</Text>
+          <Text style={[styles.title, { color: '#10B981' }]}>{t.createAccount}</Text>
+          <Text style={[styles.subtitle, { color: '#6B7280' }]}>{t.startLearningJourney}</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: '#374151' }]}>用户名</Text>
+            <Text style={[styles.label, { color: '#374151' }]}>{t.username}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
-              placeholder="请输入用户名"
+              placeholder={t.usernamePlaceholder}
               placeholderTextColor="#9CA3AF"
               value={username}
               onChangeText={setUsername}
@@ -80,10 +82,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: '#374151' }]}>密码</Text>
+            <Text style={[styles.label, { color: '#374151' }]}>{t.password}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
-              placeholder="请输入密码（至少6位）"
+              placeholder={t.passwordMinLengthPlaceholder}
               placeholderTextColor="#9CA3AF"
               value={password}
               onChangeText={setPassword}
@@ -94,10 +96,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: '#374151' }]}>确认密码</Text>
+            <Text style={[styles.label, { color: '#374151' }]}>{t.confirmPassword}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
-              placeholder="请再次输入密码"
+              placeholder={t.confirmPasswordPlaceholder}
               placeholderTextColor="#9CA3AF"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -118,7 +120,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.buttonText}>注 册</Text>
+              <Text style={styles.buttonText}>{t.registerButton}</Text>
             )}
           </TouchableOpacity>
 
@@ -128,7 +130,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             disabled={isLoading}
           >
             <Text style={[styles.linkText, { color: '#6B7280' }]}>
-              已有账号？<Text style={[styles.linkBold, { color: '#10B981' }]}>返回登录</Text>
+              {t.hasAccount}
+              <Text style={[styles.linkBold, { color: '#10B981' }]}>{t.backToLogin}</Text>
             </Text>
           </TouchableOpacity>
         </View>

@@ -51,9 +51,96 @@ export const en: TranslationKeys = {
   studySelectSubject: 'Select Subject',
   studySelectKnowledgePoint: 'Select Knowledge Point',
   studySelectCategoryFirst: 'Please select a category first',
-  studyNoUnits: 'No units in this category',
+  studyNoUnits: 'No units for this filter',
+  studySelectAllFilters: 'Select category, subject and knowledge point',
 
   // Common
   loading: 'Loading...',
   noData: 'No data',
+  back: 'Back',
+  minuteShort: 'm',
+  secondShort: 's',
+  monthDay: (month: number, day: number) => `${month}/${day}`,
+  clockTime: (h: string, m: string) => `${h}:${m}`,
+
+  // Nav titles
+  quizResultTitle: 'Quiz Result',
+  defaultUser: 'User',
+
+  // Unit list (UnitItem)
+  unitNumber: (num: number) => `Unit ${num}`,
+  unitQuestionRange: (start: number, end: number, total: number) =>
+    `Questions ${start} - ${end} · ${total} total`,
+  unitAccuracy: 'Accuracy',
+  statusNotStarted: 'Not started',
+  statusInProgress: 'In progress',
+  statusCompleted: 'Completed',
+
+  // Banner carousel
+  bannerDailyTitle: 'Daily Challenge',
+  bannerDailySubtitle: 'Practice every day, learn more efficiently',
+  bannerWrongTitle: 'Wrong Review',
+  bannerWrongSubtitle: 'Analyze mistakes and train deliberately',
+  bannerReportTitle: 'Study Report',
+  bannerReportSubtitle: 'Track progress and view analytics',
+
+  // Study records
+  recordsEmpty: 'No study records',
+  recordsEmptySub: 'Records will appear here once you start',
+  statQuestions: 'Questions',
+  statCorrect: 'Correct',
+  statWrong: 'Wrong',
+  statDuration: 'Time',
+  statTotal: 'Total',
+
+  // Wrong questions
+  wrongEmpty: 'No wrong questions',
+  wrongEmptySub: 'Keep it up, mistakes will show here',
+  analysis: 'Analysis',
+  difficultyLabel: 'Difficulty: ',
+
+  // Quiz
+  quit: 'Quit',
+  quitQuizTitle: 'Quit Practice',
+  quitQuizConfirm: 'Quit this session? Progress will not be saved.',
+  quitConfirm: 'Quit',
+  loadingQuestions: 'Loading questions...',
+  submitAnswer: 'Submit Answer',
+  selectedCount: (num: number) => ` (${num} selected)`,
+  viewResult: 'View Result',
+  nextQuestion: 'Next →',
+
+  // Quiz result
+  noResultData: 'No result data',
+  accuracyRate: 'Accuracy',
+  wrongReviewTitle: (num: number) => `Wrong Questions (${num})`,
+  yourAnswer: 'Your answer:',
+  correctAnswerLabel: 'Correct:',
+  retry: 'Try Again',
+  continueStudy: 'Continue',
+
+  // Auth
+  appTagline: 'Smart quizzes, efficient learning',
+  alertTitle: 'Notice',
+  retryLater: 'Please try again',
+  username: 'Username',
+  password: 'Password',
+  usernamePlaceholder: 'Enter your username',
+  passwordPlaceholder: 'Enter your password',
+  loginButton: 'Sign In',
+  loginFailed: 'Login failed',
+  noAccount: 'No account? ',
+  registerNow: 'Sign up',
+  fillUsernamePassword: 'Enter username and password',
+  createAccount: 'Create Account',
+  startLearningJourney: 'Start your learning journey',
+  confirmPassword: 'Confirm Password',
+  passwordMinLengthPlaceholder: 'Enter password (min 6 chars)',
+  confirmPasswordPlaceholder: 'Re-enter your password',
+  passwordMismatch: 'Passwords do not match',
+  passwordTooShort: 'Password must be at least 6 characters',
+  registerButton: 'Sign Up',
+  hasAccount: 'Have an account? ',
+  registerFailed: 'Registration failed',
+  backToLogin: 'Back to login',
 };

@@ -14,6 +14,7 @@ import ProgressBar from '../../components/ProgressBar';
 import QuizOption from '../../components/QuizOption';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from '../../i18n/useTranslation';
 import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
@@ -32,6 +33,7 @@ type OptionStatus = 'default' | 'selected' | 'correct' | 'wrong' | 'revealed';
 
 const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { spacing, font, radius } = useDensity();
   const { categoryId, unitIndex, categoryName } = route.params;
   const dispatch = useDispatch<AppDispatch>();
@@ -220,10 +222,10 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   }, [answered, currentQuestion, selectedKeys, goNextQuestion, dispatch]);
 
   const handleQuit = () => {
-    Alert.alert('退出练习', '确定要退出当前练习吗？进度将不会保存。', [
-      { text: '取消', style: 'cancel' },
+    Alert.alert(t.quitQuizTitle, t.quitQuizConfirm, [
+      { text: t.cancel, style: 'cancel' },
       {
-        text: '确定退出',
+        text: t.quitConfirm,
         style: 'destructive',
         onPress: () => navigation.goBack(),
       },
@@ -234,7 +236,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>加载题目中...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>{t.loadingQuestions}</Text>
       </View>
     );
   }
@@ -242,11 +244,11 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={handleQuit} style={styles.quitButton}>
-          <Text style={[styles.quitText, { color: colors.error }]}>退出</Text>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingHorizontal: 16 * spacing, paddingVertical: 12 * spacing }]}>
+        <TouchableOpacity onPress={handleQuit} style={[styles.quitButton, { paddingVertical: 6 * spacing, paddingHorizontal: 12 * spacing }]}>
+          <Text style={[styles.quitText, { color: colors.error, fontSize: 15 * font }]}>{t.quit}</Text>
         </TouchableOpacity>
-        <Text style={[styles.timer, { color: colors.text }]}>{formatTime(elapsedSeconds)}</Text>
+        <Text style={[styles.timer, { color: colors.text, fontSize: 16 * font }]}>{formatTime(elapsedSeconds)}</Text>
         <View style={styles.quitButton} />
       </View>
 
@@ -254,7 +256,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       <ProgressBar current={currentIndex + 1} total={totalQuestions} />
 
       {/* Question content */}
-      <View style={[styles.questionContainer, { backgroundColor: colors.surface, paddingHorizontal: 20 * spacing, paddingVertical: 24 * spacing, borderRadius: 12 * radius }]}>
+      <View style={[styles.questionContainer, { backgroundColor: colors.surface, marginHorizontal: 16 * spacing, marginTop: 12 * spacing, borderRadius: 12 * radius, paddingHorizontal: 20 * spacing, paddingVertical: 24 * spacing }]}>
         <Text style={[styles.questionContent, { color: colors.text, fontSize: 18 * font }]}>{currentQuestion.content}</Text>
       </View>
 
@@ -288,6 +290,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
             style={[
               styles.nextButton,
               {
+                paddingHorizontal: 48 * spacing,
                 backgroundColor:
                   selectedKeys.length === 0 ? colors.border : colors.primary,
                 borderRadius: 10 * radius,
@@ -305,7 +308,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
                 selectedKeys.length === 0 && { color: colors.textTertiary },
               ]}
             >
-              提交答案{selectedKeys.length > 0 ? `（已选 ${selectedKeys.length} 项）` : ''}
+              {t.submitAnswer}
+              {selectedKeys.length > 0 ? t.selectedCount(selectedKeys.length) : ''}
             </Text>
           </TouchableOpacity>
         </View>
@@ -314,9 +318,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       {/* Next button (shown only on wrong answer) */}
       {showNextButton && (
         <View style={[styles.nextContainer, { paddingHorizontal: 16 * spacing, paddingVertical: 12 * spacing }]}>
-          <TouchableOpacity style={[styles.nextButton, { backgroundColor: colors.primary, borderRadius: 10 * radius, paddingVertical: 14 * spacing }]} onPress={handleNext} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.nextButton, { paddingHorizontal: 48 * spacing, backgroundColor: colors.primary, borderRadius: 10 * radius, paddingVertical: 14 * spacing }]} onPress={handleNext} activeOpacity={0.8}>
             <Text style={[styles.nextButtonText, { fontSize: 16 * font }]}>
-              {isLastQuestion ? '查看结果' : '下一题 →'}
+              {isLastQuestion ? t.viewResult : t.nextQuestion}
             </Text>
           </TouchableOpacity>
         </View>
@@ -324,9 +328,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
       {/* Analysis (shown after answering) */}
       {answered && currentQuestion.analysis && (
-        <View style={[styles.analysisContainer, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary }]}>
-          <Text style={[styles.analysisLabel, { color: colors.primary }]}>解析</Text>
-          <Text style={[styles.analysisText, { color: colors.text }]}>{currentQuestion.analysis}</Text>
+        <View style={[styles.analysisContainer, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary, marginHorizontal: 16 * spacing, marginBottom: 16 * spacing, padding: 14 * spacing, borderRadius: 10 * radius }]}>
+          <Text style={[styles.analysisLabel, { color: colors.primary, fontSize: 13 * font, marginBottom: 6 * spacing }]}>{t.analysis}</Text>
+          <Text style={[styles.analysisText, { color: colors.text, fontSize: 14 * font, lineHeight: 22 * font }]}>{currentQuestion.analysis}</Text>
         </View>
       )}
     </View>
