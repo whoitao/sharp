@@ -1,6 +1,7 @@
 import type { UnitInfo } from '@sharp/shared';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 
 interface UnitItemProps {
@@ -18,6 +19,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 
 const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress, loading = false, disabled = false }) => {
   const { colors } = useTheme();
+  const { spacing, font, radius } = useDensity();
   const status = statusConfig[unit.status] ?? statusConfig.not_started;
   const progress =
     unit.totalQuestions > 0
@@ -32,36 +34,39 @@ const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress, loading = false, dis
           backgroundColor: colors.surface,
           borderColor: loading ? colors.primary : 'transparent',
           opacity: disabled && !loading ? 0.5 : 1,
+          padding: 16 * spacing,
+          marginBottom: 10 * spacing,
+          borderRadius: 12 * radius,
         },
       ]}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={loading ? 1 : 0.7}
     >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>第 {unit.unitIndex + 1} 单元</Text>
+      <View style={[styles.header, { marginBottom: 8 * spacing }]}>
+        <Text style={[styles.title, { color: colors.text, fontSize: 16 * font }]}>第 {unit.unitIndex + 1} 单元</Text>
         <View style={styles.headerRight}>
           {loading && (
-            <ActivityIndicator size="small" color={colors.primary} style={styles.spinner} />
+            <ActivityIndicator size="small" color={colors.primary} style={[styles.spinner, { marginRight: 8 * spacing }]} />
           )}
-          <View style={[styles.badge, { backgroundColor: status.bg }]}>
-            <Text style={[styles.badgeText, { color: status.color }]}>{status.label}</Text>
+          <View style={[styles.badge, { backgroundColor: status.bg, paddingHorizontal: 10 * spacing, paddingVertical: 4 * spacing, borderRadius: 12 * radius }]}>
+            <Text style={[styles.badgeText, { color: status.color, fontSize: 12 * font }]}>{status.label}</Text>
           </View>
         </View>
       </View>
-      <View style={styles.info}>
-        <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+      <View style={[styles.info, { marginBottom: 10 * spacing }]}>
+        <Text style={[styles.infoText, { color: colors.textSecondary, fontSize: 13 * font }]}>
           {unit.startIndex + 1} - {unit.endIndex + 1} 题 · 共 {unit.totalQuestions} 题
         </Text>
       </View>
       <View style={styles.progressContainer}>
-        <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-          <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
+        <View style={[styles.progressBar, { backgroundColor: colors.border, marginRight: 10 * spacing, borderRadius: 3 * radius, height: 6 * spacing }]}>
+          <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.primary, borderRadius: 3 * radius }]} />
         </View>
-        <Text style={[styles.progressText, { color: colors.textSecondary }]}>{progress}%</Text>
+        <Text style={[styles.progressText, { color: colors.textSecondary, fontSize: 12 * font }]}>{progress}%</Text>
       </View>
       {unit.status === 'completed' && (
-        <Text style={[styles.score, { color: colors.accent }]}>
+        <Text style={[styles.score, { color: colors.accent, fontSize: 13 * font, marginTop: 8 * spacing }]}>
           正确率: {unit.totalQuestions > 0 ? Math.round((unit.correctCount / unit.totalQuestions) * 100) : 0}%
         </Text>
       )}

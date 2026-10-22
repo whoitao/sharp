@@ -15,12 +15,14 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import TreePickerModal from '../../components/TreePickerModal';
 import UnitItem from '../../components/UnitItem';
+import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { fetchQuestions } from '../../stores/studySlice';
+import { hasStudyCache } from '../../utils/studyCache';
 
 type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'Study'>;
 
@@ -35,6 +37,7 @@ interface DropdownOption {
 
 const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
+  const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { unitSize } = useSelector((state: RootState) => state.settings);
@@ -49,7 +52,9 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
 
   const [units, setUnits] = useState<UnitInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [dataRefreshing, setDataRefreshing] = useState(false);
   const [pressingUnitIndex, setPressingUnitIndex] = useState<number | null>(null);
 
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
@@ -57,6 +62,9 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   const [kpModalVisible, setKpModalVisible] = useState(false);
 
   const fetchInitialData = useCallback(async () => {
+    // 仅在无有效缓存时显示 loading，缓存命中则静默刷新
+    const cached = await hasStudyCache();
+    if (!cached) setInitialLoading(true);
     try {
       const [cats, subs, kps] = await Promise.all([
         api.getCategories('0'),
@@ -68,8 +76,31 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
       setKnowledgePoints(kps);
     } catch {
       // ignore
+    } finally {
+      setInitialLoading(false);
     }
   }, []);
+
+  // 手动强制刷新：清空缓存后重新拉取分类/科目/知识点
+  const handleRefresh = useCallback(async () => {
+    if (dataRefreshing) return;
+    setDataRefreshing(true);
+    try {
+      await clearStudyCache();
+      const [cats, subs, kps] = await Promise.all([
+        api.getCategories('0'),
+        api.getSubjects(),
+        api.getKnowledgePoints(),
+      ]);
+      setCategories(cats);
+      setSubjects(subs);
+      setKnowledgePoints(kps);
+    } catch {
+      // ignore
+    } finally {
+      setDataRefreshing(false);
+    }
+  }, [dataRefreshing]);
 
   const fetchUnits = useCallback(async () => {
     if (!selectedCategory) {
@@ -79,7 +110,11 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     }
     setLoading(true);
     try {
-      const data = await api.getUnits(selectedCategory.id);
+      const data = await api.getUnits(
+        selectedCategory.id,
+        selectedSubject?.id,
+        selectedKP?.id,
+      );
       setUnits(data);
     } catch {
       setUnits([]);
@@ -87,7 +122,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedSubject, selectedKP]);
 
   useEffect(() => {
     fetchInitialData();
@@ -112,7 +147,12 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
         // silently proceed
       }
       const result = await dispatch(
-        fetchQuestions({ categoryId: selectedCategory.id, unitIndex: unit.unitIndex })
+        fetchQuestions({
+          categoryId: selectedCategory.id,
+          unitIndex: unit.unitIndex,
+          subjectId: selectedSubject?.id,
+          knowledgePointId: selectedKP?.id,
+        })
       );
       if (fetchQuestions.fulfilled.match(result)) {
         navigation.navigate('Quiz', {
@@ -147,22 +187,59 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.dropdownsContainer}>
+      <View style={[styles.dropdownsContainer, { padding: 12 * spacing, gap: 8 * spacing }]}>
         <DropdownButton
           label={selectedCategory?.name || t.studySelectCategory}
           onPress={() => setCategoryModalVisible(true)}
           colors={colors}
+          spacing={spacing}
+          font={font}
+          radius={radius}
         />
         <DropdownButton
           label={selectedSubject?.name || t.studySelectSubject}
           onPress={() => setSubjectModalVisible(true)}
           colors={colors}
+          spacing={spacing}
+          font={font}
+          radius={radius}
         />
         <DropdownButton
           label={selectedKP?.name || t.studySelectKnowledgePoint}
           onPress={() => setKpModalVisible(true)}
           colors={colors}
+          spacing={spacing}
+          font={font}
+          radius={radius}
         />
+        <TouchableOpacity
+          style={[
+            styles.refreshBtn,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderRadius: 8 * radius,
+              width: 40 * spacing + 8,
+            },
+          ]}
+          onPress={handleRefresh}
+          disabled={dataRefreshing}
+          activeOpacity={0.6}
+        >
+          {dataRefreshing ? (
+            <ActivityIndicator size="small" color={colors.accent} />
+          ) : (
+            <Ionicons name="refresh" size={18 * font} color={colors.textSecondary} />
+          )}
+        </TouchableOpacity>
+        {initialLoading && (
+          <View style={[styles.initialLoadingOverlay, { borderRadius: 8 * radius }]}>
+            <ActivityIndicator size="small" color={colors.accent} />
+            <Text style={[styles.initialLoadingText, { fontSize: 13 * font, color: colors.textSecondary }]}>
+              加载中...
+            </Text>
+          </View>
+        )}
       </View>
 
       {loading ? (
@@ -174,14 +251,14 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
           data={units}
           keyExtractor={(item) => item.unitIndex.toString()}
           renderItem={renderItem}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingTop: 8 * spacing, paddingBottom: 24 * spacing }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
           }
           ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>📋</Text>
-              <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
+            <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
+              <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📋</Text>
+              <Text style={[styles.emptyText, { color: colors.textTertiary, fontSize: 16 * font }]}>
                 {selectedCategory ? t.studyNoUnits : t.studySelectCategoryFirst}
               </Text>
             </View>
@@ -248,13 +325,16 @@ interface DropdownButtonProps {
   label: string;
   onPress: () => void;
   colors: any;
+  spacing: number;
+  font: number;
+  radius: number;
 }
 
-const DropdownButton: React.FC<DropdownButtonProps> = ({ label, onPress, colors }) => {
+const DropdownButton: React.FC<DropdownButtonProps> = ({ label, onPress, colors, spacing, font, radius }) => {
   const text = label ?? '';
   return (
-    <TouchableOpacity style={[styles.dropdownButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={onPress}>
-      <Text style={[styles.dropdownButtonText, { color: text.includes('选择') ? colors.textTertiary : colors.text }]} numberOfLines={1}>
+    <TouchableOpacity style={[styles.dropdownButton, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 10 * spacing, paddingHorizontal: 12 * spacing, borderRadius: 8 * radius }]} onPress={onPress}>
+      <Text style={[styles.dropdownButtonText, { color: text.includes('选择') ? colors.textTertiary : colors.text, fontSize: 13 * font }]} numberOfLines={1}>
         {text}
       </Text>
     </TouchableOpacity>
@@ -263,8 +343,11 @@ const DropdownButton: React.FC<DropdownButtonProps> = ({ label, onPress, colors 
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  dropdownsContainer: { flexDirection: 'row', padding: 12, paddingTop: 0, gap: 8 },
+  dropdownsContainer: { flexDirection: 'row', padding: 12, paddingTop: 0, gap: 8, position: 'relative' },
+  initialLoadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 },
+  initialLoadingText: { fontSize: 13 },
   dropdownButton: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  refreshBtn: { borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
   dropdownButtonText: { fontSize: 13, fontWeight: '500' },
   list: { padding: 16, paddingTop: 8, paddingBottom: 24 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },

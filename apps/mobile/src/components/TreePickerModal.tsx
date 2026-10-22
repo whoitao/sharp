@@ -90,7 +90,10 @@ function TreePickerModal<T extends TreeNode>({
       const childAncestors = new Set(ancestors).add(node.id);
       const children = lazyChildren[node.id] ?? node.children ?? [];
       const canLoad = node.children === undefined && !!loadChildren;
-      const hasChildren = children.length > 0 || canLoad;
+      // 已通过懒加载确认无下级节点时，视为叶子节点，不显示展开标识
+      const lazyLoadedEmpty =
+        lazyChildren[node.id] !== undefined && lazyChildren[node.id].length === 0;
+      const hasChildren = children.length > 0 || (canLoad && !lazyLoadedEmpty);
       const expanded = expandedIds.has(node.id);
       const loading = loadingIds.has(node.id);
       const selected = selectedId === node.id;

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAppUser } from "@/lib/middleware";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
   const ids: bigint[] = [categoryId];
@@ -24,6 +24,11 @@ export async function GET(
 
   const { id, unitIndex: unitIndexParam } = await params;
 
+  // 可选过滤：科目 / 知识点
+  const url = new URL(request.url);
+  const subjectIdRaw = url.searchParams.get("subjectId");
+  const knowledgePointIdRaw = url.searchParams.get("knowledgePointId");
+
   const settings = await prisma.userSettings.findUnique({
     where: { userId: appUser.id },
   });
@@ -32,8 +37,18 @@ export async function GET(
 
   const allCategoryIds = await getAllCategoryIds(BigInt(id));
 
+  const questionWhere: any = { categoryId: { in: allCategoryIds } };
+  if (subjectIdRaw) {
+    questionWhere.subjectId = BigInt(subjectIdRaw);
+  }
+  if (knowledgePointIdRaw) {
+    questionWhere.knowledgePoints = {
+      some: { knowledgePointId: BigInt(knowledgePointIdRaw) },
+    };
+  }
+
   const questions = await prisma.question.findMany({
-    where: { categoryId: { in: allCategoryIds } },
+    where: questionWhere,
     include: {
       options: {
         orderBy: { sortNo: "asc" },

@@ -49,6 +49,11 @@ interface EditFormValues {
   icon?: string;
 }
 
+// 递归聚合：节点自身题数 + 所有子孙节点题数
+const getTotalCount = (node: CategoryNode): number =>
+  (node._count?.questions ?? 0) +
+  (node.children?.reduce((sum, child) => sum + getTotalCount(child), 0) ?? 0);
+
 export default function CategoriesPage() {
   const { message } = App.useApp();
   const { t } = useLocale();
@@ -110,37 +115,44 @@ export default function CategoriesPage() {
   }, [tree]);
 
   const treeData = useMemo(() => {
-    const mapNode = (node: CategoryNode): TreeDataNode => ({
-      key: node.id,
-      title: (
-        <Space size={8} style={{ width: "100%", justifyContent: "space-between", paddingRight: 8, paddingTop: 6, paddingBottom: 6 }}>
-          <Typography.Text strong>{node.name}</Typography.Text>
-          <Space size={4}>
-            <Tag>{t("categories.questionsTag", { n: node._count?.questions ?? 0 })}</Tag>
-            <Button
-              type="text"
-              size="small"
-              icon={<PlusOutlined />}
-              onClick={() => openCreateChild(node)}
-            />
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => openEdit(node)}
-            />
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => openDelete(node)}
-            />
+    const mapNode = (node: CategoryNode): TreeDataNode => {
+      const directCount = node._count?.questions ?? 0;
+      const totalCount = getTotalCount(node);
+      // 有子级时显示「本级|聚合」，叶子节点只显示本级数
+      const countText =
+        node.children?.length > 0 ? `${directCount}|${totalCount}` : `${directCount}`;
+      return {
+        key: node.id,
+        title: (
+          <Space size={8} style={{ width: "100%", justifyContent: "space-between", paddingRight: 8, paddingTop: 6, paddingBottom: 6 }}>
+            <Typography.Text strong>{node.name}</Typography.Text>
+            <Space size={4}>
+              <Tag>{t("categories.questionsTag", { n: countText })}</Tag>
+              <Button
+                type="text"
+                size="small"
+                icon={<PlusOutlined />}
+                onClick={() => openCreateChild(node)}
+              />
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => openEdit(node)}
+              />
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => openDelete(node)}
+              />
+            </Space>
           </Space>
-        </Space>
-      ),
-      children: node.children?.length > 0 ? node.children.map(mapNode) : undefined,
-    });
+        ),
+        children: node.children?.length > 0 ? node.children.map(mapNode) : undefined,
+      };
+    };
     return tree.map(mapNode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tree, t]);

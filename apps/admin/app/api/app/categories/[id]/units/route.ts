@@ -25,8 +25,23 @@ export async function GET(
   const { id } = await params;
   const categoryId = BigInt(id);
 
+  // 可选过滤：科目 / 知识点
+  const url = new URL(request.url);
+  const subjectIdRaw = url.searchParams.get("subjectId");
+  const knowledgePointIdRaw = url.searchParams.get("knowledgePointId");
+
   // Get all category IDs (this category + all subcategories)
   const allCategoryIds = await getAllCategoryIds(categoryId);
+
+  const questionWhere: any = { categoryId: { in: allCategoryIds } };
+  if (subjectIdRaw) {
+    questionWhere.subjectId = BigInt(subjectIdRaw);
+  }
+  if (knowledgePointIdRaw) {
+    questionWhere.knowledgePoints = {
+      some: { knowledgePointId: BigInt(knowledgePointIdRaw) },
+    };
+  }
 
   // Get user settings for unit size
   const settings = await prisma.userSettings.findUnique({
@@ -36,7 +51,7 @@ export async function GET(
 
   // Count total questions in this category and all subcategories
   const totalQuestions = await prisma.question.count({
-    where: { categoryId: { in: allCategoryIds } },
+    where: questionWhere,
   });
 
   // Get progress for this user across all subcategories
@@ -54,7 +69,7 @@ export async function GET(
 
   // Get all question IDs in order
   const allQuestions = await prisma.question.findMany({
-    where: { categoryId: { in: allCategoryIds } },
+    where: questionWhere,
     select: { id: true, sortOrder: true },
     orderBy: { sortOrder: "asc" },
   });

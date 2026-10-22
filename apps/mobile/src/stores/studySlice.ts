@@ -40,9 +40,19 @@ const initialState: StudyState = {
 
 export const fetchQuestions = createAsyncThunk(
   'study/fetchQuestions',
-  async (params: { categoryId: string; unitIndex: number }) => {
-    const questions = await api.getQuestions(params.categoryId, params.unitIndex);
-    return { questions, ...params };
+  async (params: {
+    categoryId: string;
+    unitIndex: number;
+    subjectId?: string;
+    knowledgePointId?: string;
+  }) => {
+    const questions = await api.getQuestions(
+      params.categoryId,
+      params.unitIndex,
+      params.subjectId,
+      params.knowledgePointId,
+    );
+    return { questions, categoryId: params.categoryId, unitIndex: params.unitIndex };
   }
 );
 

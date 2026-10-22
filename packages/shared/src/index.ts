@@ -27,6 +27,12 @@ export enum Language {
   EN = 'en',
 }
 
+export enum Density {
+  COMPACT = 'compact',
+  COMFORTABLE = 'comfortable',
+  SPACIOUS = 'spacious',
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -78,6 +84,7 @@ export interface UserSettings {
   unitSize: number;
   theme: Theme;
   language: Language;
+  density: Density;
 }
 
 export interface Admin {
@@ -264,4 +271,5 @@ export interface UpdateSettingsRequest {
   unitSize?: number;
   theme?: Theme;
   language?: Language;
+  density?: Density;
 }

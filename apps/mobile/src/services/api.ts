@@ -1,6 +1,7 @@
 import type {
   AnswerItem,
   Category,
+  Density,
   KnowledgePoint,
   Language,
   LoginResponse,
@@ -34,66 +35,193 @@ const mockUser: User = {
 const mockCategories: Category[] = [
   {
     id: '1',
-    name: '英语四级',
+    name: '小学',
     parentId: '0',
     sortOrder: 1,
     icon: 'book',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    questionCount: 100,
+    questionCount: 600,
   },
   {
     id: '2',
-    name: '英语六级',
+    name: '初中',
     parentId: '0',
     sortOrder: 2,
     icon: 'book',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    questionCount: 120,
+    questionCount: 400,
   },
   {
     id: '3',
-    name: '托福词汇',
+    name: '高中',
     parentId: '0',
     sortOrder: 3,
     icon: 'book',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    questionCount: 200,
-  },
-  {
-    id: '4',
-    name: '雅思词汇',
-    parentId: '0',
-    sortOrder: 4,
-    icon: 'book',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 180,
+    questionCount: 400,
   },
 ];
 
 const mockSubCategories: Category[] = [
+  // 小学
   {
     id: '11',
-    name: '高频词汇',
+    name: '一年级',
     parentId: '1',
     sortOrder: 1,
     icon: 'star',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    questionCount: 50,
+    questionCount: 100,
+    children: [],
   },
   {
     id: '12',
-    name: '核心词汇',
+    name: '二年级',
     parentId: '1',
     sortOrder: 2,
     icon: 'star',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    questionCount: 50,
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '13',
+    name: '三年级',
+    parentId: '1',
+    sortOrder: 3,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '14',
+    name: '四年级',
+    parentId: '1',
+    sortOrder: 4,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '15',
+    name: '五年级',
+    parentId: '1',
+    sortOrder: 5,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '16',
+    name: '六年级',
+    parentId: '1',
+    sortOrder: 6,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  // 初中
+  {
+    id: '21',
+    name: '初一',
+    parentId: '2',
+    sortOrder: 1,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '22',
+    name: '初二',
+    parentId: '2',
+    sortOrder: 2,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '23',
+    name: '初三',
+    parentId: '2',
+    sortOrder: 3,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '24',
+    name: '中考',
+    parentId: '2',
+    sortOrder: 4,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  // 高中
+  {
+    id: '31',
+    name: '高一',
+    parentId: '3',
+    sortOrder: 1,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '32',
+    name: '高二',
+    parentId: '3',
+    sortOrder: 2,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '33',
+    name: '高三',
+    parentId: '3',
+    sortOrder: 3,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
+  },
+  {
+    id: '34',
+    name: '高考',
+    parentId: '3',
+    sortOrder: 4,
+    icon: 'star',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    questionCount: 100,
+    children: [],
   },
 ];
 
@@ -258,63 +386,103 @@ export const api = {
 
   // Categories
   async getCategories(parentId: string): Promise<Category[]> {
+    // 1. 优先读本地缓存
+    const cached = await getCached<Category[]>('categories', parentId);
+    if (cached) return cached;
+
+    // 2. 缓存未命中，请求接口
     try {
       const response = await apiClient.get<Category[]>('/api/app/categories', {
         params: { parentId },
       });
+      await setCached('categories', response.data, parentId);
       return response.data;
     } catch {
-      if (parentId === '0') {
-        return mockCategories;
-      }
-      if (parentId === '1') {
-        return mockSubCategories;
-      }
-      return [];
+      // 接口失败时使用 mock，并也写入缓存，避免重复请求
+      const fallback =
+        parentId === '0'
+          ? mockCategories
+          : mockSubCategories.filter((c) => c.parentId === parentId);
+      await setCached('categories', fallback, parentId);
+      return fallback;
     }
   },
 
   // Subjects
   async getSubjects(): Promise<Subject[]> {
+    const cached = await getCached<Subject[]>('subjects');
+    if (cached) return cached;
+
     try {
       const response = await apiClient.get<Subject[]>('/api/app/subjects');
+      await setCached('subjects', response.data);
       return response.data;
     } catch {
+      await setCached('subjects', mockSubjects);
       return mockSubjects;
     }
   },
 
   // Knowledge Points
   async getKnowledgePoints(subjectId?: string): Promise<KnowledgePoint[]> {
+    const cached = await getCached<KnowledgePoint[]>('knowledgePoints', subjectId);
+    if (cached) return cached;
+
     try {
       const params = subjectId ? { subjectId } : {};
       const response = await apiClient.get<KnowledgePoint[]>('/api/app/knowledge-points', { params });
+      await setCached('knowledgePoints', response.data, subjectId);
       return response.data;
     } catch {
+      await setCached('knowledgePoints', mockKnowledgePoints, subjectId);
       return mockKnowledgePoints;
     }
   },
 
   // Units
-  async getUnits(categoryId: string): Promise<UnitInfo[]> {
+  async getUnits(
+    categoryId: string,
+    subjectId?: string,
+    knowledgePointId?: string
+  ): Promise<UnitInfo[]> {
     try {
-      const response = await apiClient.get<{ units: UnitInfo[] }>(`/api/app/categories/${categoryId}/units`);
+      const params: Record<string, string> = {};
+      if (subjectId) params.subjectId = subjectId;
+      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
+      const response = await apiClient.get<{ units: UnitInfo[] }>(
+        `/api/app/categories/${categoryId}/units`,
+        { params },
+      );
       return response.data.units;
     } catch {
-      const category = mockCategories.find((c) => c.id === categoryId);
+      // mock 数据均为英语题，选择非英语科目时返回空
+      if (subjectId && subjectId !== '1') return [];
+      const allCategories = [...mockCategories, ...mockSubCategories];
+      const category = allCategories.find((c) => c.id === categoryId);
       const total = category?.questionCount ?? 100;
       return generateMockUnits(categoryId, total, 20);
     }
   },
 
   // Questions
-  async getQuestions(categoryId: string, unitIndex: number): Promise<Question[]> {
+  async getQuestions(
+    categoryId: string,
+    unitIndex: number,
+    subjectId?: string,
+    knowledgePointId?: string
+  ): Promise<Question[]> {
     try {
+      const params: Record<string, string> = {};
+      if (subjectId) params.subjectId = subjectId;
+      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
       const response = await apiClient.get<Question[]>(
         `/api/app/categories/${categoryId}/units/${unitIndex}/questions`,
+        { params },
       );
       return response.data;
     } catch {
+      // mock 数据均为英语题，选择非英语科目时返回空
+      if (subjectId && subjectId !== '1') return [];
       return generateMockQuestions(categoryId, unitIndex, 20);
     }
   },
@@ -434,6 +602,7 @@ export const api = {
         unitSize: 20,
         theme: 'light' as Theme,
         language: 'zh' as Language,
+        density: 'comfortable' as Density,
       };
     }
   },
@@ -448,6 +617,7 @@ export const api = {
         unitSize: settings.unitSize ?? 20,
         theme: settings.theme ?? ('light' as Theme),
         language: settings.language ?? ('zh' as Language),
+        density: settings.density ?? ('comfortable' as Density),
       };
     }
   },

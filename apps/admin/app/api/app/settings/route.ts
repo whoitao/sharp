@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     unitSize: settings?.unitSize ?? 20,
     theme: settings?.theme ?? "system",
     language: settings?.language ?? "zh",
+    density: settings?.density ?? "comfortable",
   });
 }
 
@@ -23,7 +24,7 @@ export async function PUT(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { unitSize, theme, language } = body;
+  const { unitSize, theme, language, density } = body;
 
   const data: Record<string, any> = {};
   if (unitSize !== undefined) {
@@ -53,6 +54,15 @@ export async function PUT(request: NextRequest) {
     }
     data.language = language;
   }
+  if (density !== undefined) {
+    if (!["compact", "comfortable", "spacious"].includes(density)) {
+      return NextResponse.json(
+        { error: "density must be 'compact', 'comfortable', or 'spacious'" },
+        { status: 400 }
+      );
+    }
+    data.density = density;
+  }
 
   const settings = await prisma.userSettings.upsert({
     where: { userId: appUser.id },
@@ -68,5 +78,6 @@ export async function PUT(request: NextRequest) {
     unitSize: settings.unitSize,
     theme: settings.theme,
     language: settings.language,
+    density: settings.density,
   });
 }

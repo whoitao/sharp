@@ -12,6 +12,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import ProgressBar from '../../components/ProgressBar';
 import QuizOption from '../../components/QuizOption';
+import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
@@ -31,6 +32,7 @@ type OptionStatus = 'default' | 'selected' | 'correct' | 'wrong' | 'revealed';
 
 const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { spacing, font, radius } = useDensity();
   const { categoryId, unitIndex, categoryName } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { currentQuestions, currentIndex, answers, isLoading } = useSelector(
@@ -252,12 +254,12 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       <ProgressBar current={currentIndex + 1} total={totalQuestions} />
 
       {/* Question content */}
-      <View style={[styles.questionContainer, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.questionContent, { color: colors.text }]}>{currentQuestion.content}</Text>
+      <View style={[styles.questionContainer, { backgroundColor: colors.surface, paddingHorizontal: 20 * spacing, paddingVertical: 24 * spacing, borderRadius: 12 * radius }]}>
+        <Text style={[styles.questionContent, { color: colors.text, fontSize: 18 * font }]}>{currentQuestion.content}</Text>
       </View>
 
       {/* Options */}
-      <View style={styles.optionsContainer}>
+      <View style={[styles.optionsContainer, { paddingHorizontal: 16 * spacing, paddingTop: 20 * spacing }]}>
         {currentQuestion.options
           .sort((a, b) => a.sortNo - b.sortNo)
           .map((option) => {
@@ -281,13 +283,15 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
       {/* Submit button for multiple choice questions */}
       {isMultipleChoice && !answered && (
-        <View style={styles.nextContainer}>
+        <View style={[styles.nextContainer, { paddingHorizontal: 16 * spacing, paddingVertical: 12 * spacing }]}>
           <TouchableOpacity
             style={[
               styles.nextButton,
               {
                 backgroundColor:
                   selectedKeys.length === 0 ? colors.border : colors.primary,
+                borderRadius: 10 * radius,
+                paddingVertical: 14 * spacing,
               },
             ]}
             onPress={handleSubmitMultiple}
@@ -297,6 +301,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
             <Text
               style={[
                 styles.nextButtonText,
+                { fontSize: 16 * font },
                 selectedKeys.length === 0 && { color: colors.textTertiary },
               ]}
             >
@@ -308,9 +313,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
       {/* Next button (shown only on wrong answer) */}
       {showNextButton && (
-        <View style={styles.nextContainer}>
-          <TouchableOpacity style={[styles.nextButton, { backgroundColor: colors.primary }]} onPress={handleNext} activeOpacity={0.8}>
-            <Text style={styles.nextButtonText}>
+        <View style={[styles.nextContainer, { paddingHorizontal: 16 * spacing, paddingVertical: 12 * spacing }]}>
+          <TouchableOpacity style={[styles.nextButton, { backgroundColor: colors.primary, borderRadius: 10 * radius, paddingVertical: 14 * spacing }]} onPress={handleNext} activeOpacity={0.8}>
+            <Text style={[styles.nextButtonText, { fontSize: 16 * font }]}>
               {isLastQuestion ? '查看结果' : '下一题 →'}
             </Text>
           </TouchableOpacity>

@@ -31,6 +31,7 @@ model UserSettings {
   unitSize Int    @default(20)
   theme    String @default("system")
   language String @default("zh")
+  density  String @default("comfortable")
 }
 
 model Admin {

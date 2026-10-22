@@ -1,4 +1,4 @@
-import type { Language, Theme } from '@sharp/shared';
+import type { Density, Language, Theme } from '@sharp/shared';
 import React from 'react';
 import {
   Alert,
@@ -9,11 +9,12 @@ import {
   View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { AppDispatch, RootState } from '../../stores';
 import { logout } from '../../stores/authSlice';
-import { setLanguage, setTheme, setUnitSize, updateSettings } from '../../stores/settingsSlice';
+import { setDensity, setLanguage, setTheme, setUnitSize, updateSettings } from '../../stores/settingsSlice';
 
 const UNIT_SIZE_OPTIONS = [20, 30, 50, 100];
 const THEME_OPTIONS: { value: Theme; labelKey: string }[] = [
@@ -25,12 +26,18 @@ const LANGUAGE_OPTIONS: { value: Language; labelKey: string }[] = [
   { value: 'zh' as Language, labelKey: 'chinese' },
   { value: 'en' as Language, labelKey: 'english' },
 ];
+const DENSITY_OPTIONS: { value: Density; labelKey: string }[] = [
+  { value: 'compact' as Density, labelKey: 'densityCompact' },
+  { value: 'comfortable' as Density, labelKey: 'densityComfortable' },
+  { value: 'spacious' as Density, labelKey: 'densitySpacious' },
+];
 
 const SettingsScreen: React.FC = () => {
   const { colors } = useTheme();
+  const { spacing, font } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { unitSize, theme, language } = useSelector((state: RootState) => state.settings);
+  const { unitSize, theme, language, density } = useSelector((state: RootState) => state.settings);
 
   const handleUnitSizeChange = (size: number) => {
     dispatch(setUnitSize(size));
@@ -45,6 +52,11 @@ const SettingsScreen: React.FC = () => {
   const handleLanguageChange = (newLanguage: Language) => {
     dispatch(setLanguage(newLanguage));
     dispatch(updateSettings({ language: newLanguage }));
+  };
+
+  const handleDensityChange = (newDensity: Density) => {
+    dispatch(setDensity(newDensity));
+    dispatch(updateSettings({ density: newDensity }));
   };
 
   const handleLogout = () => {
@@ -62,11 +74,47 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
+  const sectionPadding = 16 * spacing;
+  const sectionMarginBottom = 16 * spacing;
+  const titleFontSize = 18 * font;
+  const optionFontSize = 16 * font;
+  const optionVerticalPadding = 12 * spacing;
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+      {/* Display density section */}
+      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.displayDensity}</Text>
+
+        <View style={styles.optionsGrid}>
+          {DENSITY_OPTIONS.map((opt) => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[
+                styles.optionButton,
+                { backgroundColor: colors.borderLight, paddingVertical: optionVerticalPadding, borderRadius: 10 * spacing },
+                density === opt.value && { backgroundColor: colors.accent },
+              ]}
+              onPress={() => handleDensityChange(opt.value)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  { color: colors.textSecondary, fontSize: optionFontSize },
+                  density === opt.value && { color: colors.surface },
+                ]}
+              >
+                {t[opt.labelKey as keyof typeof t]}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
       {/* Unit size section */}
-      <View style={[styles.section, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.unitSize}</Text>
+      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.unitSize}</Text>
 
         <View style={styles.optionsGrid}>
           {UNIT_SIZE_OPTIONS.map((size) => (
@@ -74,7 +122,7 @@ const SettingsScreen: React.FC = () => {
               key={size}
               style={[
                 styles.optionButton,
-                { backgroundColor: colors.borderLight },
+                { backgroundColor: colors.borderLight, paddingVertical: optionVerticalPadding, borderRadius: 10 * spacing },
                 unitSize === size && { backgroundColor: colors.accent },
               ]}
               onPress={() => handleUnitSizeChange(size)}
@@ -83,7 +131,7 @@ const SettingsScreen: React.FC = () => {
               <Text
                 style={[
                   styles.optionText,
-                  { color: colors.textSecondary },
+                  { color: colors.textSecondary, fontSize: optionFontSize },
                   unitSize === size && { color: colors.surface },
                 ]}
               >
@@ -95,8 +143,8 @@ const SettingsScreen: React.FC = () => {
       </View>
 
       {/* Theme section */}
-      <View style={[styles.section, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.theme}</Text>
+      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.theme}</Text>
 
         <View style={styles.themeOptions}>
           {THEME_OPTIONS.map((opt) => (
@@ -104,7 +152,7 @@ const SettingsScreen: React.FC = () => {
               key={opt.value}
               style={[
                 styles.themeButton,
-                { backgroundColor: colors.background },
+                { backgroundColor: colors.background, paddingVertical: 14 * spacing, borderRadius: 10 * spacing },
                 theme === opt.value && { backgroundColor: colors.accentLight, borderColor: colors.accent },
               ]}
               onPress={() => handleThemeChange(opt.value)}
@@ -113,7 +161,7 @@ const SettingsScreen: React.FC = () => {
               <Text
                 style={[
                   styles.themeText,
-                  { color: colors.textSecondary },
+                  { color: colors.textSecondary, fontSize: 15 * font },
                   theme === opt.value && { color: colors.accent },
                 ]}
               >
@@ -125,8 +173,8 @@ const SettingsScreen: React.FC = () => {
       </View>
 
       {/* Language section */}
-      <View style={[styles.section, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.language}</Text>
+      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.language}</Text>
 
         <View style={styles.optionsGrid}>
           {LANGUAGE_OPTIONS.map((opt) => (
@@ -134,7 +182,7 @@ const SettingsScreen: React.FC = () => {
               key={opt.value}
               style={[
                 styles.optionButton,
-                { backgroundColor: colors.borderLight },
+                { backgroundColor: colors.borderLight, paddingVertical: optionVerticalPadding, borderRadius: 10 * spacing },
                 language === opt.value && { backgroundColor: colors.accent },
               ]}
               onPress={() => handleLanguageChange(opt.value)}
@@ -143,7 +191,7 @@ const SettingsScreen: React.FC = () => {
               <Text
                 style={[
                   styles.optionText,
-                  { color: colors.textSecondary },
+                  { color: colors.textSecondary, fontSize: optionFontSize },
                   language === opt.value && { color: colors.surface },
                 ]}
               >
@@ -155,25 +203,25 @@ const SettingsScreen: React.FC = () => {
       </View>
 
       {/* About section */}
-      <View style={[styles.section, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.about}</Text>
-        <View style={[styles.aboutRow, { borderBottomColor: colors.borderLight }]}>
-          <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>{t.version}</Text>
-          <Text style={[styles.aboutValue, { color: colors.textSecondary }]}>1.0.0</Text>
+      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.about}</Text>
+        <View style={[styles.aboutRow, { borderBottomColor: colors.borderLight, paddingVertical: 12 * spacing }]}>
+          <Text style={[styles.aboutLabel, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.version}</Text>
+          <Text style={[styles.aboutValue, { color: colors.textSecondary, fontSize: 15 * font }]}>1.0.0</Text>
         </View>
-        <View style={[styles.aboutRow, { borderBottomWidth: 0 }]}>
-          <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>{t.appName}</Text>
-          <Text style={[styles.aboutValue, { color: colors.textSecondary }]}>{t.appNameValue}</Text>
+        <View style={[styles.aboutRow, { borderBottomWidth: 0, paddingVertical: 12 * spacing }]}>
+          <Text style={[styles.aboutLabel, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.appName}</Text>
+          <Text style={[styles.aboutValue, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.appNameValue}</Text>
         </View>
       </View>
 
       {/* Logout button */}
       <TouchableOpacity
-        style={[styles.logoutButton, { backgroundColor: colors.surface, borderColor: colors.errorLight }]}
+        style={[styles.logoutButton, { backgroundColor: colors.surface, borderColor: colors.errorLight, paddingVertical: 16 * spacing, borderRadius: 16 * spacing }]}
         onPress={handleLogout}
         activeOpacity={0.8}
       >
-        <Text style={[styles.logoutText, { color: colors.error }]}>{t.logout}</Text>
+        <Text style={[styles.logoutText, { color: colors.error, fontSize: 16 * font }]}>{t.logout}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

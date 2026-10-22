@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 
 interface QuizOptionProps {
@@ -12,6 +13,7 @@ interface QuizOptionProps {
 
 const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, disabled, onPress }) => {
   const { colors } = useTheme();
+  const { spacing, font, radius } = useDensity();
 
   const getBackgroundColor = (): string => {
     switch (status) {
@@ -78,21 +80,24 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
         {
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
+          borderRadius: 12 * radius,
+          padding: 14 * spacing,
+          marginBottom: 10 * spacing,
         },
       ]}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.7}
     >
-      <View style={[styles.keyContainer, { borderColor: getKeyColor() }]}>
-        <Text style={[styles.keyText, { color: getKeyColor() }]}>{optionKey}</Text>
+      <View style={[styles.keyContainer, { borderColor: getKeyColor(), width: 32 * font, height: 32 * font, borderRadius: 16 * font }]}>
+        <Text style={[styles.keyText, { color: getKeyColor(), fontSize: 14 * font }]}>{optionKey}</Text>
       </View>
-      <Text style={[styles.content, { color: getContentColor() }]} numberOfLines={3}>
+      <Text style={[styles.content, { color: getContentColor(), fontSize: 15 * font }]} numberOfLines={3}>
         {content}
       </Text>
-      {status === 'correct' && <Text style={[styles.indicator, { color: '#059669' }]}>✓</Text>}
-      {status === 'wrong' && <Text style={[styles.indicator, { color: colors.error }]}>✗</Text>}
-      {status === 'revealed' && <Text style={[styles.indicator, { color: '#059669' }]}>✓</Text>}
+      {status === 'correct' && <Text style={[styles.indicator, { color: '#059669', fontSize: 18 * font }]}>✓</Text>}
+      {status === 'wrong' && <Text style={[styles.indicator, { color: colors.error, fontSize: 18 * font }]}>✗</Text>}
+      {status === 'revealed' && <Text style={[styles.indicator, { color: '#059669', fontSize: 18 * font }]}>✓</Text>}
     </TouchableOpacity>
   );
 };
