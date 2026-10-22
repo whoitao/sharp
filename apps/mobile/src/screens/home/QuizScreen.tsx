@@ -46,6 +46,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const [answered, setAnswered] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingNextRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const currentQuestion = currentQuestions[currentIndex] ?? null;
@@ -54,18 +56,25 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   // QuestionType.MULTIPLE_CHOICE = 2
   const isMultipleChoice = currentQuestion?.type === 2;
 
-  // Timer
+  // Timer + unmount cleanup
   useEffect(() => {
+    isMountedRef.current = true;
     timerRef.current = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
     return () => {
+      isMountedRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
+      if (pendingNextRef.current) clearTimeout(pendingNextRef.current);
     };
   }, []);
 
   // Reset option statuses when question changes
   useEffect(() => {
+    if (pendingNextRef.current) {
+      clearTimeout(pendingNextRef.current);
+      pendingNextRef.current = null;
+    }
     setOptionStatuses({});
     setSelectedKeys([]);
     setAnswered(false);
@@ -80,6 +89,10 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
   const handleFinish = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (pendingNextRef.current) {
+      clearTimeout(pendingNextRef.current);
+      pendingNextRef.current = null;
+    }
     dispatch(finishQuiz());
 
     const latestState = reduxStore.getState().study;
@@ -127,6 +140,15 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     }
   }, [isLastQuestion, currentIndex, dispatch, handleFinish]);
 
+  // 正确答题后延迟切题；卸载或切题时取消，避免对已卸载屏幕 dispatch/navigate 报错
+  const scheduleNext = useCallback(() => {
+    if (pendingNextRef.current) clearTimeout(pendingNextRef.current);
+    pendingNextRef.current = setTimeout(() => {
+      pendingNextRef.current = null;
+      if (isMountedRef.current) goNextQuestion();
+    }, 500);
+  }, [goNextQuestion]);
+
   const handleNext = () => {
     goNextQuestion();
   };
@@ -161,9 +183,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           })
         );
 
-        setTimeout(() => {
-          goNextQuestion();
-        }, 500);
+        scheduleNext();
       } else {
         const statuses: Record<string, OptionStatus> = {
           [optionKey]: 'wrong',
@@ -180,7 +200,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
         );
       }
     },
-    [answered, currentQuestion, isMultipleChoice, goNextQuestion, dispatch]
+    [answered, currentQuestion, isMultipleChoice, scheduleNext, dispatch]
   );
 
   const handleSubmitMultiple = useCallback(() => {
@@ -213,21 +233,26 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     );
 
     if (isCorrect) {
-      setTimeout(() => {
-        goNextQuestion();
-      }, 500);
+      scheduleNext();
     } else {
       setShowNextButton(true);
     }
-  }, [answered, currentQuestion, selectedKeys, goNextQuestion, dispatch]);
+  }, [answered, currentQuestion, selectedKeys, scheduleNext, dispatch]);
 
   const handleQuit = () => {
+    if (pendingNextRef.current) {
+      clearTimeout(pendingNextRef.current);
+      pendingNextRef.current = null;
+    }
     Alert.alert(t.quitQuizTitle, t.quitQuizConfirm, [
       { text: t.cancel, style: 'cancel' },
       {
         text: t.quitConfirm,
         style: 'destructive',
-        onPress: () => navigation.goBack(),
+        onPress: () => {
+          if (timerRef.current) clearInterval(timerRef.current);
+          navigation.goBack();
+        },
       },
     ]);
   };
