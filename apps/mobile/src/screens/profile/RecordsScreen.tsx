@@ -1,3 +1,4 @@
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { StudyRecord } from '@sharp/shared';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -6,14 +7,22 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  View,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
+import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 
-const RecordsScreen: React.FC = () => {
+type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Records'>;
+
+interface RecordsScreenProps {
+  navigation: NavigationProp;
+}
+
+const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
@@ -57,6 +66,17 @@ const RecordsScreen: React.FC = () => {
     }
   };
 
+  const handleRecordPress = (record: StudyRecord) => {
+    (navigation as any).navigate('StudyTab', {
+      screen: 'QuizResult',
+      params: {
+        categoryId: record.categoryId,
+        unitIndex: record.unitIndex,
+        record,
+      },
+    });
+  };
+
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);
     const month = date.getMonth() + 1;
@@ -80,7 +100,11 @@ const RecordsScreen: React.FC = () => {
         : 0;
 
     return (
-      <View style={[styles.recordCard, { backgroundColor: colors.surface, padding: 16 * spacing, borderRadius: 12 * radius, marginBottom: 10 * spacing }]}>
+      <TouchableOpacity
+        style={[styles.recordCard, { backgroundColor: colors.surface, padding: 16 * spacing, borderRadius: 12 * radius, marginBottom: 10 * spacing }]}
+        onPress={() => handleRecordPress(item)}
+        activeOpacity={0.7}
+      >
         <View style={[styles.recordHeader, { marginBottom: 14 * spacing }]}>
           <Text style={[styles.recordDate, { color: colors.textSecondary, fontSize: 14 * font }]}>{formatDate(item.startedAt)}</Text>
           <View
@@ -131,7 +155,7 @@ const RecordsScreen: React.FC = () => {
             <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 16 * font }]}>{formatDuration(item.durationSeconds)}</Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 

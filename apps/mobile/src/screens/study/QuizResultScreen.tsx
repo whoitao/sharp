@@ -2,11 +2,11 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useDensity } from '../../hooks/useDensity';
@@ -29,11 +29,25 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
-  const { categoryId, unitIndex, categoryName } = route.params;
+  const { categoryId, unitIndex, categoryName, record } = route.params;
   const dispatch = useDispatch<AppDispatch>();
-  const { result, currentQuestions } = useSelector((state: RootState) => state.study);
+  const { result: liveResult } = useSelector((state: RootState) => state.study);
 
   const [expandedWrong, setExpandedWrong] = useState<Record<string, boolean>>({});
+
+  // 查看历史学习记录时，使用记录中的汇总数据（不含错题详情）
+  const recordResult = record
+    ? {
+        totalQuestions: record.totalQuestions,
+        correctCount: record.correctCount,
+        wrongCount: record.wrongCount,
+        durationSeconds: record.durationSeconds,
+        wrongAnswers: [] as { question: any; selectedKeys: string[]; correctKeys: string[] }[],
+      }
+    : null;
+
+  const result = recordResult ?? liveResult;
+  const isRecordView = !!record;
 
   if (!result) {
     return (
@@ -90,14 +104,19 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
       navigation.replace('Quiz', {
         categoryId,
         unitIndex,
-        categoryName,
+        categoryName: categoryName ?? '',
       });
     }
   };
 
   const handleContinue = () => {
     dispatch(resetStudy());
-    navigation.popTo('Study');
+    if (isRecordView) {
+      // 从学习记录进入时，返回记录列表
+      (navigation as any).navigate('ProfileTab', { screen: 'Records' });
+    } else {
+      navigation.popTo('Study');
+    }
   };
 
   const toggleWrong = (questionId: string) => {
@@ -105,7 +124,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[styles.content, { padding: 16 * spacing, paddingBottom: 32 * spacing }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[styles.content, { padding: 16 * spacing, paddingTop: 0, paddingBottom: 32 * spacing }]}>
       {/* Score card */}
       <View style={[styles.scoreCard, { backgroundColor: colors.surface, borderRadius: 16 * radius, padding: 32 * spacing, marginBottom: 20 * spacing }]}>
         <Text style={[styles.scoreEmoji, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>{getScoreEmoji()}</Text>
@@ -192,7 +211,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
           <Text style={[styles.retryText, { color: colors.primary, fontSize: 16 * font }]}>{t.retry}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.continueButton, { backgroundColor: colors.primary, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleContinue} activeOpacity={0.8}>
-          <Text style={[styles.continueText, { fontSize: 16 * font }]}>{t.continueStudy}</Text>
+          <Text style={[styles.continueText, { fontSize: 16 * font }]}>{isRecordView ? t.back : t.continueStudy}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

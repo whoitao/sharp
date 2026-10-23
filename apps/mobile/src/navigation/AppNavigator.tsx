@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import type { StudyRecord } from '@sharp/shared';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,8 +20,8 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import HomeScreen from '../screens/home/HomeScreen';
 
 // Study screens
-import QuizResultScreen from '../screens/home/QuizResultScreen';
-import QuizScreen from '../screens/home/QuizScreen';
+import QuizResultScreen from '../screens/study/QuizResultScreen';
+import QuizScreen from '../screens/study/QuizScreen';
 import StudyScreen from '../screens/study/StudyScreen';
 
 // Profile screens
@@ -43,7 +44,7 @@ export type HomeStackParamList = {
 export type StudyStackParamList = {
   Study: undefined;
   Quiz: { categoryId: string; unitIndex: number; categoryName: string };
-  QuizResult: { categoryId: string; unitIndex: number; categoryName: string };
+  QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; record?: StudyRecord };
 };
 
 export type ProfileStackParamList = {
