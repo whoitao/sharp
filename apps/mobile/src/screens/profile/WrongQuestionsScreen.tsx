@@ -98,7 +98,8 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
             </View>
           ))}
 
-          {item.analysis && (
+          {/* 用 !! 转成布尔：analysis 为空字符串时 React 会把 "" 渲染成文本节点，web 端会报 Unexpected text node */}
+          {!!item.analysis && (
             <View style={[styles.analysisBox, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary, marginTop: 10 * spacing, padding: 12 * spacing, borderRadius: 8 * radius }]}>
               <Text style={[styles.analysisLabel, { color: colors.primary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{analysisLabel}</Text>
               <Text style={[styles.analysisText, { color: colors.textSecondary, fontSize: 13 * font, lineHeight: 20 * font }]}>{item.analysis}</Text>

@@ -353,7 +353,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       )}
 
       {/* Analysis (shown after answering) */}
-      {answered && currentQuestion.analysis && (
+      {answered && !!currentQuestion.analysis && (
         <View style={[styles.analysisContainer, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary, marginHorizontal: 16 * spacing, marginBottom: 16 * spacing, padding: 14 * spacing, borderRadius: 10 * radius }]}>
           <Text style={[styles.analysisLabel, { color: colors.primary, fontSize: 13 * font, marginBottom: 6 * spacing }]}>{t.analysis}</Text>
           <Text style={[styles.analysisText, { color: colors.text, fontSize: 14 * font, lineHeight: 22 * font }]}>{currentQuestion.analysis}</Text>

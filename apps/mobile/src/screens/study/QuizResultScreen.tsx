@@ -192,7 +192,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
                       <Text style={[styles.wrongLabel, { color: colors.textSecondary, fontSize: 13 * font, width: 75 * font }]}>{t.correctAnswerLabel}</Text>
                       <Text style={[styles.correctAnswer, { fontSize: 13 * font }]}>{wa.correctKeys.join(', ')}</Text>
                     </View>
-                    {wa.question.analysis && (
+                    {!!wa.question.analysis && (
                       <View style={[styles.analysisBox, { backgroundColor: colors.background, marginTop: 8 * spacing, padding: 10 * spacing, borderRadius: 8 * radius }]}>
                         <Text style={[styles.analysisText, { color: colors.text, fontSize: 13 * font, lineHeight: 20 * font }]}>{wa.question.analysis}</Text>
                       </View>

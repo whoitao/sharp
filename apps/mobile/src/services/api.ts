@@ -11,8 +11,7 @@ import type {
   Subject,
   Theme,
   UnitInfo,
-  User,
-  UserSettings,
+  UserSettings
 } from '@sharp/shared';
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { dedupeInFlight } from '../utils/dedupe';
@@ -23,16 +22,6 @@ const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://admin.sharp.whoitao.top/";
 
 // ─── Mock data for offline/demo mode ───────────────────────────────────────────
-const mockUser: User = {
-  id: '1',
-  username: 'demo',
-  nickname: 'Demo User',
-  avatar: null,
-  status: 'active' as any,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-};
-
 const mockCategories: Category[] = [
   {
     id: '1',
@@ -346,6 +335,12 @@ const createApiClient = (): AxiosInstance => {
 
 const apiClient = createApiClient();
 
+/** 优先透出后端返回的业务错误文案，避免把所有失败都笼统归为网络错误 */
+const apiErrorMessage = (err: unknown, fallback: string): string => {
+  const data = (err as AxiosError<{ error?: string }>)?.response?.data;
+  return data?.error ?? fallback;
+};
+
 // ─── API Methods ───────────────────────────────────────────────────────────────
 
 export const api = {
@@ -357,33 +352,20 @@ export const api = {
         password,
       });
       return response.data;
-    } catch {
-      if (username && password) {
-        return {
-          token: 'mock-jwt-token-' + Date.now(),
-          user: { ...mockUser, username },
-        };
-      }
-      throw new Error('Login failed');
+    } catch (err) {
+      // 不再回退 mock token：假 token 会让后续所有接口 401，问题被掩盖
+      throw new Error(apiErrorMessage(err, 'Login failed'));
     }
   },
 
   async register(username: string, password: string): Promise<LoginResponse> {
     try {
-      const response = await apiClient.post<LoginResponse>('/api/app/auth/register', {
-        username,
-        password,
-      });
-      return response.data;
-    } catch {
-      if (username && password) {
-        return {
-          token: 'mock-jwt-token-' + Date.now(),
-          user: { ...mockUser, username },
-        };
-      }
-      throw new Error('Registration failed');
+      await apiClient.post('/api/app/auth/register', { username, password });
+    } catch (err) {
+      throw new Error(apiErrorMessage(err, 'Registration failed'));
     }
+    // 后端注册接口只返回 user，不返回 token，需再用同一凭据登录换取 token
+    return api.login(username, password);
   },
 
   // Categories

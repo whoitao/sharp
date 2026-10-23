@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Category, KnowledgePoint, Subject, UnitInfo } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Modal,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import TreePickerModal from '../../components/TreePickerModal';
@@ -138,6 +139,37 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
       setRefreshing(false);
     }
   }, [selectedCategory, selectedSubject, selectedKP]);
+
+  // 回到页面时静默刷新单元进度（从 Quiz 完成返回时最关键）
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      if (selectedCategory && selectedSubject && selectedKP) {
+        (async () => {
+          try {
+            const collected: UnitInfo[] = [];
+            for (let page = 1; page <= UNITS_MAX_PAGES; page += 1) {
+              const { units, totalUnits } = await api.getUnits(
+                selectedCategory.id,
+                selectedSubject.id,
+                selectedKP.id,
+                page,
+                UNITS_PAGE_SIZE,
+              );
+              collected.push(...units);
+              if (units.length === 0 || collected.length >= totalUnits) break;
+            }
+            if (!cancelled) setUnits(collected);
+          } catch {
+            // ignore
+          }
+        })();
+      }
+      return () => {
+        cancelled = true;
+      };
+    }, [selectedCategory, selectedSubject, selectedKP])
+  );
 
   useEffect(() => {
     fetchInitialData();
