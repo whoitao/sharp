@@ -1,12 +1,15 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { useTheme } from './src/hooks/useTheme';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AppDispatch, RootState, store } from './src/stores';
 import { initializeAuth } from './src/stores/authSlice';
 import { loadSettings } from './src/stores/settingsSlice';
+
+// 与安卓原生 splash 保持一致：绿色背景 + 居中 S 图标
+const SPLASH_BACKGROUND = '#10B981';
 
 const AppContent: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -27,8 +30,8 @@ const AppContent: React.FC = () => {
 
   if (authLoading || settingsLoading) {
     return (
-      <View style={[styles.splash, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+      <View style={styles.splash}>
+        <Image source={require('./assets/splash.png')} style={styles.splashImage} resizeMode="contain" />
       </View>
     );
   }
@@ -54,7 +57,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: SPLASH_BACKGROUND,
+  },
+  splashImage: {
+    width: 200,
+    height: 200,
   },
 });
 
