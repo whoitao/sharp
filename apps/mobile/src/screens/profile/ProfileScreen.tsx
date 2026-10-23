@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import {
@@ -20,26 +21,28 @@ interface ProfileScreenProps {
   navigation: NavigationProp;
 }
 
+type MenuIcon = React.ComponentProps<typeof Ionicons>['name'];
+
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const menuItems = [
+  const menuItems: { label: string; icon: MenuIcon; onPress: () => void }[] = [
     {
       label: t.studyRecords,
-      icon: '📊',
+      icon: 'time-outline',
       onPress: () => navigation.navigate('Records'),
     },
     {
       label: t.wrongQuestions,
-      icon: '',
+      icon: 'alert-circle-outline',
       onPress: () => navigation.navigate('WrongQuestions'),
     },
     {
       label: t.settings,
-      icon: '',
+      icon: 'settings-outline',
       onPress: () => navigation.navigate('Settings'),
     },
   ];
@@ -71,10 +74,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             activeOpacity={0.6}
           >
             <View style={[styles.menuIconContainer, { backgroundColor: colors.background, width: 36 * spacing, height: 36 * spacing, borderRadius: 10 * radius, marginRight: 12 * spacing }]}>
-              <Text style={[styles.menuIcon, { fontSize: 18 * font }]}>{item.icon}</Text>
+              <Ionicons name={item.icon} size={20 * font} color={colors.accent} />
             </View>
             <Text style={[styles.menuLabel, { color: colors.text, fontSize: 16 * font }]}>{item.label}</Text>
-            <Text style={[styles.menuArrow, { color: colors.textTertiary, fontSize: 22 * font }]}>›</Text>
+            <Ionicons name="chevron-forward" size={20 * font} color={colors.textTertiary} />
           </TouchableOpacity>
         ))}
       </View>

@@ -148,6 +148,9 @@ importers:
       expo-dev-client:
         specifier: ~55.0.40
         version: 55.0.40(expo@55.0.31)
+      expo-splash-screen:
+        specifier: ~55.0.25
+        version: 55.0.25(expo@55.0.31)(typescript@5.7.3)
       expo-status-bar:
         specifier: ~3.0.0
         version: 3.0.9(react-native@0.83.0(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
@@ -2979,6 +2982,11 @@ packages:
   expo-server@55.0.12:
     resolution: {integrity: sha512-yuNHbxobUKCXWn9Z/H+lgYk6heXEFub6q1h8Yo9kCLxgL2afluWZ/YylbtxgHgmFwDVUmi6milQYfL+wwQMlzw==}
     engines: {node: '>=20.16.0'}
+
+  expo-splash-screen@55.0.25:
+    resolution: {integrity: sha512-Jl3VPbNqbgGjXlkH93hi4Y4p6GB5DasLNbpL2Gb4kl8grujKaIGi4rXL25qYbYxIzefSlt96NqG9czanxxooPg==}
+    peerDependencies:
+      expo: '*'
 
   expo-status-bar@3.0.9:
     resolution: {integrity: sha512-xyYyVg6V1/SSOZWh4Ni3U129XHCnFHBTcUo0dhWtFDrZbNp/duw5AGsQfb2sVeU0gxWHXSY1+5F0jnKYC7WuOw==}
@@ -7796,6 +7804,14 @@ snapshots:
       react-native: 0.83.0(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
 
   expo-server@55.0.12: {}
+
+  expo-splash-screen@55.0.25(expo@55.0.31)(typescript@5.7.3):
+    dependencies:
+      '@expo/prebuild-config': 55.0.22(expo@55.0.31)(typescript@5.7.3)
+      expo: 55.0.31(@babel/core@7.29.7)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@5.0.5(react-native@0.83.0(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(react-dom@19.3.0(react@19.3.0))(react-native@0.83.0(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.7.3)
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   expo-status-bar@3.0.9(react-native@0.83.0(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
     dependencies:

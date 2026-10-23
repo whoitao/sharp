@@ -23,6 +23,9 @@ config.resolver = {
     /\/node_modules\/react-native\/local-cli\/.*/,
     /\/\.next\/.*/,
     /\/\.git\/.*/,
+    /\/dicts\/.*/,
+    /\/ios\/.*/,
+    /\/android\/.*/,
   ],
 };
 
