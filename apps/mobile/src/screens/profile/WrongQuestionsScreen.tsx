@@ -1,5 +1,5 @@
 import type { Question } from '@sharp/shared';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +13,117 @@ import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import { api } from '../../services/api';
+import type { ThemeColors } from '../../theme/colors';
+
+const keyExtractor = (item: Question) => item.id.toString();
+
+interface WrongQuestionCardProps {
+  item: Question;
+  index: number;
+  expanded: boolean;
+  colors: ThemeColors;
+  spacing: number;
+  font: number;
+  radius: number;
+  analysisLabel: string;
+  difficultyLabel: string;
+  onToggle: (id: string) => void;
+}
+
+const WrongQuestionCard = memo(function WrongQuestionCard({
+  item,
+  index,
+  expanded,
+  colors,
+  spacing,
+  font,
+  radius,
+  analysisLabel,
+  difficultyLabel,
+  onToggle,
+}: WrongQuestionCardProps) {
+  const sortedOptions = useMemo(
+    () => [...item.options].sort((a, b) => a.sortNo - b.sortNo),
+    [item.options]
+  );
+
+  return (
+    <TouchableOpacity
+      style={[styles.questionCard, { backgroundColor: colors.surface, borderRadius: 12 * radius, marginBottom: 10 * spacing }]}
+      onPress={() => onToggle(item.id)}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.questionHeader, { padding: 14 * spacing }]}>
+        <View style={[styles.questionIndex, { backgroundColor: colors.errorLight, width: 28 * spacing, height: 28 * spacing, borderRadius: 14 * spacing, marginRight: 10 * spacing }]}>
+          <Text style={[styles.questionIndexText, { color: colors.error, fontSize: 12 * font }]}>{index + 1}</Text>
+        </View>
+        <Text style={[styles.questionContent, { color: colors.textSecondary, fontSize: 14 * font, lineHeight: 20 * font }]} numberOfLines={2}>
+          {item.content}
+        </Text>
+        <Text style={[styles.expandIcon, { color: colors.textTertiary, fontSize: 12 * font, marginLeft: 8 * spacing }]}>{expanded ? '▲' : '▼'}</Text>
+      </View>
+
+      {expanded && (
+        <View style={[styles.questionDetail, { borderTopColor: colors.borderLight, paddingHorizontal: 14 * spacing, paddingBottom: 14 * spacing, paddingTop: 12 * spacing }]}>
+          {sortedOptions.map((option) => (
+            <View
+              key={option.id}
+              style={[
+                styles.optionRow,
+                { paddingVertical: 8 * spacing, paddingHorizontal: 10 * spacing, borderRadius: 8 * radius, marginBottom: 4 * spacing },
+                option.isCorrect && { backgroundColor: colors.accentLight },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.optionKey,
+                  { color: colors.textSecondary, width: 24 * spacing, height: 24 * spacing, borderRadius: 12 * spacing, lineHeight: 22 * spacing, fontSize: 12 * font, marginRight: 10 * spacing },
+                  option.isCorrect && { borderColor: colors.accent, color: colors.accent },
+                ]}
+              >
+                {option.optionKey}
+              </Text>
+              <Text
+                style={[
+                  styles.optionContent,
+                  { color: colors.textSecondary, fontSize: 14 * font },
+                  option.isCorrect && styles.correctOptionContent,
+                ]}
+              >
+                {option.content}
+              </Text>
+              {option.isCorrect && (
+                <Text style={[styles.correctMark, { color: colors.accent, fontSize: 14 * font, marginLeft: 8 * spacing }]}>✓</Text>
+              )}
+            </View>
+          ))}
+
+          {item.analysis && (
+            <View style={[styles.analysisBox, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary, marginTop: 10 * spacing, padding: 12 * spacing, borderRadius: 8 * radius }]}>
+              <Text style={[styles.analysisLabel, { color: colors.primary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{analysisLabel}</Text>
+              <Text style={[styles.analysisText, { color: colors.textSecondary, fontSize: 13 * font, lineHeight: 20 * font }]}>{item.analysis}</Text>
+            </View>
+          )}
+
+          <View style={[styles.difficultyRow, { marginTop: 10 * spacing }]}>
+            <Text style={[styles.difficultyLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>{difficultyLabel}</Text>
+            {Array.from({ length: 5 }, (_, i) => (
+              <Text
+                key={i}
+                style={[
+                  styles.difficultyStar,
+                  { fontSize: 14 * font, marginRight: 2 * spacing, color: i < item.difficulty ? '#F59E0B' : colors.border },
+                ]}
+              >
+                ★
+              </Text>
+            ))}
+          </View>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+});
 
 const WrongQuestionsScreen: React.FC = () => {
   const { colors } = useTheme();
@@ -40,98 +151,53 @@ const WrongQuestionsScreen: React.FC = () => {
     fetchWrongQuestions();
   }, [fetchWrongQuestions]);
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchWrongQuestions();
-  };
+  }, [fetchWrongQuestions]);
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  }, []);
 
-  const renderItem = ({ item, index }: { item: Question; index: number }) => {
-    const isExpanded = expandedIds[item.id];
-    const correctOption = item.options.find((o) => o.isCorrect);
+  const renderItem = useCallback(
+    ({ item, index }: { item: Question; index: number }) => (
+      <WrongQuestionCard
+        item={item}
+        index={index}
+        expanded={!!expandedIds[item.id]}
+        colors={colors}
+        spacing={spacing}
+        font={font}
+        radius={radius}
+        analysisLabel={t.analysis}
+        difficultyLabel={t.difficultyLabel}
+        onToggle={toggleExpand}
+      />
+    ),
+    [expandedIds, colors, spacing, font, radius, t.analysis, t.difficultyLabel, toggleExpand]
+  );
 
-    return (
-      <TouchableOpacity
-        style={[styles.questionCard, { backgroundColor: colors.surface, borderRadius: 12 * radius, marginBottom: 10 * spacing }]}
-        onPress={() => toggleExpand(item.id)}
-        activeOpacity={0.7}
-      >
-        <View style={[styles.questionHeader, { padding: 14 * spacing }]}>
-          <View style={[styles.questionIndex, { backgroundColor: colors.errorLight, width: 28 * spacing, height: 28 * spacing, borderRadius: 14 * spacing, marginRight: 10 * spacing }]}>
-            <Text style={[styles.questionIndexText, { color: colors.error, fontSize: 12 * font }]}>{index + 1}</Text>
-          </View>
-          <Text style={[styles.questionContent, { color: colors.textSecondary, fontSize: 14 * font, lineHeight: 20 * font }]} numberOfLines={2}>
-            {item.content}
-          </Text>
-          <Text style={[styles.expandIcon, { color: colors.textTertiary, fontSize: 12 * font, marginLeft: 8 * spacing }]}>{isExpanded ? '▲' : '▼'}</Text>
-        </View>
+  const contentContainerStyle = useMemo(
+    () => [styles.list, { padding: 16 * spacing, paddingBottom: 24 * spacing }],
+    [spacing]
+  );
 
-        {isExpanded && (
-          <View style={[styles.questionDetail, { borderTopColor: colors.borderLight, paddingHorizontal: 14 * spacing, paddingBottom: 14 * spacing, paddingTop: 12 * spacing }]}>
-            {[...item.options]
-              .sort((a, b) => a.sortNo - b.sortNo)
-              .map((option) => (
-                <View
-                  key={option.id}
-                  style={[
-                    styles.optionRow,
-                    { paddingVertical: 8 * spacing, paddingHorizontal: 10 * spacing, borderRadius: 8 * radius, marginBottom: 4 * spacing },
-                    option.isCorrect && { backgroundColor: colors.accentLight },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.optionKey,
-                      { color: colors.textSecondary, width: 24 * spacing, height: 24 * spacing, borderRadius: 12 * spacing, lineHeight: 22 * spacing, fontSize: 12 * font, marginRight: 10 * spacing },
-                      option.isCorrect && { borderColor: colors.accent, color: colors.accent },
-                    ]}
-                  >
-                    {option.optionKey}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.optionContent,
-                      { color: colors.textSecondary, fontSize: 14 * font },
-                      option.isCorrect && styles.correctOptionContent,
-                    ]}
-                  >
-                    {option.content}
-                  </Text>
-                  {option.isCorrect && (
-                    <Text style={[styles.correctMark, { color: colors.accent, fontSize: 14 * font, marginLeft: 8 * spacing }]}>✓</Text>
-                  )}
-                </View>
-              ))}
+  const listEmptyComponent = useMemo(
+    () => (
+      <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
+        <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>🎉</Text>
+        <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 4 * spacing }]}>{t.wrongEmpty}</Text>
+        <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 14 * font }]}>{t.wrongEmptySub}</Text>
+      </View>
+    ),
+    [spacing, font, colors.textSecondary, colors.textTertiary, t.wrongEmpty, t.wrongEmptySub]
+  );
 
-            {item.analysis && (
-              <View style={[styles.analysisBox, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary, marginTop: 10 * spacing, padding: 12 * spacing, borderRadius: 8 * radius }]}>
-                <Text style={[styles.analysisLabel, { color: colors.primary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.analysis}</Text>
-                <Text style={[styles.analysisText, { color: colors.textSecondary, fontSize: 13 * font, lineHeight: 20 * font }]}>{item.analysis}</Text>
-              </View>
-            )}
-
-            <View style={[styles.difficultyRow, { marginTop: 10 * spacing }]}>
-              <Text style={[styles.difficultyLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>{t.difficultyLabel}</Text>
-              {Array.from({ length: 5 }, (_, i) => (
-                <Text
-                  key={i}
-                  style={[
-                    styles.difficultyStar,
-                    { fontSize: 14 * font, marginRight: 2 * spacing, color: i < item.difficulty ? '#F59E0B' : colors.border },
-                  ]}
-                >
-                  ★
-                </Text>
-              ))}
-            </View>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
+  const refreshControl = useMemo(
+    () => <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />,
+    [refreshing, onRefresh, colors.primary]
+  );
 
   if (loading && questions.length === 0) {
     return (
@@ -145,19 +211,11 @@ const WrongQuestionsScreen: React.FC = () => {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={questions}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={keyExtractor}
         renderItem={renderItem}
-        contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingBottom: 24 * spacing }]}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-        }
-        ListEmptyComponent={
-          <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
-            <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>🎉</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 4 * spacing }]}>{t.wrongEmpty}</Text>
-            <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 14 * font }]}>{t.wrongEmptySub}</Text>
-          </View>
-        }
+        contentContainerStyle={contentContainerStyle}
+        refreshControl={refreshControl}
+        ListEmptyComponent={listEmptyComponent}
       />
     </View>
   );

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Category, KnowledgePoint, Subject, UnitInfo } from '@sharp/shared';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -36,6 +36,12 @@ interface DropdownOption {
   label: string;
 }
 
+// 服务端 pageSize 上限是 100，超过部分必须翻页取回，否则单元列表会被静默截断
+const UNITS_PAGE_SIZE = 100;
+const UNITS_MAX_PAGES = 20;
+
+const keyExtractor = (item: UnitInfo) => item.unitIndex.toString();
+
 const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
@@ -57,9 +63,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [dataRefreshing, setDataRefreshing] = useState(false);
   const [pressingUnitIndex, setPressingUnitIndex] = useState<number | null>(null);
-
-  // 一次性加载单元列表，不做触底分页
-  const pageSize = 200;
 
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [subjectModalVisible, setSubjectModalVisible] = useState(false);
@@ -106,6 +109,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     }
   }, [dataRefreshing]);
 
+  // 一次性加载全部单元（不做触底分页），但需按服务端 pageSize 上限翻页取满
   const fetchUnits = useCallback(async () => {
     if (!selectedCategory || !selectedSubject || !selectedKP) {
       setUnits([]);
@@ -114,14 +118,19 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     }
     setLoading(true);
     try {
-      const { units: newUnits } = await api.getUnits(
-        selectedCategory.id,
-        selectedSubject.id,
-        selectedKP.id,
-        1,
-        pageSize,
-      );
-      setUnits(newUnits);
+      const collected: UnitInfo[] = [];
+      for (let page = 1; page <= UNITS_MAX_PAGES; page += 1) {
+        const { units, totalUnits } = await api.getUnits(
+          selectedCategory.id,
+          selectedSubject.id,
+          selectedKP.id,
+          page,
+          UNITS_PAGE_SIZE,
+        );
+        collected.push(...units);
+        if (units.length === 0 || collected.length >= totalUnits) break;
+      }
+      setUnits(collected);
     } catch {
       setUnits([]);
     } finally {
@@ -138,39 +147,42 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     fetchUnits();
   }, [fetchUnits]);
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchUnits();
-  };
+  }, [fetchUnits]);
 
-  const handleUnitPress = async (unit: UnitInfo) => {
-    if (pressingUnitIndex !== null || !selectedCategory) return;
-    setPressingUnitIndex(unit.unitIndex);
-    try {
+  const handleUnitPress = useCallback(
+    async (unit: UnitInfo) => {
+      if (pressingUnitIndex !== null || !selectedCategory) return;
+      setPressingUnitIndex(unit.unitIndex);
       try {
-        await api.startStudy(selectedCategory.id, unit.unitIndex);
-      } catch {
-        // silently proceed
+        try {
+          await api.startStudy(selectedCategory.id, unit.unitIndex);
+        } catch {
+          // silently proceed
+        }
+        const result = await dispatch(
+          fetchQuestions({
+            categoryId: selectedCategory.id,
+            unitIndex: unit.unitIndex,
+            subjectId: selectedSubject?.id,
+            knowledgePointId: selectedKP?.id,
+          })
+        );
+        if (fetchQuestions.fulfilled.match(result)) {
+          navigation.navigate('Quiz', {
+            categoryId: selectedCategory.id,
+            unitIndex: unit.unitIndex,
+            categoryName: selectedCategory.name,
+          });
+        }
+      } finally {
+        setPressingUnitIndex(null);
       }
-      const result = await dispatch(
-        fetchQuestions({
-          categoryId: selectedCategory.id,
-          unitIndex: unit.unitIndex,
-          subjectId: selectedSubject?.id,
-          knowledgePointId: selectedKP?.id,
-        })
-      );
-      if (fetchQuestions.fulfilled.match(result)) {
-        navigation.navigate('Quiz', {
-          categoryId: selectedCategory.id,
-          unitIndex: unit.unitIndex,
-          categoryName: selectedCategory.name,
-        });
-      }
-    } finally {
-      setPressingUnitIndex(null);
-    }
-  };
+    },
+    [pressingUnitIndex, selectedCategory, selectedSubject, selectedKP, dispatch, navigation]
+  );
 
   const subjectOptions: DropdownOption[] = subjects.map((s) => ({
     value: s.id,
@@ -182,13 +194,38 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     []
   );
 
-  const renderItem = ({ item }: { item: UnitInfo }) => (
-    <UnitItem
-      unit={item}
-      onPress={() => handleUnitPress(item)}
-      loading={pressingUnitIndex === item.unitIndex}
-      disabled={pressingUnitIndex !== null}
-    />
+  const renderItem = useCallback(
+    ({ item }: { item: UnitInfo }) => (
+      <UnitItem
+        unit={item}
+        onPress={handleUnitPress}
+        loading={pressingUnitIndex === item.unitIndex}
+        disabled={pressingUnitIndex !== null}
+      />
+    ),
+    [handleUnitPress, pressingUnitIndex]
+  );
+
+  const contentContainerStyle = useMemo(
+    () => [styles.list, { padding: 16 * spacing, paddingTop: 8 * spacing, paddingBottom: 24 * spacing }],
+    [spacing]
+  );
+
+  const listEmptyComponent = useMemo(
+    () => (
+      <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
+        <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📋</Text>
+        <Text style={[styles.emptyText, { color: colors.textTertiary, fontSize: 16 * font }]}>
+          {selectedCategory && selectedSubject && selectedKP ? t.studyNoUnits : t.studySelectAllFilters}
+        </Text>
+      </View>
+    ),
+    [spacing, font, colors.textTertiary, selectedCategory, selectedSubject, selectedKP, t.studyNoUnits, t.studySelectAllFilters]
+  );
+
+  const refreshControl = useMemo(
+    () => <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />,
+    [refreshing, onRefresh, colors.accent]
   );
 
   return (
@@ -258,20 +295,11 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
       ) : (
         <FlatList
           data={units}
-          keyExtractor={(item) => item.unitIndex.toString()}
+          keyExtractor={keyExtractor}
           renderItem={renderItem}
-          contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingTop: 8 * spacing, paddingBottom: 24 * spacing }]}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
-          }
-          ListEmptyComponent={
-            <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
-              <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📋</Text>
-              <Text style={[styles.emptyText, { color: colors.textTertiary, fontSize: 16 * font }]}>
-                {selectedCategory && selectedSubject && selectedKP ? t.studyNoUnits : t.studySelectAllFilters}
-              </Text>
-            </View>
-          }
+          contentContainerStyle={contentContainerStyle}
+          refreshControl={refreshControl}
+          ListEmptyComponent={listEmptyComponent}
         />
       )}
 

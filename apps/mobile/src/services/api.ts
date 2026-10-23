@@ -15,6 +15,7 @@ import type {
   UserSettings,
 } from '@sharp/shared';
 import axios, { AxiosError, AxiosInstance } from 'axios';
+import { dedupeInFlight } from '../utils/dedupe';
 import { storage } from '../utils/storage';
 import { getCached, setCached } from '../utils/studyCache';
 
@@ -22,7 +23,6 @@ const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://admin.sharp.whoitao.top/";
 
 // ─── Mock data for offline/demo mode ───────────────────────────────────────────
-console.log('API_BASE_URL:', API_BASE_URL);
 const mockUser: User = {
   id: '1',
   username: 'demo',
@@ -388,59 +388,65 @@ export const api = {
 
   // Categories
   async getCategories(parentId: string): Promise<Category[]> {
-    // 1. 优先读本地缓存（仅缓存真实接口数据）
-    const cached = await getCached<Category[]>('categories', parentId);
-    if (cached) return cached;
+    return dedupeInFlight(`categories:${parentId}`, async () => {
+      // 1. 优先读本地缓存（仅缓存真实接口数据）
+      const cached = await getCached<Category[]>('categories', parentId);
+      if (cached) return cached;
 
-    // 2. 缓存未命中，请求接口
-    try {
-      const response = await apiClient.get<Category[]>('/api/app/categories', {
-        params: { parentId },
-      });
-      // 仅缓存非空数据，避免异常空响应固化 24 小时
-      if (response.data.length > 0) {
-        await setCached('categories', response.data, parentId);
+      // 2. 缓存未命中，请求接口
+      try {
+        const response = await apiClient.get<Category[]>('/api/app/categories', {
+          params: { parentId },
+        });
+        // 仅缓存非空数据，避免异常空响应固化 24 小时
+        if (response.data.length > 0) {
+          await setCached('categories', response.data, parentId);
+        }
+        return response.data;
+      } catch {
+        // 接口失败时临时返回 mock，但不写入缓存，下次仍会重试接口
+        return parentId === '0'
+          ? mockCategories
+          : mockSubCategories.filter((c) => c.parentId === parentId);
       }
-      return response.data;
-    } catch {
-      // 接口失败时临时返回 mock，但不写入缓存，下次仍会重试接口
-      return parentId === '0'
-        ? mockCategories
-        : mockSubCategories.filter((c) => c.parentId === parentId);
-    }
+    });
   },
 
   // Subjects
   async getSubjects(): Promise<Subject[]> {
-    const cached = await getCached<Subject[]>('subjects');
-    if (cached) return cached;
+    return dedupeInFlight('subjects', async () => {
+      const cached = await getCached<Subject[]>('subjects');
+      if (cached) return cached;
 
-    try {
-      const response = await apiClient.get<Subject[]>('/api/app/subjects');
-      if (response.data.length > 0) {
-        await setCached('subjects', response.data);
+      try {
+        const response = await apiClient.get<Subject[]>('/api/app/subjects');
+        if (response.data.length > 0) {
+          await setCached('subjects', response.data);
+        }
+        return response.data;
+      } catch {
+        return mockSubjects;
       }
-      return response.data;
-    } catch {
-      return mockSubjects;
-    }
+    });
   },
 
   // Knowledge Points
   async getKnowledgePoints(subjectId?: string): Promise<KnowledgePoint[]> {
-    const cached = await getCached<KnowledgePoint[]>('knowledgePoints', subjectId);
-    if (cached) return cached;
+    return dedupeInFlight(`knowledgePoints:${subjectId ?? 'all'}`, async () => {
+      const cached = await getCached<KnowledgePoint[]>('knowledgePoints', subjectId);
+      if (cached) return cached;
 
-    try {
-      const params = subjectId ? { subjectId } : {};
-      const response = await apiClient.get<KnowledgePoint[]>('/api/app/knowledge-points', { params });
-      if (response.data.length > 0) {
-        await setCached('knowledgePoints', response.data, subjectId);
+      try {
+        const params = subjectId ? { subjectId } : {};
+        const response = await apiClient.get<KnowledgePoint[]>('/api/app/knowledge-points', { params });
+        if (response.data.length > 0) {
+          await setCached('knowledgePoints', response.data, subjectId);
+        }
+        return response.data;
+      } catch {
+        return mockKnowledgePoints;
       }
-      return response.data;
-    } catch {
-      return mockKnowledgePoints;
-    }
+    });
   },
 
   // Units

@@ -143,4 +143,17 @@ export const en: TranslationKeys = {
   hasAccount: 'Have an account? ',
   registerFailed: 'Registration failed',
   backToLogin: 'Back to login',
+
+  // Crash fallback
+  crashTitle: 'Something went wrong',
+  crashDesc: 'This part of the app failed to render. Other pages still work.',
+  crashRetry: 'Retry',
+  crashScope: 'Location',
+  crashDetails: 'View details',
+  crashHideDetails: 'Hide details',
+  crashLogTitle: 'Crash logs',
+  crashLogDesc: 'App exceptions are recorded here (up to 20 entries).',
+  crashLogEmpty: 'No crash recorded',
+  crashLogClear: 'Clear',
+  crashLogClearConfirm: 'Clear all crash logs?',
 };

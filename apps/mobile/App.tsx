@@ -2,11 +2,16 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Provider, useDispatch, useSelector } from 'react-redux';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import { useTheme } from './src/hooks/useTheme';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AppDispatch, RootState, store } from './src/stores';
 import { initializeAuth } from './src/stores/authSlice';
 import { loadSettings } from './src/stores/settingsSlice';
+import { resetStudy } from './src/stores/studySlice';
+import { installGlobalErrorLog } from './src/utils/globalErrorLog';
+
+installGlobalErrorLog();
 
 // 与安卓原生 splash 保持一致：绿色背景 + 居中 S 图标
 const SPLASH_BACKGROUND = '#10B981';
@@ -14,7 +19,7 @@ const SPLASH_BACKGROUND = '#10B981';
 const AppContent: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading: authLoading, isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const { isLoading: settingsLoading } = useSelector((state: RootState) => state.settings);
+  const { initialized: settingsInitialized } = useSelector((state: RootState) => state.settings);
   const { colors } = useTheme();
 
   useEffect(() => {
@@ -28,7 +33,8 @@ const AppContent: React.FC = () => {
     }
   }, [dispatch, authLoading, isAuthenticated]);
 
-  if (authLoading || settingsLoading) {
+  // 仅冷启动首次拉取设置前停在启动页；之后的刷新不再卸载重建整棵导航树
+  if (authLoading || (isAuthenticated && !settingsInitialized)) {
     return (
       <View style={styles.splash}>
         <Image source={require('./assets/splash.png')} style={styles.splashImage} resizeMode="contain" />
@@ -47,7 +53,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <AppContent />
+      <ErrorBoundary scope="App" onRetry={() => store.dispatch(resetStudy())}>
+        <AppContent />
+      </ErrorBoundary>
     </Provider>
   );
 };

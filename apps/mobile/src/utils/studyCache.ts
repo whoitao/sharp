@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { bumpInFlightGeneration } from './dedupe';
 
 /** 缓存有效期：24 小时 */
 export const STUDY_CACHE_TTL = 24 * 60 * 60 * 1000;
@@ -63,6 +64,8 @@ export async function hasStudyCache(): Promise<boolean> {
 
 /** 清空学习页搜索缓存（用于手动刷新或登出） */
 export async function clearStudyCache(): Promise<void> {
+  // 让仍在飞行中的旧请求失效，避免刷新后复用清缓存前发起的结果
+  bumpInFlightGeneration();
   try {
     const keys = await AsyncStorage.getAllKeys();
     const studyKeys = keys.filter((k) => k.startsWith(CACHE_PREFIX));

@@ -8,6 +8,8 @@ interface SettingsState {
   language: Language;
   density: Density;
   isLoading: boolean;
+  /** 是否已完成首次加载，用于区分冷启动门控与后续刷新 */
+  initialized: boolean;
 }
 
 const initialState: SettingsState = {
@@ -16,6 +18,7 @@ const initialState: SettingsState = {
   language: 'zh' as Language,
   density: 'comfortable' as Density,
   isLoading: false,
+  initialized: false,
 };
 
 export const loadSettings = createAsyncThunk('settings/load', async () => {
@@ -53,6 +56,7 @@ const settingsSlice = createSlice({
       })
       .addCase(loadSettings.fulfilled, (state, action) => {
         state.isLoading = false;
+        state.initialized = true;
         state.unitSize = action.payload.unitSize ?? state.unitSize;
         state.theme = action.payload.theme ?? state.theme;
         state.language = action.payload.language ?? state.language;
@@ -60,6 +64,8 @@ const settingsSlice = createSlice({
       })
       .addCase(loadSettings.rejected, (state) => {
         state.isLoading = false;
+        // 拉取失败也要放行界面，否则永久停在启动页
+        state.initialized = true;
       })
       .addCase(updateSettings.fulfilled, (state, action) => {
         state.unitSize = action.payload.unitSize ?? state.unitSize;

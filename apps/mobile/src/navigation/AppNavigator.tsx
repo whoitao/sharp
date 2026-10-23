@@ -7,6 +7,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
@@ -25,6 +26,7 @@ import QuizScreen from '../screens/study/QuizScreen';
 import StudyScreen from '../screens/study/StudyScreen';
 
 // Profile screens
+import CrashLogScreen from '../screens/profile/CrashLogScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import RecordsScreen from '../screens/profile/RecordsScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
@@ -52,6 +54,7 @@ export type ProfileStackParamList = {
   Settings: undefined;
   Records: undefined;
   WrongQuestions: undefined;
+  CrashLog: undefined;
 };
 
 export type MainTabParamList = {
@@ -189,6 +192,11 @@ const ProfileStackNavigator: React.FC = () => {
       component={WrongQuestionsScreen as any}
       options={{ title: t.wrongQuestions }}
     />
+    <ProfileStack.Screen
+      name="CrashLog"
+      component={CrashLogScreen as any}
+      options={{ title: t.crashLogTitle }}
+    />
     </ProfileStack.Navigator>
   );
 };
@@ -212,6 +220,23 @@ const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
     />
   );
 };
+
+// ─── Tab 级错误边界 ───────────────────────────────────────────────────────────
+
+/** 单独包一层组件而不是内联 render，保证导航项的组件引用稳定 */
+const withTabBoundary = (scope: string, Navigator: React.ComponentType): React.FC => {
+  const TabScreen: React.FC = () => (
+    <ErrorBoundary scope={scope}>
+      <Navigator />
+    </ErrorBoundary>
+  );
+  TabScreen.displayName = `${scope}Boundary`;
+  return TabScreen;
+};
+
+const HomeTabScreen = withTabBoundary('HomeTab', HomeStackNavigator);
+const StudyTabScreen = withTabBoundary('StudyTab', StudyStackNavigator);
+const ProfileTabScreen = withTabBoundary('ProfileTab', ProfileStackNavigator);
 
 // ─── Main Tab Navigator ───────────────────────────────────────────────────────
 
@@ -245,7 +270,7 @@ const MainTabNavigator: React.FC = () => {
     >
       <Tab.Screen
         name="HomeTab"
-        component={HomeStackNavigator as any}
+        component={HomeTabScreen as any}
         options={{
           title: t.home,
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />,
@@ -253,7 +278,7 @@ const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="StudyTab"
-        component={StudyStackNavigator as any}
+        component={StudyTabScreen as any}
         options={{
           title: t.study,
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'book' : 'book-outline'} focused={focused} />,
@@ -261,7 +286,7 @@ const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="ProfileTab"
-        component={ProfileStackNavigator as any}
+        component={ProfileTabScreen as any}
         options={{
           title: t.profile,
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />,

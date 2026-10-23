@@ -1,5 +1,5 @@
 import type { UnitInfo } from '@sharp/shared';
-import React from 'react';
+import React, { memo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
@@ -7,7 +7,8 @@ import { useTranslation } from '../i18n/useTranslation';
 
 interface UnitItemProps {
   unit: UnitInfo;
-  onPress: () => void;
+  /** 传入 unit 本身，父组件可以保持稳定回调引用，列表项才能被 memo 命中 */
+  onPress: (unit: UnitInfo) => void;
   loading?: boolean;
   disabled?: boolean;
 }
@@ -41,7 +42,7 @@ const UnitItem: React.FC<UnitItemProps> = ({ unit, onPress, loading = false, dis
           borderRadius: 12 * radius,
         },
       ]}
-      onPress={onPress}
+      onPress={() => onPress(unit)}
       disabled={disabled}
       activeOpacity={loading ? 1 : 0.7}
     >
@@ -147,4 +148,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UnitItem;
+export default memo(UnitItem);

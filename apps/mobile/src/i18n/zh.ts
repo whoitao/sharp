@@ -141,6 +141,19 @@ export const zh = {
   registerFailed: '注册失败',
   hasAccount: '已有账号？ ',
   backToLogin: '返回登录',
+
+  // Crash fallback
+  crashTitle: '界面出错了',
+  crashDesc: '这一部分在渲染时发生异常，其它页面仍可正常使用。',
+  crashRetry: '重试',
+  crashScope: '出错位置',
+  crashDetails: '查看详情',
+  crashHideDetails: '收起详情',
+  crashLogTitle: '崩溃日志',
+  crashLogDesc: '应用出现异常时会记录在这里，最多保留 20 条。',
+  crashLogEmpty: '暂无崩溃记录',
+  crashLogClear: '清空',
+  crashLogClearConfirm: '确定清空全部崩溃日志吗？',
 };
 
 export type TranslationKeys = typeof zh;

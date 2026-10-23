@@ -1,5 +1,7 @@
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import type { Density, Language, Theme } from '@sharp/shared';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -12,10 +14,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
+import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import type { StringTranslationKey } from '../../i18n/zh';
 import type { AppDispatch, RootState } from '../../stores';
 import { logout } from '../../stores/authSlice';
 import { setDensity, setLanguage, setTheme, setUnitSize, updateSettings } from '../../stores/settingsSlice';
+import { readCrashes } from '../../utils/crashLog';
+
+type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Settings'>;
+
+interface SettingsScreenProps {
+  navigation: NavigationProp;
+}
 
 const UNIT_SIZE_OPTIONS = [20, 30, 50, 100];
 const THEME_OPTIONS: { value: Theme; labelKey: StringTranslationKey }[] = [
@@ -33,12 +43,23 @@ const DENSITY_OPTIONS: { value: Density; labelKey: StringTranslationKey }[] = [
   { value: 'spacious' as Density, labelKey: 'densitySpacious' },
 ];
 
-const SettingsScreen: React.FC = () => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
-  const { spacing, font } = useDensity();
+  const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { unitSize, theme, language, density } = useSelector((state: RootState) => state.settings);
+  const [crashCount, setCrashCount] = useState(0);
+
+  const loadCrashCount = useCallback(async () => {
+    setCrashCount((await readCrashes()).length);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadCrashCount();
+    }, [loadCrashCount])
+  );
 
   const handleUnitSizeChange = (size: number) => {
     dispatch(setUnitSize(size));
@@ -216,6 +237,33 @@ const SettingsScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Crash log entry */}
+      <TouchableOpacity
+        style={[
+          styles.entryButton,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.borderLight,
+            paddingVertical: 16 * spacing,
+            paddingHorizontal: 20 * spacing,
+            borderRadius: 16 * radius,
+            marginTop: 8 * spacing,
+          },
+        ]}
+        onPress={() => navigation.navigate('CrashLog')}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.entryLabel, { color: colors.text, fontSize: 16 * font }]}>{t.crashLogTitle}</Text>
+        <Text
+          style={[
+            styles.entryValue,
+            { color: crashCount > 0 ? colors.error : colors.textTertiary, fontSize: 15 * font },
+          ]}
+        >
+          {crashCount}
+        </Text>
+      </TouchableOpacity>
+
       {/* Logout button */}
       <TouchableOpacity
         style={[styles.logoutButton, { backgroundColor: colors.surface, borderColor: colors.errorLight, paddingVertical: 16 * spacing, borderRadius: 16 * spacing }]}
@@ -335,6 +383,23 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  entryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  entryLabel: {
+    fontWeight: '600',
+  },
+  entryValue: {
+    fontVariant: ['tabular-nums'],
   },
 });
 

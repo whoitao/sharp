@@ -18,7 +18,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { spacing } = useDensity();
 
   // 进入首页后的空余时间预拉取学习页搜索数据（分类/科目/知识点），
-  // api 方法内部已做缓存优先，重复调用不会产生多余网络请求
+  // api 内部做缓存优先 + 并发去重，与学习页同时挂载也不会产生重复请求
   useEffect(() => {
     api.getCategories('0').catch(() => {});
     api.getSubjects().catch(() => {});

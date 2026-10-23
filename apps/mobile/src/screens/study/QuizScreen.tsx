@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import ElapsedTimer from '../../components/ElapsedTimer';
 import ProgressBar from '../../components/ProgressBar';
 import QuizOption from '../../components/QuizOption';
 import { useDensity } from '../../hooks/useDensity';
@@ -45,10 +46,11 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [answered, setAnswered] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingNextRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // 计时秒数由 ElapsedTimer 自己维护，这里只保留最新值供交卷时使用
+  const elapsedRef = useRef(0);
+  const [timerRunning, setTimerRunning] = useState(true);
 
   const currentQuestion = currentQuestions[currentIndex] ?? null;
   const totalQuestions = currentQuestions.length;
@@ -56,15 +58,11 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   // QuestionType.MULTIPLE_CHOICE = 2
   const isMultipleChoice = currentQuestion?.type === 2;
 
-  // Timer + unmount cleanup
+  // 卸载时取消待执行的切题任务
   useEffect(() => {
     isMountedRef.current = true;
-    timerRef.current = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
     return () => {
       isMountedRef.current = false;
-      if (timerRef.current) clearInterval(timerRef.current);
       if (pendingNextRef.current) clearTimeout(pendingNextRef.current);
     };
   }, []);
@@ -81,14 +79,12 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     setShowNextButton(false);
   }, [currentIndex]);
 
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  const handleElapsed = useCallback((seconds: number) => {
+    elapsedRef.current = seconds;
+  }, []);
 
   const handleFinish = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    setTimerRunning(false);
     if (pendingNextRef.current) {
       clearTimeout(pendingNextRef.current);
       pendingNextRef.current = null;
@@ -120,7 +116,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     api
       .finishStudy(categoryId, unitIndex, {
         ...stats,
-        durationSeconds: elapsedSeconds,
+        durationSeconds: elapsedRef.current,
         answers: answerItems,
       })
       .catch(() => {});
@@ -130,7 +126,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       unitIndex,
       categoryName,
     });
-  }, [dispatch, navigation, categoryId, unitIndex, categoryName, elapsedSeconds]);
+  }, [dispatch, navigation, categoryId, unitIndex, categoryName]);
 
   const goNextQuestion = useCallback(() => {
     if (isLastQuestion) {
@@ -250,7 +246,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
         text: t.quitConfirm,
         style: 'destructive',
         onPress: () => {
-          if (timerRef.current) clearInterval(timerRef.current);
+          setTimerRunning(false);
           navigation.goBack();
         },
       },
@@ -273,7 +269,12 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
         <TouchableOpacity onPress={handleQuit} style={[styles.quitButton, { paddingVertical: 6 * spacing, paddingHorizontal: 12 * spacing }]}>
           <Text style={[styles.quitText, { color: colors.error, fontSize: 15 * font }]}>{t.quit}</Text>
         </TouchableOpacity>
-        <Text style={[styles.timer, { color: colors.text, fontSize: 16 * font }]}>{formatTime(elapsedSeconds)}</Text>
+        <ElapsedTimer
+          running={timerRunning}
+          onElapsed={handleElapsed}
+          color={colors.text}
+          fontSize={16 * font}
+        />
         <View style={styles.quitButton} />
       </View>
 
@@ -391,11 +392,6 @@ const styles = StyleSheet.create({
   quitText: {
     fontSize: 15,
     fontWeight: '500',
-  },
-  timer: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
   },
   questionContainer: {
     paddingHorizontal: 20,

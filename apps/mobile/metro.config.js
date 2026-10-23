@@ -24,6 +24,7 @@ config.resolver = {
     /\/\.next\/.*/,
     /\/\.git\/.*/,
     /\/dicts\/.*/,
+    /\/build-[^/]*\.apk$/,
     /\/ios\/.*/,
     /\/android\/.*/,
   ],
