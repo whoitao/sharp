@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
       userId: appUser.id,
       questionId: BigInt(questionId),
       categoryId: question.categoryId,
+      subjectId: question.subjectId,
       status: isCorrect ? "correct" : "wrong",
       lastPracticedAt: new Date(),
       correctCount: isCorrect ? 1 : 0,

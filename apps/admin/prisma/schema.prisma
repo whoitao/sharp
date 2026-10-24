@@ -69,6 +69,7 @@ model Subject {
   questions       Question[]
   knowledgePoints KnowledgePoint[]
   studyRecords    UserStudyRecord[]
+  questionProgress UserQuestionProgress[]
 
   @@index([sortOrder])
 }
@@ -135,6 +136,11 @@ model UserQuestionProgress {
   questionId      BigInt
   question        Question @relation(fields: [questionId], references: [id])
   categoryId      BigInt
+  // 练习时选择的筛选条件（null = 未筛选）
+  subjectId        BigInt?
+  subject          Subject?        @relation(fields: [subjectId], references: [id])
+  knowledgePointId BigInt?
+  knowledgePoint   KnowledgePoint? @relation(fields: [knowledgePointId], references: [id])
   status          String   @default("unseen")
   lastPracticedAt DateTime?
   correctCount    Int      @default(0)
@@ -142,6 +148,8 @@ model UserQuestionProgress {
 
   @@id([userId, questionId])
   @@index([categoryId])
+  @@index([subjectId])
+  @@index([knowledgePointId])
 }
 
 model UserDailyStat {
@@ -169,6 +177,7 @@ model KnowledgePoint {
   subject   Subject?         @relation(fields: [subjectId], references: [id])
   questions QuestionKnowledgePoint[]
   studyRecords UserStudyRecord[]
+  questionProgress UserQuestionProgress[]
 
   @@index([parentId])
   @@index([subjectId])

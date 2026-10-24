@@ -91,11 +91,15 @@ export async function POST(request: NextRequest) {
       },
       update: {
         lastPracticedAt: new Date(),
+        subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : null,
+        knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
       },
       create: {
         userId: appUser.id,
         questionId: q.id,
         categoryId: BigInt(categoryId),
+        subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : null,
+        knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
         status: "unseen",
         lastPracticedAt: new Date(),
       },

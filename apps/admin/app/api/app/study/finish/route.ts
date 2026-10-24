@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAppUser } from "@/lib/middleware";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const appUser = requireAppUser(request);
@@ -45,6 +45,11 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // 本次练习的筛选条件（来自 start 创建的学习记录）
+  const filter = record
+    ? { subjectId: record.subjectId, knowledgePointId: record.knowledgePointId }
+    : {};
+
   // Batch update question progress from answers
   if (answers && Array.isArray(answers)) {
     for (const answer of answers) {
@@ -63,11 +68,13 @@ export async function POST(request: NextRequest) {
           correctCount: { increment: isCorrect ? 1 : 0 },
           wrongCount: { increment: isCorrect ? 0 : 1 },
           status: isCorrect ? "correct" : "wrong",
+          ...filter,
         },
         create: {
           userId: appUser.id,
           questionId: BigInt(questionId),
           categoryId: BigInt(categoryId),
+          ...filter,
           status: isCorrect ? "correct" : "wrong",
           lastPracticedAt: new Date(),
           correctCount: isCorrect ? 1 : 0,
