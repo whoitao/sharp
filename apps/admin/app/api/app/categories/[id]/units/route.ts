@@ -92,7 +92,8 @@ export async function GET(
       const p = progressMap.get(q.id.toString()) as any;
       if (p && p.status !== "unseen") {
         answeredCount++;
-        correctCount += p.correctCount;
+        // 按题目最新一次作答结果统计，避免同一题多次学习重复累加导致正确率超过 100%
+        if (p.status === "correct") correctCount++;
       }
     }
 
