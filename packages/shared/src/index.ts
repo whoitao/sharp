@@ -129,6 +129,10 @@ export interface StudyRecord {
   id: string;
   userId: string;
   categoryId: string;
+  /** 学习时选择的科目筛选（null = 未筛选） */
+  subjectId: string | null;
+  /** 学习时选择的知识点筛选（null = 未筛选） */
+  knowledgePointId: string | null;
   unitIndex: number;
   startedAt: string;
   finishedAt: string | null;

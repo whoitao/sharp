@@ -22,17 +22,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Find the study record for this (user, category, unit).
-  // A unique constraint guarantees at most one record, so we don't filter by
-  // finishedAt — re-practicing a finished unit ("再练一次") must overwrite it.
-  const record = await prisma.userStudyRecord.findUnique({
+  // 记录表已改为追加式历史日志：优先定位该单元最新一条未完成的记录；
+  // 没有未完成的（异常路径，如未先调 start）则退化为更新最新一条
+  const record = await prisma.userStudyRecord.findFirst({
     where: {
-      userId_categoryId_unitIndex: {
-        userId: appUser.id,
-        categoryId: BigInt(categoryId),
-        unitIndex,
-      },
+      userId: appUser.id,
+      categoryId: BigInt(categoryId),
+      unitIndex,
     },
+    orderBy: [{ finishedAt: { sort: "asc", nulls: "first" } }, { startedAt: "desc" }],
   });
 
   if (record) {

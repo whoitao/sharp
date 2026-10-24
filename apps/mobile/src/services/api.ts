@@ -485,9 +485,17 @@ export const api = {
   },
 
   // Study sessions
-  async startStudy(categoryId: string, unitIndex: number): Promise<void> {
+  async startStudy(
+    categoryId: string,
+    unitIndex: number,
+    subjectId?: string,
+    knowledgePointId?: string
+  ): Promise<void> {
     try {
-      await apiClient.post('/api/app/study/start', { categoryId, unitIndex });
+      const params: Record<string, string> = {};
+      if (subjectId) params.subjectId = subjectId;
+      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
+      await apiClient.post('/api/app/study/start', { categoryId, unitIndex }, { params });
     } catch {
       // silently succeed in mock mode
     }
@@ -512,12 +520,19 @@ export const api = {
   // Study records
   async getStudyRecords(
     page: number = 1,
-    pageSize: number = 20
+    pageSize: number = 20,
+    categoryId?: string,
+    subjectId?: string,
+    knowledgePointId?: string
   ): Promise<PaginatedResponse<StudyRecord>> {
     try {
+      const params: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
+      if (categoryId) params.categoryId = categoryId;
+      if (subjectId) params.subjectId = subjectId;
+      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
       const response = await apiClient.get<PaginatedResponse<StudyRecord>>(
         '/api/app/study/records',
-        { params: { page, pageSize } }
+        { params }
       );
       return response.data;
     } catch {
@@ -525,6 +540,8 @@ export const api = {
         id: `record-${i}`,
         userId: '1',
         categoryId: '1',
+        subjectId: null,
+        knowledgePointId: null,
         unitIndex: i,
         startedAt: new Date(Date.now() - i * 86400000).toISOString(),
         finishedAt: new Date(Date.now() - i * 86400000 + 600000).toISOString(),

@@ -1,15 +1,18 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { StudyRecord } from '@sharp/shared';
+import type { Category, KnowledgePoint, StudyRecord, Subject } from '@sharp/shared';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import TreePickerModal from '../../components/TreePickerModal';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -32,10 +35,27 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // 顶部筛选：分类 / 科目 / 知识点（均可不选 = 全部）
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [knowledgePoints, setKnowledgePoints] = useState<KnowledgePoint[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [selectedKP, setSelectedKP] = useState<KnowledgePoint | null>(null);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [subjectModalVisible, setSubjectModalVisible] = useState(false);
+  const [kpModalVisible, setKpModalVisible] = useState(false);
+
   const fetchRecords = useCallback(async (pageNum: number = 1) => {
     try {
       setLoading(pageNum === 1);
-      const response = await api.getStudyRecords(pageNum, 20);
+      const response = await api.getStudyRecords(
+        pageNum,
+        20,
+        selectedCategory?.id,
+        selectedSubject?.id,
+        selectedKP?.id,
+      );
       if (pageNum === 1) {
         setRecords(response.data);
       } else {
@@ -49,8 +69,27 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
+  }, [selectedCategory, selectedSubject, selectedKP]);
+
+  // 下拉数据源：与学习页同一套接口
+  useEffect(() => {
+    (async () => {
+      try {
+        const [cats, subs, kps] = await Promise.all([
+          api.getCategories('0'),
+          api.getSubjects(),
+          api.getKnowledgePoints(),
+        ]);
+        setCategories(cats);
+        setSubjects(subs);
+        setKnowledgePoints(kps);
+      } catch {
+        // ignore
+      }
+    })();
   }, []);
 
+  // 筛选变化时回到第一页重新加载
   useEffect(() => {
     fetchRecords(1);
   }, [fetchRecords]);
@@ -72,6 +111,8 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       params: {
         categoryId: record.categoryId,
         unitIndex: record.unitIndex,
+        subjectId: record.subjectId ?? undefined,
+        knowledgePointId: record.knowledgePointId ?? undefined,
         record,
       },
     });
@@ -159,40 +200,139 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
     );
   };
 
-  if (loading && records.length === 0) {
-    return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  const renderFilterChip = (
+    label: string | null,
+    placeholder: string,
+    onPress: () => void,
+    onClear: (() => void) | null,
+  ) => (
+    <TouchableOpacity
+      style={[styles.dropdownButton, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 10 * spacing, paddingHorizontal: 12 * spacing, borderRadius: 8 * radius }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text
+        style={[styles.dropdownButtonText, { color: label ? colors.text : colors.textTertiary, fontSize: 13 * font }]}
+        numberOfLines={1}
+      >
+        {label ?? placeholder}
+      </Text>
+      {label && onClear && (
+        <TouchableOpacity
+          onPress={onClear}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={{ color: colors.textTertiary, fontSize: 13 * font, marginLeft: 4 * spacing }}>✕</Text>
+        </TouchableOpacity>
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <FlatList
-        data={records}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingTop: 0, paddingBottom: 24 * spacing }]}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-        }
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
-            <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📊</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 4 * spacing }]}>{t.recordsEmpty}</Text>
-            <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 14 * font }]}>{t.recordsEmptySub}</Text>
-          </View>
-        }
-        ListFooterComponent={
-          loading && records.length > 0 ? (
-            <View style={styles.loadingMore}>
-              <ActivityIndicator size="small" color={colors.primary} />
+      {/* 顶部筛选：分类 / 科目 / 知识点 */}
+      <View style={[styles.dropdownsContainer, { padding: 12 * spacing, paddingTop: 12 * spacing, gap: 8 * spacing }]}>
+        {renderFilterChip(
+          selectedCategory?.name ?? null,
+          t.studySelectCategory,
+          () => setCategoryModalVisible(true),
+          () => setSelectedCategory(null),
+        )}
+        {renderFilterChip(
+          selectedSubject?.name ?? null,
+          t.studySelectSubject,
+          () => setSubjectModalVisible(true),
+          () => setSelectedSubject(null),
+        )}
+        {renderFilterChip(
+          selectedKP?.name ?? null,
+          t.studySelectKnowledgePoint,
+          () => setKpModalVisible(true),
+          () => setSelectedKP(null),
+        )}
+      </View>
+
+      {loading && records.length === 0 ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={records}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingTop: 0, paddingBottom: 24 * spacing }]}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={
+            <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
+              <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📊</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 4 * spacing }]}>{t.recordsEmpty}</Text>
+              <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 14 * font }]}>{t.recordsEmptySub}</Text>
             </View>
-          ) : null
-        }
+          }
+          ListFooterComponent={
+            loading && records.length > 0 ? (
+              <View style={styles.loadingMore}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : null
+          }
+        />
+      )}
+
+      <TreePickerModal<Category>
+        visible={categoryModalVisible}
+        title={t.studySelectCategory}
+        roots={categories}
+        selectedId={selectedCategory?.id ?? null}
+        colors={colors}
+        emptyText={t.noData}
+        onClose={() => setCategoryModalVisible(false)}
+        onSelect={(node) => {
+          setSelectedCategory(node);
+          setCategoryModalVisible(false);
+        }}
+        loadChildren={(node) => api.getCategories(node.id)}
+      />
+
+      <Modal visible={subjectModalVisible} transparent animationType="fade" onRequestClose={() => setSubjectModalVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setSubjectModalVisible(false)}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text, fontSize: 18 * font }]}>{t.studySelectSubject}</Text>
+            <ScrollView style={styles.modalList}>
+              {subjects.map((sub) => (
+                <TouchableOpacity
+                  key={sub.id}
+                  style={[styles.modalOption, { borderRadius: 8 * radius }, selectedSubject?.id === sub.id && { backgroundColor: colors.accentLight }]}
+                  onPress={() => {
+                    setSelectedSubject(sub);
+                    setSubjectModalVisible(false);
+                  }}
+                >
+                  <Text style={[styles.modalOptionText, { color: colors.text, fontSize: 16 * font }]}>{sub.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <TreePickerModal<KnowledgePoint>
+        visible={kpModalVisible}
+        title={t.studySelectKnowledgePoint}
+        roots={knowledgePoints}
+        selectedId={selectedKP?.id ?? null}
+        colors={colors}
+        emptyText={t.noData}
+        onClose={() => setKpModalVisible(false)}
+        onSelect={(node) => {
+          setSelectedKP(node);
+          setKpModalVisible(false);
+        }}
       />
     </View>
   );
@@ -207,20 +347,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  dropdownsContainer: { flexDirection: 'row', padding: 12, gap: 8 },
+  dropdownButton: { flex: 1, flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  dropdownButtonText: { fontSize: 13, fontWeight: '500' },
   list: {
     padding: 16,
     paddingBottom: 24,
-  },
-  header: {
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
   },
   recordCard: {
     borderRadius: 12,
@@ -285,6 +417,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { width: '100%', maxHeight: '60%', borderRadius: 12, padding: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
+  modalList: { maxHeight: 300 },
+  modalOption: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, marginBottom: 4 },
+  modalOptionText: { fontSize: 16, textAlign: 'center' },
 });
 
 export default RecordsScreen;

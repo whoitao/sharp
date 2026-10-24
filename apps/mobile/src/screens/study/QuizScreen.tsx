@@ -2,12 +2,12 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ElapsedTimer from '../../components/ElapsedTimer';
@@ -36,7 +36,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { spacing, font, radius } = useDensity();
-  const { categoryId, unitIndex, categoryName } = route.params;
+  const { categoryId, unitIndex, categoryName, subjectId, knowledgePointId } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { currentQuestions, currentIndex, answers, isLoading } = useSelector(
     (state: RootState) => state.study
@@ -125,8 +125,10 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       categoryId,
       unitIndex,
       categoryName,
+      subjectId,
+      knowledgePointId,
     });
-  }, [dispatch, navigation, categoryId, unitIndex, categoryName]);
+  }, [dispatch, navigation, categoryId, unitIndex, categoryName, subjectId, knowledgePointId]);
 
   const goNextQuestion = useCallback(() => {
     if (isLastQuestion) {

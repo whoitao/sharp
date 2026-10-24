@@ -45,8 +45,8 @@ export type HomeStackParamList = {
 
 export type StudyStackParamList = {
   Study: undefined;
-  Quiz: { categoryId: string; unitIndex: number; categoryName: string };
-  QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; record?: StudyRecord };
+  Quiz: { categoryId: string; unitIndex: number; categoryName: string; subjectId?: string; knowledgePointId?: string };
+  QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; subjectId?: string; knowledgePointId?: string; record?: StudyRecord };
 };
 
 export type ProfileStackParamList = {

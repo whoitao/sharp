@@ -29,7 +29,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
-  const { categoryId, unitIndex, categoryName, record } = route.params;
+  const { categoryId, unitIndex, categoryName, subjectId, knowledgePointId, record } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { result: liveResult } = useSelector((state: RootState) => state.study);
 
@@ -93,18 +93,20 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   const handleRetry = async () => {
     dispatch(resetStudy());
     try {
-      await api.startStudy(categoryId, unitIndex);
+      await api.startStudy(categoryId, unitIndex, subjectId, knowledgePointId);
     } catch {
       // silently proceed even if start fails
     }
     const fetchResult = await dispatch(
-      fetchQuestions({ categoryId, unitIndex })
+      fetchQuestions({ categoryId, unitIndex, subjectId, knowledgePointId })
     );
     if (fetchQuestions.fulfilled.match(fetchResult)) {
       navigation.replace('Quiz', {
         categoryId,
         unitIndex,
         categoryName: categoryName ?? '',
+        subjectId,
+        knowledgePointId,
       });
     }
   };

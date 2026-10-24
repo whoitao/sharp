@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAppUser } from "@/lib/middleware";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
   const ids: bigint[] = [categoryId];
@@ -29,6 +29,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 可选筛选：科目 / 知识点（查询参数），与 units、questions 接口保持一致的过滤口径
+  const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
+  const knowledgePointIdRaw = request.nextUrl.searchParams.get("knowledgePointId");
+
   const settings = await prisma.userSettings.findUnique({
     where: { userId: appUser.id },
   });
@@ -36,9 +40,21 @@ export async function POST(request: NextRequest) {
 
   const allCategoryIds = await getAllCategoryIds(BigInt(categoryId));
 
-  // Get questions for this unit (including subcategories)
+  // Get questions for this unit (including subcategories), 科目/知识点筛选与 units 接口一致
+  const questionWhere: Record<string, unknown> = {
+    categoryId: { in: allCategoryIds },
+  };
+  if (subjectIdRaw) {
+    questionWhere.subjectId = BigInt(subjectIdRaw);
+  }
+  if (knowledgePointIdRaw) {
+    questionWhere.knowledgePoints = {
+      some: { knowledgePointId: BigInt(knowledgePointIdRaw) },
+    };
+  }
+
   const questions = await prisma.question.findMany({
-    where: { categoryId: { in: allCategoryIds } },
+    where: questionWhere,
     orderBy: { sortOrder: "asc" },
     skip: unitIndex * unitSize,
     take: unitSize,
@@ -52,27 +68,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // One record per (user, category, unit): re-entering a unit resets it instead of creating a duplicate.
-  const record = await prisma.userStudyRecord.upsert({
-    where: {
-      userId_categoryId_unitIndex: {
-        userId: appUser.id,
-        categoryId: BigInt(categoryId),
-        unitIndex,
-      },
-    },
-    update: {
-      startedAt: new Date(),
-      finishedAt: null,
-      totalQuestions: questions.length,
-      correctCount: 0,
-      wrongCount: 0,
-      durationSeconds: 0,
-    },
-    create: {
+  // 每次开始学习都新建一条记录（历史日志），写入当时的筛选条件
+  const record = await prisma.userStudyRecord.create({
+    data: {
       userId: appUser.id,
       categoryId: BigInt(categoryId),
       unitIndex,
+      subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : null,
+      knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
       totalQuestions: questions.length,
     },
   });

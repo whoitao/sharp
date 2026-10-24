@@ -68,6 +68,7 @@ model Subject {
 
   questions       Question[]
   knowledgePoints KnowledgePoint[]
+  studyRecords    UserStudyRecord[]
 
   @@index([sortOrder])
 }
@@ -112,6 +113,11 @@ model UserStudyRecord {
   user            User     @relation(fields: [userId], references: [id])
   categoryId      BigInt
   unitIndex       Int
+  // 学习时选择的筛选条件（null = 未筛选）；记录的是用户行为上下文，与题目自身的多对多知识点无关
+  subjectId        BigInt?
+  subject          Subject?        @relation(fields: [subjectId], references: [id])
+  knowledgePointId BigInt?
+  knowledgePoint   KnowledgePoint? @relation(fields: [knowledgePointId], references: [id])
   startedAt       DateTime @default(now())
   finishedAt      DateTime?
   totalQuestions  Int
@@ -119,8 +125,7 @@ model UserStudyRecord {
   wrongCount      Int      @default(0)
   durationSeconds Int      @default(0)
 
-  @@unique([userId, categoryId, unitIndex])
-  @@index([userId])
+  @@index([userId, startedAt])
   @@index([categoryId])
 }
 
@@ -163,6 +168,7 @@ model KnowledgePoint {
   children  KnowledgePoint[] @relation("KnowledgePointTree")
   subject   Subject?         @relation(fields: [subjectId], references: [id])
   questions QuestionKnowledgePoint[]
+  studyRecords UserStudyRecord[]
 
   @@index([parentId])
   @@index([subjectId])

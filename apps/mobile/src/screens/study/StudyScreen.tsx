@@ -1,18 +1,17 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Category, KnowledgePoint, Subject, UnitInfo } from '@sharp/shared';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Modal,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import TreePickerModal from '../../components/TreePickerModal';
@@ -24,7 +23,7 @@ import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { fetchQuestions } from '../../stores/studySlice';
-import { clearStudyCache, hasStudyCache } from '../../utils/studyCache';
+import { hasStudyCache } from '../../utils/studyCache';
 
 type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'Study'>;
 
@@ -37,9 +36,8 @@ interface DropdownOption {
   label: string;
 }
 
-// 服务端 pageSize 上限是 100，超过部分必须翻页取回，否则单元列表会被静默截断
-const UNITS_PAGE_SIZE = 100;
-const UNITS_MAX_PAGES = 20;
+// 单元列表每页加载数量（触底翻页）
+const UNITS_PAGE_SIZE = 10;
 
 const keyExtractor = (item: UnitInfo) => item.unitIndex.toString();
 
@@ -62,7 +60,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [initialLoading, setInitialLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [dataRefreshing, setDataRefreshing] = useState(false);
   const [pressingUnitIndex, setPressingUnitIndex] = useState<number | null>(null);
 
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
@@ -89,99 +86,109 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     }
   }, []);
 
-  // 手动强制刷新：清空缓存后重新拉取分类/科目/知识点
-  const handleRefresh = useCallback(async () => {
-    if (dataRefreshing) return;
-    setDataRefreshing(true);
-    try {
-      await clearStudyCache();
-      const [cats, subs, kps] = await Promise.all([
-        api.getCategories('0'),
-        api.getSubjects(),
-        api.getKnowledgePoints(),
-      ]);
-      setCategories(cats);
-      setSubjects(subs);
-      setKnowledgePoints(kps);
-    } catch {
-      // ignore
-    } finally {
-      setDataRefreshing(false);
-    }
-  }, [dataRefreshing]);
+  // 记录最近一次成功加载单元列表时的筛选组合，用于区分“筛选变化”和“回到页面”两种刷新
+  const lastUnitsKeyRef = useRef<string | null>(null);
+  // 分页进度（用 ref 避免触底回调/静默刷新把它们列为依赖而重复触发）
+  const totalUnitsRef = useRef(0);
+  const loadedPagesRef = useRef(0);
+  const loadingMoreRef = useRef(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  // 一次性加载全部单元（不做触底分页），但需按服务端 pageSize 上限翻页取满
-  const fetchUnits = useCallback(async () => {
+  // 按页加载单元列表：page=1 覆盖列表，page>1 触底追加
+  // silent=true 时不显示 loading、失败时保留旧数据（用于回到页面时的静默刷新）
+  const fetchUnits = useCallback(async (pageToLoad: number, opts?: { silent?: boolean }) => {
     if (!selectedCategory || !selectedSubject || !selectedKP) {
       setUnits([]);
+      totalUnitsRef.current = 0;
+      loadedPagesRef.current = 0;
       setLoading(false);
       return;
     }
-    setLoading(true);
+    const silent = opts?.silent === true;
+    if (!silent) {
+      if (pageToLoad === 1) setLoading(true);
+      else setLoadingMore(true);
+    }
     try {
-      const collected: UnitInfo[] = [];
-      for (let page = 1; page <= UNITS_MAX_PAGES; page += 1) {
-        const { units, totalUnits } = await api.getUnits(
-          selectedCategory.id,
-          selectedSubject.id,
-          selectedKP.id,
-          page,
-          UNITS_PAGE_SIZE,
-        );
-        collected.push(...units);
-        if (units.length === 0 || collected.length >= totalUnits) break;
-      }
-      setUnits(collected);
+      const { units: pageUnits, totalUnits } = await api.getUnits(
+        selectedCategory.id,
+        selectedSubject.id,
+        selectedKP.id,
+        pageToLoad,
+        UNITS_PAGE_SIZE,
+      );
+      totalUnitsRef.current = totalUnits;
+      loadedPagesRef.current = pageToLoad;
+      setUnits((prev) => (pageToLoad === 1 ? pageUnits : [...prev, ...pageUnits]));
+      lastUnitsKeyRef.current = `${selectedCategory.id}|${selectedSubject.id}|${selectedKP.id}`;
     } catch {
-      setUnits([]);
+      if (!silent && pageToLoad === 1) setUnits([]);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
       setRefreshing(false);
     }
   }, [selectedCategory, selectedSubject, selectedKP]);
-
-  // 回到页面时静默刷新单元进度（从 Quiz 完成返回时最关键）
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      if (selectedCategory && selectedSubject && selectedKP) {
-        (async () => {
-          try {
-            const collected: UnitInfo[] = [];
-            for (let page = 1; page <= UNITS_MAX_PAGES; page += 1) {
-              const { units, totalUnits } = await api.getUnits(
-                selectedCategory.id,
-                selectedSubject.id,
-                selectedKP.id,
-                page,
-                UNITS_PAGE_SIZE,
-              );
-              collected.push(...units);
-              if (units.length === 0 || collected.length >= totalUnits) break;
-            }
-            if (!cancelled) setUnits(collected);
-          } catch {
-            // ignore
-          }
-        })();
-      }
-      return () => {
-        cancelled = true;
-      };
-    }, [selectedCategory, selectedSubject, selectedKP])
-  );
 
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
 
+  // 筛选变化时统一从这里加载第一页（带 loading）
   useEffect(() => {
-    fetchUnits();
+    fetchUnits(1);
   }, [fetchUnits]);
+
+  // 回到页面时静默刷新已加载页的单元进度（从 Quiz 完成返回时最关键）；
+  // 仅当筛选组合与上次成功加载一致时才刷新——筛选变化由上面的 useEffect 负责，
+  // 否则选中分类/科目/知识点时同一接口会被连发两次
+  useFocusEffect(
+    useCallback(() => {
+      const key = selectedCategory && selectedSubject && selectedKP
+        ? `${selectedCategory.id}|${selectedSubject.id}|${selectedKP.id}`
+        : null;
+      if (!key || key !== lastUnitsKeyRef.current) return;
+      const pages = loadedPagesRef.current;
+      if (pages < 1) return;
+      (async () => {
+        try {
+          const refreshed: UnitInfo[] = [];
+          for (let p = 1; p <= pages; p += 1) {
+            const { units: pageUnits, totalUnits } = await api.getUnits(
+              selectedCategory!.id,
+              selectedSubject!.id,
+              selectedKP!.id,
+              p,
+              UNITS_PAGE_SIZE,
+            );
+            refreshed.push(...pageUnits);
+            totalUnitsRef.current = totalUnits;
+            if (pageUnits.length === 0) break;
+          }
+          setUnits(refreshed);
+        } catch {
+          // 静默刷新失败时保留旧数据
+        }
+      })();
+    }, [selectedCategory, selectedSubject, selectedKP])
+  );
+
+  // 触底加载下一页
+  const handleLoadMore = useCallback(() => {
+    if (loading || loadingMoreRef.current) return;
+    if (!lastUnitsKeyRef.current) return;
+    if (units.length >= totalUnitsRef.current) return;
+    loadingMoreRef.current = true;
+    fetchUnits(loadedPagesRef.current + 1).finally(() => {
+      loadingMoreRef.current = false;
+    });
+  }, [fetchUnits, loading, units.length]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchUnits();
+    fetchUnits(1);
   }, [fetchUnits]);
 
   const handleUnitPress = useCallback(
@@ -190,7 +197,12 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
       setPressingUnitIndex(unit.unitIndex);
       try {
         try {
-          await api.startStudy(selectedCategory.id, unit.unitIndex);
+          await api.startStudy(
+            selectedCategory.id,
+            unit.unitIndex,
+            selectedSubject?.id,
+            selectedKP?.id
+          );
         } catch {
           // silently proceed
         }
@@ -207,6 +219,8 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
             categoryId: selectedCategory.id,
             unitIndex: unit.unitIndex,
             categoryName: selectedCategory.name,
+            subjectId: selectedSubject?.id,
+            knowledgePointId: selectedKP?.id,
           });
         }
       } finally {
@@ -290,26 +304,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
           font={font}
           radius={radius}
         />
-        <TouchableOpacity
-          style={[
-            styles.refreshBtn,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderRadius: 8 * radius,
-              width: 40 * spacing + 8,
-            },
-          ]}
-          onPress={handleRefresh}
-          disabled={dataRefreshing}
-          activeOpacity={0.6}
-        >
-          {dataRefreshing ? (
-            <ActivityIndicator size="small" color={colors.accent} />
-          ) : (
-            <Ionicons name="refresh" size={18 * font} color={colors.textSecondary} />
-          )}
-        </TouchableOpacity>
         {initialLoading && (
           <View style={[styles.initialLoadingOverlay, { borderRadius: 8 * radius }]}>
             <ActivityIndicator size="small" color={colors.accent} />
@@ -332,6 +326,13 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
           contentContainerStyle={contentContainerStyle}
           refreshControl={refreshControl}
           ListEmptyComponent={listEmptyComponent}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator style={{ paddingVertical: 12 * spacing }} color={colors.accent} />
+            ) : null
+          }
         />
       )}
 
@@ -417,7 +418,6 @@ const styles = StyleSheet.create({
   initialLoadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 },
   initialLoadingText: { fontSize: 13 },
   dropdownButton: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  refreshBtn: { borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
   dropdownButtonText: { fontSize: 13, fontWeight: '500' },
   list: { padding: 16, paddingTop: 8, paddingBottom: 24 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
