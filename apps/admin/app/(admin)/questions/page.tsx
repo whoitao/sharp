@@ -4,30 +4,30 @@ import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
-  DeleteOutlined,
-  DownloadOutlined,
-  EditOutlined,
-  InboxOutlined,
-  PlusOutlined,
-  UploadOutlined
+    DeleteOutlined,
+    DownloadOutlined,
+    EditOutlined,
+    InboxOutlined,
+    PlusOutlined,
+    UploadOutlined
 } from "@ant-design/icons";
 import {
-  App,
-  Button,
-  Card,
-  Checkbox,
-  Col,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Row,
-  Select,
-  Space,
-  Table,
-  Tag,
-  TreeSelect,
-  Upload
+    App,
+    Button,
+    Card,
+    Checkbox,
+    Col,
+    Form,
+    Input,
+    InputNumber,
+    Modal,
+    Row,
+    Select,
+    Space,
+    Table,
+    Tag,
+    TreeSelect,
+    Upload
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo, useState } from "react";
@@ -102,6 +102,8 @@ export default function QuestionsPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>();
   const [selectedKPId, setSelectedKPId] = useState<string>();
+  const [searchInput, setSearchInput] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const { pageSize } = usePageSize();
@@ -199,6 +201,7 @@ export default function QuestionsPage() {
     if (selectedCategoryId) params.append("categoryId", selectedCategoryId);
     if (selectedSubjectId) params.append("subjectId", selectedSubjectId);
     if (selectedKPId) params.append("knowledgePointId", selectedKPId);
+    if (searchText.trim()) params.append("search", searchText.trim());
     try {
       const res = await fetch(
         `/api/admin/questions?${params.toString()}`,
@@ -236,10 +239,19 @@ export default function QuestionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSubjectId]);
 
+  // 内容模糊搜索：防抖 300ms，避免每敲一个字符都发请求
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchText(searchInput.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategoryId, selectedSubjectId, selectedKPId, page, pageSize]);
+  }, [selectedCategoryId, selectedSubjectId, selectedKPId, searchText, page, pageSize]);
 
   const resetForm = () => {
     setFormSubjectId(undefined);
@@ -779,6 +791,16 @@ export default function QuestionsPage() {
               };
             })}
             treeDefaultExpandAll
+          />
+        </Space>
+        <Space>
+          <span>{t("questions.colContent")}</span>
+          <Input
+            allowClear
+            style={{ width: 200 }}
+            placeholder={t("questions.searchContentPlaceholder")}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </Space>
       </Card>

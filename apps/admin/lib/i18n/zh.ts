@@ -150,6 +150,7 @@ export const zh: Messages = {
     colId: "ID",
     colType: "类型",
     colContent: "内容",
+    searchContentPlaceholder: "按内容模糊搜索...",
     colDifficulty: "难度",
     colScore: "分值",
     colOptions: "选项",

@@ -148,6 +148,7 @@ export const en = {
     colId: "ID",
     colType: "Type",
     colContent: "Content",
+    searchContentPlaceholder: "Search content...",
     colDifficulty: "Difficulty",
     colScore: "Score",
     colOptions: "Options",

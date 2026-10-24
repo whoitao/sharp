@@ -33,7 +33,7 @@ function pickDistractors(pool: string[], exclude: string, count: number): string
 
 async function main() {
   // 1. 读取词典
-  const dictPath = path.resolve(__dirname, "../../mobile/dicts/CET4_T.json");
+  const dictPath = path.resolve(__dirname, "../../admin/dicts/CET4_T.json");
   const raw = fs.readFileSync(dictPath, "utf-8");
   const words: DictWord[] = JSON.parse(raw);
   console.log(`读取到 ${words.length} 个单词`);
@@ -47,11 +47,14 @@ async function main() {
   if (!kp) throw new Error(`knowledgePoint ${KNOWLEDGE_POINT_ID} 不存在`);
 
   // 3. 构造题目（先不插选项）
+  // content = 单词 + 空格 + 英式音标，如 "explosive /ɪk'spləusɪv/"；音标缺失时只用单词
+  const contentOf = (w: DictWord) =>
+    w.ukphone ? `${w.name} /${w.ukphone}/` : w.name;
   const questionData = words.map((w) => ({
     categoryId: CATEGORY_ID,
     subjectId: SUBJECT_ID,
     type: 1,
-    content: w.name,
+    content: contentOf(w),
     analysis: "",
     difficulty: 1,
     score: 1,
@@ -83,7 +86,7 @@ async function main() {
   const kpRows: Array<{ questionId: bigint; knowledgePointId: bigint }> = [];
 
   for (const w of words) {
-    const questionId = idByName.get(w.name);
+    const questionId = idByName.get(contentOf(w));
     if (!questionId) {
       console.warn(`未找到题目: ${w.name}`);
       continue;

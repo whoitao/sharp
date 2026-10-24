@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const categoryId = searchParams.get("categoryId");
   const subjectId = searchParams.get("subjectId");
   const knowledgePointId = searchParams.get("knowledgePointId");
+  const search = searchParams.get("search")?.trim();
 
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const pageSize = Math.min(
@@ -28,6 +29,9 @@ export async function GET(request: NextRequest) {
     where.knowledgePoints = {
       some: { knowledgePointId: BigInt(knowledgePointId) },
     };
+  }
+  if (search) {
+    where.content = { contains: search, mode: "insensitive" };
   }
 
   const [questions, total] = await Promise.all([

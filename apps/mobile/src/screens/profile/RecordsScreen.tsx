@@ -173,7 +173,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
         data={records}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingBottom: 24 * spacing }]}
+        contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingTop: 0, paddingBottom: 24 * spacing }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }

@@ -33,7 +33,7 @@ function pickDistractors(pool: string[], exclude: string, count: number): string
 
 async function main() {
   // 1. 读取词典
-  const dictPath = path.resolve(__dirname, "../../mobile/dicts/CET6_T.json");
+  const dictPath = path.resolve(__dirname, "../../admin/dicts/CET6_T.json");
   const raw = fs.readFileSync(dictPath, "utf-8");
   const words: DictWord[] = JSON.parse(raw);
   console.log(`读取到 ${words.length} 个单词`);
@@ -54,11 +54,13 @@ async function main() {
   console.log(`插入前最大题目 ID: ${maxId.toString()}`);
 
   // 4. 构造题目（先不插选项）
+  const contentOf = (w: DictWord) =>
+    w.ukphone ? `${w.name} /${w.ukphone}/` : w.name;
   const questionData = words.map((w) => ({
     categoryId: CATEGORY_ID,
     subjectId: SUBJECT_ID,
     type: 1,
-    content: w.name,
+    content: contentOf(w),
     analysis: "",
     difficulty: 1,
     score: 1,
@@ -75,8 +77,13 @@ async function main() {
     select: { id: true, content: true },
     orderBy: { id: "asc" },
   });
-  const idByName = new Map<string, bigint>();
-  for (const q of inserted) idByName.set(q.content, q.id);
+  // content 允许重复：同一 content 对应多个 id 时按插入顺序入队，消费时依次取出
+  const idsByContent = new Map<string, bigint[]>();
+  for (const q of inserted) {
+    const list = idsByContent.get(q.content);
+    if (list) list.push(q.id);
+    else idsByContent.set(q.content, [q.id]);
+  }
   console.log(`回查到新题目: ${inserted.length} 条`);
 
   // 7. 构造选项 + 知识点关联
@@ -91,7 +98,8 @@ async function main() {
   const kpRows: Array<{ questionId: bigint; knowledgePointId: bigint }> = [];
 
   for (const w of words) {
-    const questionId = idByName.get(w.name);
+    const queue = idsByContent.get(contentOf(w));
+    const questionId = queue?.shift();
     if (!questionId) {
       console.warn(`未找到题目: ${w.name}`);
       continue;
