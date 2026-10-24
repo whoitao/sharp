@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useDensity } from '../hooks/useDensity';
 import type { ThemeColors } from '../theme/colors';
@@ -38,6 +38,8 @@ interface TreePickerModalProps<T extends TreeNode> {
   onSelect: (node: T) => void;
   /** 节点未携带 children 时，展开该节点按需加载子节点 */
   loadChildren?: (node: T) => Promise<T[]>;
+  /** 打开时默认展开所有已携带 children 的节点（直到叶子） */
+  defaultExpandAll?: boolean;
 }
 
 interface TreeRowProps {
@@ -115,6 +117,7 @@ function TreePickerModal<T extends TreeNode>({
   onClose,
   onSelect,
   loadChildren,
+  defaultExpandAll = false,
 }: TreePickerModalProps<T>) {
   const { spacing, font, radius } = useDensity();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -132,8 +135,23 @@ function TreePickerModal<T extends TreeNode>({
       setExpandedIds(new Set());
       setLazyChildren({});
       setLoadingIds(new Set());
+      return;
     }
-  }, [visible]);
+    // 默认全展开：把已携带 children 的节点全部加入展开集合（懒加载节点除外，保持点击再加载）
+    if (defaultExpandAll) {
+      const ids = new Set<string>();
+      const walk = (nodes: T[]) => {
+        for (const n of nodes) {
+          if (n.children && n.children.length > 0) {
+            ids.add(n.id);
+            walk(n.children as T[]);
+          }
+        }
+      };
+      walk(roots);
+      setExpandedIds(ids);
+    }
+  }, [visible, defaultExpandAll, roots]);
 
   const toggleNode = useCallback(
     async (node: TreeNode) => {

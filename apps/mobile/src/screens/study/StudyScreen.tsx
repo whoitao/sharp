@@ -5,23 +5,20 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
-  Modal,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import TreePickerModal from '../../components/TreePickerModal';
+import { useDispatch } from 'react-redux';
+import StudyFilterBar from '../../components/StudyFilterBar';
 import UnitItem from '../../components/UnitItem';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
-import type { AppDispatch, RootState } from '../../stores';
+import type { AppDispatch } from '../../stores';
 import { fetchQuestions } from '../../stores/studySlice';
 import { hasStudyCache } from '../../utils/studyCache';
 
@@ -31,11 +28,6 @@ interface StudyScreenProps {
   navigation: NavigationProp;
 }
 
-interface DropdownOption {
-  value: string;
-  label: string;
-}
-
 // 单元列表每页加载数量（触底翻页）
 const UNITS_PAGE_SIZE = 10;
 
@@ -43,10 +35,9 @@ const keyExtractor = (item: UnitInfo) => item.unitIndex.toString();
 
 const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
-  const { spacing, font, radius } = useDensity();
+  const { spacing, font } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { unitSize } = useSelector((state: RootState) => state.settings);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -61,10 +52,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   const [initialLoading, setInitialLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [pressingUnitIndex, setPressingUnitIndex] = useState<number | null>(null);
-
-  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-  const [subjectModalVisible, setSubjectModalVisible] = useState(false);
-  const [kpModalVisible, setKpModalVisible] = useState(false);
 
   const fetchInitialData = useCallback(async () => {
     // 仅在无有效缓存时显示 loading，缓存命中则静默刷新
@@ -230,16 +217,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     [pressingUnitIndex, selectedCategory, selectedSubject, selectedKP, dispatch, navigation]
   );
 
-  const subjectOptions: DropdownOption[] = subjects.map((s) => ({
-    value: s.id,
-    label: s.name,
-  }));
-
-  const loadCategoryChildren = useCallback(
-    (node: Category) => api.getCategories(node.id),
-    []
-  );
-
   const renderItem = useCallback(
     ({ item }: { item: UnitInfo }) => (
       <UnitItem
@@ -276,43 +253,19 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.dropdownsContainer, { padding: 12 * spacing, gap: 8 * spacing }]}>
-        <DropdownButton
-          label={selectedCategory?.name || t.studySelectCategory}
-          placeholder={!selectedCategory}
-          onPress={() => setCategoryModalVisible(true)}
-          colors={colors}
-          spacing={spacing}
-          font={font}
-          radius={radius}
-        />
-        <DropdownButton
-          label={selectedSubject?.name || t.studySelectSubject}
-          placeholder={!selectedSubject}
-          onPress={() => setSubjectModalVisible(true)}
-          colors={colors}
-          spacing={spacing}
-          font={font}
-          radius={radius}
-        />
-        <DropdownButton
-          label={selectedKP?.name || t.studySelectKnowledgePoint}
-          placeholder={!selectedKP}
-          onPress={() => setKpModalVisible(true)}
-          colors={colors}
-          spacing={spacing}
-          font={font}
-          radius={radius}
-        />
-        {initialLoading && (
-          <View style={[styles.initialLoadingOverlay, { borderRadius: 8 * radius }]}>
-            <ActivityIndicator size="small" color={colors.accent} />
-            <Text style={[styles.initialLoadingText, { fontSize: 13 * font, color: colors.textSecondary }]}>
-              {t.loading}
-            </Text>
-          </View>
-        )}
-      </View>
+      <StudyFilterBar
+        categories={categories}
+        subjects={subjects}
+        knowledgePoints={knowledgePoints}
+        selectedCategory={selectedCategory}
+        selectedSubject={selectedSubject}
+        selectedKP={selectedKP}
+        onSelectCategory={setSelectedCategory}
+        onSelectSubject={setSelectedSubject}
+        onSelectKP={setSelectedKP}
+        loading={initialLoading}
+        allowClear
+      />
 
       {loading ? (
         <View style={styles.center}>
@@ -335,101 +288,17 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
           }
         />
       )}
-
-      <TreePickerModal<Category>
-        visible={categoryModalVisible}
-        title={t.studySelectCategory}
-        roots={categories}
-        selectedId={selectedCategory?.id ?? null}
-        colors={colors}
-        emptyText={t.noData}
-        onClose={() => setCategoryModalVisible(false)}
-        onSelect={(node) => {
-          setSelectedCategory(node);
-          setCategoryModalVisible(false);
-        }}
-        loadChildren={loadCategoryChildren}
-      />
-
-      <Modal visible={subjectModalVisible} transparent animationType="fade" onRequestClose={() => setSubjectModalVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setSubjectModalVisible(false)}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>{t.studySelectSubject}</Text>
-            <ScrollView style={styles.modalList}>
-              {subjectOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[styles.modalOption, selectedSubject?.id === option.value && { backgroundColor: colors.accentLight }]}
-                  onPress={() => {
-                    const sub = subjects.find((s) => s.id === option.value);
-                    setSelectedSubject(sub || null);
-                    setSubjectModalVisible(false);
-                  }}
-                >
-                  <Text style={[styles.modalOptionText, { color: colors.text }]}>{option.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      <TreePickerModal<KnowledgePoint>
-        visible={kpModalVisible}
-        title={t.studySelectKnowledgePoint}
-        roots={knowledgePoints}
-        selectedId={selectedKP?.id ?? null}
-        colors={colors}
-        emptyText={t.noData}
-        onClose={() => setKpModalVisible(false)}
-        onSelect={(node) => {
-          setSelectedKP(node);
-          setKpModalVisible(false);
-        }}
-      />
     </View>
-  );
-};
-
-interface DropdownButtonProps {
-  label: string;
-  placeholder?: boolean;
-  onPress: () => void;
-  colors: any;
-  spacing: number;
-  font: number;
-  radius: number;
-}
-
-const DropdownButton: React.FC<DropdownButtonProps> = ({ label, placeholder = false, onPress, colors, spacing, font, radius }) => {
-  const text = label ?? '';
-  return (
-    <TouchableOpacity style={[styles.dropdownButton, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 10 * spacing, paddingHorizontal: 12 * spacing, borderRadius: 8 * radius }]} onPress={onPress}>
-      <Text style={[styles.dropdownButtonText, { color: placeholder ? colors.textTertiary : colors.text, fontSize: 13 * font }]} numberOfLines={1}>
-        {text}
-      </Text>
-    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  dropdownsContainer: { flexDirection: 'row', padding: 12, paddingTop: 0, gap: 8, position: 'relative' },
-  initialLoadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 },
-  initialLoadingText: { fontSize: 13 },
-  dropdownButton: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  dropdownButtonText: { fontSize: 13, fontWeight: '500' },
   list: { padding: 16, paddingTop: 8, paddingBottom: 24 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: 16 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContent: { width: '100%', maxHeight: '60%', borderRadius: 12, padding: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
-  modalList: { maxHeight: 300 },
-  modalOption: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, marginBottom: 4 },
-  modalOptionText: { fontSize: 16, textAlign: 'center' },
 });
 
 export default StudyScreen;
