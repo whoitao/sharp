@@ -205,6 +205,8 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
             categoryName: selectedCategory.name,
             subjectId: selectedSubject?.id,
             knowledgePointId: selectedKP?.id,
+            subjectName: selectedSubject?.name,
+            knowledgePointName: selectedKP?.name,
           });
         }
       } finally {

@@ -27,6 +27,8 @@ interface WrongQuestionCardProps {
   radius: number;
   analysisLabel: string;
   difficultyLabel: string;
+  /** 题目类型文案（单选题 / 多选题） */
+  questionTypeLabel: string;
   onToggle: (id: string) => void;
 }
 
@@ -40,6 +42,7 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
   radius,
   analysisLabel,
   difficultyLabel,
+  questionTypeLabel,
   onToggle,
 }: WrongQuestionCardProps) {
   const sortedOptions = useMemo(
@@ -107,18 +110,24 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
           )}
 
           <View style={[styles.difficultyRow, { marginTop: 10 * spacing }]}>
-            <Text style={[styles.difficultyLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>{difficultyLabel}</Text>
-            {Array.from({ length: 5 }, (_, i) => (
-              <Text
-                key={i}
-                style={[
-                  styles.difficultyStar,
-                  { fontSize: 14 * font, marginRight: 2 * spacing, color: i < item.difficulty ? '#F59E0B' : colors.border },
-                ]}
-              >
-                ★
-              </Text>
-            ))}
+            <View style={styles.difficultyLeft}>
+              <Text style={[styles.difficultyLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>{difficultyLabel}</Text>
+              {Array.from({ length: 5 }, (_, i) => (
+                <Text
+                  key={i}
+                  style={[
+                    styles.difficultyStar,
+                    { fontSize: 14 * font, marginRight: 2 * spacing, color: i < item.difficulty ? '#F59E0B' : colors.border },
+                  ]}
+                >
+                  ★
+                </Text>
+              ))}
+            </View>
+            {/* 右下角：题目类型 */}
+            <Text style={[styles.questionType, { color: colors.textTertiary, fontSize: 12 * font }]}>
+              {questionTypeLabel}
+            </Text>
           </View>
         </View>
       )}
@@ -173,14 +182,15 @@ const WrongQuestionsScreen: React.FC = () => {
         radius={radius}
         analysisLabel={t.analysis}
         difficultyLabel={t.difficultyLabel}
+        questionTypeLabel={item.type === 2 ? t.multipleChoice : t.singleChoice}
         onToggle={toggleExpand}
       />
     ),
-    [expandedIds, colors, spacing, font, radius, t.analysis, t.difficultyLabel, toggleExpand]
+    [expandedIds, colors, spacing, font, radius, t.analysis, t.difficultyLabel, t.singleChoice, t.multipleChoice, toggleExpand]
   );
 
   const contentContainerStyle = useMemo(
-    () => [styles.list, { padding: 16 * spacing, paddingBottom: 24 * spacing }],
+    () => [styles.list, { paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 24 * spacing }],
     [spacing]
   );
 
@@ -340,9 +350,17 @@ const styles = StyleSheet.create({
   difficultyRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: 10,
   },
+  difficultyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   difficultyLabel: {
+    fontSize: 12,
+  },
+  questionType: {
     fontSize: 12,
   },
   difficultyStar: {

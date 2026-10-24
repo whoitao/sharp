@@ -45,7 +45,7 @@ export type HomeStackParamList = {
 
 export type StudyStackParamList = {
   Study: undefined;
-  Quiz: { categoryId: string; unitIndex: number; categoryName: string; subjectId?: string; knowledgePointId?: string };
+  Quiz: { categoryId: string; unitIndex: number; categoryName: string; subjectId?: string; knowledgePointId?: string; subjectName?: string; knowledgePointName?: string };
   QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; subjectId?: string; knowledgePointId?: string; record?: StudyRecord };
 };
 
@@ -138,7 +138,14 @@ const StudyStackNavigator: React.FC = () => {
       name="Quiz"
       component={QuizScreen as any}
       options={({ route }) => ({
-        title: route.params.categoryName,
+        // 顶部标题：分类 - 科目 - 知识点（未选的项自动省略）
+        title: [
+          route.params.categoryName,
+          route.params.subjectName,
+          route.params.knowledgePointName,
+        ]
+          .filter(Boolean)
+          .join(' - '),
         headerBackVisible: false,
         headerLeft: () => null,
       })}

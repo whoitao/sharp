@@ -98,6 +98,8 @@ export const en: TranslationKeys = {
   wrongEmptySub: 'Keep it up, mistakes will show here',
   analysis: 'Analysis',
   difficultyLabel: 'Difficulty: ',
+  singleChoice: 'Single choice',
+  multipleChoice: 'Multiple choice',
 
   // Quiz
   quit: 'Quit',
@@ -109,6 +111,8 @@ export const en: TranslationKeys = {
   selectedCount: (num: number) => ` (${num} selected)`,
   viewResult: 'View Result',
   nextQuestion: 'Next →',
+  prevQuestion: '← Prev',
+  swipeHint: '← Swipe left / right to switch →',
 
   // Quiz result
   noResultData: 'No result data',

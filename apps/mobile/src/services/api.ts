@@ -16,7 +16,7 @@ import type {
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { dedupeInFlight } from '../utils/dedupe';
 import { storage } from '../utils/storage';
-import { getCached, setCached } from '../utils/studyCache';
+import { CATEGORY_ALL_CACHE_SUFFIX, getCached, setCached } from '../utils/studyCache';
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://admin.sharp.whoitao.top/";
@@ -378,7 +378,7 @@ export const api = {
   async getCategories(parentId: string): Promise<Category[]> {
     // 根节点一次拉取全部分类树，避免按 parentId 逐层请求
     const isRoot = parentId === '0';
-    const cacheSuffix = isRoot ? 'all' : parentId;
+    const cacheSuffix = isRoot ? CATEGORY_ALL_CACHE_SUFFIX : parentId;
     return dedupeInFlight(`categories:${cacheSuffix}`, async () => {
       // 1. 优先读本地缓存（仅缓存真实接口数据）
       const cached = await getCached<Category[]>('categories', cacheSuffix);
@@ -389,8 +389,10 @@ export const api = {
         const response = await apiClient.get<Category[]>('/api/app/categories', {
           params: isRoot ? { all: '1' } : { parentId },
         });
-        // 仅缓存非空数据，避免异常空响应固化 24 小时
-        if (response.data.length > 0) {
+        // 仅缓存「带 children 字段的整棵树」，避免把旧版接口的根节点列表固化 24 小时
+        const isFullTree =
+          response.data.length > 0 && response.data.every((item) => Array.isArray(item.children));
+        if (isFullTree) {
           await setCached('categories', response.data, cacheSuffix);
         }
         return response.data;

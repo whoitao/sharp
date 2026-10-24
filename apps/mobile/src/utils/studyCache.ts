@@ -4,6 +4,9 @@ import { bumpInFlightGeneration } from './dedupe';
 /** 缓存有效期：24 小时 */
 export const STUDY_CACHE_TTL = 24 * 60 * 60 * 1000;
 
+/** 分类整棵树（一次请求返回）的缓存后缀，v2 用于作废旧版「仅根节点」缓存 */
+export const CATEGORY_ALL_CACHE_SUFFIX = 'all2';
+
 const CACHE_PREFIX = '@sharp/study/v2/';
 
 interface CacheEntry<T> {
@@ -41,7 +44,7 @@ export async function setCached<T>(name: string, data: T, suffix?: string): Prom
 /** 判断学习页搜索数据是否全部有有效缓存（分类/科目；知识点按学科按需拉取） */
 export async function hasStudyCache(): Promise<boolean> {
   const keys = [
-    cacheKey('categories', 'all'),
+    cacheKey('categories', CATEGORY_ALL_CACHE_SUFFIX),
     cacheKey('subjects'),
   ];
   try {

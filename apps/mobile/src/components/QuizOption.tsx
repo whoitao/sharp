@@ -82,7 +82,8 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
           borderColor: getBorderColor(),
           borderWidth: 2,
           borderRadius: 12 * radius,
-          padding: 14 * spacing,
+          paddingHorizontal: 14 * spacing,
+          paddingVertical: 12 * spacing,
           marginBottom: 10 * spacing,
         },
       ]}

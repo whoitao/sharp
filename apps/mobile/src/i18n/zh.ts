@@ -96,6 +96,8 @@ export const zh = {
   wrongEmptySub: '继续保持，错题会显示在这里',
   analysis: '解析',
   difficultyLabel: '难度：',
+  singleChoice: '单选题',
+  multipleChoice: '多选题',
 
   // Quiz
   quit: '退出',
@@ -107,6 +109,8 @@ export const zh = {
   selectedCount: (num: number) => `（已选 ${num} 项）`,
   viewResult: '查看结果',
   nextQuestion: '下一题 →',
+  prevQuestion: '← 上一题',
+  swipeHint: '← 左右滑动切换题目 →',
 
   // Quiz result
   noResultData: '暂无结果数据',

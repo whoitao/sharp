@@ -1,21 +1,21 @@
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Density, Language, Theme } from '@sharp/shared';
 import React, { useCallback, useState } from 'react';
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
-import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import type { StringTranslationKey } from '../../i18n/zh';
+import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import type { AppDispatch, RootState } from '../../stores';
 import { logout } from '../../stores/authSlice';
 import { setDensity, setLanguage, setTheme, setUnitSize, updateSettings } from '../../stores/settingsSlice';
@@ -50,6 +50,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { unitSize, theme, language, density } = useSelector((state: RootState) => state.settings);
   const [crashCount, setCrashCount] = useState(0);
+  const [logoutVisible, setLogoutVisible] = useState(false);
 
   const loadCrashCount = useCallback(async () => {
     setCrashCount((await readCrashes()).length);
@@ -81,19 +82,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     dispatch(updateSettings({ density: newDensity }));
   };
 
+  // 浏览器端不支持 Alert.alert，改用应用内弹窗确认
   const handleLogout = () => {
-    Alert.alert(
-      t.logout,
-      t.logoutConfirm,
-      [
-        { text: t.cancel, style: 'cancel' },
-        {
-          text: t.confirm,
-          style: 'destructive',
-          onPress: () => dispatch(logout()),
-        },
-      ]
-    );
+    setLogoutVisible(true);
+  };
+
+  const confirmLogout = () => {
+    setLogoutVisible(false);
+    dispatch(logout());
   };
 
   const sectionPadding = 16 * spacing;
@@ -272,6 +268,39 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       >
         <Text style={[styles.logoutText, { color: colors.error, fontSize: 16 * font }]}>{t.logout}</Text>
       </TouchableOpacity>
+
+      {/* 退出登录确认 */}
+      <Modal
+        visible={logoutVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface, borderRadius: 14 * radius, padding: 20 * spacing }]}>
+            <Text style={[styles.modalTitle, { color: colors.text, fontSize: 17 * font }]}>{t.logout}</Text>
+            <Text style={[styles.modalMessage, { color: colors.textSecondary, fontSize: 14 * font, marginTop: 8 * spacing, marginBottom: 20 * spacing }]}>
+              {t.logoutConfirm}
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { borderColor: colors.border, borderRadius: 10 * radius, paddingVertical: 12 * spacing }]}
+                onPress={() => setLogoutVisible(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.cancel}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonDanger, { borderRadius: 10 * radius, paddingVertical: 12 * spacing }]}
+                onPress={confirmLogout}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.error, fontSize: 15 * font }]}>{t.confirm}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -367,6 +396,41 @@ const styles = StyleSheet.create({
   },
   aboutValue: {
     fontSize: 15,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 360,
+  },
+  modalTitle: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  modalMessage: {
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  modalButtonDanger: {
+    borderWidth: 0,
+    backgroundColor: 'rgba(239,68,68,0.1)',
+  },
+  modalButtonText: {
+    fontWeight: '600',
   },
   logoutButton: {
     borderRadius: 16,

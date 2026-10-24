@@ -3,7 +3,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Dimensions,
   Modal,
+  PanResponder,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -32,6 +37,9 @@ interface QuizScreenProps {
 
 type OptionStatus = 'default' | 'selected' | 'correct' | 'wrong' | 'revealed';
 
+// Web 端没有原生动画模块，使用 JS 驱动避免告警
+const USE_NATIVE_DRIVER = Platform.OS !== 'web';
+
 const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -45,7 +53,6 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const [optionStatuses, setOptionStatuses] = useState<Record<string, OptionStatus>>({});
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [answered, setAnswered] = useState(false);
-  const [showNextButton, setShowNextButton] = useState(false);
   const pendingNextRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
   // 计时秒数由 ElapsedTimer 自己维护，这里只保留最新值供交卷时使用
@@ -69,16 +76,36 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     };
   }, []);
 
-  // Reset option statuses when question changes
+  // 切换题目时重置状态；若回到已答过的题目，则还原当时的作答结果
   useEffect(() => {
     if (pendingNextRef.current) {
       clearTimeout(pendingNextRef.current);
       pendingNextRef.current = null;
     }
+
+    const study = reduxStore.getState().study;
+    const question = study.currentQuestions[currentIndex];
+    const answer = question ? study.answers[question.id] : undefined;
+
+    if (question && answer) {
+      const statuses: Record<string, OptionStatus> = {};
+      question.options.forEach((o) => {
+        if (o.isCorrect) {
+          // 单选题答错时正确答案用 revealed（与首次作答一致），多选题用 correct
+          statuses[o.optionKey] = answer.correct || question.type === 2 ? 'correct' : 'revealed';
+        } else if (answer.selectedKeys.includes(o.optionKey)) {
+          statuses[o.optionKey] = 'wrong';
+        }
+      });
+      setOptionStatuses(statuses);
+      setSelectedKeys(answer.selectedKeys);
+      setAnswered(true);
+      return;
+    }
+
     setOptionStatuses({});
     setSelectedKeys([]);
     setAnswered(false);
-    setShowNextButton(false);
   }, [currentIndex]);
 
   const handleElapsed = useCallback((seconds: number) => {
@@ -149,9 +176,100 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     }, 500);
   }, [goNextQuestion]);
 
-  const handleNext = () => {
-    goNextQuestion();
+  // ===== 左右滑动切题 =====
+  const SWIPE_DISTANCE = 60;
+  const SWIPE_DURATION = 180;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const swipeBusyRef = useRef(false);
+  // 手势回调创建一次，用 ref 读取最新的题目索引与切题动作
+  const swipeActionsRef = useRef({
+    index: 0,
+    total: 0,
+    answered: false,
+    next: () => {},
+    prev: () => {},
+  });
+  swipeActionsRef.current = {
+    index: currentIndex,
+    total: totalQuestions,
+    answered,
+    next: goNextQuestion,
+    prev: () => {
+      if (pendingNextRef.current) {
+        clearTimeout(pendingNextRef.current);
+        pendingNextRef.current = null;
+      }
+      dispatch(setCurrentIndex(currentIndex - 1));
+    },
   };
+
+  // dir=-1 左滑（下一题），dir=1 右滑（上一题）
+  const slideTo = useCallback(
+    (dir: -1 | 1) => {
+      if (swipeBusyRef.current) return;
+      swipeBusyRef.current = true;
+      const width = Dimensions.get('window').width;
+      Animated.timing(translateX, {
+        toValue: dir * width,
+        duration: SWIPE_DURATION,
+        useNativeDriver: USE_NATIVE_DRIVER,
+      }).start(() => {
+        translateX.setValue(-dir * width);
+        const { next, prev } = swipeActionsRef.current;
+        if (dir === -1) next();
+        else prev();
+        Animated.timing(translateX, {
+          toValue: 0,
+          duration: SWIPE_DURATION,
+          useNativeDriver: USE_NATIVE_DRIVER,
+        }).start(() => {
+          swipeBusyRef.current = false;
+        });
+      });
+    },
+    [translateX]
+  );
+
+  const panResponder = useRef(
+    PanResponder.create({
+      // 仅当横向位移明显大于纵向时才接管，避免和上下滚动冲突
+      onMoveShouldSetPanResponder: (_, gesture) =>
+        Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
+      onPanResponderMove: (_, gesture) => {
+        if (swipeBusyRef.current) return;
+        const { index, total } = swipeActionsRef.current;
+        const atStart = index === 0 && gesture.dx > 0;
+        const atEnd = index === total - 1 && gesture.dx < 0;
+        // 边界处加阻尼，提示不可再滑
+        translateX.setValue(atStart || atEnd ? gesture.dx * 0.3 : gesture.dx);
+      },
+      onPanResponderRelease: (_, gesture) => {
+        if (swipeBusyRef.current) return;
+        const { index, total, answered: currentAnswered } = swipeActionsRef.current;
+        // 最后一题已作答时左滑等同「查看结果」
+        if (gesture.dx <= -SWIPE_DISTANCE && (index < total - 1 || currentAnswered)) {
+          slideTo(-1);
+          return;
+        }
+        if (gesture.dx >= SWIPE_DISTANCE && index > 0) {
+          slideTo(1);
+          return;
+        }
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: USE_NATIVE_DRIVER,
+          bounciness: 0,
+        }).start();
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: USE_NATIVE_DRIVER,
+          bounciness: 0,
+        }).start();
+      },
+    })
+  ).current;
 
   const handleOptionPress = useCallback(
     (optionKey: string) => {
@@ -190,7 +308,6 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           [correctKey]: 'revealed',
         };
         setOptionStatuses(statuses);
-        setShowNextButton(true);
         dispatch(
           recordAnswer({
             questionId: currentQuestion.id,
@@ -234,8 +351,6 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
     if (isCorrect) {
       scheduleNext();
-    } else {
-      setShowNextButton(true);
     }
   }, [answered, currentQuestion, selectedKeys, scheduleNext, dispatch]);
 
@@ -278,16 +393,26 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
         <View style={styles.quitButton} />
       </View>
 
+      {/* 内容区域可滚动；左右滑动切换上一题 / 下一题 */}
+      <Animated.View
+        style={[styles.scroll, { transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}
+      >
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 * spacing }]}
+        showsVerticalScrollIndicator={false}
+      >
       {/* Progress */}
       <ProgressBar current={currentIndex + 1} total={totalQuestions} />
 
       {/* Question content */}
-      <View style={[styles.questionContainer, { backgroundColor: colors.surface, marginHorizontal: 16 * spacing, marginTop: 12 * spacing, borderRadius: 12 * radius, paddingHorizontal: 20 * spacing, paddingVertical: 24 * spacing }]}>
+      <View style={[styles.questionContainer, { backgroundColor: colors.surface, marginHorizontal: 16 * spacing, marginTop: 0, borderRadius: 12 * radius, paddingHorizontal: 20 * spacing, paddingVertical: 20 * spacing }]}>
         <Text style={[styles.questionContent, { color: colors.text, fontSize: 18 * font }]}>{currentQuestion.content}</Text>
       </View>
 
       {/* Options */}
-      <View style={[styles.optionsContainer, { paddingHorizontal: 16 * spacing, paddingTop: 20 * spacing }]}>
+      <View style={[styles.optionsContainer, { paddingHorizontal: 16 * spacing, paddingTop: 16 * spacing }]}>
         {[...currentQuestion.options]
           .sort((a, b) => a.sortNo - b.sortNo)
           .map((option) => {
@@ -341,17 +466,6 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
         </View>
       )}
 
-      {/* Next button (shown only on wrong answer) */}
-      {showNextButton && (
-        <View style={[styles.nextContainer, { paddingHorizontal: 16 * spacing, paddingVertical: 12 * spacing }]}>
-          <TouchableOpacity style={[styles.nextButton, { paddingHorizontal: 48 * spacing, backgroundColor: colors.primary, borderRadius: 10 * radius, paddingVertical: 14 * spacing }]} onPress={handleNext} activeOpacity={0.8}>
-            <Text style={[styles.nextButtonText, { fontSize: 16 * font }]}>
-              {isLastQuestion ? t.viewResult : t.nextQuestion}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       {/* Analysis (shown after answering) */}
       {answered && !!currentQuestion.analysis && (
         <View style={[styles.analysisContainer, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary, marginHorizontal: 16 * spacing, marginBottom: 16 * spacing, padding: 14 * spacing, borderRadius: 10 * radius }]}>
@@ -359,6 +473,15 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           <Text style={[styles.analysisText, { color: colors.text, fontSize: 14 * font, lineHeight: 22 * font }]}>{currentQuestion.analysis}</Text>
         </View>
       )}
+
+      {/* 滑动切题提示 */}
+      {totalQuestions > 1 && (
+        <Text style={[styles.swipeHint, { color: colors.textTertiary, fontSize: 12 * font, marginTop: 4 * spacing, marginBottom: 4 * spacing }]}>
+          {t.swipeHint}
+        </Text>
+      )}
+      </ScrollView>
+      </Animated.View>
 
       {/* 退出确认 */}
       <Modal
@@ -401,6 +524,12 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   center: {
     flex: 1,
@@ -478,12 +607,17 @@ const styles = StyleSheet.create({
   nextContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  swipeHint: {
+    textAlign: 'center',
   },
   nextButton: {
     borderRadius: 10,
     paddingVertical: 14,
-    paddingHorizontal: 48,
+    paddingHorizontal: 32,
   },
   nextButtonText: {
     color: '#FFFFFF',
