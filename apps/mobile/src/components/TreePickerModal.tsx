@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useDensity } from '../hooks/useDensity';
 import type { ThemeColors } from '../theme/colors';
@@ -130,27 +130,60 @@ function TreePickerModal<T extends TreeNode>({
     onSelectRef.current = onSelect;
   }, [onSelect]);
 
+  // loadChildren 多为内联函数，用 ref 固定避免自动展开 effect 反复触发
+  const loadChildrenRef = useRef(loadChildren);
+  useEffect(() => {
+    loadChildrenRef.current = loadChildren;
+  }, [loadChildren]);
+
+  // 每次打开只自动展开一次；关闭时递增 runId 取消仍在进行的懒加载
+  const autoExpandRunRef = useRef(0);
+  const autoExpandStartedRef = useRef(false);
+
   useEffect(() => {
     if (!visible) {
+      autoExpandRunRef.current += 1;
+      autoExpandStartedRef.current = false;
       setExpandedIds(new Set());
       setLazyChildren({});
       setLoadingIds(new Set());
       return;
     }
-    // 默认全展开：把已携带 children 的节点全部加入展开集合（懒加载节点除外，保持点击再加载）
-    if (defaultExpandAll) {
-      const ids = new Set<string>();
-      const walk = (nodes: T[]) => {
-        for (const n of nodes) {
-          if (n.children && n.children.length > 0) {
-            ids.add(n.id);
-            walk(n.children as T[]);
-          }
+    if (!defaultExpandAll || autoExpandStartedRef.current) return;
+    autoExpandStartedRef.current = true;
+
+    const runId = autoExpandRunRef.current;
+
+    // 已有 children 的直接展开；children 未携带时按需拉取并继续下钻，直到叶子节点
+    const visit = async (node: T): Promise<void> => {
+      if (runId !== autoExpandRunRef.current) return;
+      let children = node.children as T[] | undefined;
+
+      if (children === undefined) {
+        const loader = loadChildrenRef.current;
+        if (!loader) return;
+        setLoadingIds((prev) => new Set(prev).add(node.id));
+        try {
+          children = await loader(node);
+        } catch {
+          children = [];
         }
-      };
-      walk(roots);
-      setExpandedIds(ids);
-    }
+        if (runId !== autoExpandRunRef.current) return;
+        setLoadingIds((prev) => {
+          if (!prev.has(node.id)) return prev;
+          const next = new Set(prev);
+          next.delete(node.id);
+          return next;
+        });
+        setLazyChildren((prev) => ({ ...prev, [node.id]: children as T[] }));
+      }
+
+      if (!children || children.length === 0) return;
+      setExpandedIds((prev) => new Set(prev).add(node.id));
+      await Promise.all(children.map(visit));
+    };
+
+    void Promise.all(roots.map(visit));
   }, [visible, defaultExpandAll, roots]);
 
   const toggleNode = useCallback(

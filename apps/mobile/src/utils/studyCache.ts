@@ -38,12 +38,11 @@ export async function setCached<T>(name: string, data: T, suffix?: string): Prom
   }
 }
 
-/** 判断学习页搜索数据是否全部有有效缓存（分类/科目/知识点） */
+/** 判断学习页搜索数据是否全部有有效缓存（分类/科目；知识点按学科按需拉取） */
 export async function hasStudyCache(): Promise<boolean> {
   const keys = [
-    cacheKey('categories', '0'),
+    cacheKey('categories', 'all'),
     cacheKey('subjects'),
-    cacheKey('knowledgePoints'),
   ];
   try {
     const raws = await AsyncStorage.multiGet(keys);

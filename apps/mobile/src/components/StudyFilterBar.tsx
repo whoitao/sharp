@@ -1,5 +1,5 @@
 import type { Category, KnowledgePoint, Subject } from '@sharp/shared';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Modal,
@@ -18,7 +18,6 @@ import TreePickerModal from './TreePickerModal';
 interface StudyFilterBarProps {
   categories: Category[];
   subjects: Subject[];
-  knowledgePoints: KnowledgePoint[];
   selectedCategory: Category | null;
   selectedSubject: Subject | null;
   selectedKP: KnowledgePoint | null;
@@ -38,7 +37,6 @@ interface StudyFilterBarProps {
 const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   categories,
   subjects,
-  knowledgePoints,
   selectedCategory,
   selectedSubject,
   selectedKP,
@@ -55,14 +53,46 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   const [subjectModalVisible, setSubjectModalVisible] = useState(false);
   const [kpModalVisible, setKpModalVisible] = useState(false);
 
+  // 知识点按学科过滤：学科未选时不可选，选中学科后按 subjectId 拉取
+  const [subjectKPs, setSubjectKPs] = useState<KnowledgePoint[]>([]);
+  const onSelectKPRef = useRef(onSelectKP);
+  useEffect(() => {
+    onSelectKPRef.current = onSelectKP;
+  }, [onSelectKP]);
+
+  useEffect(() => {
+    let cancelled = false;
+    // 学科变化后已选知识点不再有效，需要清空
+    onSelectKPRef.current(null);
+    if (!selectedSubject) {
+      setSubjectKPs([]);
+      return;
+    }
+    (async () => {
+      try {
+        const tree = await api.getKnowledgePoints(selectedSubject.id);
+        if (!cancelled) setSubjectKPs(tree);
+      } catch {
+        if (!cancelled) setSubjectKPs([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSubject]);
+
+  const kpDisabled = !selectedSubject;
+
   const renderChip = (
     label: string | null,
     placeholder: string,
     onPress: () => void,
     onClear: (() => void) | null,
+    disabled = false,
   ) => (
     <TouchableOpacity
-      style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 10 * spacing, paddingHorizontal: 12 * spacing, borderRadius: 8 * radius }]}
+      disabled={disabled}
+      style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 10 * spacing, paddingHorizontal: 12 * spacing, borderRadius: 8 * radius }, disabled && styles.chipDisabled]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -99,6 +129,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
         t.studySelectKnowledgePoint,
         () => setKpModalVisible(true),
         () => onSelectKP(null),
+        kpDisabled,
       )}
       {loading && (
         <View style={[styles.loadingOverlay, { borderRadius: 8 * radius }]}>
@@ -114,6 +145,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
         selectedId={selectedCategory?.id ?? null}
         colors={colors}
         emptyText={t.noData}
+        defaultExpandAll
         onClose={() => setCategoryModalVisible(false)}
         onSelect={(node) => {
           onSelectCategory(node);
@@ -147,7 +179,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
       <TreePickerModal<KnowledgePoint>
         visible={kpModalVisible}
         title={t.studySelectKnowledgePoint}
-        roots={knowledgePoints}
+        roots={subjectKPs}
         selectedId={selectedKP?.id ?? null}
         colors={colors}
         emptyText={t.noData}
@@ -165,6 +197,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
 const styles = StyleSheet.create({
   container: { flexDirection: 'row', padding: 12, paddingTop: 0, gap: 8, position: 'relative' },
   chip: { flex: 1, flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  chipDisabled: { opacity: 0.45 },
   chipText: { fontSize: 13, fontWeight: '500' },
   loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },

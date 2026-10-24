@@ -2,12 +2,12 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ElapsedTimer from '../../components/ElapsedTimer';
@@ -51,6 +51,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   // 计时秒数由 ElapsedTimer 自己维护，这里只保留最新值供交卷时使用
   const elapsedRef = useRef(0);
   const [timerRunning, setTimerRunning] = useState(true);
+  // 使用应用内弹窗确认退出（浏览器端不支持 Alert.alert）
+  const [quitConfirmVisible, setQuitConfirmVisible] = useState(false);
 
   const currentQuestion = currentQuestions[currentIndex] ?? null;
   const totalQuestions = currentQuestions.length;
@@ -242,17 +244,13 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       clearTimeout(pendingNextRef.current);
       pendingNextRef.current = null;
     }
-    Alert.alert(t.quitQuizTitle, t.quitQuizConfirm, [
-      { text: t.cancel, style: 'cancel' },
-      {
-        text: t.quitConfirm,
-        style: 'destructive',
-        onPress: () => {
-          setTimerRunning(false);
-          navigation.goBack();
-        },
-      },
-    ]);
+    setQuitConfirmVisible(true);
+  };
+
+  const confirmQuit = () => {
+    setQuitConfirmVisible(false);
+    setTimerRunning(false);
+    navigation.goBack();
   };
 
   if (isLoading || !currentQuestion) {
@@ -361,6 +359,41 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           <Text style={[styles.analysisText, { color: colors.text, fontSize: 14 * font, lineHeight: 22 * font }]}>{currentQuestion.analysis}</Text>
         </View>
       )}
+
+      {/* 退出确认 */}
+      <Modal
+        visible={quitConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setQuitConfirmVisible(false)}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={[styles.confirmCard, { backgroundColor: colors.surface, borderRadius: 12 * radius, padding: 20 * spacing }]}>
+            <Text style={[styles.confirmTitle, { color: colors.text, fontSize: 17 * font, marginBottom: 8 * spacing }]}>
+              {t.quitQuizTitle}
+            </Text>
+            <Text style={[styles.confirmMessage, { color: colors.textSecondary, fontSize: 14 * font, marginBottom: 18 * spacing }]}>
+              {t.quitQuizConfirm}
+            </Text>
+            <View style={[styles.confirmActions, { gap: 10 * spacing }]}>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: colors.background, borderRadius: 8 * radius, paddingVertical: 11 * spacing }]}
+                onPress={() => setQuitConfirmVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: colors.textSecondary, fontSize: 15 * font }}>{t.cancel}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: colors.error, borderRadius: 8 * radius, paddingVertical: 11 * spacing }]}
+                onPress={confirmQuit}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 15 * font, fontWeight: '600' }}>{t.quitConfirm}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -394,6 +427,32 @@ const styles = StyleSheet.create({
   quitText: {
     fontSize: 15,
     fontWeight: '500',
+  },
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  confirmCard: {
+    width: '100%',
+    maxWidth: 360,
+  },
+  confirmTitle: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  confirmMessage: {
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  confirmActions: {
+    flexDirection: 'row',
+  },
+  confirmButton: {
+    flex: 1,
+    alignItems: 'center',
   },
   questionContainer: {
     paddingHorizontal: 20,

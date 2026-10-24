@@ -41,7 +41,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [knowledgePoints, setKnowledgePoints] = useState<KnowledgePoint[]>([]);
 
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
@@ -58,14 +57,12 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
     const cached = await hasStudyCache();
     if (!cached) setInitialLoading(true);
     try {
-      const [cats, subs, kps] = await Promise.all([
+      const [cats, subs] = await Promise.all([
         api.getCategories('0'),
         api.getSubjects(),
-        api.getKnowledgePoints(),
       ]);
       setCategories(cats);
       setSubjects(subs);
-      setKnowledgePoints(kps);
     } catch {
       // ignore
     } finally {
@@ -256,7 +253,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
       <StudyFilterBar
         categories={categories}
         subjects={subjects}
-        knowledgePoints={knowledgePoints}
         selectedCategory={selectedCategory}
         selectedSubject={selectedSubject}
         selectedKP={selectedKP}

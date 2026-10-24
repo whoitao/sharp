@@ -8,13 +8,15 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const parentId = searchParams.get("parentId") || "0";
-
-  console.log('parentId', parentId);
+  // all=1：一次返回全部分类并组装成树，避免移动端按 parentId 逐层请求
+  const all = searchParams.get("all") === "1";
 
   // parentId=0 means top-level (null in database)
-  const where = parentId === "0"
-    ? { parentId: null }
-    : { parentId: BigInt(parentId) };
+  const where = all
+    ? {}
+    : parentId === "0"
+      ? { parentId: null }
+      : { parentId: BigInt(parentId) };
 
   const categories = await prisma.category.findMany({
     where,
@@ -35,5 +37,15 @@ export async function GET(request: NextRequest) {
     questionCount: c._count.questions,
   });
 
-  return NextResponse.json(categories.map(serialize));
+  const items = categories.map(serialize);
+
+  if (!all) return NextResponse.json(items);
+
+  // 按 parentId 组装树（根节点的 parentId 已序列化为 "0"）
+  const buildTree = (pid: string): any[] =>
+    items
+      .filter((item) => item.parentId === pid)
+      .map((item) => ({ ...item, children: buildTree(item.id) }));
+
+  return NextResponse.json(buildTree("0"));
 }

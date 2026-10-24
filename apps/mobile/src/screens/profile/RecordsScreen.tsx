@@ -36,7 +36,6 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   // 顶部筛选：分类 / 科目 / 知识点（均可不选 = 全部）
   const [categories, setCategories] = useState<Category[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [knowledgePoints, setKnowledgePoints] = useState<KnowledgePoint[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [selectedKP, setSelectedKP] = useState<KnowledgePoint | null>(null);
@@ -79,14 +78,12 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   useEffect(() => {
     (async () => {
       try {
-        const [cats, subs, kps] = await Promise.all([
+        const [cats, subs] = await Promise.all([
           api.getCategories('0'),
           api.getSubjects(),
-          api.getKnowledgePoints(),
         ]);
         setCategories(cats);
         setSubjects(subs);
-        setKnowledgePoints(kps);
       } catch {
         // ignore
       }
@@ -210,7 +207,6 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       <StudyFilterBar
         categories={categories}
         subjects={subjects}
-        knowledgePoints={knowledgePoints}
         selectedCategory={selectedCategory}
         selectedSubject={selectedSubject}
         selectedKP={selectedKP}

@@ -335,6 +335,12 @@ const createApiClient = (): AxiosInstance => {
 
 const apiClient = createApiClient();
 
+/** 接口不可用时把 mock 分类组装成树，保持与接口返回结构一致 */
+const buildMockCategoryTree = (parentId: string): Category[] =>
+  [...mockCategories, ...mockSubCategories]
+    .filter((c) => c.parentId === parentId)
+    .map((c) => ({ ...c, children: buildMockCategoryTree(c.id) }));
+
 /** 优先透出后端返回的业务错误文案，避免把所有失败都笼统归为网络错误 */
 const apiErrorMessage = (err: unknown, fallback: string): string => {
   const data = (err as AxiosError<{ error?: string }>)?.response?.data;
@@ -370,25 +376,28 @@ export const api = {
 
   // Categories
   async getCategories(parentId: string): Promise<Category[]> {
-    return dedupeInFlight(`categories:${parentId}`, async () => {
+    // 根节点一次拉取全部分类树，避免按 parentId 逐层请求
+    const isRoot = parentId === '0';
+    const cacheSuffix = isRoot ? 'all' : parentId;
+    return dedupeInFlight(`categories:${cacheSuffix}`, async () => {
       // 1. 优先读本地缓存（仅缓存真实接口数据）
-      const cached = await getCached<Category[]>('categories', parentId);
+      const cached = await getCached<Category[]>('categories', cacheSuffix);
       if (cached) return cached;
 
       // 2. 缓存未命中，请求接口
       try {
         const response = await apiClient.get<Category[]>('/api/app/categories', {
-          params: { parentId },
+          params: isRoot ? { all: '1' } : { parentId },
         });
         // 仅缓存非空数据，避免异常空响应固化 24 小时
         if (response.data.length > 0) {
-          await setCached('categories', response.data, parentId);
+          await setCached('categories', response.data, cacheSuffix);
         }
         return response.data;
       } catch {
         // 接口失败时临时返回 mock，但不写入缓存，下次仍会重试接口
-        return parentId === '0'
-          ? mockCategories
+        return isRoot
+          ? buildMockCategoryTree('0')
           : mockSubCategories.filter((c) => c.parentId === parentId);
       }
     });
