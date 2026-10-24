@@ -3,27 +3,27 @@
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    PlusOutlined,
 } from "@ant-design/icons";
 import type { TreeDataNode } from "antd";
 import {
-  App,
-  Button,
-  Card,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Spin,
-  Tag,
-  Tree,
-  TreeSelect,
-  Typography,
+    App,
+    Button,
+    Card,
+    Empty,
+    Form,
+    Input,
+    InputNumber,
+    Modal,
+    Select,
+    Space,
+    Spin,
+    Tag,
+    Tree,
+    TreeSelect,
+    Typography,
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
@@ -66,6 +66,9 @@ export default function KnowledgePointsPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedNode, setSelectedNode] = useState<KPNode | null>(null);
+  // 待写入新建表单的初始值：表单在弹窗打开后才挂载（destroyOnHidden），
+  // 先暂存，在 afterOpenChange 中写入，避免 useForm 未连接告警
+  const [pendingCreateValues, setPendingCreateValues] = useState<CreateFormValues | null>(null);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [saving, setSaving] = useState(false);
   const [createForm] = Form.useForm<CreateFormValues>();
@@ -158,7 +161,6 @@ export default function KnowledgePointsPage() {
       }
       message.success(t("knowledgePoints.created"));
       setCreateOpen(false);
-      createForm.resetFields();
       fetchTree();
     } finally {
       setSaving(false);
@@ -167,11 +169,6 @@ export default function KnowledgePointsPage() {
 
   const openEdit = (node: KPNode) => {
     setSelectedNode(node);
-    editForm.setFieldsValue({
-      name: node.name,
-      subjectId: node.subjectId || undefined,
-      sortOrder: node.sortOrder,
-    });
     setEditOpen(true);
   };
 
@@ -224,7 +221,7 @@ export default function KnowledgePointsPage() {
   };
 
   const openCreateChild = (parent: KPNode) => {
-    createForm.setFieldsValue({
+    setPendingCreateValues({
       name: "",
       parentId: parent.id,
       subjectId: parent.subjectId || selectedSubjectId,
@@ -296,7 +293,7 @@ export default function KnowledgePointsPage() {
         type="primary"
         icon={<PlusOutlined />}
         onClick={() => {
-          createForm.setFieldsValue({
+          setPendingCreateValues({
             name: "",
             parentId: "0",
             subjectId: selectedSubjectId,
@@ -355,6 +352,12 @@ export default function KnowledgePointsPage() {
         okText={t("common.create")}
         onOk={() => createForm.submit()}
         destroyOnHidden
+        afterOpenChange={(open) => {
+          if (open && pendingCreateValues) {
+            createForm.setFieldsValue(pendingCreateValues);
+            setPendingCreateValues(null);
+          }
+        }}
       >
         <Form form={createForm} layout="vertical" onFinish={handleCreate} style={{ marginTop: 16 }}>
           <Form.Item
@@ -398,6 +401,15 @@ export default function KnowledgePointsPage() {
         okText={t("common.saveChanges")}
         onOk={() => editForm.submit()}
         destroyOnHidden
+        afterOpenChange={(open) => {
+          if (open && selectedNode) {
+            editForm.setFieldsValue({
+              name: selectedNode.name,
+              subjectId: selectedNode.subjectId || undefined,
+              sortOrder: selectedNode.sortOrder,
+            });
+          }
+        }}
       >
         <Form form={editForm} layout="vertical" onFinish={handleUpdate} style={{ marginTop: 16 }}>
           <Form.Item

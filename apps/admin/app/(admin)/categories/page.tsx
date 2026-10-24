@@ -3,26 +3,26 @@
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    PlusOutlined,
 } from "@ant-design/icons";
 import type { TreeDataNode } from "antd";
 import {
-  App,
-  Button,
-  Card,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Space,
-  Spin,
-  Tag,
-  Tree,
-  TreeSelect,
-  Typography,
+    App,
+    Button,
+    Card,
+    Empty,
+    Form,
+    Input,
+    InputNumber,
+    Modal,
+    Space,
+    Spin,
+    Tag,
+    Tree,
+    TreeSelect,
+    Typography,
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
@@ -63,6 +63,9 @@ export default function CategoriesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryNode | null>(null);
+  // 待写入新建表单的初始值：表单在弹窗打开后才挂载（destroyOnHidden），
+  // 先暂存，在 afterOpenChange 中写入，避免 useForm 未连接告警
+  const [pendingCreateValues, setPendingCreateValues] = useState<CreateFormValues | null>(null);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [saving, setSaving] = useState(false);
   const [createForm] = Form.useForm<CreateFormValues>();
@@ -181,7 +184,6 @@ export default function CategoriesPage() {
       }
       message.success(t("categories.created"));
       setCreateOpen(false);
-      createForm.resetFields();
       fetchCategories();
     } finally {
       setSaving(false);
@@ -239,16 +241,11 @@ export default function CategoriesPage() {
 
   const openEdit = (cat: CategoryNode) => {
     setSelectedCategory(cat);
-    editForm.setFieldsValue({
-      name: cat.name,
-      sortOrder: cat.sortOrder,
-      icon: cat.icon || "",
-    });
     setEditOpen(true);
   };
 
   const openCreateChild = (parentCat: CategoryNode) => {
-    createForm.setFieldsValue({
+    setPendingCreateValues({
       name: "",
       parentId: parentCat.id,
       sortOrder: 0,
@@ -268,7 +265,7 @@ export default function CategoriesPage() {
         type="primary"
         icon={<PlusOutlined />}
         onClick={() => {
-          createForm.setFieldsValue({ name: "", parentId: "0", sortOrder: 0, icon: "" });
+          setPendingCreateValues({ name: "", parentId: "0", sortOrder: 0, icon: "" });
           setCreateOpen(true);
         }}
       >
@@ -309,6 +306,12 @@ export default function CategoriesPage() {
         okText={t("common.create")}
         onOk={() => createForm.submit()}
         destroyOnHidden
+        afterOpenChange={(open) => {
+          if (open && pendingCreateValues) {
+            createForm.setFieldsValue(pendingCreateValues);
+            setPendingCreateValues(null);
+          }
+        }}
       >
         <Form form={createForm} layout="vertical" onFinish={handleCreate} style={{ marginTop: 16 }}>
           <Form.Item
@@ -349,6 +352,15 @@ export default function CategoriesPage() {
         okText={t("common.saveChanges")}
         onOk={() => editForm.submit()}
         destroyOnHidden
+        afterOpenChange={(open) => {
+          if (open && selectedCategory) {
+            editForm.setFieldsValue({
+              name: selectedCategory.name,
+              sortOrder: selectedCategory.sortOrder,
+              icon: selectedCategory.icon || "",
+            });
+          }
+        }}
       >
         <Form form={editForm} layout="vertical" onFinish={handleUpdate} style={{ marginTop: 16 }}>
           <Form.Item

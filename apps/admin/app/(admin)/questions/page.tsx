@@ -30,7 +30,7 @@ import {
     Upload
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface QuestionOption {
   optionKey: string;
@@ -226,8 +226,14 @@ export default function QuestionsPage() {
   }, []);
 
   // 知识点按选中的科目联动过滤，切换科目时清空已选知识点
+  // 首次挂载时表单尚未渲染（弹窗无 forceRender），跳过 setFieldsValue 避免 useForm 未连接告警
+  const isSubjectEffectFirstRun = useRef(true);
   useEffect(() => {
     fetchKnowledgePoints(formSubjectId);
+    if (isSubjectEffectFirstRun.current) {
+      isSubjectEffectFirstRun.current = false;
+      return;
+    }
     questionForm.setFieldsValue({ knowledgePointIds: [] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formSubjectId]);
@@ -318,8 +324,8 @@ export default function QuestionsPage() {
     }
   };
 
-  const openEdit = (q: QuestionItem) => {
-    setSelectedQuestion(q);
+  // 弹窗打开后再填充表单（afterOpenChange 回调），确保 Form 已挂载
+  const populateEditForm = (q: QuestionItem) => {
     setFormSubjectId(q.subjectId || undefined);
     questionForm.setFieldsValue({
       categoryId: q.categoryId,
@@ -336,6 +342,10 @@ export default function QuestionsPage() {
           ? q.options.map((o) => ({ ...o }))
           : DEFAULT_OPTIONS.map((o) => ({ ...o })),
     });
+  };
+
+  const openEdit = (q: QuestionItem) => {
+    setSelectedQuestion(q);
     setEditOpen(true);
   };
 
@@ -558,6 +568,8 @@ export default function QuestionsPage() {
     <Form
       form={questionForm}
       layout="vertical"
+      // 初始值放在 Form 上，避免新建/编辑两个弹窗同时挂载时对同名字段重复声明 initialValue
+      initialValues={{ type: "1", difficulty: 1, score: 1, sortOrder: 0 }}
       onFinish={isEdit ? handleUpdate : handleCreate}
     >
       <Form.Item
@@ -604,8 +616,8 @@ export default function QuestionsPage() {
               })}
               treeCheckable
               multiple
-              showSearch
-              treeNodeFilterProp="title"
+              // antd v6：搜索配置收敛到 showSearch 对象，按标题过滤
+              showSearch={{ treeNodeFilterProp: "title" }}
               placeholder={
                 formSubjectId
                   ? t("questions.knowledgePointsPlaceholder")
@@ -621,7 +633,7 @@ export default function QuestionsPage() {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item label={t("questions.type")} name="type" initialValue="1">
+          <Form.Item label={t("questions.type")} name="type">
             <Select
               options={[
                 { value: "1", label: t("questions.typeSingle") },
@@ -633,7 +645,7 @@ export default function QuestionsPage() {
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item label={t("questions.difficultyLabel")} name="difficulty" initialValue={1}>
+          <Form.Item label={t("questions.difficultyLabel")} name="difficulty">
             <InputNumber min={1} max={5} style={{ width: "100%" }} />
           </Form.Item>
         </Col>
@@ -653,12 +665,12 @@ export default function QuestionsPage() {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item label={t("questions.score")} name="score" initialValue={1}>
+          <Form.Item label={t("questions.score")} name="score">
             <InputNumber min={1} style={{ width: "100%" }} />
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item label={t("questions.sortOrder")} name="sortOrder" initialValue={0}>
+          <Form.Item label={t("questions.sortOrder")} name="sortOrder">
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
         </Col>
@@ -713,20 +725,14 @@ export default function QuestionsPage() {
         </Button>
         <Button
           icon={<UploadOutlined />}
-          onClick={() => {
-            importForm.resetFields();
-            setImportOpen(true);
-          }}
+          onClick={() => setImportOpen(true)}
         >
           {t("questions.import")}
         </Button>
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => {
-            resetForm();
-            setCreateOpen(true);
-          }}
+          onClick={() => setCreateOpen(true)}
         >
           {t("questions.addQuestion")}
         </Button>
@@ -823,6 +829,8 @@ export default function QuestionsPage() {
       />
 
       {/* Create Modal */}
+      {/* 不使用 forceRender：SSR 阶段预渲染弹窗 DOM 会导致 antd css-var 类名与客户端不一致，
+          触发 hydration mismatch；首次打开后再填充表单，避免未挂载时调用 form 方法的告警 */}
       <Modal
         title={t("questions.createTitle")}
         open={createOpen}
@@ -832,7 +840,9 @@ export default function QuestionsPage() {
         okText={t("questions.createQuestion")}
         onOk={() => questionForm.submit()}
         destroyOnHidden={false}
-        forceRender
+        afterOpenChange={(open) => {
+          if (open) resetForm();
+        }}
       >
         {renderQuestionForm(false)}
       </Modal>
@@ -850,7 +860,9 @@ export default function QuestionsPage() {
         okText={t("common.saveChanges")}
         onOk={() => questionForm.submit()}
         destroyOnHidden={false}
-        forceRender
+        afterOpenChange={(open) => {
+          if (open && selectedQuestion) populateEditForm(selectedQuestion);
+        }}
       >
         {renderQuestionForm(true)}
       </Modal>
@@ -880,7 +892,9 @@ export default function QuestionsPage() {
         okText={t("questions.import")}
         onOk={() => importForm.submit()}
         destroyOnHidden={false}
-        forceRender
+        afterOpenChange={(open) => {
+          if (open) importForm.resetFields();
+        }}
       >
         <Form form={importForm} layout="vertical" onFinish={handleImport}>
           <p style={{ color: "rgba(0,0,0,0.45)" }}>

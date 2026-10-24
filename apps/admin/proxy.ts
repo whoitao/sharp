@@ -26,7 +26,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const origin = request.headers.get("origin");
   const cors = corsHeaders(origin);
 

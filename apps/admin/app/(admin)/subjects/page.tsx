@@ -3,20 +3,20 @@
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    PlusOutlined,
 } from "@ant-design/icons";
 import {
-  App,
-  Button,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Space,
-  Table,
-  Tag,
+    App,
+    Button,
+    Form,
+    Input,
+    InputNumber,
+    Modal,
+    Space,
+    Table,
+    Tag,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo, useState } from "react";
@@ -88,7 +88,6 @@ export default function SubjectsPage() {
       }
       message.success(t("subjects.created"));
       setCreateOpen(false);
-      createForm.resetFields();
       fetchSubjects();
     } finally {
       setSaving(false);
@@ -97,11 +96,6 @@ export default function SubjectsPage() {
 
   const openEdit = (subject: SubjectItem) => {
     setSelectedSubject(subject);
-    editForm.setFieldsValue({
-      name: subject.name,
-      icon: subject.icon || undefined,
-      sortOrder: subject.sortOrder,
-    });
     setEditOpen(true);
   };
 
@@ -212,10 +206,7 @@ export default function SubjectsPage() {
       <Button
         type="primary"
         icon={<PlusOutlined />}
-        onClick={() => {
-          createForm.resetFields();
-          setCreateOpen(true);
-        }}
+        onClick={() => setCreateOpen(true)}
       >
         {t("subjects.addSubject")}
       </Button>
@@ -246,6 +237,7 @@ export default function SubjectsPage() {
         onOk={() => createForm.submit()}
         destroyOnHidden
       >
+        {/* 表单随弹窗开关挂载/卸载，初始值由 Form.Item 的 initialValue 提供，无需预填充 */}
         <Form form={createForm} layout="vertical" onFinish={handleCreate}>
           <Form.Item
             label={t("subjects.name")}
@@ -275,6 +267,15 @@ export default function SubjectsPage() {
         okText={t("common.saveChanges")}
         onOk={() => editForm.submit()}
         destroyOnHidden
+        afterOpenChange={(open) => {
+          if (open && selectedSubject) {
+            editForm.setFieldsValue({
+              name: selectedSubject.name,
+              icon: selectedSubject.icon || undefined,
+              sortOrder: selectedSubject.sortOrder,
+            });
+          }
+        }}
       >
         <Form form={editForm} layout="vertical" onFinish={handleUpdate}>
           <Form.Item
