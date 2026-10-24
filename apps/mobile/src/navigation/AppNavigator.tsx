@@ -26,9 +26,11 @@ import QuizScreen from '../screens/study/QuizScreen';
 import StudyScreen from '../screens/study/StudyScreen';
 
 // Profile screens
+import type { SettingKey } from '../constants/settings';
 import CrashLogScreen from '../screens/profile/CrashLogScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import RecordsScreen from '../screens/profile/RecordsScreen';
+import SettingOptionScreen from '../screens/profile/SettingOptionScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
 import WrongQuestionsScreen from '../screens/profile/WrongQuestionsScreen';
 
@@ -52,6 +54,7 @@ export type StudyStackParamList = {
 export type ProfileStackParamList = {
   Profile: undefined;
   Settings: undefined;
+  SettingOption: { key: SettingKey };
   Records: undefined;
   WrongQuestions: undefined;
   CrashLog: undefined;
@@ -188,6 +191,11 @@ const ProfileStackNavigator: React.FC = () => {
       name="Settings"
       component={SettingsScreen as any}
       options={{ title: t.settings }}
+    />
+    <ProfileStack.Screen
+      name="SettingOption"
+      component={SettingOptionScreen as any}
+      options={{ title: '' }}
     />
     <ProfileStack.Screen
       name="Records"

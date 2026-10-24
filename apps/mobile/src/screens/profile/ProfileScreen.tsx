@@ -48,7 +48,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   ];
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[styles.content, { padding: 16 * spacing, paddingBottom: 40 * spacing }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[styles.content, { paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 40 * spacing }]}>
       {/* User info */}
       <View style={[styles.userCard, { backgroundColor: colors.accentBackground, padding: 24 * spacing, borderRadius: 12 * radius, marginBottom: 20 * spacing }]}>
         <View style={[styles.avatarContainer, { backgroundColor: colors.surface, width: 72 * spacing, height: 72 * spacing, borderRadius: 36 * spacing, marginBottom: 14 * spacing }]}>

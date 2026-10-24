@@ -1,24 +1,23 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Density, Language, Theme } from '@sharp/shared';
 import React, { useCallback, useState } from 'react';
 import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { DENSITY_OPTIONS, LANGUAGE_OPTIONS, THEME_OPTIONS, type SettingKey } from '../../constants/settings';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
-import type { StringTranslationKey } from '../../i18n/zh';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import type { AppDispatch, RootState } from '../../stores';
 import { logout } from '../../stores/authSlice';
-import { setDensity, setLanguage, setTheme, setUnitSize, updateSettings } from '../../stores/settingsSlice';
 import { readCrashes } from '../../utils/crashLog';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Settings'>;
@@ -26,22 +25,6 @@ type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Settings
 interface SettingsScreenProps {
   navigation: NavigationProp;
 }
-
-const UNIT_SIZE_OPTIONS = [20, 30, 50, 100];
-const THEME_OPTIONS: { value: Theme; labelKey: StringTranslationKey }[] = [
-  { value: 'light' as Theme, labelKey: 'light' },
-  { value: 'dark' as Theme, labelKey: 'dark' },
-  { value: 'system' as Theme, labelKey: 'system' },
-];
-const LANGUAGE_OPTIONS: { value: Language; labelKey: StringTranslationKey }[] = [
-  { value: 'zh' as Language, labelKey: 'chinese' },
-  { value: 'en' as Language, labelKey: 'english' },
-];
-const DENSITY_OPTIONS: { value: Density; labelKey: StringTranslationKey }[] = [
-  { value: 'compact' as Density, labelKey: 'densityCompact' },
-  { value: 'comfortable' as Density, labelKey: 'densityComfortable' },
-  { value: 'spacious' as Density, labelKey: 'densitySpacious' },
-];
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
@@ -62,25 +45,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     }, [loadCrashCount])
   );
 
-  const handleUnitSizeChange = (size: number) => {
-    dispatch(setUnitSize(size));
-    dispatch(updateSettings({ unitSize: size }));
-  };
+  // 当前值文案（显示在入口行右侧）
+  const languageLabel = t[LANGUAGE_OPTIONS.find((o) => o.value === language)?.labelKey ?? 'chinese'];
+  const themeLabel = t[THEME_OPTIONS.find((o) => o.value === theme)?.labelKey ?? 'system'];
+  const densityLabel = t[DENSITY_OPTIONS.find((o) => o.value === density)?.labelKey ?? 'densityComfortable'];
 
-  const handleThemeChange = (newTheme: Theme) => {
-    dispatch(setTheme(newTheme));
-    dispatch(updateSettings({ theme: newTheme }));
-  };
-
-  const handleLanguageChange = (newLanguage: Language) => {
-    dispatch(setLanguage(newLanguage));
-    dispatch(updateSettings({ language: newLanguage }));
-  };
-
-  const handleDensityChange = (newDensity: Density) => {
-    dispatch(setDensity(newDensity));
-    dispatch(updateSettings({ density: newDensity }));
-  };
+  // 一级入口：点击进入二级页选择具体值
+  const settingRows: { key: SettingKey; label: string; value: string }[] = [
+    { key: 'language', label: t.language, value: languageLabel },
+    { key: 'theme', label: t.theme, value: themeLabel },
+    { key: 'density', label: t.displayDensity, value: densityLabel },
+    { key: 'unitSize', label: t.unitSize, value: `${unitSize}` },
+  ];
 
   // 浏览器端不支持 Alert.alert，改用应用内弹窗确认
   const handleLogout = () => {
@@ -95,129 +71,36 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const sectionPadding = 16 * spacing;
   const sectionMarginBottom = 16 * spacing;
   const titleFontSize = 18 * font;
-  const optionFontSize = 16 * font;
-  const optionVerticalPadding = 12 * spacing;
+
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-      {/* Display density section */}
-      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.displayDensity}</Text>
-
-        <View style={styles.optionsGrid}>
-          {DENSITY_OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[
-                styles.optionButton,
-                { backgroundColor: colors.borderLight, paddingVertical: optionVerticalPadding, borderRadius: 10 * spacing },
-                density === opt.value && { backgroundColor: colors.accent },
-              ]}
-              onPress={() => handleDensityChange(opt.value)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  { color: colors.textSecondary, fontSize: optionFontSize },
-                  density === opt.value && { color: colors.surface },
-                ]}
-              >
-                {t[opt.labelKey]}
+      {/* 设置项入口（一级） */}
+      <View style={[styles.section, styles.menuCard, { backgroundColor: colors.surface, marginBottom: sectionMarginBottom }]}>
+        {settingRows.map((row, index) => (
+          <TouchableOpacity
+            key={row.key}
+            style={[
+              styles.settingRow,
+              {
+                paddingVertical: 16 * spacing,
+                paddingHorizontal: sectionPadding,
+                borderBottomColor: colors.borderLight,
+                borderBottomWidth: index === settingRows.length - 1 ? 0 : StyleSheet.hairlineWidth,
+              },
+            ]}
+            onPress={() => navigation.navigate('SettingOption', { key: row.key })}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.settingLabel, { color: colors.text, fontSize: 16 * font }]}>{row.label}</Text>
+            <View style={styles.settingValueWrap}>
+              <Text style={[styles.settingValue, { color: colors.textTertiary, fontSize: 14 * font, marginRight: 6 * spacing }]}>
+                {row.value}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Unit size section */}
-      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.unitSize}</Text>
-
-        <View style={styles.optionsGrid}>
-          {UNIT_SIZE_OPTIONS.map((size) => (
-            <TouchableOpacity
-              key={size}
-              style={[
-                styles.optionButton,
-                { backgroundColor: colors.borderLight, paddingVertical: optionVerticalPadding, borderRadius: 10 * spacing },
-                unitSize === size && { backgroundColor: colors.accent },
-              ]}
-              onPress={() => handleUnitSizeChange(size)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  { color: colors.textSecondary, fontSize: optionFontSize },
-                  unitSize === size && { color: colors.surface },
-                ]}
-              >
-                {size}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Theme section */}
-      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.theme}</Text>
-
-        <View style={styles.themeOptions}>
-          {THEME_OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[
-                styles.themeButton,
-                { backgroundColor: colors.background, paddingVertical: 14 * spacing, borderRadius: 10 * spacing },
-                theme === opt.value && { backgroundColor: colors.accentLight, borderColor: colors.accent },
-              ]}
-              onPress={() => handleThemeChange(opt.value)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.themeText,
-                  { color: colors.textSecondary, fontSize: 15 * font },
-                  theme === opt.value && { color: colors.accent },
-                ]}
-              >
-                {t[opt.labelKey]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Language section */}
-      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.language}</Text>
-
-        <View style={styles.optionsGrid}>
-          {LANGUAGE_OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[
-                styles.optionButton,
-                { backgroundColor: colors.borderLight, paddingVertical: optionVerticalPadding, borderRadius: 10 * spacing },
-                language === opt.value && { backgroundColor: colors.accent },
-              ]}
-              onPress={() => handleLanguageChange(opt.value)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  { color: colors.textSecondary, fontSize: optionFontSize },
-                  language === opt.value && { color: colors.surface },
-                ]}
-              >
-                {t[opt.labelKey]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+              <Ionicons name="chevron-forward" size={18 * font} color={colors.textTertiary} />
+            </View>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* About section */}
@@ -227,7 +110,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           <Text style={[styles.aboutLabel, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.version}</Text>
           <Text style={[styles.aboutValue, { color: colors.textSecondary, fontSize: 15 * font }]}>1.0.0</Text>
         </View>
-        <View style={[styles.aboutRow, { borderBottomWidth: 0, paddingVertical: 12 * spacing }]}>
+        <View style={[styles.aboutRow, { borderBottomWidth: 0, paddingTop: 12 * spacing, paddingBottom: 0 }]}>
           <Text style={[styles.aboutLabel, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.appName}</Text>
           <Text style={[styles.aboutValue, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.appNameValue}</Text>
         </View>
@@ -243,7 +126,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             paddingVertical: 16 * spacing,
             paddingHorizontal: 20 * spacing,
             borderRadius: 16 * radius,
-            marginTop: 8 * spacing,
+            marginBottom: 16 * spacing,
           },
         ]}
         onPress={() => navigation.navigate('CrashLog')}
@@ -328,6 +211,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 10,
+  },
+  menuCard: {
+    padding: 0,
+    overflow: 'hidden',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  settingLabel: {
+    fontSize: 16,
+  },
+  settingValueWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingValue: {
+    fontSize: 14,
   },
   sectionDesc: {
     fontSize: 13,
@@ -442,7 +344,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
-    marginTop: 8,
   },
   logoutText: {
     fontSize: 16,
