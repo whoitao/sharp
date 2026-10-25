@@ -347,6 +347,45 @@ const apiErrorMessage = (err: unknown, fallback: string): string => {
   return data?.error ?? fallback;
 };
 
+/**
+ * 加载完整分类树：分类只缓存这一个接口（all=1），其余层级都从这棵树上取
+ */
+const loadCategoryTree = (): Promise<Category[]> =>
+  dedupeInFlight('categories:allTree', async () => {
+    // 1. 优先读本地缓存（只缓存 allTree 这一份数据）
+    const cached = await getCached<Category[]>('categories', CATEGORY_ALL_CACHE_SUFFIX);
+    if (cached) return cached;
+
+    // 2. 缓存未命中，一次拉取整棵树
+    try {
+      const response = await apiClient.get<Category[]>('/api/app/categories', {
+        params: { all: '1' },
+      });
+      // 仅缓存「带 children 字段的整棵树」，避免把其他形式的返回固化 24 小时
+      const isFullTree =
+        response.data.length > 0 && response.data.every((item) => Array.isArray(item.children));
+      if (isFullTree) {
+        await setCached('categories', response.data, CATEGORY_ALL_CACHE_SUFFIX);
+      }
+      return response.data;
+    } catch {
+      // 接口失败时临时返回 mock，但不写入缓存，下次仍会重试接口
+      return buildMockCategoryTree('0');
+    }
+  });
+
+/** 从整棵分类树里取某个节点的子级，避免再发 parentId 请求 */
+const findCategoryChildren = (nodes: Category[], parentId: string): Category[] => {
+  for (const node of nodes) {
+    if (node.id === parentId) return node.children ?? [];
+    if (node.children?.length) {
+      const matched = findCategoryChildren(node.children, parentId);
+      if (matched.length > 0) return matched;
+    }
+  }
+  return [];
+};
+
 // ─── API Methods ───────────────────────────────────────────────────────────────
 
 export const api = {
@@ -376,33 +415,9 @@ export const api = {
 
   // Categories
   async getCategories(parentId: string): Promise<Category[]> {
-    // 根节点一次拉取全部分类树，避免按 parentId 逐层请求
-    const isRoot = parentId === '0';
-    const cacheSuffix = isRoot ? CATEGORY_ALL_CACHE_SUFFIX : parentId;
-    return dedupeInFlight(`categories:${cacheSuffix}`, async () => {
-      // 1. 优先读本地缓存（仅缓存真实接口数据）
-      const cached = await getCached<Category[]>('categories', cacheSuffix);
-      if (cached) return cached;
-
-      // 2. 缓存未命中，请求接口
-      try {
-        const response = await apiClient.get<Category[]>('/api/app/categories', {
-          params: isRoot ? { all: '1' } : { parentId },
-        });
-        // 仅缓存「带 children 字段的整棵树」，避免把旧版接口的根节点列表固化 24 小时
-        const isFullTree =
-          response.data.length > 0 && response.data.every((item) => Array.isArray(item.children));
-        if (isFullTree) {
-          await setCached('categories', response.data, cacheSuffix);
-        }
-        return response.data;
-      } catch {
-        // 接口失败时临时返回 mock，但不写入缓存，下次仍会重试接口
-        return isRoot
-          ? buildMockCategoryTree('0')
-          : mockSubCategories.filter((c) => c.parentId === parentId);
-      }
-    });
+    // 分类数据全部来自整棵树；非根节点直接从树里取子级，不再单独请求
+    const tree = await loadCategoryTree();
+    return parentId === '0' ? tree : findCategoryChildren(tree, parentId);
   },
 
   // Subjects

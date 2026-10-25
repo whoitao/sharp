@@ -4,8 +4,8 @@ import { bumpInFlightGeneration } from './dedupe';
 /** 缓存有效期：24 小时 */
 export const STUDY_CACHE_TTL = 24 * 60 * 60 * 1000;
 
-/** 分类整棵树（一次请求返回）的缓存后缀，v2 用于作废旧版「仅根节点」缓存 */
-export const CATEGORY_ALL_CACHE_SUFFIX = 'all2';
+/** 分类整棵树（一次请求返回）的缓存后缀，只有这个接口会写缓存 */
+export const CATEGORY_ALL_CACHE_SUFFIX = 'allTree';
 
 const CACHE_PREFIX = '@sharp/study/v2/';
 

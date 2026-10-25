@@ -177,10 +177,19 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   }, [goNextQuestion]);
 
   // ===== 左右滑动切题 =====
+  // 触发切题所需的最小横向位移
   const SWIPE_DISTANCE = 60;
-  const SWIPE_DURATION = 180;
+  // 拖动位移上限（容器宽度的 26%）：避免滑出后露出大片空白
+  const MAX_DRAG_RATIO = 0.26;
+  // 切题时新内容从反方向推入的距离
+  const SLIDE_IN_DISTANCE = 48;
+  // 横向判定：位移足够且明显大于纵向，避免抢走上下滚动
+  const isHorizontalSwipe = (dx: number, dy: number) =>
+    Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2;
+
   const translateX = useRef(new Animated.Value(0)).current;
-  const swipeBusyRef = useRef(false);
+  // 内容区实测宽度（浏览器里 window 宽度远大于 App 容器宽度，不能直接用 Dimensions）
+  const swipeWidthRef = useRef(0);
   // 手势回调创建一次，用 ref 读取最新的题目索引与切题动作
   const swipeActionsRef = useRef({
     index: 0,
@@ -204,47 +213,48 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   };
 
   // dir=-1 左滑（下一题），dir=1 右滑（上一题）
+  // 同步切题：不依赖动画完成回调，避免动画被中断后手势被锁死
   const slideTo = useCallback(
     (dir: -1 | 1) => {
-      if (swipeBusyRef.current) return;
-      swipeBusyRef.current = true;
-      const width = Dimensions.get('window').width;
+      translateX.stopAnimation();
+      translateX.setValue(0);
+      const { next, prev } = swipeActionsRef.current;
+      if (dir === -1) next();
+      else prev();
+      // 新题目从滑动方向的反侧轻推入位
+      translateX.setValue(-dir * SLIDE_IN_DISTANCE);
       Animated.timing(translateX, {
-        toValue: dir * width,
-        duration: SWIPE_DURATION,
+        toValue: 0,
+        duration: 160,
         useNativeDriver: USE_NATIVE_DRIVER,
-      }).start(() => {
-        translateX.setValue(-dir * width);
-        const { next, prev } = swipeActionsRef.current;
-        if (dir === -1) next();
-        else prev();
-        Animated.timing(translateX, {
-          toValue: 0,
-          duration: SWIPE_DURATION,
-          useNativeDriver: USE_NATIVE_DRIVER,
-        }).start(() => {
-          swipeBusyRef.current = false;
-        });
-      });
+      }).start();
     },
     [translateX]
   );
 
   const panResponder = useRef(
     PanResponder.create({
+      // capture 阶段先判定，避免内部的 ScrollView / 选项按钮抢走横向手势
+      onMoveShouldSetPanResponderCapture: (_, gesture) =>
+        isHorizontalSwipe(gesture.dx, gesture.dy),
       // 仅当横向位移明显大于纵向时才接管，避免和上下滚动冲突
-      onMoveShouldSetPanResponder: (_, gesture) =>
-        Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
+      onMoveShouldSetPanResponder: (_, gesture) => isHorizontalSwipe(gesture.dx, gesture.dy),
+      onPanResponderGrant: () => {
+        // 打断可能还在播放的切题动画，保证拖动从当前位移开始
+        translateX.stopAnimation();
+      },
       onPanResponderMove: (_, gesture) => {
-        if (swipeBusyRef.current) return;
         const { index, total } = swipeActionsRef.current;
         const atStart = index === 0 && gesture.dx > 0;
         const atEnd = index === total - 1 && gesture.dx < 0;
         // 边界处加阻尼，提示不可再滑
-        translateX.setValue(atStart || atEnd ? gesture.dx * 0.3 : gesture.dx);
+        const raw = atStart || atEnd ? gesture.dx * 0.3 : gesture.dx;
+        // 限制最大位移，滑动过程中不会露出大面积空白
+        const width = swipeWidthRef.current || Dimensions.get('window').width;
+        const limit = width * MAX_DRAG_RATIO;
+        translateX.setValue(Math.max(-limit, Math.min(limit, raw)));
       },
       onPanResponderRelease: (_, gesture) => {
-        if (swipeBusyRef.current) return;
         const { index, total, answered: currentAnswered } = swipeActionsRef.current;
         // 最后一题已作答时左滑等同「查看结果」
         if (gesture.dx <= -SWIPE_DISTANCE && (index < total - 1 || currentAnswered)) {
@@ -394,10 +404,17 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       </View>
 
       {/* 内容区域可滚动；左右滑动切换上一题 / 下一题 */}
-      <Animated.View
-        style={[styles.scroll, { transform: [{ translateX }] }]}
+      {/* 外层裁切 overflow，避免横向位移时内容溢出到容器外 */}
+      <View
+        style={styles.swipeArea}
+        onLayout={(e) => {
+          swipeWidthRef.current = e.nativeEvent.layout.width;
+        }}
         {...panResponder.panHandlers}
       >
+        <Animated.View
+          style={[styles.scroll, { transform: [{ translateX }] }]}
+        >
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 * spacing }]}
@@ -481,7 +498,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
         </Text>
       )}
       </ScrollView>
-      </Animated.View>
+        </Animated.View>
+      </View>
 
       {/* 退出确认 */}
       <Modal
@@ -527,6 +545,11 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+  },
+  swipeArea: {
+    flex: 1,
+    // 裁切横向位移，避免内容溢出到容器外露出空白
+    overflow: 'hidden',
   },
   scrollContent: {
     flexGrow: 1,
