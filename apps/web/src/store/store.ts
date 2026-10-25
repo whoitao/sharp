@@ -8,6 +8,9 @@ export const makeStore = () => {
     reducer: {
       app: placeholderReducer,
     },
+    // RTK 的 devtools enhancer 初始化时会调用 Math.random() 生成实例 id，
+    // Next 16 预渲染（SSR pass）会拦截该不稳定值；服务端关闭 devtools，仅浏览器端启用
+    devTools: typeof window !== "undefined",
   });
 };
 

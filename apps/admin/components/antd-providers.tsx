@@ -116,9 +116,16 @@ function ConfiguredApp({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AntdProviders({ children }: { children: React.ReactNode }) {
+export function AntdProviders({
+  children,
+  initialLocale,
+}: {
+  children: React.ReactNode;
+  /** 服务端解析出的初始语言，保证首屏渲染语言与用户设置一致 */
+  initialLocale?: "zh" | "en";
+}) {
   return (
-    <LocaleProvider>
+    <LocaleProvider initialLocale={initialLocale}>
       <ConfiguredApp>{children}</ConfiguredApp>
     </LocaleProvider>
   );

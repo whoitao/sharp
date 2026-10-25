@@ -42,6 +42,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  cacheComponents: true,
+  partialPrefetching: true, // 显式设置，避免警告
   transpilePackages: collectTranspilePackages(),
 };
 

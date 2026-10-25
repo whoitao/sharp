@@ -4,30 +4,31 @@ import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
-    DeleteOutlined,
-    DownloadOutlined,
-    EditOutlined,
-    InboxOutlined,
-    PlusOutlined,
-    UploadOutlined
+  DeleteOutlined,
+  DownloadOutlined,
+  EditOutlined,
+  InboxOutlined,
+  PlusOutlined,
+  UploadOutlined
 } from "@ant-design/icons";
 import {
-    App,
-    Button,
-    Card,
-    Checkbox,
-    Col,
-    Form,
-    Input,
-    InputNumber,
-    Modal,
-    Row,
-    Select,
-    Space,
-    Table,
-    Tag,
-    TreeSelect,
-    Upload
+  App,
+  Button,
+  Card,
+  Checkbox,
+  Col,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Popover,
+  Row,
+  Select,
+  Space,
+  Table,
+  Tag,
+  TreeSelect,
+  Upload
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -228,10 +229,16 @@ export default function QuestionsPage() {
   // 知识点按选中的科目联动过滤，切换科目时清空已选知识点
   // 首次挂载时表单尚未渲染（弹窗无 forceRender），跳过 setFieldsValue 避免 useForm 未连接告警
   const isSubjectEffectFirstRun = useRef(true);
+  // 编辑弹窗填充数据时会程序性设置科目，此时不应清空随后写入的知识点
+  const skipSubjectClearRef = useRef(false);
   useEffect(() => {
     fetchKnowledgePoints(formSubjectId);
     if (isSubjectEffectFirstRun.current) {
       isSubjectEffectFirstRun.current = false;
+      return;
+    }
+    if (skipSubjectClearRef.current) {
+      skipSubjectClearRef.current = false;
       return;
     }
     questionForm.setFieldsValue({ knowledgePointIds: [] });
@@ -326,7 +333,13 @@ export default function QuestionsPage() {
 
   // 弹窗打开后再填充表单（afterOpenChange 回调），确保 Form 已挂载
   const populateEditForm = (q: QuestionItem) => {
-    setFormSubjectId(q.subjectId || undefined);
+    // 程序性设置科目：跳过科目联动 effect 中「清空知识点」的逻辑，否则刚填充的知识点会被清空。
+    // 仅在科目实际变化时设置跳过标记，保证标记一定会被 effect 消费，不影响后续手动切换科目
+    const nextSubjectId = q.subjectId || undefined;
+    if (nextSubjectId !== formSubjectId) {
+      skipSubjectClearRef.current = true;
+      setFormSubjectId(nextSubjectId);
+    }
     questionForm.setFieldsValue({
       categoryId: q.categoryId,
       subjectId: q.subjectId || undefined,
@@ -487,7 +500,7 @@ export default function QuestionsPage() {
       title: t("questions.colId"),
       dataIndex: "id",
       key: "id",
-      width: 90,
+      width: 80,
       render: (value: string) => (
         <span style={{ fontFamily: "monospace", fontSize: 12 }}>{value}</span>
       ),
@@ -496,9 +509,10 @@ export default function QuestionsPage() {
       title: t("questions.colType"),
       dataIndex: "type",
       key: "type",
-      width: 140,
+      width: 90,
       render: (type: number) => <Tag>{typeLabel(type)}</Tag>,
     },
+    // 内容列不设宽度，自动占满剩余空间（其余列均显式收窄）
     {
       title: t("questions.colContent"),
       dataIndex: "content",
@@ -508,7 +522,7 @@ export default function QuestionsPage() {
     {
       title: t("questions.knowledgePointsLabel"),
       key: "knowledgePoints",
-      width: 180,
+      width: 120,
       render: (_, record) =>
         record.knowledgePoints?.length ? (
           <Space size={2} wrap>
@@ -525,7 +539,7 @@ export default function QuestionsPage() {
     {
       title: t("questions.subject"),
       key: "subject",
-      width: 120,
+      width: 90,
       render: (_, record) =>
         record.subjectName ? (
           <span>{record.subjectName}</span>
@@ -533,18 +547,39 @@ export default function QuestionsPage() {
           <span style={{ color: "rgba(0,0,0,0.25)" }}>-</span>
         ),
     },
-    { title: t("questions.colDifficulty"), dataIndex: "difficulty", key: "difficulty", width: 100 },
-    { title: t("questions.colScore"), dataIndex: "score", key: "score", width: 80 },
+    { title: t("questions.colDifficulty"), dataIndex: "difficulty", key: "difficulty", width: 70 },
+    { title: t("questions.colScore"), dataIndex: "score", key: "score", width: 70 },
     {
       title: t("questions.colOptions"),
       key: "options",
-      width: 90,
-      render: (_, record) => t("questions.opts", { n: record.options.length }),
+      width: 100,
+      // 鼠标滑过展示选项明细（含正确选项标记）
+      render: (_, record) => (
+        <Popover
+          placement="left"
+          content={
+            <Space orientation="vertical" size={4} style={{ maxWidth: 360 }}>
+              {record.options.map((o) => (
+                <div key={o.optionKey}>
+                  <Tag color={o.isCorrect ? "green" : undefined} style={{ marginRight: 6 }}>
+                    {o.optionKey}
+                  </Tag>
+                  <span>{o.content}</span>
+                </div>
+              ))}
+            </Space>
+          }
+        >
+          <span style={{ cursor: "default", whiteSpace: "nowrap", color: "#1677ff" }}>
+            {t("questions.opts", { n: record.options.length })}
+          </span>
+        </Popover>
+      ),
     },
     {
       title: t("questions.colActions"),
       key: "actions",
-      width: 100,
+      width: 80,
       align: "right",
       render: (_, record) => (
         <Space size={0}>
@@ -565,24 +600,43 @@ export default function QuestionsPage() {
   ];
 
   const renderQuestionForm = (isEdit: boolean) => (
+    // question-form-compact：globals.css 中把该表单内 Form.Item 底部间距收紧为 8px
     <Form
+      className="question-form-compact"
       form={questionForm}
       layout="vertical"
       // 初始值放在 Form 上，避免新建/编辑两个弹窗同时挂载时对同名字段重复声明 initialValue
       initialValues={{ type: "1", difficulty: 1, score: 1, sortOrder: 0 }}
       onFinish={isEdit ? handleUpdate : handleCreate}
     >
-      <Form.Item
-        label={t("questions.category")}
-        name="categoryId"
-        rules={[{ required: true, message: t("questions.categoryRequired") }]}
-      >
-        <Select
-          showSearch
-          options={categoryOptions}
-          placeholder={t("questions.chooseCategory")}
-        />
-      </Form.Item>
+      {/* 布局：分类|类型 / 科目|知识点 / 分值|难度 / 题目内容 / 选项 / 解析 / 排序 */}
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item
+            label={t("questions.category")}
+            name="categoryId"
+            rules={[{ required: true, message: t("questions.categoryRequired") }]}
+          >
+            <Select
+              showSearch
+              options={categoryOptions}
+              placeholder={t("questions.chooseCategory")}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item label={t("questions.type")} name="type">
+            <Select
+              options={[
+                { value: "1", label: t("questions.typeSingle") },
+                { value: "2", label: t("questions.typeMultiple") },
+                { value: "3", label: t("questions.typeTrueFalse") },
+                { value: "4", label: t("questions.typeFillBlank") },
+              ]}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
 
       <Row gutter={16}>
         <Col span={12}>
@@ -633,15 +687,8 @@ export default function QuestionsPage() {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item label={t("questions.type")} name="type">
-            <Select
-              options={[
-                { value: "1", label: t("questions.typeSingle") },
-                { value: "2", label: t("questions.typeMultiple") },
-                { value: "3", label: t("questions.typeTrueFalse") },
-                { value: "4", label: t("questions.typeFillBlank") },
-              ]}
-            />
+          <Form.Item label={t("questions.score")} name="score">
+            <InputNumber min={1} style={{ width: "100%" }} />
           </Form.Item>
         </Col>
         <Col span={12}>
@@ -658,23 +705,6 @@ export default function QuestionsPage() {
       >
         <Input.TextArea rows={2} maxLength={500} showCount />
       </Form.Item>
-
-      <Form.Item label={t("questions.analysisOptional")} name="analysis">
-        <Input.TextArea rows={2} maxLength={1000} />
-      </Form.Item>
-
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item label={t("questions.score")} name="score">
-            <InputNumber min={1} style={{ width: "100%" }} />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item label={t("questions.sortOrder")} name="sortOrder">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-        </Col>
-      </Row>
 
       <Form.List name="options">
         {(fields, { add, remove }) => (
@@ -714,6 +744,18 @@ export default function QuestionsPage() {
           </Form.Item>
         )}
       </Form.List>
+
+      <Form.Item label={t("questions.analysisOptional")} name="analysis">
+        <Input.TextArea rows={2} maxLength={1000} />
+      </Form.Item>
+
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item label={t("questions.sortOrder")} name="sortOrder">
+            <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+        </Col>
+      </Row>
     </Form>
   );
 
@@ -782,7 +824,12 @@ export default function QuestionsPage() {
             showSearch
             allowClear
             style={{ width: 200 }}
-            placeholder={t("questions.knowledgePointsPlaceholder")}
+            disabled={!selectedSubjectId}
+            placeholder={
+              selectedSubjectId
+                ? t("questions.knowledgePointsPlaceholder")
+                : t("questions.selectSubjectFirst")
+            }
             value={selectedKPId}
             onChange={(value) => {
               setSelectedKPId(value);

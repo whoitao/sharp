@@ -46,21 +46,16 @@ function translate(locale: Locale, key: MessageKey, vars?: MessageVars): string 
   );
 }
 
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  // SSR 与首次客户端渲染固定为 en，避免 hydration 不一致；
-  // 挂载后再根据 localStorage / 浏览器语言切换。
-  const [locale, setLocaleState] = useState<Locale>("en");
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Locale | null;
-    const initial =
-      stored === "zh" || stored === "en"
-        ? stored
-        : navigator.language.toLowerCase().startsWith("zh")
-          ? "zh"
-          : "en";
-    setLocaleState(initial);
-  }, []);
+export function LocaleProvider({
+  children,
+  initialLocale,
+}: {
+  children: React.ReactNode;
+  /** 服务端按 cookie / Accept-Language 解析的初始语言，避免首屏语言闪烁 */
+  initialLocale?: Locale;
+}) {
+  // 初始语言由服务端下发，SSR 与客户端首次渲染一致，无需挂载后再切换
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? "zh");
 
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
@@ -68,6 +63,8 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
+    // 写 cookie 供服务端下次渲染读取（localStorage 仅做兼容兜底）
+    document.cookie = `${STORAGE_KEY}=${next}; path=/; max-age=31536000`;
     localStorage.setItem(STORAGE_KEY, next);
   }, []);
 
