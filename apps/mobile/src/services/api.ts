@@ -14,6 +14,7 @@ import type {
   UserSettings
 } from '@sharp/shared';
 import axios, { AxiosError, AxiosInstance } from 'axios';
+import { Platform } from 'react-native';
 import { dedupeInFlight } from '../utils/dedupe';
 import { storage } from '../utils/storage';
 import { CATEGORY_ALL_CACHE_SUFFIX, getCached, setCached } from '../utils/studyCache';
@@ -664,12 +665,32 @@ export const api = {
   // Avatar upload — 失败必须让调用方看到真实错误，这里不做 mock 兜底
   async uploadAvatar(file: { uri: string; name: string; type: string }): Promise<string> {
     const form = new FormData();
-    // RN 的原生文件描述符对象不在 FormData 的类型定义里
-    form.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
-    const response = await apiClient.post<{ avatar: string }>('/api/app/profile/avatar', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 30000,
+
+    if (Platform.OS === 'web') {
+      // 浏览器端：React Native 的 { uri, name, type } 是 native descriptor，
+      // 浏览器 FormData 会把它当成普通 object append，后端 instanceof File 检查通不过 → 400。
+      // 必须 fetch 真正的文件二进制转成 Blob。
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
+      form.append('file', blob, file.name);
+    } else {
+      // RN 端：polyfill 识别 { uri, name, type } 并转成真 Blob
+      form.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
+    }
+
+    // 关键：不要手动设置 Content-Type，axios 会自动补 multipart/form-data + boundary，
+    // 手动覆盖会让后端解析不到 boundary，同样导致 400
+    const apiInstance = axios.create({ baseURL: API_BASE_URL, timeout: 30000 });
+    apiInstance.interceptors.request.use(async (config) => {
+      const token = await storage.getToken();
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+      return config;
     });
+
+    const response = await apiInstance.post<{ avatar: string }>(
+      '/api/app/profile/avatar',
+      form,
+    );
     return response.data.avatar;
   },
 };
