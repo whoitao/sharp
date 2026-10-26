@@ -5,8 +5,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, "");
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const AVATAR_BUCKET = process.env.SUPABASE_AVATAR_BUCKET ?? "sharpbucket";
 
-/** 单次上传上限 1MB */
-export const MAX_AVATAR_BYTES = 1024 * 1024;
+/** 单次上传上限 5MB */
+export const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 export type ImageContentType = "image/jpeg" | "image/png" | "image/webp";
 
