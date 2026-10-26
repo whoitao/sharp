@@ -10,8 +10,10 @@ import { initializeAuth } from './src/stores/authSlice';
 import { loadSettings } from './src/stores/settingsSlice';
 import { resetStudy } from './src/stores/studySlice';
 import { installGlobalErrorLog } from './src/utils/globalErrorLog';
+import { installConsoleFilters } from './src/utils/consoleFilters';
 
 installGlobalErrorLog();
+installConsoleFilters();
 
 // 与安卓原生 splash 保持一致：绿色背景 + 居中 S 图标
 const SPLASH_BACKGROUND = '#10B981';
