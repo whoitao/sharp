@@ -6,6 +6,10 @@ import { cookies, headers } from "next/headers";
 import { Suspense } from "react";
 import "./globals.css";
 
+// 管理后台需要鉴权 + 动态解析 locale，无需静态预渲染；
+// 显式标记 force-dynamic 避免 Next 16 在预渲染 _not-found 时因 cookies()/headers() 报错
+export const dynamic = "force-dynamic";
+
 
 const inter = Inter({ subsets: ["latin"] });
 

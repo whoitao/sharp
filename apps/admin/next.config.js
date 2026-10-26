@@ -42,8 +42,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  cacheComponents: true,
-  partialPrefetching: true, // 显式设置，避免警告
+  // cacheComponents / partialPrefetching 与 Next 16 的动态路由机制互斥；
+  // 管理后台依赖 cookies()/headers() 做 locale 解析，且所有页面都需鉴权，本身就是动态内容，无需开启
+  cacheComponents: false,
   transpilePackages: collectTranspilePackages(),
 };
 
