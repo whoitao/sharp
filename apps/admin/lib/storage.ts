@@ -37,9 +37,23 @@ const CONTENT_TYPE_TO_EXT: Record<ImageContentType, string> = {
   "image/webp": "webp",
 };
 
-/** 固定 path：换图即覆盖（x-upsert），不会留下历史孤儿文件 */
+/**
+ * 把 userId 里的斜杠 / \ 换成下划线，防止 ".." 路径穿越或伪造目录名。
+ * userId 是 Prisma 生成的自增 ID 或 UUID，理论上不含分隔符，但多一道护栏。
+ */
+function sanitizeUserId(userId: string): string {
+  return userId.replace(/[\\/]/g, "_").replace(/\.\./g, "_");
+}
+
+/**
+ * 每个用户独立目录：{userId}/avatars/avatar.{ext}。
+ * 同名覆盖（x-upsert），换图后旧版本不会留下。
+ * 目录本身不需要提前创建——Supabase Storage PUT 带多级 path 会自动建层级。
+ */
 export function avatarPath(userId: string, contentType: ImageContentType): string {
-  return `avatars/${userId}.${CONTENT_TYPE_TO_EXT[contentType]}`;
+  const safeId = sanitizeUserId(userId);
+  const ext = CONTENT_TYPE_TO_EXT[contentType];
+  return `${safeId}/avatars/avatar.${ext}`;
 }
 
 // key 固定，换图后 URL 不变，所以带一个版本号查询参数让客户端绕过图片缓存
