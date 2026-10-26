@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { User } from '@sharp/shared';
-import type { RootState } from '../stores';
 import { api } from '../services/api';
+import type { RootState } from '../stores';
 import { storage } from '../utils/storage';
 
 interface AuthState {
@@ -68,7 +68,11 @@ export const uploadAvatar = createAsyncThunk(
       return avatar;
     } catch (err: any) {
       // 413 = 超过服务端 1MB 限制，其它状态码统一按失败处理
-      return rejectWithValue((err?.response?.status === 413 ? 'tooLarge' : 'failed') as AvatarUploadError);
+      // fetch 路径抛出的错误带 status 字段；网络异常（无 status）也在这里兜底
+      if (err?.status !== 413) {
+        console.warn('[avatar] upload error:', err?.message ?? err);
+      }
+      return rejectWithValue((err?.status === 413 ? 'tooLarge' : 'failed') as AvatarUploadError);
     }
   }
 );

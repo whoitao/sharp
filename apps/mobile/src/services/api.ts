@@ -667,31 +667,47 @@ export const api = {
     const form = new FormData();
 
     if (Platform.OS === 'web') {
-      // 浏览器端：React Native 的 { uri, name, type } 是 native descriptor，
-      // 浏览器 FormData 会把它当成普通 object append，后端 instanceof File 检查通不过 → 400。
-      // 必须 fetch 真正的文件二进制转成 Blob。
+      // 浏览器端：RN 的 { uri, name, type } 是 native descriptor，浏览器 FormData 会把它当普通
+      // object append，后端 instanceof File 检查通不过 → 400。必须 fetch 文件二进制转成 Blob。
       const response = await fetch(file.uri);
       const blob = await response.blob();
       form.append('file', blob, file.name);
     } else {
-      // RN 端：polyfill 识别 { uri, name, type } 并转成真 Blob
+      // RN 端：原生层识别 { uri, name, type } 组装 multipart（RN 官方模式）。
+      // 不要用 axios：其 XHR 适配器在 Android 上对文件 part 编码不可靠，服务端解析 multipart 失败。
       form.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
     }
 
-    // 关键：不要手动设置 Content-Type，axios 会自动补 multipart/form-data + boundary，
-    // 手动覆盖会让后端解析不到 boundary，同样导致 400
-    const apiInstance = axios.create({ baseURL: API_BASE_URL, timeout: 30000 });
-    apiInstance.interceptors.request.use(async (config) => {
-      const token = await storage.getToken();
-      if (token) config.headers.Authorization = `Bearer ${token}`;
-      return config;
-    });
+    const token = await storage.getToken();
+    // 保留原 axios 实例的 30s 超时语义
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
 
-    const response = await apiInstance.post<{ avatar: string }>(
-      '/api/app/profile/avatar',
-      form,
-    );
-    return response.data.avatar;
+    try {
+      const response = await fetch(
+        `${API_BASE_URL.replace(/\/+$/, '')}/api/app/profile/avatar`,
+        {
+          method: 'POST',
+          // 不要手动设置 Content-Type：RN/浏览器都会自动补 multipart/form-data + boundary
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: form,
+          signal: controller.signal,
+        },
+      );
+
+      if (!response.ok) {
+        // 打出真实状态码 + 响应体，方便定位（404=线上未部署新路由、401=token 失效、413=超 1MB、415=格式不支持）
+        console.warn('[avatar] upload failed:', response.status, await response.text().catch(() => ''));
+        const err = new Error(`avatar upload failed: ${response.status}`) as Error & { status: number };
+        err.status = response.status;
+        throw err;
+      }
+
+      const data = (await response.json()) as { avatar: string };
+      return data.avatar;
+    } finally {
+      clearTimeout(timer);
+    }
   },
 };
 
