@@ -277,3 +277,29 @@ export interface UpdateSettingsRequest {
   language?: Language;
   density?: Density;
 }
+
+/**
+ * Supabase Storage 公开桶的默认名字（apps/admin 里 env 覆盖）。
+ * 和 apps/admin/lib/storage.ts 保持一致。
+ */
+export const DEFAULT_SUPABASE_AVATAR_BUCKET = 'sharpbucket';
+
+/**
+ * 头像 URL 拼接 helper。
+ *
+ * DB 里只存相对路径：{userId}/avatars/avatar.jpg
+ * 展示层用它拼完整 URL，Supabase project 迁移 / 换 CDN 不用改 DB。
+ *
+ * 兼容历史：如果 avatarPath 已经是 https://... 完整 URL，原样返回。
+ */
+export function buildAvatarUrl(
+  avatarPath: string | null | undefined,
+  supabaseUrl: string | undefined,
+  bucket: string = DEFAULT_SUPABASE_AVATAR_BUCKET,
+): string | null {
+  if (!avatarPath) return null;
+  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) return avatarPath;
+  if (!supabaseUrl) return null;
+  const base = supabaseUrl.replace(/\/+$/, '');
+  return `${base}/storage/v1/object/public/${bucket}/${avatarPath}`;
+}

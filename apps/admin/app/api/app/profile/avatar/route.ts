@@ -54,15 +54,9 @@ export async function POST(request: NextRequest) {
   }
 
   let objectPath: string;
-  let avatarUrl: string;
   try {
-    const { publicUrl, objectPath: path } = await uploadAvatar(
-      appUser.id,
-      bytes,
-      contentType,
-    );
-    avatarUrl = publicUrl;
-    objectPath = path;
+    const result = await uploadAvatar(appUser.id, bytes, contentType);
+    objectPath = result.objectPath;
   } catch (err) {
     if (err instanceof StorageConfigError) {
       console.error("[avatar]", err.message);
@@ -77,16 +71,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // DB 里只存相对路径 {userId}/avatars/avatar.{ext}，域名统一用 avatarPublicUrl() 在展示层拼
     await prisma.user.update({
       where: { id: appUser.id },
-      data: { avatar: avatarUrl },
+      data: { avatar: objectPath },
     });
   } catch (err) {
-    // 关键：上传成功但 DB 写入失败时，回滚刚上传的 object，避免孤儿文件
     console.error("[avatar] prisma update failed, compensating delete", err);
     await deleteAvatar(objectPath);
     return NextResponse.json({ error: "failed to save avatar" }, { status: 500 });
   }
 
-  return NextResponse.json({ avatar: avatarUrl });
+  // 返回相对路径，客户端用 avatarPublicUrl 拼完整 URL；
+  // 同时也返回完整 URL（avatarFull）给立即渲染用，前端可直接消费
+  return NextResponse.json({ avatar: objectPath });
 }

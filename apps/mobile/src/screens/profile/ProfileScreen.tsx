@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { buildAvatarUrl } from '@sharp/shared';
 import { Image } from 'expo-image';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -39,6 +40,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const [isUploading, setIsUploading] = useState(false);
+
+  // DB 里只存相对路径 {userId}/avatars/avatar.{ext}，展示层拼完整 URL
+  // 兼容历史：如果 user.avatar 已是完整 https:// URL，buildAvatarUrl 原样返回
+  const avatarUrl = useMemo(
+    () => buildAvatarUrl(user?.avatar ?? null, process.env.EXPO_PUBLIC_SUPABASE_URL),
+    [user?.avatar]
+  );
 
   const handleChangeAvatar = useCallback(async () => {
     if (isUploading) return;
@@ -102,9 +110,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           activeOpacity={0.75}
           disabled={isUploading}
         >
-          {user?.avatar ? (
+          {avatarUrl ? (
             <Image
-              source={user.avatar}
+              source={avatarUrl}
               style={[styles.avatarImage, { borderRadius: 36 * spacing }]}
               contentFit="cover"
               transition={150}

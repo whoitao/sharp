@@ -56,17 +56,28 @@ export function avatarPath(userId: string, contentType: ImageContentType): strin
   return `${safeId}/avatars/avatar.${ext}`;
 }
 
-// key 固定，换图后 URL 不变，所以带一个版本号查询参数让客户端绕过图片缓存
-export function avatarPublicUrl(path: string, version: number = Date.now()): string {
-  return `${SUPABASE_URL}/storage/v1/object/public/${AVATAR_BUCKET}/${path}?v=${version}`;
+/**
+ * 根据相对路径拼接公开 URL。
+ * path 允许：
+ *   - 相对路径：{userId}/avatars/avatar.jpg  →  拼上 Supabase Storage 域名
+ *   - 已带完整协议：https://...  →  原样返回（兼容历史已存完整 URL 的用户头像）
+ */
+export function avatarPublicUrl(path: string, version?: number): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const v = version ?? Date.now();
+  return `${SUPABASE_URL}/storage/v1/object/public/${AVATAR_BUCKET}/${path}?v=${v}`;
 }
 
-/** 上传（覆盖）头像，返回桶的公开访问地址 */
+/**
+ * 头像只存相对路径在 DB：{userId}/avatars/avatar.jpg
+ * 这样 Supabase project 迁移 / 换 CDN 时不用批量改 DB。
+ * 调用 avatarPublicUrl(path) 在展示层拼完整 URL。
+ */
 export async function uploadAvatar(
   userId: string,
   bytes: Uint8Array,
   contentType: ImageContentType,
-): Promise<{ publicUrl: string; objectPath: string }> {
+): Promise<{ objectPath: string }> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new StorageConfigError("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY is not configured");
   }
@@ -94,7 +105,8 @@ export async function uploadAvatar(
     throw new StorageUploadError(`${response.status} ${detail.slice(0, 200)}`);
   }
 
-  return { publicUrl: avatarPublicUrl(path), objectPath: path };
+  // 只返回相对路径，不拼域名
+  return { objectPath: path };
 }
 
 /** 补偿删除：upload 成功但 prisma update 失败时清理刚上传的 object，避免留下孤儿文件 */
