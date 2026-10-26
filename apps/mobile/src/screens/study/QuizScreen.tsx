@@ -425,6 +425,32 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
       {/* Question content */}
       <View style={[styles.questionContainer, { backgroundColor: colors.surface, marginHorizontal: 16 * spacing, marginTop: 0, borderRadius: 12 * radius, paddingHorizontal: 20 * spacing, paddingVertical: 20 * spacing }]}>
+        {/* 题目头部：左侧难度星级，右侧题型 */}
+        <View style={[styles.questionMeta, { marginBottom: 10 * spacing }]}>
+          <View style={styles.questionMetaLeft}>
+            <Text style={[styles.questionMetaLabel, { color: colors.textSecondary, fontSize: 12 * font }]}>
+              {t.difficultyLabel}
+            </Text>
+            {Array.from({ length: 5 }, (_, i) => (
+              <Text
+                key={i}
+                style={[
+                  styles.questionStar,
+                  {
+                    fontSize: 14 * font,
+                    marginRight: 2 * spacing,
+                    color: i < (currentQuestion.difficulty ?? 0) ? '#F59E0B' : colors.border,
+                  },
+                ]}
+              >
+                ★
+              </Text>
+            ))}
+          </View>
+          <Text style={[styles.questionType, { color: colors.textTertiary, fontSize: 12 * font }]}>
+            {isMultipleChoice ? t.multipleChoice : t.singleChoice}
+          </Text>
+        </View>
         <Text style={[styles.questionContent, { color: colors.text, fontSize: 18 * font }]}>{currentQuestion.content}</Text>
       </View>
 
@@ -622,6 +648,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     lineHeight: 28,
     fontWeight: '500',
+  },
+  questionMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  questionMetaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  questionMetaLabel: {
+    fontSize: 12,
+  },
+  questionStar: {
+    fontSize: 14,
+    marginRight: 2,
+  },
+  questionType: {
+    fontSize: 12,
   },
   optionsContainer: {
     paddingHorizontal: 16,
