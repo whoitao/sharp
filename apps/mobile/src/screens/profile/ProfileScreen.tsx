@@ -1,19 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
+import { Image } from 'expo-image';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
+import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
-import type { RootState } from '../../stores';
+import type { AppDispatch, RootState } from '../../stores';
+import { uploadAvatar } from '../../stores/authSlice';
+
+/** 头像统一压到 512px 方形 JPEG，远小于服务端 1MB 上限 */
+const AVATAR_SIZE = 512;
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
@@ -27,7 +36,43 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleChangeAvatar = useCallback(async () => {
+    if (isUploading) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(t.avatarPermission);
+      return;
+    }
+
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      allowsEditing: true,
+      // iOS 的方形裁剪框本身是固定的，aspect 只在 Android 生效
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (picked.canceled) return;
+    const source = picked.assets[0]?.uri;
+    if (!source) return;
+
+    setIsUploading(true);
+    try {
+      const context = ImageManipulator.manipulate(source);
+      context.resize({ width: AVATAR_SIZE, height: AVATAR_SIZE });
+      const rendered = await context.renderAsync();
+      const result = await rendered.saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
+      await dispatch(uploadAvatar({ uri: result.uri, name: 'avatar.jpg', type: 'image/jpeg' })).unwrap();
+    } catch (err) {
+      Alert.alert(err === 'tooLarge' ? t.avatarTooLarge : t.avatarUploadFailed);
+    } finally {
+      setIsUploading(false);
+    }
+  }, [dispatch, isUploading, t]);
 
   const menuItems: { label: string; icon: MenuIcon; onPress: () => void }[] = [
     {
@@ -51,13 +96,35 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[styles.content, { paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 40 * spacing }]}>
       {/* User info */}
       <View style={[styles.userCard, { backgroundColor: colors.accentBackground, padding: 24 * spacing, borderRadius: 12 * radius, marginBottom: 20 * spacing }]}>
-        <View style={[styles.avatarContainer, { backgroundColor: colors.surface, width: 72 * spacing, height: 72 * spacing, borderRadius: 36 * spacing, marginBottom: 14 * spacing }]}>
-          <Text style={[styles.avatar, { color: colors.accent, fontSize: 30 * font }]}>
-            {user?.nickname?.[0]?.toUpperCase() ?? user?.username?.[0]?.toUpperCase() ?? '?'}
-          </Text>
-        </View>
+        <TouchableOpacity
+          style={[styles.avatarContainer, { backgroundColor: colors.surface, width: 72 * spacing, height: 72 * spacing, borderRadius: 36 * spacing, marginBottom: 14 * spacing }]}
+          onPress={handleChangeAvatar}
+          activeOpacity={0.75}
+          disabled={isUploading}
+        >
+          {user?.avatar ? (
+            <Image
+              source={user.avatar}
+              style={[styles.avatarImage, { borderRadius: 36 * spacing }]}
+              contentFit="cover"
+              transition={150}
+            />
+          ) : (
+            <Text style={[styles.avatar, { color: colors.accent, fontSize: 30 * font }]}>
+              {user?.nickname?.[0]?.toUpperCase() ?? user?.username?.[0]?.toUpperCase() ?? '?'}
+            </Text>
+          )}
+          {isUploading && (
+            <View style={[styles.avatarOverlay, { borderRadius: 36 * spacing }]}>
+              <ActivityIndicator color="#FFFFFF" />
+            </View>
+          )}
+        </TouchableOpacity>
         <Text style={[styles.username, { color: colors.text, fontSize: 20 * font, marginBottom: 4 * spacing }]}>{user?.nickname ?? user?.username ?? t.defaultUser}</Text>
         <Text style={[styles.userSub, { color: colors.textSecondary, fontSize: 14 * font }]}>@{user?.username ?? ''}</Text>
+        <Text style={[styles.avatarHint, { color: colors.textTertiary, fontSize: 12 * font, marginTop: 8 * spacing }]}>
+          {isUploading ? t.avatarUploading : t.editAvatar}
+        </Text>
       </View>
 
       {/* Menu */}
@@ -121,6 +188,19 @@ const styles = StyleSheet.create({
   avatar: {
     fontSize: 30,
     fontWeight: '700',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  avatarHint: {
+    fontSize: 12,
   },
   username: {
     fontSize: 20,

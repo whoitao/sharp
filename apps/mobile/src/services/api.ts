@@ -661,6 +661,17 @@ export const api = {
       };
     }
   },
+  // Avatar upload — 失败必须让调用方看到真实错误，这里不做 mock 兜底
+  async uploadAvatar(file: { uri: string; name: string; type: string }): Promise<string> {
+    const form = new FormData();
+    // RN 的原生文件描述符对象不在 FormData 的类型定义里
+    form.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
+    const response = await apiClient.post<{ avatar: string }>('/api/app/profile/avatar', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    });
+    return response.data.avatar;
+  },
 };
 
 export default api;

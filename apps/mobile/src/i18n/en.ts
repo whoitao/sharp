@@ -160,4 +160,11 @@ export const en: TranslationKeys = {
   crashLogEmpty: 'No crash recorded',
   crashLogClear: 'Clear',
   crashLogClearConfirm: 'Clear all crash logs?',
+
+  // Avatar
+  editAvatar: 'Tap to change avatar',
+  avatarUploading: 'Uploading avatar…',
+  avatarUploadFailed: 'Avatar upload failed, please try again',
+  avatarTooLarge: 'Avatar is larger than 1MB, pick another image',
+  avatarPermission: 'Photo library permission is required to change the avatar',
 };

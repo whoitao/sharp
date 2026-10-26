@@ -44,6 +44,14 @@
             "enableShrinkResourcesInReleaseBuilds": true
           }
         }
+      ],
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sharp 需要访问相册来更换你的头像",
+          "cameraPermission": false
+        }
       ]
     ]
   }

@@ -158,6 +158,13 @@ export const zh = {
   crashLogEmpty: '暂无崩溃记录',
   crashLogClear: '清空',
   crashLogClearConfirm: '确定清空全部崩溃日志吗？',
+
+  // Avatar
+  editAvatar: '点击更换头像',
+  avatarUploading: '正在上传头像…',
+  avatarUploadFailed: '头像上传失败，请稍后重试',
+  avatarTooLarge: '头像体积超过 1MB，请重新选择',
+  avatarPermission: '需要相册权限才能更换头像',
 };
 
 export type TranslationKeys = typeof zh;

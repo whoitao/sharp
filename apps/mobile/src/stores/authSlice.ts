@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { User } from '@sharp/shared';
+import type { RootState } from '../stores';
 import { api } from '../services/api';
 import { storage } from '../utils/storage';
 
@@ -49,6 +50,25 @@ export const register = createAsyncThunk(
       return response;
     } catch (err: any) {
       return rejectWithValue(err.message ?? 'Registration failed');
+    }
+  }
+);
+
+export type AvatarUploadError = 'tooLarge' | 'failed';
+
+export const uploadAvatar = createAsyncThunk(
+  'auth/uploadAvatar',
+  async (file: { uri: string; name: string; type: string }, { getState, rejectWithValue }) => {
+    try {
+      const avatar = await api.uploadAvatar(file);
+      const current = (getState() as RootState).auth.user;
+      if (current) {
+        await storage.setUser({ ...current, avatar } as unknown as Record<string, unknown>);
+      }
+      return avatar;
+    } catch (err: any) {
+      // 413 = 超过服务端 1MB 限制，其它状态码统一按失败处理
+      return rejectWithValue((err?.response?.status === 413 ? 'tooLarge' : 'failed') as AvatarUploadError);
     }
   }
 );
@@ -111,6 +131,12 @@ const authSlice = createSlice({
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // avatar
+      .addCase(uploadAvatar.fulfilled, (state, action: PayloadAction<string>) => {
+        if (state.user) {
+          state.user.avatar = action.payload;
+        }
       });
   },
 });
