@@ -31,9 +31,15 @@ export function detectImageType(bytes: Uint8Array): ImageContentType | null {
   return null;
 }
 
-/** 固定 key：换图即覆盖，不会留下历史孤儿文件 */
-export function avatarPath(userId: string): string {
-  return `avatars/${userId}`;
+const CONTENT_TYPE_TO_EXT: Record<ImageContentType, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+/** 固定 path：换图即覆盖（x-upsert），不会留下历史孤儿文件 */
+export function avatarPath(userId: string, contentType: ImageContentType): string {
+  return `avatars/${userId}.${CONTENT_TYPE_TO_EXT[contentType]}`;
 }
 
 // key 固定，换图后 URL 不变，所以带一个版本号查询参数让客户端绕过图片缓存
@@ -42,13 +48,16 @@ export function avatarPublicUrl(path: string, version: number = Date.now()): str
 }
 
 /** 上传（覆盖）头像，返回桶的公开访问地址 */
-export async function uploadAvatar(userId: string, bytes: Uint8Array, contentType: ImageContentType): Promise<string> {
+export async function uploadAvatar(
+  userId: string,
+  bytes: Uint8Array,
+  contentType: ImageContentType,
+): Promise<{ publicUrl: string; objectPath: string }> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new StorageConfigError("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY is not configured");
   }
 
-  const path = avatarPath(userId);
-  const version = Date.now();
+  const path = avatarPath(userId, contentType);
   let response: Response;
   try {
     response = await fetch(`${SUPABASE_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
@@ -60,7 +69,6 @@ export async function uploadAvatar(userId: string, bytes: Uint8Array, contentTyp
         "x-upsert": "true",
         "cache-control": "no-cache",
       },
-      // fetch 要求 ArrayBuffer 视图，转一份避免 SharedArrayBuffer 类型不兼容
       body: bytes.slice().buffer as ArrayBuffer,
     });
   } catch (err) {
@@ -72,5 +80,21 @@ export async function uploadAvatar(userId: string, bytes: Uint8Array, contentTyp
     throw new StorageUploadError(`${response.status} ${detail.slice(0, 200)}`);
   }
 
-  return avatarPublicUrl(path, version);
+  return { publicUrl: avatarPublicUrl(path), objectPath: path };
+}
+
+/** 补偿删除：upload 成功但 prisma update 失败时清理刚上传的 object，避免留下孤儿文件 */
+export async function deleteAvatar(path: string): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
+  try {
+    await fetch(`${SUPABASE_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+      },
+    });
+  } catch {
+    // 补偿删除失败静默，避免掩盖主错误
+  }
 }
