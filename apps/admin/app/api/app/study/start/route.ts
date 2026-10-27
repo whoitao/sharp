@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
   const questions = await prisma.question.findMany({
     where: questionWhere,
-    orderBy: { sortOrder: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     skip: unitIndex * unitSize,
     take: unitSize,
     select: { id: true },

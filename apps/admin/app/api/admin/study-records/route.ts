@@ -45,11 +45,22 @@ export async function GET(request: NextRequest) {
   });
   const categoryNameMap = new Map(categories.map((c: { id: bigint; name: string }) => [c.id.toString(), c.name]));
 
+  // 显式列举字段并转换 BigInt，禁止展开原始 Prisma 对象（BigInt 会导致 JSON 序列化 500）
   const serialized = records.map((r: any) => ({
-    ...r,
     id: r.id,
+    userId: r.userId,
+    user: { username: r.user?.username ?? null, nickname: r.user?.nickname ?? null },
     categoryId: r.categoryId.toString(),
     categoryName: categoryNameMap.get(r.categoryId.toString()) ?? null,
+    unitIndex: r.unitIndex,
+    subjectId: r.subjectId?.toString() ?? null,
+    knowledgePointId: r.knowledgePointId?.toString() ?? null,
+    startedAt: r.startedAt,
+    finishedAt: r.finishedAt,
+    totalQuestions: r.totalQuestions,
+    correctCount: r.correctCount,
+    wrongCount: r.wrongCount,
+    durationSeconds: r.durationSeconds,
   }));
 
   return NextResponse.json({

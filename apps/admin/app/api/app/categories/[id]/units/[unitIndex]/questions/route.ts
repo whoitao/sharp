@@ -54,7 +54,7 @@ export async function GET(
         orderBy: { sortNo: "asc" },
       },
     },
-    orderBy: { sortOrder: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     skip: unitIndex * unitSize,
     take: unitSize,
   });

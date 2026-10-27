@@ -73,7 +73,8 @@ export async function GET(
   const allQuestions = await prisma.question.findMany({
     where: questionWhere,
     select: { id: true, sortOrder: true },
-    orderBy: { sortOrder: "asc" },
+    // sortOrder 存在大量并列（导入题目均为 0），必须加 id 决胜保证单元窗口跨接口稳定
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
   });
 
   // Calculate units
