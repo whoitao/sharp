@@ -27,7 +27,7 @@ interface SettingsScreenProps {
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -71,12 +71,20 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const sectionPadding = 16 * spacing;
   const sectionMarginBottom = 16 * spacing;
   const titleFontSize = 18 * font;
+  // 卡片层级：白底 + hairline；深色下 elevation 会变成黑边，关掉
+  const cardChrome = {
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    elevation: isDark ? 0 : 2,
+    shadowOpacity: isDark ? 0 : 0.04,
+  };
 
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} contentContainerStyle={styles.content}>
       {/* 设置项入口（一级） */}
-      <View style={[styles.section, styles.menuCard, { backgroundColor: colors.surface, marginBottom: sectionMarginBottom }]}>
+      <View style={[styles.section, styles.menuCard, cardChrome, { marginBottom: sectionMarginBottom }]}>
         {settingRows.map((row, index) => (
           <TouchableOpacity
             key={row.key}
@@ -94,7 +102,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           >
             <Text style={[styles.settingLabel, { color: colors.text, fontSize: 16 * font }]}>{row.label}</Text>
             <View style={styles.settingValueWrap}>
-              <Text style={[styles.settingValue, { color: colors.textTertiary, fontSize: 14 * font, marginRight: 6 * spacing }]}>
+              <Text style={[styles.settingValue, { color: colors.textSecondary, fontSize: 14 * font, marginRight: 6 * spacing }]}>
                 {row.value}
               </Text>
               <Ionicons name="chevron-forward" size={18 * font} color={colors.textTertiary} />
@@ -103,49 +111,35 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         ))}
       </View>
 
-      {/* About section */}
-      <View style={[styles.section, { backgroundColor: colors.surface, padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
+      {/* About section：崩溃日志收成最后一行，不再单独占一张同级大卡 */}
+      <View style={[styles.section, cardChrome, { padding: sectionPadding, marginBottom: sectionMarginBottom }]}>
         <Text style={[styles.sectionTitle, { color: colors.text, fontSize: titleFontSize, marginBottom: 10 * spacing }]}>{t.about}</Text>
         <View style={[styles.aboutRow, { borderBottomColor: colors.borderLight, paddingVertical: 12 * spacing }]}>
           <Text style={[styles.aboutLabel, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.version}</Text>
           <Text style={[styles.aboutValue, { color: colors.textSecondary, fontSize: 15 * font }]}>1.0.0</Text>
         </View>
-        <View style={[styles.aboutRow, { borderBottomWidth: 0, paddingTop: 12 * spacing, paddingBottom: 0 }]}>
+        <View style={[styles.aboutRow, { borderBottomColor: colors.borderLight, paddingVertical: 12 * spacing }]}>
           <Text style={[styles.aboutLabel, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.appName}</Text>
           <Text style={[styles.aboutValue, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.appNameValue}</Text>
         </View>
-      </View>
-
-      {/* Crash log entry */}
-      <TouchableOpacity
-        style={[
-          styles.entryButton,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.borderLight,
-            paddingVertical: 16 * spacing,
-            paddingHorizontal: 20 * spacing,
-            borderRadius: 16 * radius,
-            marginBottom: 16 * spacing,
-          },
-        ]}
-        onPress={() => navigation.navigate('CrashLog')}
-        activeOpacity={0.8}
-      >
-        <Text style={[styles.entryLabel, { color: colors.text, fontSize: 16 * font }]}>{t.crashLogTitle}</Text>
-        <Text
-          style={[
-            styles.entryValue,
-            { color: crashCount > 0 ? colors.error : colors.textTertiary, fontSize: 15 * font },
-          ]}
+        <TouchableOpacity
+          style={[styles.aboutRow, { borderBottomWidth: 0, paddingVertical: 12 * spacing }]}
+          onPress={() => navigation.navigate('CrashLog')}
+          activeOpacity={0.7}
         >
-          {crashCount}
-        </Text>
-      </TouchableOpacity>
+          <Text style={[styles.aboutLabel, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.crashLogTitle}</Text>
+          <View style={styles.settingValueWrap}>
+            <Text style={[styles.aboutValue, { color: crashCount > 0 ? colors.error : colors.textSecondary, fontSize: 15 * font, marginRight: 6 * spacing }]}>
+              {crashCount}
+            </Text>
+            <Ionicons name="chevron-forward" size={16 * font} color={colors.textTertiary} />
+          </View>
+        </TouchableOpacity>
+      </View>
 
       {/* Logout button */}
       <TouchableOpacity
-        style={[styles.logoutButton, { backgroundColor: colors.surface, borderColor: colors.errorLight, paddingVertical: 16 * spacing, borderRadius: 16 * spacing }]}
+        style={[styles.logoutButton, { backgroundColor: colors.dangerSurface, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]}
         onPress={handleLogout}
         activeOpacity={0.8}
       >
@@ -198,7 +192,7 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   section: {
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 20,
     marginBottom: 16,
     shadowColor: '#000',
@@ -335,36 +329,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   logoutButton: {
-    borderRadius: 16,
+    borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
   },
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  entryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  entryLabel: {
-    fontWeight: '600',
-  },
-  entryValue: {
-    fontVariant: ['tabular-nums'],
   },
 });
 

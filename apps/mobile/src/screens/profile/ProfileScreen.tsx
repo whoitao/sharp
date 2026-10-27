@@ -34,7 +34,7 @@ interface ProfileScreenProps {
 type MenuIcon = React.ComponentProps<typeof Ionicons>['name'];
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -47,6 +47,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     () => buildAvatarUrl(user?.avatar ?? null, process.env.EXPO_PUBLIC_SUPABASE_URL),
     [user?.avatar]
   );
+
+  // 卡片层级靠"白底 + hairline"表达；深色下 elevation 会变成一圈黑边，关掉
+  const userCardStyle = {
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    elevation: isDark ? 0 : 4,
+    shadowOpacity: isDark ? 0 : 0.08,
+  };
+  const listCardStyle = {
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    elevation: isDark ? 0 : 2,
+    shadowOpacity: isDark ? 0 : 0.04,
+  };
 
   const handleChangeAvatar = useCallback(async () => {
     if (isUploading) return;
@@ -110,9 +126,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   return (
     <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} contentContainerStyle={[styles.content, { paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 40 * spacing }]}>
       {/* User info */}
-      <View style={[styles.userCard, { backgroundColor: colors.accentBackground, padding: 24 * spacing, borderRadius: 12 * radius, marginBottom: 20 * spacing }]}>
+      <View style={[styles.userCard, userCardStyle, { padding: 24 * spacing, borderRadius: 12 * radius, marginBottom: 20 * spacing }]}>
         <TouchableOpacity
-          style={[styles.avatarContainer, { backgroundColor: colors.surface, width: 72 * spacing, height: 72 * spacing, borderRadius: 36 * spacing, marginBottom: 14 * spacing }]}
+          style={[styles.avatarContainer, { backgroundColor: colors.accentLight, width: 72 * spacing, height: 72 * spacing, borderRadius: 36 * spacing, marginBottom: 14 * spacing, elevation: isDark ? 0 : 2, shadowOpacity: isDark ? 0 : 0.08 }]}
           onPress={handleChangeAvatar}
           activeOpacity={0.75}
           disabled={isUploading}
@@ -125,7 +141,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               transition={150}
             />
           ) : (
-            <Text style={[styles.avatar, { color: colors.accent, fontSize: 30 * font }]}>
+            <Text style={[styles.avatar, { color: colors.accentStrong, fontSize: 30 * font }]}>
               {user?.nickname?.[0]?.toUpperCase() ?? user?.username?.[0]?.toUpperCase() ?? '?'}
             </Text>
           )}
@@ -137,13 +153,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         </TouchableOpacity>
         <Text style={[styles.username, { color: colors.text, fontSize: 20 * font, marginBottom: 4 * spacing }]}>{user?.nickname ?? user?.username ?? t.defaultUser}</Text>
         <Text style={[styles.userSub, { color: colors.textSecondary, fontSize: 14 * font }]}>@{user?.username ?? ''}</Text>
-        <Text style={[styles.avatarHint, { color: colors.textTertiary, fontSize: 12 * font, marginTop: 8 * spacing }]}>
+        <Text style={[styles.avatarHint, { color: colors.textSecondary, fontSize: 12 * font, marginTop: 8 * spacing }]}>
           {isUploading ? t.avatarUploading : t.editAvatar}
         </Text>
       </View>
 
       {/* Menu */}
-      <View style={[styles.menuSection, { backgroundColor: colors.surface, borderRadius: 12 * radius, marginBottom: 24 * spacing }]}>
+      <View style={[styles.menuSection, listCardStyle, { borderRadius: 12 * radius, marginBottom: 24 * spacing }]}>
         {menuItems.map((item, index) => (
           <TouchableOpacity
             key={index}

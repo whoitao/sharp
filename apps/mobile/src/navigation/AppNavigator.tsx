@@ -106,14 +106,14 @@ const AuthNavigator: React.FC = () => (
 // ── Home Stack Navigator ─────────────────────────────────────────────────────
 
 const HomeStackNavigator: React.FC = () => {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <HomeStack.Navigator
       screenOptions={{
         headerBackground: () => <GradientHeader />,
         headerShadowVisible: false,
-        headerTintColor: isDark ? '#F9FAFB' : '#1F2937',
+        headerTintColor: colors.text,
         headerTitleAlign: 'center',
         headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
@@ -132,7 +132,7 @@ const HomeStackNavigator: React.FC = () => {
 // ── Study Stack Navigator ────────────────────────────────────────────────────
 
 const StudyStackNavigator: React.FC = () => {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
   const { t } = useTranslation();
 
   return (
@@ -140,7 +140,7 @@ const StudyStackNavigator: React.FC = () => {
       screenOptions={{
         headerBackground: () => <GradientHeader />,
         headerShadowVisible: false,
-        headerTintColor: isDark ? '#F9FAFB' : '#1F2937',
+        headerTintColor: colors.text,
         headerTitleAlign: 'center',
         headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
@@ -182,7 +182,7 @@ const StudyStackNavigator: React.FC = () => {
 // ─── Profile Stack Navigator ──────────────────────────────────────────────────
 
 const ProfileStackNavigator: React.FC = () => {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
   const { t } = useTranslation();
 
   return (
@@ -190,7 +190,7 @@ const ProfileStackNavigator: React.FC = () => {
       screenOptions={{
         headerBackground: () => <GradientHeader />,
         headerShadowVisible: false,
-        headerTintColor: isDark ? '#F9FAFB' : '#1F2937',
+        headerTintColor: colors.text,
         headerTitleAlign: 'center',
         headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
@@ -285,12 +285,14 @@ const MainTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: colors.accent,
+        // 选中态用 accentStrong：12px 标签需要 4.5:1，纯 accent 在白底只有 2.5:1
+        tabBarActiveTintColor: colors.accentStrong,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.borderLight,
-          borderTopWidth: 1,
+          // 与页面渐变终点同色（都是 background），底部不会出现色调硬切
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+          borderTopWidth: StyleSheet.hairlineWidth,
           // 高度保持固定：随 spacing 缩放会导致 compact 下标签底部被裁切
           height: 64 + insets.bottom,
           paddingBottom: 4 + insets.bottom,

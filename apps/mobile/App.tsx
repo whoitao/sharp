@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { useTheme } from './src/hooks/useTheme';
@@ -47,8 +47,47 @@ const AppContent: React.FC = () => {
   return (
     <>
       <StatusBar style={colors.statusBar === 'light-content' ? 'light' : 'dark'} />
-      <AppNavigator />
+      <ThemeFade>
+        <AppNavigator />
+      </ThemeFade>
     </>
+  );
+};
+
+// 主题切换时铺一层"旧底色"再淡出，避免整屏颜色在下一帧硬跳
+const ThemeFade: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { colors } = useTheme();
+  const opacity = useRef(new Animated.Value(0)).current;
+  const previousBackground = useRef(colors.background);
+  const [veil, setVeil] = useState<string | null>(null);
+
+  useEffect(() => {
+    const previous = previousBackground.current;
+    if (previous === colors.background) return;
+
+    previousBackground.current = colors.background;
+    setVeil(previous);
+    opacity.setValue(1);
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 220,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setVeil(null);
+    });
+  }, [colors.background, opacity]);
+
+  return (
+    <View style={styles.fill}>
+      {children}
+      {veil ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor: veil, opacity }]}
+        />
+      ) : null}
+    </View>
   );
 };
 
@@ -63,6 +102,9 @@ const App: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  fill: {
+    flex: 1,
+  },
   splash: {
     flex: 1,
     justifyContent: 'center',

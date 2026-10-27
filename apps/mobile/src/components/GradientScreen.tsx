@@ -2,20 +2,21 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
-import { GRADIENT_BOTTOM, GRADIENT_MID } from './GradientHeader';
+import { gradients } from '../theme/gradients';
 
 interface GradientScreenProps {
   children: React.ReactNode;
   style?: ViewStyle;
 }
 
-// 页面级渐变背景：与头部渐变同色衔接（页面从 GRADIENT_MID 开始），铺满整个屏幕
+// 页面级渐变：起始色 === header 结束色，结束色 === 主题 background，
+// 于是底部与 tab bar（backgroundColor 同为 background）之间是连续的，没有硬边。
 const GradientScreen: React.FC<GradientScreenProps> = ({ children, style }) => {
   const { isDark } = useTheme();
 
   return (
     <LinearGradient
-      colors={isDark ? [GRADIENT_MID.dark, GRADIENT_BOTTOM.dark] : [GRADIENT_MID.light, GRADIENT_BOTTOM.light]}
+      colors={isDark ? gradients.dark.screen : gradients.light.screen}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       style={[styles.container, style]}

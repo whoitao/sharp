@@ -93,7 +93,7 @@ const SettingOptionScreen: React.FC<SettingOptionScreenProps> = ({ navigation, r
       style={[styles.container, { backgroundColor: 'transparent' }]}
       contentContainerStyle={[styles.content, { padding: 16 * spacing, paddingTop: 0, paddingBottom: 40 * spacing }]}
     >
-      <View style={[styles.card, { backgroundColor: colors.surface, borderRadius: 16 * radius, paddingHorizontal: 16 * spacing }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: 12 * radius, paddingHorizontal: 16 * spacing }]}>
         {items.map((item, index) => (
           <TouchableOpacity
             key={item.label}
