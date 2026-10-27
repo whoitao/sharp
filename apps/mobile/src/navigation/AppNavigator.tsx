@@ -8,6 +8,7 @@ import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import ErrorBoundary from '../components/ErrorBoundary';
+import GradientHeader from '../components/GradientHeader';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
@@ -93,14 +94,12 @@ const AuthNavigator: React.FC = () => (
 // ── Home Stack Navigator ─────────────────────────────────────────────────────
 
 const HomeStackNavigator: React.FC = () => {
-  const { colors } = useTheme();
-
   return (
     <HomeStack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.background },
+        headerBackground: () => <GradientHeader />,
         headerShadowVisible: false,
-        headerTintColor: colors.text,
+        headerTintColor: '#FFFFFF',
         headerTitleAlign: 'center',
         headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
@@ -119,15 +118,14 @@ const HomeStackNavigator: React.FC = () => {
 // ── Study Stack Navigator ────────────────────────────────────────────────────
 
 const StudyStackNavigator: React.FC = () => {
-  const { colors } = useTheme();
   const { t } = useTranslation();
 
   return (
     <StudyStack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.background },
+        headerBackground: () => <GradientHeader />,
         headerShadowVisible: false,
-        headerTintColor: colors.text,
+        headerTintColor: '#FFFFFF',
         headerTitleAlign: 'center',
         headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
@@ -169,15 +167,14 @@ const StudyStackNavigator: React.FC = () => {
 // ─── Profile Stack Navigator ──────────────────────────────────────────────────
 
 const ProfileStackNavigator: React.FC = () => {
-  const { colors } = useTheme();
   const { t } = useTranslation();
 
   return (
     <ProfileStack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.background },
+        headerBackground: () => <GradientHeader />,
         headerShadowVisible: false,
-        headerTintColor: colors.text,
+        headerTintColor: '#FFFFFF',
         headerTitleAlign: 'center',
         headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',

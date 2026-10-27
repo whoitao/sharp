@@ -9,8 +9,8 @@ import { AppDispatch, RootState, store } from './src/stores';
 import { initializeAuth } from './src/stores/authSlice';
 import { loadSettings } from './src/stores/settingsSlice';
 import { resetStudy } from './src/stores/studySlice';
-import { installGlobalErrorLog } from './src/utils/globalErrorLog';
 import { installConsoleFilters } from './src/utils/consoleFilters';
+import { installGlobalErrorLog } from './src/utils/globalErrorLog';
 
 installGlobalErrorLog();
 installConsoleFilters();
@@ -46,7 +46,9 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      <StatusBar style={colors.statusBar === 'light-content' ? 'light' : 'dark'} />
+      {/* 已登录后所有页面均为渐变头部（深蓝底），状态栏图标用白色；
+          登录/注册页无头部、浅色背景，跟随主题 */}
+      <StatusBar style={isAuthenticated ? 'light' : colors.statusBar === 'light-content' ? 'light' : 'dark'} />
       <AppNavigator />
     </>
   );

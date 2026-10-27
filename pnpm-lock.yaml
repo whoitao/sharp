@@ -152,6 +152,9 @@ importers:
       expo-image-picker:
         specifier: ~55.0.24
         version: 55.0.24(expo@55.0.32)
+      expo-linear-gradient:
+        specifier: ~55.0.18
+        version: 55.0.18(expo@55.0.32)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       expo-splash-screen:
         specifier: ~55.0.25
         version: 55.0.25(expo@55.0.32)(typescript@5.7.3)
@@ -2983,6 +2986,13 @@ packages:
     peerDependencies:
       expo: '*'
       react: 19.3.0
+
+  expo-linear-gradient@55.0.18:
+    resolution: {integrity: sha512-dlc3US7bFhGDLGvKTVt8tvs9KMEpZl6v9fE76pah5H48DyU0WxWD/ub3dvpDy94Py47rn14AptMn5kjGxjRfIw==}
+    peerDependencies:
+      expo: '*'
+      react: 19.3.0
+      react-native: '*'
 
   expo-manifests@55.0.21:
     resolution: {integrity: sha512-Eu27Ia6v2Ev4i7AoswypTcqhWTKmyjd8t8cwznK3HkDQqhfHsAQIeBxSwiLmErS25iD5NsQ4C3+w/2TZdLABhQ==}
@@ -7825,6 +7835,12 @@ snapshots:
     dependencies:
       expo: 55.0.32(@babel/core@7.29.7)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@55.0.12)(react-dom@19.3.0(react@19.3.0))(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.7.3)
       react: 19.3.0
+
+  expo-linear-gradient@55.0.18(expo@55.0.32)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
+    dependencies:
+      expo: 55.0.32(@babel/core@7.29.7)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@55.0.12)(react-dom@19.3.0(react@19.3.0))(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.7.3)
+      react: 19.3.0
+      react-native: 0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
 
   expo-manifests@55.0.21(expo@55.0.32):
     dependencies:
