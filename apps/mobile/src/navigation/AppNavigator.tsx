@@ -298,6 +298,24 @@ const MainTabNavigator: React.FC = () => {
           title: t.study,
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'book' : 'book-outline'} focused={focused} />,
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // 切到学习 Tab 时，如果内部栈不在根页面（还停留在 Quiz / QuizResult），
+            // 则重置到 Study 根页面，避免从"我的"里点练习结果回来后 Tab 仍停在结果页的问题
+            const state = navigation.getState();
+            const studyRoute = state.routes.find((r) => r.name === 'StudyTab');
+            const stackState = studyRoute?.state as { index?: number } | undefined;
+            if (stackState && (stackState.index ?? 0) > 0) {
+              e.preventDefault();
+              navigation.dispatch(
+                CommonActions.navigate({
+                  name: 'StudyTab',
+                  params: { state: { index: 0, routes: [{ name: 'Study' }] } },
+                }),
+              );
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="ProfileTab"
