@@ -184,7 +184,7 @@ export default function AdminLayout({
 
   return (
     <PageActionsContext.Provider value={{ setActions: setPageActions }}>
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout style={{ height: "100vh", overflow: "hidden" }}>
       <Sider
         collapsible
         collapsed={collapsed}
@@ -227,7 +227,7 @@ export default function AdminLayout({
           selectedKeys={[activeKey]}
           items={navItems}
           onClick={handleNavClick}
-          style={{ borderInlineEnd: "none", padding: 8, paddingBottom: 72 }}
+          style={{ borderInlineEnd: "none", padding: 8, paddingBottom: 72, flex: 1, overflow: "auto" }}
         />
 
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 12, borderTop: `1px solid ${colorBorderSecondary}`, background: colorBgContainer }}>
@@ -258,7 +258,7 @@ export default function AdminLayout({
         </div>
       </Sider>
 
-      <Layout>
+      <Layout style={{ height: "100vh", minWidth: 0 }}>
         {/* Global top bar: page title (sticky) */}
         <div
           style={{
@@ -266,6 +266,7 @@ export default function AdminLayout({
             top: 0,
             zIndex: 10,
             height: 50,
+            flexShrink: 0,
             background: colorBgContainer,
             borderBottom: `1px solid ${colorBorderSecondary}`,
             display: "flex",
@@ -284,7 +285,7 @@ export default function AdminLayout({
           </div>
         </div>
 
-        <Content style={{ padding: 8, overflow: "auto", position: "relative" }}>
+        <Content style={{ padding: 8, overflow: "auto", position: "relative", minHeight: 0 }}>
           {pendingKey && pendingKey !== pathname && (
             <div
               style={{
