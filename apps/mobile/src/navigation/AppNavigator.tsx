@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import ErrorBoundary from '../components/ErrorBoundary';
 import GradientHeader from '../components/GradientHeader';
+import GradientScreen from '../components/GradientScreen';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
@@ -77,6 +78,17 @@ const StudyStack = createNativeStackNavigator<StudyStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+// 页面级渐变包装：所有主页面根容器背景已设为透明，由该包装组件铺满整页浅绿渐变（与头部渐变无缝衔接）
+const withGradient = (Comp: React.ComponentType<any>): React.FC<any> => {
+  const Wrapped: React.FC<any> = (props) => (
+    <GradientScreen>
+      <Comp {...props} />
+    </GradientScreen>
+  );
+  Wrapped.displayName = `withGradient(${Comp.displayName || Comp.name || 'Screen'})`;
+  return Wrapped;
+};
+
 // ─── Auth Navigator ───────────────────────────────────────────────────────────
 
 const AuthNavigator: React.FC = () => (
@@ -94,12 +106,14 @@ const AuthNavigator: React.FC = () => (
 // ── Home Stack Navigator ─────────────────────────────────────────────────────
 
 const HomeStackNavigator: React.FC = () => {
+  const { isDark } = useTheme();
+
   return (
     <HomeStack.Navigator
       screenOptions={{
         headerBackground: () => <GradientHeader />,
         headerShadowVisible: false,
-        headerTintColor: '#FFFFFF',
+        headerTintColor: isDark ? '#F9FAFB' : '#1F2937',
         headerTitleAlign: 'center',
         headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
@@ -108,7 +122,7 @@ const HomeStackNavigator: React.FC = () => {
     >
     <HomeStack.Screen
       name="Home"
-      component={HomeScreen as any}
+      component={withGradient(HomeScreen)}
       options={{ title: 'Sharp' }}
     />
     </HomeStack.Navigator>
@@ -118,6 +132,7 @@ const HomeStackNavigator: React.FC = () => {
 // ── Study Stack Navigator ────────────────────────────────────────────────────
 
 const StudyStackNavigator: React.FC = () => {
+  const { isDark } = useTheme();
   const { t } = useTranslation();
 
   return (
@@ -125,7 +140,7 @@ const StudyStackNavigator: React.FC = () => {
       screenOptions={{
         headerBackground: () => <GradientHeader />,
         headerShadowVisible: false,
-        headerTintColor: '#FFFFFF',
+        headerTintColor: isDark ? '#F9FAFB' : '#1F2937',
         headerTitleAlign: 'center',
         headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
@@ -134,12 +149,12 @@ const StudyStackNavigator: React.FC = () => {
     >
     <StudyStack.Screen
       name="Study"
-      component={StudyScreen as any}
+      component={withGradient(StudyScreen)}
       options={{ title: t.study }}
     />
     <StudyStack.Screen
       name="Quiz"
-      component={QuizScreen as any}
+      component={withGradient(QuizScreen)}
       options={({ route }) => ({
         // 顶部标题：分类 - 科目 - 知识点（未选的项自动省略）
         title: [
@@ -155,7 +170,7 @@ const StudyStackNavigator: React.FC = () => {
     />
     <StudyStack.Screen
       name="QuizResult"
-      component={QuizResultScreen as any}
+      component={withGradient(QuizResultScreen)}
       options={{
         title: t.quizResultTitle,
       }}
@@ -167,6 +182,7 @@ const StudyStackNavigator: React.FC = () => {
 // ─── Profile Stack Navigator ──────────────────────────────────────────────────
 
 const ProfileStackNavigator: React.FC = () => {
+  const { isDark } = useTheme();
   const { t } = useTranslation();
 
   return (
@@ -174,7 +190,7 @@ const ProfileStackNavigator: React.FC = () => {
       screenOptions={{
         headerBackground: () => <GradientHeader />,
         headerShadowVisible: false,
-        headerTintColor: '#FFFFFF',
+        headerTintColor: isDark ? '#F9FAFB' : '#1F2937',
         headerTitleAlign: 'center',
         headerTitleStyle: { fontWeight: '400' },
         headerBackButtonDisplayMode: 'minimal',
@@ -183,38 +199,38 @@ const ProfileStackNavigator: React.FC = () => {
     >
     <ProfileStack.Screen
       name="Profile"
-      component={ProfileScreen as any}
+      component={withGradient(ProfileScreen)}
       options={{ title: t.profile }}
     />
     <ProfileStack.Screen
       name="Settings"
-      component={SettingsScreen as any}
+      component={withGradient(SettingsScreen)}
       options={{ title: t.settings }}
     />
     <ProfileStack.Screen
       name="SettingOption"
-      component={SettingOptionScreen as any}
+      component={withGradient(SettingOptionScreen)}
       options={{ title: '' }}
     />
     <ProfileStack.Screen
       name="Records"
-      component={RecordsScreen as any}
+      component={withGradient(RecordsScreen)}
       options={{ title: t.studyRecords }}
     />
     <ProfileStack.Screen
       name="WrongQuestions"
-      component={WrongQuestionsScreen as any}
+      component={withGradient(WrongQuestionsScreen)}
       options={{ title: t.wrongQuestions }}
     />
     <ProfileStack.Screen
       name="CrashLog"
-      component={CrashLogScreen as any}
+      component={withGradient(CrashLogScreen)}
       options={{ title: t.crashLogTitle }}
     />
     {/* 从学习记录跳转进来的练习结果，在 ProfileTab 内部展示 */}
     <ProfileStack.Screen
       name="QuizResult"
-      component={QuizResultScreen as any}
+      component={withGradient(QuizResultScreen)}
       options={{ title: t.quizResultTitle }}
     />
     </ProfileStack.Navigator>

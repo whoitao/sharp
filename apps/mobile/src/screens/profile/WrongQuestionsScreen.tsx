@@ -212,14 +212,14 @@ const WrongQuestionsScreen: React.FC = () => {
 
   if (loading && questions.length === 0) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
+      <View style={[styles.center, { backgroundColor: 'transparent' }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <FlatList
         data={questions}
         keyExtractor={keyExtractor}

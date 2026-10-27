@@ -90,7 +90,7 @@ const SettingOptionScreen: React.FC<SettingOptionScreenProps> = ({ navigation, r
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: 'transparent' }]}
       contentContainerStyle={[styles.content, { padding: 16 * spacing, paddingTop: 0, paddingBottom: 40 * spacing }]}
     >
       <View style={[styles.card, { backgroundColor: colors.surface, borderRadius: 16 * radius, paddingHorizontal: 16 * spacing }]}>

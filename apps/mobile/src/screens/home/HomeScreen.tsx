@@ -26,7 +26,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingHorizontal: 12 * spacing }]}>
+    <View style={[styles.container, { backgroundColor: 'transparent', paddingHorizontal: 12 * spacing }]}>
       <BannerCarousel />
     </View>
   );

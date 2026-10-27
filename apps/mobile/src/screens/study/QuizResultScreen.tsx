@@ -51,7 +51,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
 
   if (!result) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
+      <View style={[styles.center, { backgroundColor: 'transparent' }]}>
         <Text style={[styles.noResultText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 16 * spacing }]}>{t.noResultData}</Text>
         <TouchableOpacity
           style={[styles.backButton, { backgroundColor: colors.primary, borderRadius: 10 * radius, paddingVertical: 12 * spacing, paddingHorizontal: 32 * spacing }]}
@@ -126,7 +126,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[styles.content, { padding: 16 * spacing, paddingTop: 0, paddingBottom: 32 * spacing }]}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} contentContainerStyle={[styles.content, { padding: 16 * spacing, paddingTop: 0, paddingBottom: 32 * spacing }]}>
       {/* Score card */}
       <View style={[styles.scoreCard, { backgroundColor: colors.surface, borderRadius: 16 * radius, padding: 32 * spacing, marginBottom: 20 * spacing }]}>
         <Text style={[styles.scoreEmoji, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>{getScoreEmoji()}</Text>
@@ -209,10 +209,10 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
 
       {/* Action buttons */}
       <View style={[styles.actions, { gap: 12 * spacing }]}>
-        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleRetry} activeOpacity={0.8}>
-          <Text style={[styles.retryText, { color: colors.primary, fontSize: 16 * font }]}>{t.retry}</Text>
+        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.surface, borderColor: colors.accent, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleRetry} activeOpacity={0.8}>
+          <Text style={[styles.retryText, { color: colors.accent, fontSize: 16 * font }]}>{t.retry}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.continueButton, { backgroundColor: colors.primary, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleContinue} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.continueButton, { backgroundColor: colors.accent, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleContinue} activeOpacity={0.8}>
           <Text style={[styles.continueText, { fontSize: 16 * font }]}>{isRecordView ? t.back : t.continueStudy}</Text>
         </TouchableOpacity>
       </View>

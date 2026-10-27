@@ -201,7 +201,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       {/* 顶部筛选：分类 / 科目 / 知识点 */}
       <StudyFilterBar
         categories={categories}

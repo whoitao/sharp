@@ -251,7 +251,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <StudyFilterBar
         categories={categories}
         subjects={subjects}

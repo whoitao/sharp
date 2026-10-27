@@ -380,7 +380,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
   if (isLoading || !currentQuestion) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
+      <View style={[styles.center, { backgroundColor: 'transparent' }]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>{t.loadingQuestions}</Text>
       </View>
@@ -388,7 +388,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingHorizontal: 16 * spacing, paddingVertical: 12 * spacing }]}>
         <TouchableOpacity onPress={handleQuit} style={[styles.quitButton, { paddingVertical: 6 * spacing, paddingHorizontal: 12 * spacing }]}>

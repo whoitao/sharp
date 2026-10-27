@@ -182,7 +182,7 @@ const CrashLogScreen: React.FC = () => {
 
   return (
     <FlatList
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: 'transparent' }]}
       data={entries}
       keyExtractor={keyExtractor}
       renderItem={renderItem}

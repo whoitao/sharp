@@ -74,7 +74,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} contentContainerStyle={styles.content}>
       {/* 设置项入口（一级） */}
       <View style={[styles.section, styles.menuCard, { backgroundColor: colors.surface, marginBottom: sectionMarginBottom }]}>
         {settingRows.map((row, index) => (
