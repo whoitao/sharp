@@ -868,6 +868,7 @@ export default function QuestionsPage() {
           pageSize,
           total,
           showSizeChanger: false,
+          showTotal: (n) => t("common.total", { n }),
           onChange: (p) => setPage(p),
         }}
         locale={{

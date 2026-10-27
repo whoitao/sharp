@@ -3,6 +3,7 @@ import type { User } from '@sharp/shared';
 import { api } from '../services/api';
 import type { RootState } from '../stores';
 import { storage } from '../utils/storage';
+import { clearStudyCache } from '../utils/studyCache';
 
 interface AuthState {
   token: string | null;
@@ -31,6 +32,8 @@ export const login = createAsyncThunk(
   async (credentials: { username: string; password: string }, { rejectWithValue }) => {
     try {
       const response = await api.login(credentials.username, credentials.password);
+      // 登录是会话边界：清空分类/科目/知识点缓存，保证本次登录后重新从数据库拉取
+      await clearStudyCache();
       await storage.setToken(response.token);
       await storage.setUser(response.user as unknown as Record<string, unknown>);
       return response;
@@ -45,6 +48,8 @@ export const register = createAsyncThunk(
   async (credentials: { username: string; password: string }, { rejectWithValue }) => {
     try {
       const response = await api.register(credentials.username, credentials.password);
+      // 注册后同样是新会话，清空学习页搜索缓存
+      await clearStudyCache();
       await storage.setToken(response.token);
       await storage.setUser(response.user as unknown as Record<string, unknown>);
       return response;
@@ -88,6 +93,8 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
       storage.clear();
+      // 退出登录时一并清空学习页搜索缓存，避免下一个账号看到上一个账号的分类/科目数据
+      clearStudyCache();
     },
     clearError(state) {
       state.error = null;
