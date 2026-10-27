@@ -58,6 +58,8 @@ export type ProfileStackParamList = {
   Records: undefined;
   WrongQuestions: undefined;
   CrashLog: undefined;
+  // 从学习记录进入时：在 ProfileTab 内展示练习结果，不跨 Tab 切换，保持底部高亮在"我的"
+  QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; subjectId?: string; knowledgePointId?: string; record?: StudyRecord };
 };
 
 export type MainTabParamList = {
@@ -212,6 +214,12 @@ const ProfileStackNavigator: React.FC = () => {
       component={CrashLogScreen as any}
       options={{ title: t.crashLogTitle }}
     />
+    {/* 从学习记录跳转进来的练习结果，在 ProfileTab 内部展示 */}
+    <ProfileStack.Screen
+      name="QuizResult"
+      component={QuizResultScreen as any}
+      options={{ title: t.quizResultTitle }}
+    />
     </ProfileStack.Navigator>
   );
 };
@@ -298,24 +306,6 @@ const MainTabNavigator: React.FC = () => {
           title: t.study,
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'book' : 'book-outline'} focused={focused} />,
         }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            // 切到学习 Tab 时，如果内部栈不在根页面（还停留在 Quiz / QuizResult），
-            // 则重置到 Study 根页面，避免从"我的"里点练习结果回来后 Tab 仍停在结果页的问题
-            const state = navigation.getState();
-            const studyRoute = state.routes.find((r) => r.name === 'StudyTab');
-            const stackState = studyRoute?.state as { index?: number } | undefined;
-            if (stackState && (stackState.index ?? 0) > 0) {
-              e.preventDefault();
-              navigation.dispatch(
-                CommonActions.navigate({
-                  name: 'StudyTab',
-                  params: { state: { index: 0, routes: [{ name: 'Study' }] } },
-                }),
-              );
-            }
-          },
-        })}
       />
       <Tab.Screen
         name="ProfileTab"

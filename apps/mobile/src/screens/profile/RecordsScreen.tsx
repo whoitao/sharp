@@ -107,15 +107,14 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   };
 
   const handleRecordPress = (record: StudyRecord) => {
-    (navigation as any).navigate('StudyTab', {
-      screen: 'QuizResult',
-      params: {
-        categoryId: record.categoryId,
-        unitIndex: record.unitIndex,
-        subjectId: record.subjectId ?? undefined,
-        knowledgePointId: record.knowledgePointId ?? undefined,
-        record,
-      },
+    // 直接在 ProfileStack 内跳转到 QuizResult，不跨 Tab。
+    // 这样底部高亮保持在"我的"，符合用户从学习记录查看结果的预期。
+    navigation.navigate('QuizResult', {
+      categoryId: record.categoryId,
+      unitIndex: record.unitIndex,
+      subjectId: record.subjectId ?? undefined,
+      knowledgePointId: record.knowledgePointId ?? undefined,
+      record,
     });
   };
 
