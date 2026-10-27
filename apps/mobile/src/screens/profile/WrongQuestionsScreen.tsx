@@ -81,7 +81,7 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
                 style={[
                   styles.optionKey,
                   { color: colors.textSecondary, width: 24 * spacing, height: 24 * spacing, borderRadius: 12 * spacing, lineHeight: 22 * spacing, fontSize: 12 * font, marginRight: 10 * spacing },
-                  option.isCorrect && { borderColor: colors.accent, color: colors.accent },
+                  option.isCorrect && { borderColor: colors.success, color: colors.success },
                 ]}
               >
                 {option.optionKey}
@@ -90,13 +90,13 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
                 style={[
                   styles.optionContent,
                   { color: colors.textSecondary, fontSize: 14 * font },
-                  option.isCorrect && styles.correctOptionContent,
+                  option.isCorrect && [styles.correctOptionContent, { color: colors.successText }],
                 ]}
               >
                 {option.content}
               </Text>
               {option.isCorrect && (
-                <Text style={[styles.correctMark, { color: colors.accent, fontSize: 14 * font, marginLeft: 8 * spacing }]}>✓</Text>
+                <Text style={[styles.correctMark, { color: colors.success, fontSize: 14 * font, marginLeft: 8 * spacing }]}>✓</Text>
               )}
             </View>
           ))}
@@ -324,7 +324,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   correctOptionContent: {
-    color: '#065F46',
     fontWeight: '500',
   },
   correctMark: {

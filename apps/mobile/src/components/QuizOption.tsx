@@ -35,11 +35,11 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
       case 'selected':
         return colors.primary;
       case 'correct':
-        return '#059669';
+        return colors.success;
       case 'wrong':
         return colors.error;
       case 'revealed':
-        return '#059669';
+        return colors.success;
       default:
         return colors.border;
     }
@@ -50,11 +50,11 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
       case 'selected':
         return colors.primary;
       case 'correct':
-        return '#059669';
+        return colors.success;
       case 'wrong':
         return colors.error;
       case 'revealed':
-        return '#059669';
+        return colors.success;
       default:
         return colors.primary;
     }
@@ -63,11 +63,11 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
   const getContentColor = (): string => {
     switch (status) {
       case 'correct':
-        return '#065F46';
+        return colors.successText;
       case 'wrong':
-        return '#991B1B';
+        return colors.error;
       case 'revealed':
-        return '#065F46';
+        return colors.successText;
       default:
         return colors.text;
     }
@@ -97,9 +97,9 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
       <Text style={[styles.content, { color: getContentColor(), fontSize: 15 * font }]} numberOfLines={3}>
         {content}
       </Text>
-      {status === 'correct' && <Text style={[styles.indicator, { color: '#059669', fontSize: 18 * font }]}>✓</Text>}
+      {status === 'correct' && <Text style={[styles.indicator, { color: colors.success, fontSize: 18 * font }]}>✓</Text>}
       {status === 'wrong' && <Text style={[styles.indicator, { color: colors.error, fontSize: 18 * font }]}>✗</Text>}
-      {status === 'revealed' && <Text style={[styles.indicator, { color: '#059669', fontSize: 18 * font }]}>✓</Text>}
+      {status === 'revealed' && <Text style={[styles.indicator, { color: colors.success, fontSize: 18 * font }]}>✓</Text>}
     </TouchableOpacity>
   );
 };

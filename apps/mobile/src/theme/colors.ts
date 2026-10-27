@@ -20,6 +20,8 @@ export const lightColors = {
   dangerSurface: '#FDECEC',
   success: '#0B7F58',
   successLight: '#DDF6EA',
+  // 绿色底上的正文：success 对 successLight 只有 4.4:1，需要更深一档
+  successText: '#065F46',
   warning: '#B45309',
   warningLight: '#FEF3C7',
   cardShadow: '#10231A',
@@ -47,6 +49,7 @@ export const darkColors: ThemeColors = {
   dangerSurface: '#3A1D1D',
   success: '#34D399',
   successLight: '#123B2C',
+  successText: '#34D399',
   warning: '#FBBF24',
   warningLight: '#3A2E12',
   cardShadow: '#000000',

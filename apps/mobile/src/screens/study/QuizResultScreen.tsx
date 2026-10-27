@@ -78,8 +78,8 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   };
 
   const getScoreColor = (): string => {
-    if (percentage >= 80) return '#059669';
-    if (percentage >= 60) return '#D97706';
+    if (percentage >= 80) return colors.success;
+    if (percentage >= 60) return colors.warning;
     return colors.error;
   };
 
@@ -192,7 +192,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
                     </View>
                     <View style={[styles.wrongRow, { marginBottom: 6 * spacing }]}>
                       <Text style={[styles.wrongLabel, { color: colors.textSecondary, fontSize: 13 * font, width: 75 * font }]}>{t.correctAnswerLabel}</Text>
-                      <Text style={[styles.correctAnswer, { fontSize: 13 * font }]}>{wa.correctKeys.join(', ')}</Text>
+                      <Text style={[styles.correctAnswer, { color: colors.success, fontSize: 13 * font }]}>{wa.correctKeys.join(', ')}</Text>
                     </View>
                     {!!wa.question.analysis && (
                       <View style={[styles.analysisBox, { backgroundColor: colors.background, marginTop: 8 * spacing, padding: 10 * spacing, borderRadius: 8 * radius }]}>
@@ -355,7 +355,6 @@ const styles = StyleSheet.create({
   },
   correctAnswer: {
     fontSize: 13,
-    color: '#059669',
     fontWeight: '500',
   },
   analysisBox: {
