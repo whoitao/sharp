@@ -70,8 +70,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "avatar upload failed" }, { status: 502 });
   }
 
+  let oldAvatarPath: string | null = null;
   try {
-    // DB 里只存相对路径 {userId}/avatars/avatar.{ext}，域名统一用 avatarPublicUrl() 在展示层拼
+    const user = await prisma.user.findUnique({
+      where: { id: appUser.id },
+      select: { avatar: true },
+    });
+    oldAvatarPath = user?.avatar ?? null;
+  } catch {
+    // 查旧头像失败不阻塞上传——极端情况：用户记录突然消失
+  }
+
+  try {
+    // DB 里存新的随机路径，展示层用 avatarPublicUrl() 拼完整 URL
     await prisma.user.update({
       where: { id: appUser.id },
       data: { avatar: objectPath },
@@ -80,6 +91,13 @@ export async function POST(request: NextRequest) {
     console.error("[avatar] prisma update failed, compensating delete", err);
     await deleteAvatar(objectPath);
     return NextResponse.json({ error: "failed to save avatar" }, { status: 500 });
+  }
+
+  // DB 更新成功后删除旧头像（仅删相对路径，完整 URL 是历史数据不碰）
+  if (oldAvatarPath && !oldAvatarPath.startsWith("http")) {
+    deleteAvatar(oldAvatarPath).catch(() => {
+      // 旧图删失败静默，不影响本次上传结果
+    });
   }
 
   // 返回相对路径，客户端用 avatarPublicUrl 拼完整 URL；

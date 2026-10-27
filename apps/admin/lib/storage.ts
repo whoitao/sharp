@@ -46,14 +46,18 @@ function sanitizeUserId(userId: string): string {
 }
 
 /**
- * 每个用户独立目录：{userId}/avatars/avatar.{ext}。
- * 同名覆盖（x-upsert），换图后旧版本不会留下。
- * 目录本身不需要提前创建——Supabase Storage PUT 带多级 path 会自动建层级。
+ * 每个用户独立目录：{userId}/avatars/{随机UUID}.{ext}。
+ * 每次上传生成新文件名，避免覆盖旧图的同时天然绕过 CDN 缓存（路径变化 = 新 URL）。
+ * 旧头像由调用方在 DB 更新成功后主动删除（见 route.ts）。
  */
 export function avatarPath(userId: string, contentType: ImageContentType): string {
   const safeId = sanitizeUserId(userId);
   const ext = CONTENT_TYPE_TO_EXT[contentType];
-  return `${safeId}/avatars/avatar.${ext}`;
+  const rand =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${safeId}/avatars/${rand}.${ext}`;
 }
 
 /**
