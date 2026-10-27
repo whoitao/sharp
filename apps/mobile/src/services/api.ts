@@ -697,8 +697,10 @@ export const api = {
 
       if (!response.ok) {
         // 打出真实状态码 + 响应体，方便定位（404=线上未部署新路由、401=token 失效、413=超 1MB、415=格式不支持）
-        console.warn('[avatar] upload failed:', response.status, await response.text().catch(() => ''));
-        const err = new Error(`avatar upload failed: ${response.status}`) as Error & { status: number };
+        const body = await response.text().catch(() => '');
+        console.warn('[avatar] upload failed:', response.status, body);
+        // TEMP-DIAG: 响应体片段带进 message，安卓 APK 看不到 console 日志
+        const err = new Error(`HTTP ${response.status} ${body.slice(0, 160)}`) as Error & { status: number };
         err.status = response.status;
         throw err;
       }

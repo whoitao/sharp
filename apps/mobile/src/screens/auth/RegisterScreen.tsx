@@ -12,11 +12,10 @@ import {
     View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from '../../i18n/useTranslation';
 import type { AuthStackParamList } from '../../navigation/AppNavigator';
 import type { AppDispatch, RootState } from '../../stores';
 import { clearError, register } from '../../stores/authSlice';
-import { useTheme } from '../../hooks/useTheme';
-import { useTranslation } from '../../i18n/useTranslation';
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -25,7 +24,6 @@ interface RegisterScreenProps {
 }
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
-  const { colors } = useTheme();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
@@ -68,7 +66,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: '#374151' }]}>{t.username}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
               placeholder={t.usernamePlaceholder}
@@ -82,7 +79,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: '#374151' }]}>{t.password}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
               placeholder={t.passwordMinLengthPlaceholder}
@@ -96,7 +92,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: '#374151' }]}>{t.confirmPassword}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: '#FFFFFF', borderColor: '#A7F3D0', color: '#1F2937' }]}
               placeholder={t.confirmPasswordPlaceholder}
@@ -170,11 +165,6 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: 2,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 6,
   },
   input: {
     borderWidth: 1,

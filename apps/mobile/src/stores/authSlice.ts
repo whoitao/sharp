@@ -72,7 +72,8 @@ export const uploadAvatar = createAsyncThunk(
       if (err?.status !== 413) {
         console.warn('[avatar] upload error:', err?.message ?? err);
       }
-      return rejectWithValue((err?.status === 413 ? 'tooLarge' : 'failed') as AvatarUploadError);
+      // TEMP-DIAG: 原本这里固定回 'failed'，改成把真实原因带出去
+      return rejectWithValue((err?.status === 413 ? 'tooLarge' : `upload: ${err?.message ?? err}`) as string);
     }
   }
 );

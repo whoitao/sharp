@@ -69,14 +69,21 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     if (!source) return;
 
     setIsUploading(true);
+    let stage = 'compress'; // TEMP-DIAG
     try {
       const context = ImageManipulator.manipulate(source);
       context.resize({ width: AVATAR_SIZE, height: AVATAR_SIZE });
       const rendered = await context.renderAsync();
       const result = await rendered.saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
+      stage = 'upload'; // TEMP-DIAG
       await dispatch(uploadAvatar({ uri: result.uri, name: 'avatar.jpg', type: 'image/jpeg' })).unwrap();
-    } catch (err) {
-      Alert.alert(err === 'tooLarge' ? t.avatarTooLarge : t.avatarUploadFailed);
+    } catch (err: any) { // TEMP-DIAG
+      if (err === 'tooLarge') {
+        Alert.alert(t.avatarTooLarge);
+      } else {
+        const detail = typeof err === 'string' ? err : `${err?.name ?? 'Error'}: ${err?.message ?? String(err)}`;
+        Alert.alert(t.avatarUploadFailed, `[诊断·${stage}] ${detail}`.slice(0, 400));
+      }
     } finally {
       setIsUploading(false);
     }
