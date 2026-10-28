@@ -3,10 +3,13 @@
 
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, "");
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const AVATAR_BUCKET = process.env.SUPABASE_AVATAR_BUCKET ?? "sharpbucket";
+const STORAGE_BUCKET = process.env.SUPABASE_AVATAR_BUCKET ?? "sharpbucket";
 
-/** 单次上传上限 5MB */
+/** 头像单次上传上限 5MB */
 export const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+
+/** 题目图片单次上传上限 5MB */
+export const MAX_QUESTION_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export type ImageContentType = "image/jpeg" | "image/png" | "image/webp";
 
@@ -52,12 +55,13 @@ function sanitizeUserId(userId: string): string {
  */
 export function avatarPath(userId: string, contentType: ImageContentType): string {
   const safeId = sanitizeUserId(userId);
-  const ext = CONTENT_TYPE_TO_EXT[contentType];
-  const rand =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-  return `${safeId}/avatars/${rand}.${ext}`;
+  return `${safeId}/avatars/${randomId()}.${CONTENT_TYPE_TO_EXT[contentType]}`;
+}
+
+function randomId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 /**
@@ -69,7 +73,7 @@ export function avatarPath(userId: string, contentType: ImageContentType): strin
 export function avatarPublicUrl(path: string, version?: number): string {
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   const v = version ?? Date.now();
-  return `${SUPABASE_URL}/storage/v1/object/public/${AVATAR_BUCKET}/${path}?v=${v}`;
+  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}?v=${v}`;
 }
 
 /**
@@ -82,14 +86,21 @@ export async function uploadAvatar(
   bytes: Uint8Array,
   contentType: ImageContentType,
 ): Promise<{ objectPath: string }> {
+  const path = avatarPath(userId, contentType);
+  await putObject(path, bytes, contentType);
+  // 只返回相对路径，不拼域名
+  return { objectPath: path };
+}
+
+/** 写入 Storage object，路径由调用方决定 */
+async function putObject(path: string, bytes: Uint8Array, contentType: ImageContentType): Promise<void> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new StorageConfigError("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY is not configured");
   }
 
-  const path = avatarPath(userId, contentType);
   let response: Response;
   try {
-    response = await fetch(`${SUPABASE_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
+    response = await fetch(`${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -108,16 +119,13 @@ export async function uploadAvatar(
     const detail = await response.text().catch(() => "");
     throw new StorageUploadError(`${response.status} ${detail.slice(0, 200)}`);
   }
-
-  // 只返回相对路径，不拼域名
-  return { objectPath: path };
 }
 
 /** 补偿删除：upload 成功但 prisma update 失败时清理刚上传的 object，避免留下孤儿文件 */
 export async function deleteAvatar(path: string): Promise<void> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
   try {
-    await fetch(`${SUPABASE_URL}/storage/v1/object/${AVATAR_BUCKET}/${path}`, {
+    await fetch(`${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -127,4 +135,28 @@ export async function deleteAvatar(path: string): Promise<void> {
   } catch {
     // 补偿删除失败静默，避免掩盖主错误
   }
+}
+
+/**
+ * 题目图片：questions/{随机UUID}.{ext}，全站共用一套目录。
+ * 文件名随机，既避免覆盖，也能长期缓存（路径不变，内容不变）。
+ */
+export function questionImagePath(contentType: ImageContentType): string {
+  return `questions/${randomId()}.${CONTENT_TYPE_TO_EXT[contentType]}`;
+}
+
+/** 存入题干/选项/解析的图片地址（完整 URL，客户端直接渲染） */
+export function questionImagePublicUrl(path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+}
+
+/** 上传题目图片，返回相对路径与完整 URL */
+export async function uploadQuestionImage(
+  bytes: Uint8Array,
+  contentType: ImageContentType,
+): Promise<{ objectPath: string; url: string }> {
+  const path = questionImagePath(contentType);
+  await putObject(path, bytes, contentType);
+  return { objectPath: path, url: questionImagePublicUrl(path) };
 }

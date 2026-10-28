@@ -19,7 +19,7 @@ import { dedupeInFlight } from '../utils/dedupe';
 import { storage } from '../utils/storage';
 import { CATEGORY_ALL_CACHE_SUFFIX, getCached, setCached } from '../utils/studyCache';
 
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://admin.sharp.whoitao.top/";
 
 // ─── Mock data for offline/demo mode ───────────────────────────────────────────

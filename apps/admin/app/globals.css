@@ -39,6 +39,44 @@ body {
   background-color: #000;
 }
 
+/* 富文本编辑器（TipTap）在 antd Form / Modal 内的排版收敛 */
+.sharp-rich-text {
+  outline: none;
+}
+
+.sharp-rich-text p {
+  margin: 0 0 4px;
+  line-height: 1.6;
+}
+
+.sharp-rich-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* 行内公式与文本基线对齐，避免撑高行高 */
+.sharp-rich-text .katex {
+  font-size: 1.05em;
+}
+
+.sharp-rich-text [data-type="inline-math"]:focus,
+.sharp-rich-text [data-type="block-math"]:focus {
+  outline: 2px solid rgba(22, 119, 255, 0.4);
+  border-radius: 3px;
+}
+
+/* 题目图片：随编辑器宽度缩放，避免大图撑破表单 */
+.sharp-rich-text img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 4px 0;
+  border-radius: 4px;
+}
+
+.sharp-rich-text img.ProseMirror-selectednode {
+  outline: 2px solid rgba(22, 119, 255, 0.4);
+}
+
 @keyframes theme-veil-fade {
   from { opacity: 1; }
   to { opacity: 0; }

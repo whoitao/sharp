@@ -9,6 +9,7 @@ import {
     View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import RichTextView from '../../components/RichTextView';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -16,6 +17,7 @@ import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { fetchQuestions, resetStudy } from '../../stores/studySlice';
+import { htmlToText } from '../../utils/richText';
 
 type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'QuizResult'>;
 type QuizResultRouteProp = RouteProp<StudyStackParamList, 'QuizResult'>;
@@ -180,7 +182,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
                     <Text style={{ color: colors.error, fontSize: 13 * font, fontWeight: '600', textAlign: 'center', lineHeight: 28 * spacing }}>{idx + 1}</Text>
                   </View>
                   <Text style={[styles.wrongContent, { color: colors.text, fontSize: 14 * font }]} numberOfLines={1}>
-                    {wa.question.content}
+                    {htmlToText(wa.question.content)}
                   </Text>
                   <Text style={[styles.expandIcon, { color: colors.textTertiary, fontSize: 12 * font, marginLeft: 8 * spacing }]}>{isExpanded ? '▲' : '▼'}</Text>
                 </View>
@@ -196,7 +198,13 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
                     </View>
                     {!!wa.question.analysis && (
                       <View style={[styles.analysisBox, { backgroundColor: colors.background, marginTop: 8 * spacing, padding: 10 * spacing, borderRadius: 8 * radius }]}>
-                        <Text style={[styles.analysisText, { color: colors.text, fontSize: 13 * font, lineHeight: 20 * font }]}>{wa.question.analysis}</Text>
+                        <RichTextView
+                          html={wa.question.analysis}
+                          fontSize={13 * font}
+                          lineHeight={20 * font}
+                          color={colors.text}
+                          style={styles.analysisText}
+                        />
                       </View>
                     )}
                   </View>

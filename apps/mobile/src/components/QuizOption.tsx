@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
+import RichTextView from './RichTextView';
 
 interface QuizOptionProps {
   optionKey: string;
@@ -94,9 +95,14 @@ const QuizOption: React.FC<QuizOptionProps> = ({ optionKey, content, status, dis
       <View style={[styles.keyContainer, { borderColor: getKeyColor(), width: 32 * font, height: 32 * font, borderRadius: 16 * font }]}>
         <Text style={[styles.keyText, { color: getKeyColor(), fontSize: 14 * font }]}>{optionKey}</Text>
       </View>
-      <Text style={[styles.content, { color: getContentColor(), fontSize: 15 * font }]} numberOfLines={3}>
-        {content}
-      </Text>
+      <RichTextView
+        html={content}
+        fontSize={15 * font}
+        lineHeight={22 * font}
+        color={getContentColor()}
+        containerStyle={{ flex: 1 }}
+        numberOfLines={3}
+      />
       {status === 'correct' && <Text style={[styles.indicator, { color: colors.success, fontSize: 18 * font }]}>✓</Text>}
       {status === 'wrong' && <Text style={[styles.indicator, { color: colors.error, fontSize: 18 * font }]}>✗</Text>}
       {status === 'revealed' && <Text style={[styles.indicator, { color: colors.success, fontSize: 18 * font }]}>✓</Text>}

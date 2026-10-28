@@ -9,11 +9,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import RichTextView from '../../components/RichTextView';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import { api } from '../../services/api';
 import type { ThemeColors } from '../../theme/colors';
+import { htmlToText } from '../../utils/richText';
 
 const keyExtractor = (item: Question) => item.id.toString();
 
@@ -61,7 +63,7 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
           <Text style={[styles.questionIndexText, { color: colors.error, fontSize: 12 * font }]}>{index + 1}</Text>
         </View>
         <Text style={[styles.questionContent, { color: colors.textSecondary, fontSize: 14 * font, lineHeight: 20 * font }]} numberOfLines={2}>
-          {item.content}
+          {htmlToText(item.content)}
         </Text>
         <Text style={[styles.expandIcon, { color: colors.textTertiary, fontSize: 12 * font, marginLeft: 8 * spacing }]}>{expanded ? '▲' : '▼'}</Text>
       </View>
@@ -86,15 +88,13 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
               >
                 {option.optionKey}
               </Text>
-              <Text
-                style={[
-                  styles.optionContent,
-                  { color: colors.textSecondary, fontSize: 14 * font },
-                  option.isCorrect && [styles.correctOptionContent, { color: colors.successText }],
-                ]}
-              >
-                {option.content}
-              </Text>
+              <RichTextView
+                html={option.content}
+                fontSize={14 * font}
+                lineHeight={20 * font}
+                color={option.isCorrect ? colors.successText : colors.textSecondary}
+                containerStyle={{ flex: 1 }}
+              />
               {option.isCorrect && (
                 <Text style={[styles.correctMark, { color: colors.success, fontSize: 14 * font, marginLeft: 8 * spacing }]}>✓</Text>
               )}
@@ -105,7 +105,13 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
           {!!item.analysis && (
             <View style={[styles.analysisBox, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary, marginTop: 10 * spacing, padding: 12 * spacing, borderRadius: 8 * radius }]}>
               <Text style={[styles.analysisLabel, { color: colors.primary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{analysisLabel}</Text>
-              <Text style={[styles.analysisText, { color: colors.textSecondary, fontSize: 13 * font, lineHeight: 20 * font }]}>{item.analysis}</Text>
+              <RichTextView
+                html={item.analysis}
+                fontSize={13 * font}
+                lineHeight={20 * font}
+                color={colors.textSecondary}
+                style={styles.analysisText}
+              />
             </View>
           )}
 

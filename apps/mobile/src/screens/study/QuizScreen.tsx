@@ -18,6 +18,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import ElapsedTimer from '../../components/ElapsedTimer';
 import ProgressBar from '../../components/ProgressBar';
 import QuizOption from '../../components/QuizOption';
+import RichTextView from '../../components/RichTextView';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -451,7 +452,13 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
             {isMultipleChoice ? t.multipleChoice : t.singleChoice}
           </Text>
         </View>
-        <Text style={[styles.questionContent, { color: colors.text, fontSize: 18 * font }]}>{currentQuestion.content}</Text>
+        <RichTextView
+          html={currentQuestion.content}
+          fontSize={18 * font}
+          lineHeight={28 * font}
+          color={colors.text}
+          style={styles.questionContent}
+        />
       </View>
 
       {/* Options */}
@@ -513,7 +520,13 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       {answered && !!currentQuestion.analysis && (
         <View style={[styles.analysisContainer, { backgroundColor: colors.primaryLight, borderLeftColor: colors.primary, marginHorizontal: 16 * spacing, marginBottom: 16 * spacing, padding: 14 * spacing, borderRadius: 10 * radius }]}>
           <Text style={[styles.analysisLabel, { color: colors.primary, fontSize: 13 * font, marginBottom: 6 * spacing }]}>{t.analysis}</Text>
-          <Text style={[styles.analysisText, { color: colors.text, fontSize: 14 * font, lineHeight: 22 * font }]}>{currentQuestion.analysis}</Text>
+          <RichTextView
+            html={currentQuestion.analysis}
+            fontSize={14 * font}
+            lineHeight={22 * font}
+            color={colors.text}
+            style={styles.analysisText}
+          />
         </View>
       )}
 

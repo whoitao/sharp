@@ -12,6 +12,7 @@ import {
   UploadOutlined
 } from "@ant-design/icons";
 import {
+  theme as antdTheme,
   App,
   Button,
   Card,
@@ -27,12 +28,13 @@ import {
   Space,
   Table,
   Tag,
-  theme as antdTheme,
   TreeSelect,
   Upload
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo, useRef, useState } from "react";
+import MathText from "../../../components/MathText";
+import RichTextEditor from "../../../components/RichTextEditor";
 
 interface QuestionOption {
   optionKey: string;
@@ -519,6 +521,8 @@ export default function QuestionsPage() {
       dataIndex: "content",
       key: "content",
       ellipsis: true,
+      // 富文本以 HTML 存储，列表展示纯文本并把公式渲染出来
+      render: (value: string) => <MathText html={value} />,
     },
     {
       title: t("questions.knowledgePointsLabel"),
@@ -565,7 +569,9 @@ export default function QuestionsPage() {
                   <Tag color={o.isCorrect ? "green" : undefined} style={{ marginRight: 6 }}>
                     {o.optionKey}
                   </Tag>
-                  <span>{o.content}</span>
+                  <span>
+                    <MathText html={o.content} />
+                  </span>
                 </div>
               ))}
             </Space>
@@ -704,7 +710,7 @@ export default function QuestionsPage() {
         name="content"
         rules={[{ required: true, message: t("questions.contentRequired") }]}
       >
-        <Input.TextArea rows={2} maxLength={500} showCount />
+        <RichTextEditor minHeight={72} />
       </Form.Item>
 
       <Form.List name="options">
@@ -717,7 +723,11 @@ export default function QuestionsPage() {
                     <Input style={{ width: 56 }} maxLength={1} />
                   </Form.Item>
                   <Form.Item name={[field.name, "content"]} noStyle>
-                    <Input placeholder={t("questions.optionContent")} style={{ width: 380 }} />
+                    <RichTextEditor
+                      compact
+                      minHeight={28}
+                      style={{ width: 380 }}
+                    />
                   </Form.Item>
                   <Form.Item name={[field.name, "isCorrect"]} valuePropName="checked" noStyle>
                     <Checkbox>{t("questions.correct")}</Checkbox>
@@ -747,7 +757,7 @@ export default function QuestionsPage() {
       </Form.List>
 
       <Form.Item label={t("questions.analysisOptional")} name="analysis">
-        <Input.TextArea rows={2} maxLength={1000} />
+        <RichTextEditor minHeight={56} />
       </Form.Item>
 
       <Row gutter={16}>
