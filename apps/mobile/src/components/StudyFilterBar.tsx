@@ -1,19 +1,27 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { Category, KnowledgePoint, Subject } from '@sharp/shared';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
 import { api } from '../services/api';
 import TreePickerModal from './TreePickerModal';
+
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+/** 后台存的是 Ionicons 名称，历史 / 异常值不渲染图标，只显示文字 */
+function isIoniconName(value?: string | null): value is IoniconName {
+  return !!value && value in Ionicons.glyphMap;
+}
 
 interface StudyFilterBarProps {
   categories: Category[];
@@ -84,7 +92,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   const kpDisabled = !selectedSubject;
 
   const renderChip = (
-    label: string | null,
+    label: React.ReactNode,
     placeholder: string,
     onPress: () => void,
     onClear: (() => void) | null,
@@ -119,7 +127,18 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
         () => onSelectCategory(null),
       )}
       {renderChip(
-        selectedSubject?.name ?? null,
+        selectedSubject ? (
+          <>
+            {isIoniconName(selectedSubject.icon) && (
+              <Ionicons
+                name={selectedSubject.icon}
+                size={13 * font}
+                color={colors.accent}
+              />
+            )}
+            {` ${selectedSubject.name}`}
+          </>
+        ) : null,
         t.studySelectSubject,
         () => setSubjectModalVisible(true),
         () => onSelectSubject(null),
@@ -168,7 +187,17 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
                     setSubjectModalVisible(false);
                   }}
                 >
-                  <Text style={[styles.modalOptionText, { color: colors.text, fontSize: 16 * font }]}>{sub.name}</Text>
+                  <View style={styles.modalOptionRow}>
+                    {isIoniconName(sub.icon) && (
+                      <Ionicons
+                        name={sub.icon}
+                        size={20 * font}
+                        color={colors.accent}
+                        style={{ marginRight: 8 * spacing }}
+                      />
+                    )}
+                    <Text style={[styles.modalOptionText, { color: colors.text, fontSize: 16 * font }]}>{sub.name}</Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -205,6 +234,7 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
   modalList: { maxHeight: 300 },
   modalOption: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, marginBottom: 4 },
+  modalOptionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   modalOptionText: { fontSize: 16, textAlign: 'center' },
 });
 

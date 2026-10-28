@@ -53,8 +53,17 @@ function buildDocument(html: string, fontSize: number, color: string, lineHeight
   img { display: block; max-width: 100%; height: auto; margin: 4px 0; border-radius: 4px; }
   .katex { font-size: 1.05em; }
   .katex-display { margin: 6px 0; overflow-x: auto; overflow-y: hidden; }
-  table { border-collapse: collapse; max-width: 100%; }
-  td, th { border: 1px solid ${color}33; padding: 4px 6px; }
+  /* 表格固定铺满宽度：WebView 禁用了滚动，超宽内容会被裁掉 */
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 6px 0; }
+  td, th {
+    border: 1px solid ${color}33;
+    padding: 4px 6px;
+    vertical-align: top;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  th { font-weight: 600; }
+  td p, th p { margin: 0; }
 </style>
 </head>
 <body>

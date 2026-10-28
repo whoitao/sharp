@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
   const serialize = (s: any) => ({
     id: s.id.toString(),
     name: s.name,
+    icon: s.icon,
+    sortOrder: s.sortOrder,
     createdAt: s.createdAt,
     updatedAt: s.updatedAt,
   });

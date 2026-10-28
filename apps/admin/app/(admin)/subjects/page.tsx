@@ -1,5 +1,7 @@
 "use client";
 
+import IconPicker from "@/components/IconPicker";
+import IonIcon from "@/components/IonIcon";
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
@@ -15,8 +17,7 @@ import {
     InputNumber,
     Modal,
     Space,
-    Table,
-    Tag,
+    Table
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo, useState } from "react";
@@ -32,7 +33,7 @@ interface SubjectItem {
 
 interface SubjectFormValues {
   name: string;
-  icon?: string;
+  icon?: string | null;
   sortOrder: number;
 }
 
@@ -159,7 +160,7 @@ export default function SubjectsPage() {
       dataIndex: "icon",
       key: "icon",
       width: 100,
-      render: (icon: string | null) => (icon ? <Tag>{icon}</Tag> : "-"),
+      render: (icon: string | null) => (icon ? <IonIcon name={icon} size={18} /> : "-"),
     },
     {
       title: t("subjects.name"),
@@ -237,8 +238,9 @@ export default function SubjectsPage() {
         onOk={() => createForm.submit()}
         destroyOnHidden
       >
-        {/* 表单随弹窗开关挂载/卸载，初始值由 Form.Item 的 initialValue 提供，无需预填充 */}
-        <Form form={createForm} layout="vertical" onFinish={handleCreate}>
+        {/* 表单随弹窗开关挂载/卸载，初始值由 Form.Item 的 initialValue 提供，无需预填充；
+            preserve={false} 让字段卸载时丢弃旧值，否则再次打开会带上上次输入 */}
+        <Form form={createForm} layout="vertical" onFinish={handleCreate} preserve={false}>
           <Form.Item
             label={t("subjects.name")}
             name="name"
@@ -247,7 +249,7 @@ export default function SubjectsPage() {
             <Input maxLength={50} />
           </Form.Item>
           <Form.Item label={t("subjects.iconOptional")} name="icon">
-            <Input maxLength={20} placeholder="e.g., " />
+            <IconPicker />
           </Form.Item>
           <Form.Item label={t("subjects.sortOrder")} name="sortOrder" initialValue={0}>
             <InputNumber style={{ width: "100%" }} />
@@ -286,7 +288,7 @@ export default function SubjectsPage() {
             <Input maxLength={50} />
           </Form.Item>
           <Form.Item label={t("subjects.iconOptional")} name="icon">
-            <Input maxLength={20} placeholder="e.g., 📐" />
+            <IconPicker />
           </Form.Item>
           <Form.Item label={t("subjects.sortOrder")} name="sortOrder">
             <InputNumber style={{ width: "100%" }} />

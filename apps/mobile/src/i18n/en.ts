@@ -45,6 +45,9 @@ export const en: TranslationKeys = {
   startLearning: 'Start Learning',
   selectCategory: 'Choose a category to start',
   noCategories: 'No categories yet',
+  homeSubjects: 'Subjects',
+  subjectQuestionCount: (num: number) => `${num} questions`,
+  subjectProgressLabel: (num: number) => `${num}% learned`,
 
   // Study
   studySelectCategory: 'Select Category',

@@ -359,7 +359,14 @@ export default function KnowledgePointsPage() {
           }
         }}
       >
-        <Form form={createForm} layout="vertical" onFinish={handleCreate} style={{ marginTop: 16 }}>
+        <Form
+          form={createForm}
+          layout="vertical"
+          onFinish={handleCreate}
+          // 弹窗销毁时一并丢弃字段值，避免下次打开带上上次输入
+          preserve={false}
+          style={{ marginTop: 16 }}
+        >
           <Form.Item
             label={t("knowledgePoints.name")}
             name="name"

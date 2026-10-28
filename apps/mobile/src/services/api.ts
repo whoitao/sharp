@@ -9,6 +9,7 @@ import type {
   Question,
   StudyRecord,
   Subject,
+  SubjectOverview,
   Theme,
   UnitInfo,
   UserSettings
@@ -435,6 +436,18 @@ export const api = {
         return response.data;
       } catch {
         return mockSubjects;
+      }
+    });
+  },
+
+  // 首页科目概览：题目总数 + 当前用户已学比例，随作答变化，不走本地缓存
+  async getSubjectOverview(): Promise<SubjectOverview[]> {
+    return dedupeInFlight('subjectOverview', async () => {
+      try {
+        const response = await apiClient.get<SubjectOverview[]>('/api/app/subjects/overview');
+        return response.data;
+      } catch {
+        return [];
       }
     });
   },

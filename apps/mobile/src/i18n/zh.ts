@@ -43,6 +43,9 @@ export const zh = {
   startLearning: '开始学习',
   selectCategory: '选择一个分类开始练习',
   noCategories: '暂无分类',
+  homeSubjects: '科目',
+  subjectQuestionCount: (num: number) => `${num} 道题`,
+  subjectProgressLabel: (num: number) => `已学 ${num}%`,
 
   // Study
   studySelectCategory: '选择分类',

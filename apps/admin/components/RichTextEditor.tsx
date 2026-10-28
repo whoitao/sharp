@@ -4,21 +4,26 @@ import {
   BoldOutlined,
   FunctionOutlined,
   ItalicOutlined,
+  MoreOutlined,
   PictureOutlined,
+  TableOutlined,
   UnderlineOutlined
 } from "@ant-design/icons";
 import Image from "@tiptap/extension-image";
 import Mathematics from "@tiptap/extension-mathematics";
+import { TableKit } from "@tiptap/extension-table";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
+  theme as antdTheme,
   App,
   Button,
+  Dropdown,
   Input,
   Modal,
   Space,
   Tooltip,
-  theme as antdTheme
+  type MenuProps
 } from "antd";
 import katex from "katex";
 import "katex/dist/katex.min.css";
@@ -140,6 +145,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         katexOptions: { throwOnError: false },
       }),
       Image.configure({ allowBase64: false }),
+      TableKit.configure({
+        // 关掉列宽拖拽，避免在弹窗里出现拖拽手柄与隐藏的列宽属性
+        table: { resizable: false },
+      }),
     ],
     []
   );
@@ -150,6 +159,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editable: !disabled,
     // Next.js SSR 下必须关闭首次立即渲染，否则会 hydration 不一致
     immediatelyRender: false,
+    // 工具栏高亮、表格操作菜单都依赖光标位置，需要跟随每次事务重渲染
+    shouldRerenderOnTransaction: true,
     editorProps: {
       attributes: {
         class: "sharp-rich-text",
@@ -251,6 +262,67 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editor?.chain().focus().insertInlineMath({ latex: trimmed }).run();
     setMathOpen(false);
     setLatex("");
+  };
+
+  const insertTable = () => {
+    editor
+      ?.chain()
+      .focus()
+      .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+      .run();
+  };
+
+  // 光标在表格内才展示「表格操作」，避免工具栏常驻一排低频按钮
+  const tableMenuItems: MenuProps["items"] = [
+    { key: "rowBefore", label: "上方插入行" },
+    { key: "rowAfter", label: "下方插入行" },
+    { key: "colBefore", label: "左侧插入列" },
+    { key: "colAfter", label: "右侧插入列" },
+    { type: "divider" },
+    { key: "mergeCells", label: "合并单元格", disabled: !editor?.can().mergeCells() },
+    { key: "splitCell", label: "拆分单元格", disabled: !editor?.can().splitCell() },
+    { type: "divider" },
+    { key: "toggleHeaderRow", label: "切换表头行" },
+    { key: "deleteRow", label: "删除当前行" },
+    { key: "deleteColumn", label: "删除当前列" },
+    { key: "deleteTable", label: "删除表格", danger: true },
+  ];
+
+  const handleTableAction: MenuProps["onClick"] = ({ key }) => {
+    if (!editor) return;
+    const chain = editor.chain().focus();
+    switch (key) {
+      case "rowBefore":
+        chain.addRowBefore().run();
+        break;
+      case "rowAfter":
+        chain.addRowAfter().run();
+        break;
+      case "colBefore":
+        chain.addColumnBefore().run();
+        break;
+      case "colAfter":
+        chain.addColumnAfter().run();
+        break;
+      case "mergeCells":
+        chain.mergeCells().run();
+        break;
+      case "splitCell":
+        chain.splitCell().run();
+        break;
+      case "toggleHeaderRow":
+        chain.toggleHeaderRow().run();
+        break;
+      case "deleteRow":
+        chain.deleteRow().run();
+        break;
+      case "deleteColumn":
+        chain.deleteColumn().run();
+        break;
+      case "deleteTable":
+        chain.deleteTable().run();
+        break;
+    }
   };
 
   if (!editor) {
@@ -361,6 +433,21 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             e.target.value = "";
           }}
         />
+        {toolbarButton(<TableOutlined />, false, insertTable, "插入表格 3×3")}
+        {editor.isActive("table") && (
+          <Dropdown
+            menu={{ items: tableMenuItems, onClick: handleTableAction }}
+            trigger={["click"]}
+          >
+            <Button
+              size="small"
+              type="text"
+              icon={<MoreOutlined />}
+              disabled={disabled}
+              title="表格操作"
+            />
+          </Dropdown>
+        )}
       </div>
       <div style={{ padding: compact ? "4px 8px" : "8px 10px" }}>
         <EditorContent editor={editor} />

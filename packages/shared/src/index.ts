@@ -103,6 +103,18 @@ export interface Subject {
   updatedAt: string;
 }
 
+/** 首页科目概览：题目总量与当前用户已学比例 */
+export interface SubjectOverview {
+  id: string;
+  name: string;
+  icon: string | null;
+  sortOrder: number;
+  questionCount: number;
+  learnedCount: number;
+  /** 已学百分比（0-100，按已作答的去重题目数 / 题目总数） */
+  progress: number;
+}
+
 export interface KnowledgePoint {
   id: string;
   name: string;

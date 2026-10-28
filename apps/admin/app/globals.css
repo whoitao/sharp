@@ -6,11 +6,11 @@ html, body {
 
 /* 根节点颜色随主题走：overscroll 区域、登录页这类不铺 antd Layout 的页面不会露出白底 */
 html {
-  background-color: #f5f5f5;
+  background-color: #F5F5F5;
 }
 
-html[data-theme="dark"] {
-  background-color: #000;
+html[data-theme='dark'] {
+  background-color: #000000;
 }
 
 * {
@@ -18,25 +18,47 @@ html[data-theme="dark"] {
 }
 
 /* 主题切换时根底色先过渡，再叠一层旧底色淡出（见 antd-providers.tsx） */
-html,
-body {
+html, body {
   transition: background-color 200ms ease;
 }
 
 .theme-veil {
   position: fixed;
-  inset: 0;
   z-index: 9999;
-  pointer-events: none;
+
   animation: theme-veil-fade 220ms ease-out forwards;
+
+  pointer-events: none;
+
+  inset: 0;
 }
 
 .theme-veil--light {
-  background-color: #f5f5f5;
+  background-color: #F5F5F5;
 }
 
 .theme-veil--dark {
-  background-color: #000;
+  background-color: #000000;
+}
+
+/* Ionicons：与移动端 @expo/vector-icons 共用同一字体，用于科目图标 */
+@font-face {
+  font-family: 'Ionicons';
+  font-weight: normal;
+  font-style: normal;
+
+  font-display: block;
+  src: url('/fonts/ionicons.ttf') format('truetype');
+}
+
+.ionicon {
+  font-family: 'Ionicons', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-variant: normal;
+  text-transform: none;
+
+  -webkit-font-smoothing: antialiased;
 }
 
 /* 富文本编辑器（TipTap）在 antd Form / Modal 内的排版收敛 */
@@ -46,6 +68,7 @@ body {
 
 .sharp-rich-text p {
   margin: 0 0 4px;
+
   line-height: 1.6;
 }
 
@@ -58,38 +81,90 @@ body {
   font-size: 1.05em;
 }
 
-.sharp-rich-text [data-type="inline-math"]:focus,
-.sharp-rich-text [data-type="block-math"]:focus {
-  outline: 2px solid rgba(22, 119, 255, 0.4);
+.sharp-rich-text [data-type='inline-math']:focus, .sharp-rich-text [data-type='block-math']:focus {
   border-radius: 3px;
+
+  outline: 2px solid rgba(22, 119, 255, .4);
 }
 
 /* 题目图片：随编辑器宽度缩放，避免大图撑破表单 */
 .sharp-rich-text img {
   display: block;
-  max-width: 100%;
-  height: auto;
+
   margin: 4px 0;
   border-radius: 4px;
+  max-width: 100%;
+  height: auto;
 }
 
 .sharp-rich-text img.ProseMirror-selectednode {
-  outline: 2px solid rgba(22, 119, 255, 0.4);
+  outline: 2px solid rgba(22, 119, 255, .4);
+}
+
+/* 表格：固定列宽布局，避免长公式把某一列撑爆 */
+.sharp-rich-text table {
+  table-layout: fixed;
+  border-collapse: collapse;
+
+  margin: 6px 0;
+  width: 100%;
+}
+
+.sharp-rich-text th, .sharp-rich-text td {
+  position: relative;
+
+  border: 1px solid rgba(5, 5, 5, .15);
+  padding: 4px 8px;
+  min-width: 40px;
+
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.sharp-rich-text th {
+  font-weight: 600;
+  text-align: left;
+
+  background: rgba(5, 5, 5, .04);
+}
+
+/* 单元格内部的段落不要带外边距，否则表格行高被撑开 */
+.sharp-rich-text th p, .sharp-rich-text td p {
+  margin: 0;
+}
+
+/* 多选单元格时的选区高亮 */
+.sharp-rich-text .selectedCell::after {
+  position: absolute;
+
+  background: rgba(22, 119, 255, .08);
+
+  content: '';
+  pointer-events: none;
+
+  inset: 0;
 }
 
 @keyframes theme-veil-fade {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 /* 路由切换的顶部细进度条 */
 .route-progress {
+  overflow: hidden;
+
   position: absolute;
-  left: 0;
   right: 0;
   bottom: -1px;
+  left: 0;
+
   height: 2px;
-  overflow: hidden;
+
   pointer-events: none;
 }
 
@@ -97,19 +172,24 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 32%;
+
   border-radius: 1px;
+  width: 32%;
+
   animation: route-progress-slide 1s ease-in-out infinite;
 }
 
 @keyframes route-progress-slide {
-  0% { left: -32%; }
-  100% { left: 100%; }
+  0% {
+    left: -32%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html,
-  body {
+  html, body {
     transition: none;
   }
 
