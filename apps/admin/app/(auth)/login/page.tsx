@@ -75,7 +75,6 @@ export default function LoginPage() {
 
         <Form<LoginFormValues> layout="vertical" onFinish={handleLogin} requiredMark={false}>
           <Form.Item
-            label={t("login.username")}
             name="username"
             rules={[{ required: true, message: t("login.usernameRequired") }]}
           >
@@ -88,7 +87,6 @@ export default function LoginPage() {
           </Form.Item>
 
           <Form.Item
-            label={t("login.password")}
             name="password"
             rules={[{ required: true, message: t("login.passwordRequired") }]}
           >

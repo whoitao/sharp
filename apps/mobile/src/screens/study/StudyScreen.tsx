@@ -1,4 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Category, KnowledgePoint, Subject, UnitInfo } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -26,6 +27,7 @@ type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'Study'>;
 
 interface StudyScreenProps {
   navigation: NavigationProp;
+  route: RouteProp<StudyStackParamList, 'Study'>;
 }
 
 // 单元列表每页加载数量（触底翻页）
@@ -33,7 +35,7 @@ const UNITS_PAGE_SIZE = 10;
 
 const keyExtractor = (item: UnitInfo) => item.unitIndex.toString();
 
-const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
+const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
   const { spacing, font } = useDensity();
   const { t } = useTranslation();
@@ -119,6 +121,16 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation }) => {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+
+  // 首页点学科行进入：科目列表到位后自动选中该学科，然后立刻清掉参数
+  // （清掉后再次点同一学科还能触发；已选知识点的清空由 StudyFilterBar 负责）
+  const requestedSubjectId = route.params?.subjectId;
+  useEffect(() => {
+    if (!requestedSubjectId || subjects.length === 0) return;
+    const target = subjects.find((subject) => subject.id === requestedSubjectId);
+    navigation.setParams({ subjectId: undefined });
+    if (target) setSelectedSubject(target);
+  }, [requestedSubjectId, subjects, navigation]);
 
   // 筛选变化时统一从这里加载第一页（带 loading）
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
+import { Animated, Appearance, Easing, Image, StyleSheet, View } from 'react-native';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { useTheme } from './src/hooks/useTheme';
@@ -22,11 +22,18 @@ const AppContent: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading: authLoading, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const { initialized: settingsInitialized } = useSelector((state: RootState) => state.settings);
+  const theme = useSelector((state: RootState) => state.settings.theme);
   const { colors } = useTheme();
 
   useEffect(() => {
     dispatch(initializeAuth());
   }, [dispatch]);
+
+  // 原生控件（键盘、Alert、系统弹层）跟随应用内主题；system 时交还给系统外观
+  // react-native-web 未实现 setColorScheme，Web 端直接跳过
+  useEffect(() => {
+    Appearance.setColorScheme?.(theme === 'system' ? 'unspecified' : (theme as 'light' | 'dark'));
+  }, [theme]);
 
   // 认证就绪后立即加载设置（密度/语言/主题），保证进入应用即生效
   useEffect(() => {

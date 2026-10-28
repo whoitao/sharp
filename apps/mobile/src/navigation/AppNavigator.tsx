@@ -48,7 +48,8 @@ export type HomeStackParamList = {
 };
 
 export type StudyStackParamList = {
-  Study: undefined;
+  // subjectId：首页点学科行直达该学科（进页面后自动选中，随后由 StudyScreen 清掉参数）
+  Study: { subjectId?: string } | undefined;
   Quiz: { categoryId: string; unitIndex: number; categoryName: string; subjectId?: string; knowledgePointId?: string; subjectName?: string; knowledgePointName?: string };
   QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; subjectId?: string; knowledgePointId?: string; record?: StudyRecord };
 };

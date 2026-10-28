@@ -1,3 +1,6 @@
+import { formatCount } from '../utils/format';
+
+// 文案里的数字统一走 formatCount，中文和英文共用同一套千分位
 export const zh = {
   // Navigation
   home: '首页',
@@ -43,9 +46,15 @@ export const zh = {
   startLearning: '开始学习',
   selectCategory: '选择一个分类开始练习',
   noCategories: '暂无分类',
-  homeSubjects: '科目',
-  subjectQuestionCount: (num: number) => `${num} 道题`,
+  subjectQuestionCount: (num: number) => `${formatCount(num)} 道题`,
   subjectProgressLabel: (num: number) => `已学 ${num}%`,
+  homeContinueAction: '继续练习',
+  homeSubjects: '学科',
+  homeSubjectCount: (num: number) => `${num} 个`,
+  homeNoQuestions: '暂无题目',
+  homeStreak: (days: number) => `连续 ${days} 天`,
+  homeDaily: '每日挑战',
+  homeReport: '学习报告',
 
   // Study
   studySelectCategory: '选择分类',
@@ -76,14 +85,6 @@ export const zh = {
   statusNotStarted: '未开始',
   statusInProgress: '进行中',
   statusCompleted: '已完成',
-
-  // Banner carousel
-  bannerDailyTitle: '每日挑战',
-  bannerDailySubtitle: '坚持每天练习，提升学习效率',
-  bannerWrongTitle: '错题回顾',
-  bannerWrongSubtitle: '智能分析错题，针对性强化训练',
-  bannerReportTitle: '学习报告',
-  bannerReportSubtitle: '查看学习进度和数据分析',
 
   // Study records
   recordsEmpty: '暂无学习记录',

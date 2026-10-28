@@ -1,90 +1,19 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SubjectOverview } from '@sharp/shared';
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import BannerCarousel from '../../components/BannerCarousel';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import StreakBadge from '../../components/StreakBadge';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
+import QuickEntry from './QuickEntry';
+import SubjectCarousel from './SubjectCarousel';
+import SubjectRow from './SubjectRow';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
-
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-
-function isIoniconName(value?: string | null): value is IoniconName {
-  return !!value && value in Ionicons.glyphMap;
-}
-
-const SubjectRow: React.FC<{ item: SubjectOverview }> = ({ item }) => {
-  const { colors } = useTheme();
-  const { spacing, font, radius } = useDensity();
-  const { t } = useTranslation();
-
-  return (
-    <View
-      style={[
-        styles.subjectRow,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          borderRadius: 12 * radius,
-          padding: 12 * spacing,
-          marginTop: 8 * spacing,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.iconWrap,
-          { backgroundColor: colors.accentLight, borderRadius: 10 * radius },
-        ]}
-      >
-        <Ionicons
-          name={isIoniconName(item.icon) ? item.icon : 'school-outline'}
-          size={20 * font}
-          color={colors.accentStrong}
-        />
-      </View>
-      <View style={styles.subjectBody}>
-        <View style={styles.subjectHeader}>
-          <Text
-            style={[styles.subjectName, { color: colors.text, fontSize: 16 * font }]}
-            numberOfLines={1}
-          >
-            {item.name}
-          </Text>
-          <Text style={[styles.subjectPercent, { color: colors.accentStrong, fontSize: 14 * font }]}>
-            {item.progress}%
-          </Text>
-        </View>
-        <View style={[styles.progressTrack, { backgroundColor: colors.borderLight }]}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                backgroundColor: colors.accent,
-                width: `${item.progress}%` as `${number}%`,
-              },
-            ]}
-          />
-        </View>
-        <Text style={[styles.subjectMeta, { color: colors.textTertiary, fontSize: 12 * font }]}>
-          {t.subjectQuestionCount(item.questionCount)} · {t.subjectProgressLabel(item.progress)}
-        </Text>
-      </View>
-    </View>
-  );
-};
 
 interface HomeScreenProps {
   navigation: NavigationProp;
@@ -95,6 +24,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { spacing, font } = useDensity();
   const { t } = useTranslation();
   const [subjects, setSubjects] = useState<SubjectOverview[]>([]);
+  const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // 进入首页后的空余时间预拉取学习页搜索数据（分类/科目），
@@ -105,42 +35,119 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     api.getSubjects().catch(() => {});
   }, []);
 
-  const loadSubjects = useCallback(async () => {
-    const data = await api.getSubjectOverview();
-    setSubjects(data);
+  // 首页属于 HomeStack，学习/我的在另外两个 Tab：navigate 会冒泡到父级 Tab 导航器
+  const navigateToTab = useCallback(
+    (tab: 'StudyTab' | 'ProfileTab', params?: object) => {
+      (navigation as any).navigate(tab, params);
+    },
+    [navigation]
+  );
+
+  // 点学科行/继续练习：带上 subjectId 直达筛选后的学习页
+  const goToStudy = useCallback(
+    (subjectId?: string) => {
+      navigateToTab('StudyTab', {
+        screen: 'Study',
+        params: subjectId ? { subjectId } : undefined,
+      });
+    },
+    [navigateToTab]
+  );
+
+  // 连续天数画在原生 header 右侧：与标题同一行，不挤占内容区
+  useEffect(() => {
+    if (streak <= 0) {
+      navigation.setOptions({ headerRight: undefined });
+      return;
+    }
+    navigation.setOptions({ headerRight: () => <StreakBadge days={streak} /> });
+  }, [navigation, streak]);
+
+  const loadHome = useCallback(async () => {
+    const [overview, stats] = await Promise.all([api.getSubjectOverview(), api.getStats()]);
+    setSubjects(overview);
+    setStreak(stats.streak);
     setLoading(false);
   }, []);
 
   // 每次回到首页都刷新：从练习页返回时已学比例要跟着变
   useFocusEffect(
     useCallback(() => {
-      loadSubjects().catch(() => setLoading(false));
-    }, [loadSubjects])
+      loadHome().catch(() => setLoading(false));
+    }, [loadHome])
   );
+
+  // 轮播只放有题目的学科：先"学过没学完"（进度高的在前），再学完的，最后没开始的（题多的在前）
+  const carouselItems = useMemo(() => {
+    const available = subjects.filter((subject) => subject.questionCount > 0);
+    const rank = (subject: SubjectOverview) => {
+      if (subject.progress > 0 && subject.progress < 100) return 0;
+      if (subject.progress >= 100) return 1;
+      return 2;
+    };
+    return [...available].sort(
+      (a, b) => rank(a) - rank(b) || b.progress - a.progress || b.questionCount - a.questionCount
+    );
+  }, [subjects]);
 
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <ScrollView
-        contentContainerStyle={{ padding: 12 * spacing, paddingBottom: 24 * spacing }}
+        contentContainerStyle={{
+          paddingHorizontal: 16 * spacing,
+          paddingTop: 4 * spacing,
+          paddingBottom: 24 * spacing,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        <BannerCarousel />
-        <Text
-          style={[
-            styles.sectionTitle,
-            { color: colors.text, fontSize: 16 * font, marginTop: 20 * spacing },
-          ]}
-        >
-          {t.homeSubjects}
-        </Text>
         {loading ? (
-          <ActivityIndicator color={colors.accent} style={{ marginTop: 16 }} />
-        ) : subjects.length === 0 ? (
-          <Text style={{ color: colors.textSecondary, fontSize: 14 * font, marginTop: 8 }}>
-            {t.noData}
-          </Text>
+          <ActivityIndicator color={colors.accent} style={{ marginTop: 32 * spacing }} />
         ) : (
-          subjects.map((subject) => <SubjectRow key={subject.id} item={subject} />)
+          <>
+            <SubjectCarousel
+              items={carouselItems}
+              onSelect={goToStudy}
+              onFallbackPress={() => goToStudy()}
+            />
+
+            <View style={[styles.quickRow, { gap: 8 * spacing, marginTop: 12 * spacing }]}>
+              <QuickEntry icon="calendar-outline" label={t.homeDaily} onPress={() => goToStudy()} />
+              <QuickEntry
+                icon="bookmark-outline"
+                label={t.wrongQuestions}
+                onPress={() => navigateToTab('ProfileTab', { screen: 'WrongQuestions' })}
+              />
+              <QuickEntry
+                icon="bar-chart-outline"
+                label={t.homeReport}
+                onPress={() => navigateToTab('ProfileTab', { screen: 'Records' })}
+              />
+            </View>
+
+            <View
+              style={[
+                styles.section,
+                { marginTop: 18 * spacing, marginBottom: 9 * spacing, paddingHorizontal: 2 * spacing },
+              ]}
+            >
+              <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '700' }}>
+                {t.homeSubjects}
+              </Text>
+              <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font }}>
+                {t.homeSubjectCount(subjects.length)}
+              </Text>
+            </View>
+
+            {subjects.length === 0 ? (
+              <Text style={{ color: colors.textSecondary, fontSize: 14 * font }}>{t.noData}</Text>
+            ) : (
+              <View style={{ gap: 9 * spacing }}>
+                {subjects.map((subject) => (
+                  <SubjectRow key={subject.id} item={subject} onPress={() => goToStudy(subject.id)} />
+                ))}
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -151,48 +158,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  sectionTitle: {
-    fontWeight: '600',
-  },
-  subjectRow: {
+  quickRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
   },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  subjectBody: {
-    flex: 1,
-  },
-  subjectHeader: {
+  section: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
-  },
-  subjectName: {
-    fontWeight: '600',
-    flex: 1,
-    marginRight: 8,
-  },
-  subjectPercent: {
-    fontWeight: '600',
-  },
-  progressTrack: {
-    height: 6,
-    marginTop: 8,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-  },
-  subjectMeta: {
-    marginTop: 6,
   },
 });
 

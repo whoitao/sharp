@@ -1,3 +1,4 @@
+import { formatCount } from '../utils/format';
 import type { TranslationKeys } from './zh';
 
 export const en: TranslationKeys = {
@@ -45,9 +46,15 @@ export const en: TranslationKeys = {
   startLearning: 'Start Learning',
   selectCategory: 'Choose a category to start',
   noCategories: 'No categories yet',
-  homeSubjects: 'Subjects',
-  subjectQuestionCount: (num: number) => `${num} questions`,
+  subjectQuestionCount: (num: number) => `${formatCount(num)} questions`,
   subjectProgressLabel: (num: number) => `${num}% learned`,
+  homeContinueAction: 'Continue practice',
+  homeSubjects: 'Subjects',
+  homeSubjectCount: (num: number) => `${num} ${num === 1 ? 'subject' : 'subjects'}`,
+  homeNoQuestions: 'No questions yet',
+  homeStreak: (days: number) => `${days}-day streak`,
+  homeDaily: 'Daily Challenge',
+  homeReport: 'Study Report',
 
   // Study
   studySelectCategory: 'Select Category',
@@ -78,14 +85,6 @@ export const en: TranslationKeys = {
   statusNotStarted: 'Not started',
   statusInProgress: 'In progress',
   statusCompleted: 'Completed',
-
-  // Banner carousel
-  bannerDailyTitle: 'Daily Challenge',
-  bannerDailySubtitle: 'Practice every day, learn more efficiently',
-  bannerWrongTitle: 'Wrong Review',
-  bannerWrongSubtitle: 'Analyze mistakes and train deliberately',
-  bannerReportTitle: 'Study Report',
-  bannerReportSubtitle: 'Track progress and view analytics',
 
   // Study records
   recordsEmpty: 'No study records',
