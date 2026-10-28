@@ -122,8 +122,8 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   const handleContinue = () => {
     dispatch(resetStudy());
     if (isRecordView) {
-      // 从学习记录进入时，返回记录列表
-      (navigation as any).navigate('ProfileTab', { screen: 'Records' });
+      // 从学习记录进入时，返回来时所在栈的记录列表（首页或「我的」）
+      navigation.goBack();
     } else {
       navigation.popTo('Study');
     }

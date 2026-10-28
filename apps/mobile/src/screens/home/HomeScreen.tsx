@@ -115,12 +115,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <QuickEntry
                 icon="bookmark-outline"
                 label={t.wrongQuestions}
-                onPress={() => navigateToTab('ProfileTab', { screen: 'WrongQuestions' })}
+                onPress={() => navigation.navigate('WrongQuestions')}
               />
               <QuickEntry
                 icon="bar-chart-outline"
                 label={t.homeReport}
-                onPress={() => navigateToTab('ProfileTab', { screen: 'Records' })}
+                onPress={() => navigation.navigate('Records')}
               />
             </View>
 

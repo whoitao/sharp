@@ -45,6 +45,10 @@ export type AuthStackParamList = {
 
 export type HomeStackParamList = {
   Home: undefined;
+  // 首页也注册一份错题本/学习记录/练习结果：从首页进入返回首页，从「我的」进入返回「我的」
+  WrongQuestions: undefined;
+  Records: undefined;
+  QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; subjectId?: string; knowledgePointId?: string; record?: StudyRecord };
 };
 
 export type StudyStackParamList = {
@@ -109,6 +113,7 @@ const AuthNavigator: React.FC = () => (
 
 const HomeStackNavigator: React.FC = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <HomeStack.Navigator
@@ -126,6 +131,23 @@ const HomeStackNavigator: React.FC = () => {
       name="Home"
       component={withGradient(HomeScreen)}
       options={{ title: 'Sharp' }}
+    />
+    {/* 从首页快捷入口进入的错题本 / 学习记录，返回时回到首页 */}
+    <HomeStack.Screen
+      name="WrongQuestions"
+      component={withGradient(WrongQuestionsScreen)}
+      options={{ title: t.wrongQuestions }}
+    />
+    <HomeStack.Screen
+      name="Records"
+      component={withGradient(RecordsScreen)}
+      options={{ title: t.studyRecords }}
+    />
+    {/* 从首页的学习记录点进练习结果，保持在首页 Tab 内 */}
+    <HomeStack.Screen
+      name="QuizResult"
+      component={withGradient(QuizResultScreen)}
+      options={{ title: t.quizResultTitle }}
     />
     </HomeStack.Navigator>
   );
