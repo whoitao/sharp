@@ -115,6 +115,13 @@ export const zh = {
   nextQuestion: '下一题 →',
   prevQuestion: '← 上一题',
   swipeHint: '← 左右滑动切换题目 →',
+  studyAgain: '再学一次',
+  studyAgainTitle: '再学一次',
+  studyAgainConfirm: '将清除本单元之前的学习记录，并从第一题重新开始。',
+  studyAgainAction: '重新开始',
+  previousStudy: '上次学习',
+  previousStudyScore: (correct: number, total: number) => `正确 ${correct}/${total}`,
+  previousStudyDuration: (duration: string) => `用时 ${duration}`,
 
   // Quiz result
   noResultData: '暂无结果数据',

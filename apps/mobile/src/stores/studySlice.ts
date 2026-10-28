@@ -106,6 +106,13 @@ const studySlice = createSlice({
         wrongAnswers,
       };
     },
+    // 再学一次：保留本次加载的题目，清空作答进度并重新计时
+    restartQuiz(state) {
+      state.currentIndex = 0;
+      state.answers = {};
+      state.startTime = Date.now();
+      state.result = null;
+    },
     resetStudy(state) {
       Object.assign(state, initialState);
     },
@@ -134,5 +141,5 @@ const studySlice = createSlice({
   },
 });
 
-export const { setCurrentIndex, recordAnswer, finishQuiz, resetStudy } = studySlice.actions;
+export const { setCurrentIndex, recordAnswer, finishQuiz, restartQuiz, resetStudy } = studySlice.actions;
 export default studySlice.reducer;

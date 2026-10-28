@@ -154,6 +154,15 @@ export interface StudyRecord {
   durationSeconds: number;
 }
 
+/** 重学某单元时展示的「上次学习」摘要（只含已完成的记录） */
+export interface StudyRecordSummary {
+  finishedAt: string;
+  totalQuestions: number;
+  correctCount: number;
+  wrongCount: number;
+  durationSeconds: number;
+}
+
 export interface QuestionProgress {
   userId: string;
   questionId: string;

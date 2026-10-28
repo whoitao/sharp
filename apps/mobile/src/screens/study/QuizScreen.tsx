@@ -26,7 +26,7 @@ import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { store as reduxStore } from '../../stores';
-import { finishQuiz, recordAnswer, setCurrentIndex } from '../../stores/studySlice';
+import { finishQuiz, recordAnswer, restartQuiz, setCurrentIndex } from '../../stores/studySlice';
 
 type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'Quiz'>;
 type QuizRouteProp = RouteProp<StudyStackParamList, 'Quiz'>;
@@ -42,7 +42,7 @@ type OptionStatus = 'default' | 'selected' | 'correct' | 'wrong' | 'revealed';
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
 const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const { spacing, font, radius } = useDensity();
   const { categoryId, unitIndex, categoryName, subjectId, knowledgePointId } = route.params;
@@ -61,12 +61,33 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const [timerRunning, setTimerRunning] = useState(true);
   // 使用应用内弹窗确认退出（浏览器端不支持 Alert.alert）
   const [quitConfirmVisible, setQuitConfirmVisible] = useState(false);
+  // 再学一次：确认弹窗；attempt 用作计时器的 key，变化即从 00:00 重新计时
+  const [restartConfirmVisible, setRestartConfirmVisible] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  // 上次已完成的学习记录（由 StudyScreen 进入时带上，仅用于展示摘要与「再学一次」）
+  const previous = route.params.previousRecord ?? null;
 
   const currentQuestion = currentQuestions[currentIndex] ?? null;
   const totalQuestions = currentQuestions.length;
   const isLastQuestion = currentIndex >= totalQuestions - 1;
   // QuestionType.MULTIPLE_CHOICE = 2
   const isMultipleChoice = currentQuestion?.type === 2;
+
+  // 上次学习摘要的日期 / 用时格式，与学习记录列表保持一致
+  const formatRecordDate = (iso: string): string => {
+    const date = new Date(iso);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${t.monthDay(date.getMonth() + 1, date.getDate())} ${t.clockTime(hours, minutes)}`;
+  };
+
+  const formatRecordDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins > 0) return `${mins}${t.minuteShort}${secs}${t.secondShort}`;
+    return `${secs}${t.secondShort}`;
+  };
 
   // 卸载时取消待执行的切题任务
   useEffect(() => {
@@ -148,6 +169,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
         ...stats,
         durationSeconds: elapsedRef.current,
         answers: answerItems,
+        subjectId,
+        knowledgePointId,
       })
       .catch(() => {});
 
@@ -379,6 +402,30 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     navigation.goBack();
   };
 
+  const handleRestartPress = () => {
+    setRestartConfirmVisible(true);
+  };
+
+  const confirmRestart = () => {
+    setRestartConfirmVisible(false);
+    if (pendingNextRef.current) {
+      clearTimeout(pendingNextRef.current);
+      pendingNextRef.current = null;
+    }
+    // 服务端清掉本单元之前的学习记录，本次从第一题重新开始
+    api.restartStudy(categoryId, unitIndex, subjectId, knowledgePointId).catch(() => {});
+    dispatch(restartQuiz());
+    setOptionStatuses({});
+    setSelectedKeys([]);
+    setAnswered(false);
+    elapsedRef.current = 0;
+    // 换 key 重挂计时器，让显示回到 00:00
+    setAttempt((n) => n + 1);
+    setTimerRunning(true);
+    // 清掉参数，摘要条随之消失
+    navigation.setParams({ previousRecord: null });
+  };
+
   if (isLoading || !currentQuestion) {
     return (
       <View style={[styles.center, { backgroundColor: 'transparent' }]}>
@@ -396,12 +443,24 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           <Text style={[styles.quitText, { color: colors.error, fontSize: 15 * font }]}>{t.quit}</Text>
         </TouchableOpacity>
         <ElapsedTimer
+          key={attempt}
           running={timerRunning}
           onElapsed={handleElapsed}
           color={colors.text}
           fontSize={16 * font}
         />
-        <View style={styles.quitButton} />
+        {previous ? (
+          <TouchableOpacity
+            onPress={handleRestartPress}
+            style={[styles.quitButton, { paddingVertical: 6 * spacing, paddingHorizontal: 12 * spacing }]}
+          >
+            <Text style={[styles.quitText, styles.restartText, { color: colors.accentStrong, fontSize: 15 * font }]}>
+              {t.studyAgain}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.quitButton} />
+        )}
       </View>
 
       {/* 内容区域可滚动；左右滑动切换上一题 / 下一题 */}
@@ -423,6 +482,39 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       >
       {/* Progress */}
       <ProgressBar current={currentIndex + 1} total={totalQuestions} />
+
+      {/* 上次学习摘要：仅在本单元有已完成的记录时出现 */}
+      {previous && (
+        <View
+          style={[
+            styles.previousCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              marginHorizontal: 16 * spacing,
+              marginTop: 10 * spacing,
+              borderRadius: 10 * radius,
+              paddingVertical: 10 * spacing,
+              paddingHorizontal: 14 * spacing,
+            },
+          ]}
+        >
+          <View style={styles.previousRow}>
+            <Text style={{ color: colors.textSecondary, fontSize: 12 * font }}>{t.previousStudy}</Text>
+            <Text style={{ color: colors.textTertiary, fontSize: 12 * font }}>
+              {formatRecordDate(previous.finishedAt)}
+            </Text>
+          </View>
+          <View style={[styles.previousRow, { marginTop: 4 * spacing }]}>
+            <Text style={{ color: colors.text, fontSize: 14 * font, fontWeight: '600' }}>
+              {t.previousStudyScore(previous.correctCount, previous.totalQuestions)}
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 13 * font }}>
+              {t.previousStudyDuration(formatRecordDuration(previous.durationSeconds))}
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Question content */}
       <View style={[styles.questionContainer, { backgroundColor: colors.surface, marginHorizontal: 16 * spacing, marginTop: 0, borderRadius: 12 * radius, paddingHorizontal: 20 * spacing, paddingVertical: 20 * spacing }]}>
@@ -574,6 +666,43 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
+
+      {/* 再学一次确认 */}
+      <Modal
+        visible={restartConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRestartConfirmVisible(false)}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={[styles.confirmCard, { backgroundColor: colors.surface, borderRadius: 12 * radius, padding: 20 * spacing }]}>
+            <Text style={[styles.confirmTitle, { color: colors.text, fontSize: 17 * font, marginBottom: 8 * spacing }]}>
+              {t.studyAgainTitle}
+            </Text>
+            <Text style={[styles.confirmMessage, { color: colors.textSecondary, fontSize: 14 * font, marginBottom: 18 * spacing }]}>
+              {t.studyAgainConfirm}
+            </Text>
+            <View style={[styles.confirmActions, { gap: 10 * spacing }]}>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: colors.background, borderRadius: 8 * radius, paddingVertical: 11 * spacing }]}
+                onPress={() => setRestartConfirmVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: colors.textSecondary, fontSize: 15 * font }}>{t.cancel}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: colors.accentStrong, borderRadius: 8 * radius, paddingVertical: 11 * spacing }]}
+                onPress={confirmRestart}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: isDark ? colors.background : '#FFFFFF', fontSize: 15 * font, fontWeight: '600' }}>
+                  {t.studyAgainAction}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -618,6 +747,17 @@ const styles = StyleSheet.create({
   quitText: {
     fontSize: 15,
     fontWeight: '500',
+  },
+  restartText: {
+    textAlign: 'right',
+  },
+  previousCard: {
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  previousRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   confirmOverlay: {
     flex: 1,

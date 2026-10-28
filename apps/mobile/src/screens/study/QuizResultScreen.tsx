@@ -1,5 +1,6 @@
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StudyRecordSummary } from '@sharp/shared';
 import React, { useState } from 'react';
 import {
     ScrollView,
@@ -94,8 +95,12 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
 
   const handleRetry = async () => {
     dispatch(resetStudy());
+    let previousRecord: StudyRecordSummary | null = null;
     try {
-      await api.startStudy(categoryId, unitIndex, subjectId, knowledgePointId);
+      // 复用同一条学习记录：刚完成的成绩作为「上次学习」带入答题页
+      previousRecord = (
+        await api.startStudy(categoryId, unitIndex, subjectId, knowledgePointId)
+      ).previous;
     } catch {
       // silently proceed even if start fails
     }
@@ -109,6 +114,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
         categoryName: categoryName ?? '',
         subjectId,
         knowledgePointId,
+        previousRecord,
       });
     }
   };

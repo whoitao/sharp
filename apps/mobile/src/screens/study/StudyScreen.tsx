@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Category, KnowledgePoint, Subject, UnitInfo } from '@sharp/shared';
+import type { Category, KnowledgePoint, StudyRecordSummary, Subject, UnitInfo } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -192,13 +192,16 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       if (pressingUnitIndex !== null || !selectedCategory) return;
       setPressingUnitIndex(unit.unitIndex);
       try {
+        let previousRecord: StudyRecordSummary | null = null;
         try {
-          await api.startStudy(
-            selectedCategory.id,
-            unit.unitIndex,
-            selectedSubject?.id,
-            selectedKP?.id
-          );
+          previousRecord = (
+            await api.startStudy(
+              selectedCategory.id,
+              unit.unitIndex,
+              selectedSubject?.id,
+              selectedKP?.id
+            )
+          ).previous;
         } catch {
           // silently proceed
         }
@@ -219,6 +222,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
             knowledgePointId: selectedKP?.id,
             subjectName: selectedSubject?.name,
             knowledgePointName: selectedKP?.name,
+            previousRecord,
           });
         }
       } finally {

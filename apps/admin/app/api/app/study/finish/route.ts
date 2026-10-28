@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { categoryId, unitIndex, correctCount, wrongCount, durationSeconds, answers } = body;
+  const { categoryId, unitIndex, correctCount, wrongCount, durationSeconds, answers, subjectId, knowledgePointId } = body;
 
   if (
     categoryId === undefined ||
@@ -22,33 +22,54 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 记录表已改为追加式历史日志：优先定位该单元最新一条未完成的记录；
-  // 没有未完成的（异常路径，如未先调 start）则退化为更新最新一条
-  const record = await prisma.userStudyRecord.findFirst({
-    where: {
-      userId: appUser.id,
-      categoryId: BigInt(categoryId),
-      unitIndex,
-    },
-    orderBy: [{ finishedAt: { sort: "asc", nulls: "first" } }, { startedAt: "desc" }],
-  });
+  // 客户端会带上本次的筛选条件：同一单元在不同筛选下各有一条记录，必须按完整键定位。
+  // 没带（旧版本客户端）或定位不到时退化为「该单元最新一条」。
+  const filterWhere =
+    subjectId !== undefined || knowledgePointId !== undefined
+      ? {
+          subjectId: subjectId ? BigInt(subjectId) : null,
+          knowledgePointId: knowledgePointId ? BigInt(knowledgePointId) : null,
+        }
+      : null;
+
+  const recordWhere = {
+    userId: appUser.id,
+    categoryId: BigInt(categoryId),
+    unitIndex,
+  };
+
+  const record =
+    (await prisma.userStudyRecord.findFirst({
+      where: filterWhere ? { ...recordWhere, ...filterWhere } : recordWhere,
+      orderBy: [{ finishedAt: { sort: "asc", nulls: "first" } }, { startedAt: "desc" }],
+    })) ??
+    (filterWhere
+      ? await prisma.userStudyRecord.findFirst({
+          where: recordWhere,
+          orderBy: [{ finishedAt: { sort: "asc", nulls: "first" } }, { startedAt: "desc" }],
+        })
+      : null);
 
   if (record) {
+    // 同一单元只有一条记录，重复学习后要覆盖成最新一次的时间与成绩：
+    // startedAt 由本次用时反推，保证学习记录列表按最近一次学习时间排序、展示
+    const finishedAt = new Date();
     await prisma.userStudyRecord.update({
       where: { id: record.id },
       data: {
         correctCount,
         wrongCount,
         durationSeconds,
-        finishedAt: new Date(),
+        startedAt: new Date(finishedAt.getTime() - durationSeconds * 1000),
+        finishedAt,
       },
     });
   }
 
-  // 本次练习的筛选条件（来自 start 创建的学习记录）
+  // 本次练习的筛选条件：优先用记录上的值，记录缺失时用客户端传来的
   const filter = record
     ? { subjectId: record.subjectId, knowledgePointId: record.knowledgePointId }
-    : {};
+    : (filterWhere ?? {});
 
   // Batch update question progress from answers
   if (answers && Array.isArray(answers)) {

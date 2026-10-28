@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { StudyRecord } from '@sharp/shared';
-import React from 'react';
-import { StyleSheet } from 'react-native';
+import type { StudyRecord, StudyRecordSummary } from '@sharp/shared';
+import React, { useEffect, useRef } from 'react';
+import { BackHandler, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -50,7 +50,8 @@ export type HomeStackParamList = {
 export type StudyStackParamList = {
   // subjectId：首页点学科行直达该学科（进页面后自动选中，随后由 StudyScreen 清掉参数）
   Study: { subjectId?: string } | undefined;
-  Quiz: { categoryId: string; unitIndex: number; categoryName: string; subjectId?: string; knowledgePointId?: string; subjectName?: string; knowledgePointName?: string };
+  // previousRecord：本单元上一次已完成的学习记录（有则答题页展示「上次学习」摘要）
+  Quiz: { categoryId: string; unitIndex: number; categoryName: string; subjectId?: string; knowledgePointId?: string; subjectName?: string; knowledgePointName?: string; previousRecord?: StudyRecordSummary | null };
   QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; subjectId?: string; knowledgePointId?: string; record?: StudyRecord };
 };
 
@@ -340,16 +341,56 @@ const MainTabNavigator: React.FC = () => {
 const RootStack = createNativeStackNavigator();
 
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
+  const auth = useSelector((state: RootState) => state.auth);
+  const navigationRef = useNavigationContainerRef();
+  const isAuthenticatedRef = useRef(auth.isAuthenticated);
 
-  if (isLoading) {
+  useEffect(() => {
+    isAuthenticatedRef.current = auth.isAuthenticated;
+  }, [auth.isAuthenticated]);
+
+  // Android 物理返回键：首页根层时拦截，避免按一下就退出 App。
+  // 非根层（如错题本/学习记录/练习页）仍遵循默认 pop 行为。
+  useEffect(() => {
+    const handler = () => {
+      if (!isAuthenticatedRef.current) return false;
+      const nav = navigationRef.current;
+      if (!nav) return false;
+      const state = nav.getRootState();
+      if (!state) return false;
+
+      // RootStack → Main tab navigator → 当前 active Tab → Tab 内 Stack → 当前 screen
+      const mainTab = (state.routes[state.index] as any)?.state;
+      if (!mainTab) return false;
+
+      const activeTab = mainTab.routes[mainTab.index] as any;
+      const activeStack = activeTab?.state;
+      if (!activeStack) return false;
+
+      // 只有 HomeTab 的 Home 是栈顶时才拦截，其他 Tab 的根层或子栈都放行
+      const topScreen = activeStack.routes[activeStack.index]?.name;
+      const isHomeRoot =
+        activeTab.name === 'HomeTab' && topScreen === 'Home' && activeStack.index === 0;
+
+      if (isHomeRoot) {
+        // 保持在首页但给用户一个反馈（可选：toast）；这里直接返回 true 吃掉按键
+        return true;
+      }
+      return false;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', handler);
+    return () => sub.remove();
+  }, [navigationRef]);
+
+  if (auth.isLoading) {
     return null;
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
+        {auth.isAuthenticated ? (
           <RootStack.Screen name="Main" component={MainTabNavigator as any} />
         ) : (
           <RootStack.Screen name="Auth" component={AuthNavigator as any} />

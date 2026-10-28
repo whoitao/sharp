@@ -8,6 +8,7 @@ import type {
   PaginatedResponse,
   Question,
   StudyRecord,
+  StudyRecordSummary,
   Subject,
   SubjectOverview,
   Theme,
@@ -525,7 +526,31 @@ export const api = {
   },
 
   // Study sessions
+  // 返回该单元之前已完成的一次记录（有则用于答题页展示「上次学习」摘要）
   async startStudy(
+    categoryId: string,
+    unitIndex: number,
+    subjectId?: string,
+    knowledgePointId?: string
+  ): Promise<{ previous: StudyRecordSummary | null }> {
+    try {
+      const params: Record<string, string> = {};
+      if (subjectId) params.subjectId = subjectId;
+      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
+      const response = await apiClient.post<{ previous: StudyRecordSummary | null }>(
+        '/api/app/study/start',
+        { categoryId, unitIndex },
+        { params },
+      );
+      return { previous: response.data?.previous ?? null };
+    } catch {
+      // silently succeed in mock mode
+      return { previous: null };
+    }
+  },
+
+  // 再学一次：清空该单元之前的学习记录，本次从零开始
+  async restartStudy(
     categoryId: string,
     unitIndex: number,
     subjectId?: string,
@@ -535,7 +560,7 @@ export const api = {
       const params: Record<string, string> = {};
       if (subjectId) params.subjectId = subjectId;
       if (knowledgePointId) params.knowledgePointId = knowledgePointId;
-      await apiClient.post('/api/app/study/start', { categoryId, unitIndex }, { params });
+      await apiClient.post('/api/app/study/restart', { categoryId, unitIndex }, { params });
     } catch {
       // silently succeed in mock mode
     }
@@ -544,13 +569,23 @@ export const api = {
   async finishStudy(
     categoryId: string,
     unitIndex: number,
-    stats: { correctCount: number; wrongCount: number; durationSeconds: number; answers: AnswerItem[] }
+    stats: {
+      correctCount: number;
+      wrongCount: number;
+      durationSeconds: number;
+      answers: AnswerItem[];
+      subjectId?: string;
+      knowledgePointId?: string;
+    }
   ): Promise<void> {
     try {
       await apiClient.post('/api/app/study/finish', {
         categoryId,
         unitIndex,
         ...stats,
+        // 同一单元在不同筛选下各有一条记录，服务端按完整键定位
+        subjectId: stats.subjectId ?? null,
+        knowledgePointId: stats.knowledgePointId ?? null,
       });
     } catch {
       // silently succeed in mock mode

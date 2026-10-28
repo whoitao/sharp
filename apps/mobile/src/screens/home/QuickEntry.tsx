@@ -35,16 +35,16 @@ const QuickEntry: React.FC<QuickEntryProps> = ({ icon, label, onPress }) => {
     >
       <View
         style={{
-          backgroundColor: colors.accentLight,
-          width: 32 * spacing,
-          height: 32 * spacing,
-          borderRadius: 9 * radius,
+          backgroundColor: colors.background,
+          width: 36 * spacing,
+          height: 36 * spacing,
+          borderRadius: 10 * radius,
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: 8 * spacing,
         }}
       >
-        <Ionicons name={icon} size={17 * font} color={colors.accentStrong} />
+        <Ionicons name={icon} size={20 * font} color={colors.accent} />
       </View>
       <Text
         numberOfLines={1}

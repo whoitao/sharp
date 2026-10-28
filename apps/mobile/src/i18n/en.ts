@@ -115,6 +115,13 @@ export const en: TranslationKeys = {
   nextQuestion: 'Next →',
   prevQuestion: '← Prev',
   swipeHint: '← Swipe left / right to switch →',
+  studyAgain: 'Study again',
+  studyAgainTitle: 'Study again',
+  studyAgainConfirm: 'This clears the previous record for this unit and restarts from the first question.',
+  studyAgainAction: 'Restart',
+  previousStudy: 'Last attempt',
+  previousStudyScore: (correct: number, total: number) => `${correct}/${total} correct`,
+  previousStudyDuration: (duration: string) => `${duration} spent`,
 
   // Quiz result
   noResultData: 'No result data',

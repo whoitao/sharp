@@ -43,23 +43,28 @@ const SubjectRow: React.FC<SubjectRowProps> = ({ item, onPress }) => {
       <View style={styles.top}>
         <View
           style={{
-            backgroundColor: empty ? 'transparent' : colors.accentLight,
-            borderColor: empty ? colors.border : 'transparent',
-            borderWidth: empty ? 1 : 0,
-            borderStyle: empty ? 'dashed' : 'solid',
-            width: 38 * spacing,
-            height: 38 * spacing,
-            borderRadius: 11 * radius,
+            backgroundColor: colors.background,
+            width: 36 * spacing,
+            height: 36 * spacing,
+            borderRadius: 10 * radius,
             marginRight: 11 * spacing,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Ionicons
-            name={isIoniconName(item.icon) ? item.icon : 'school-outline'}
-            size={19 * font}
-            color={empty ? colors.textTertiary : colors.accentStrong}
-          />
+          {empty ? (
+            <Ionicons
+              name="add-outline"
+              size={18 * font}
+              color={colors.textTertiary}
+            />
+          ) : (
+            <Ionicons
+              name={isIoniconName(item.icon) ? item.icon : 'school-outline'}
+              size={20 * font}
+              color={colors.accent}
+            />
+          )}
         </View>
         <View style={styles.main}>
           <Text
