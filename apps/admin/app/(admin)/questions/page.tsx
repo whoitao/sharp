@@ -27,6 +27,7 @@ import {
   Space,
   Table,
   Tag,
+  theme as antdTheme,
   TreeSelect,
   Upload
 } from "antd";
@@ -94,6 +95,7 @@ const DEFAULT_OPTIONS: QuestionOption[] = ["A", "B", "C", "D"].map((key) => ({
 
 export default function QuestionsPage() {
   const { message } = App.useApp();
+  const { token } = antdTheme.useToken();
   const { t } = useLocale();
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -226,17 +228,16 @@ export default function QuestionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 知识点按选中的科目联动过滤，切换科目时清空已选知识点
-  // 首次挂载时表单尚未渲染（弹窗无 forceRender），跳过 setFieldsValue 避免 useForm 未连接告警
-  const isSubjectEffectFirstRun = useRef(true);
+  // 知识点按选中的科目联动过滤，切换科目时清空已选知识点。
+  // 用「科目值是否真的变化」判断，而不是「是否首次执行」：StrictMode 下 effect 会连续跑两次，
+  // 首次标记会被第一次吃掉，第二次就会在弹窗里的 Form 尚未挂载时调用 setFieldsValue 触发 useForm 告警。
+  const lastFormSubjectRef = useRef<string | undefined>(undefined);
   // 编辑弹窗填充数据时会程序性设置科目，此时不应清空随后写入的知识点
   const skipSubjectClearRef = useRef(false);
   useEffect(() => {
     fetchKnowledgePoints(formSubjectId);
-    if (isSubjectEffectFirstRun.current) {
-      isSubjectEffectFirstRun.current = false;
-      return;
-    }
+    if (lastFormSubjectRef.current === formSubjectId) return;
+    lastFormSubjectRef.current = formSubjectId;
     if (skipSubjectClearRef.current) {
       skipSubjectClearRef.current = false;
       return;
@@ -533,7 +534,7 @@ export default function QuestionsPage() {
             ))}
           </Space>
         ) : (
-          <span style={{ color: "rgba(0,0,0,0.25)" }}>-</span>
+          <span style={{ color: token.colorTextTertiary }}>-</span>
         ),
     },
     {
@@ -544,7 +545,7 @@ export default function QuestionsPage() {
         record.subjectName ? (
           <span>{record.subjectName}</span>
         ) : (
-          <span style={{ color: "rgba(0,0,0,0.25)" }}>-</span>
+          <span style={{ color: token.colorTextTertiary }}>-</span>
         ),
     },
     { title: t("questions.colDifficulty"), dataIndex: "difficulty", key: "difficulty", width: 70 },
@@ -570,7 +571,7 @@ export default function QuestionsPage() {
             </Space>
           }
         >
-          <span style={{ cursor: "default", whiteSpace: "nowrap", color: "#1677ff" }}>
+          <span style={{ cursor: "default", whiteSpace: "nowrap", color: token.colorLink }}>
             {t("questions.opts", { n: record.options.length })}
           </span>
         </Popover>
@@ -788,74 +789,62 @@ export default function QuestionsPage() {
   return (
     <div>
       <Card size="small" style={{ marginBottom: 10 }} styles={{ body: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 } }}>
-        <Space>
-          <span>{t("questions.selectCategory")}</span>
-          <Select
-            showSearch
-            allowClear
-            style={{ width: 160 }}
-            placeholder={t("questions.chooseCategory")}
-            value={selectedCategoryId}
-            onChange={(value) => {
-              setSelectedCategoryId(value);
-              setPage(1);
-            }}
-            options={categoryOptions}
-          />
-        </Space>
-        <Space>
-          <span>{t("questions.subject")}</span>
-          <Select
-            showSearch
-            allowClear
-            style={{ width: 160 }}
-            placeholder={t("questions.subjectPlaceholder")}
-            value={selectedSubjectId}
-            onChange={(value) => {
-              setSelectedSubjectId(value);
-              setPage(1);
-            }}
-            options={subjects.map((s) => ({ value: s.id, label: s.name }))}
-          />
-        </Space>
-        <Space>
-          <span>{t("questions.knowledgePointsLabel")}</span>
-          <TreeSelect
-            showSearch
-            allowClear
-            style={{ width: 200 }}
-            disabled={!selectedSubjectId}
-            placeholder={
-              selectedSubjectId
-                ? t("questions.knowledgePointsPlaceholder")
-                : t("questions.selectSubjectFirst")
-            }
-            value={selectedKPId}
-            onChange={(value) => {
-              setSelectedKPId(value);
-              setPage(1);
-            }}
-            treeData={filterKpTree.map(function convert(node: KPNode): any {
-              return {
-                value: node.id,
-                title: node.name,
-                key: node.id,
-                children: node.children?.map(convert) || [],
-              };
-            })}
-            treeDefaultExpandAll
-          />
-        </Space>
-        <Space>
-          <span>{t("questions.colContent")}</span>
-          <Input
-            allowClear
-            style={{ width: 200 }}
-            placeholder={t("questions.searchContentPlaceholder")}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-        </Space>
+        <Select
+          showSearch
+          allowClear
+          style={{ width: 200 }}
+          placeholder={t("questions.chooseCategory")}
+          value={selectedCategoryId}
+          onChange={(value) => {
+            setSelectedCategoryId(value);
+            setPage(1);
+          }}
+          options={categoryOptions}
+        />
+        <Select
+          showSearch
+          allowClear
+          style={{ width: 200 }}
+          placeholder={t("questions.subjectPlaceholder")}
+          value={selectedSubjectId}
+          onChange={(value) => {
+            setSelectedSubjectId(value);
+            setPage(1);
+          }}
+          options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+        />
+        <TreeSelect
+          showSearch
+          allowClear
+          style={{ width: 200 }}
+          disabled={!selectedSubjectId}
+          placeholder={
+            selectedSubjectId
+              ? t("questions.knowledgePointsPlaceholder")
+              : t("questions.selectSubjectFirst")
+          }
+          value={selectedKPId}
+          onChange={(value) => {
+            setSelectedKPId(value);
+            setPage(1);
+          }}
+          treeData={filterKpTree.map(function convert(node: KPNode): any {
+            return {
+              value: node.id,
+              title: node.name,
+              key: node.id,
+              children: node.children?.map(convert) || [],
+            };
+          })}
+          treeDefaultExpandAll
+        />
+        <Input
+          allowClear
+          style={{ width: 200 }}
+          placeholder={t("questions.searchContentPlaceholder")}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
       </Card>
 
       <Table<QuestionItem>
@@ -945,7 +934,7 @@ export default function QuestionsPage() {
         }}
       >
         <Form form={importForm} layout="vertical" onFinish={handleImport}>
-          <p style={{ color: "rgba(0,0,0,0.45)" }}>
+          <p style={{ color: token.colorTextTertiary }}>
             {t("questions.importFormat")}
           </p>
           <Form.Item

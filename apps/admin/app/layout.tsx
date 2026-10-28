@@ -36,14 +36,25 @@ export default async function RootLayout({
         ? "zh"
         : "en";
 
+  // 主题同理：cookie 里存的是上次解析后的结果，服务端直出对应配色，
+  // 深色用户不会先看到一帧浅色再跳深色
+  const initialTheme: "light" | "dark" =
+    cookieStore.get("admin_theme")?.value === "dark" ? "dark" : "light";
+
   return (
-    <html lang={initialLocale === "zh" ? "zh-CN" : "en"}>
+    <html
+      lang={initialLocale === "zh" ? "zh-CN" : "en"}
+      data-theme={initialTheme}
+      style={{ colorScheme: initialTheme }}
+    >
       <body className={inter.className}>
         {/* cacheComponents 模式下 AntdRegistry 预渲染时会调用 Math.random() 生成样式缓存键，
             会被 Next 16 拦截；包一层 Suspense 让它转为流式渲染（管理后台无需静态预渲染） */}
         <Suspense>
           <AntdRegistry>
-            <AntdProviders initialLocale={initialLocale}>{children}</AntdProviders>
+            <AntdProviders initialLocale={initialLocale} initialTheme={initialTheme}>
+              {children}
+            </AntdProviders>
           </AntdRegistry>
         </Suspense>
       </body>

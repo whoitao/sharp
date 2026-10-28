@@ -2,7 +2,7 @@
 
 import { useLocale } from "@/lib/i18n";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Form, Input } from "antd";
+import { Alert, Button, Card, Form, Input, theme as antdTheme } from "antd";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -13,6 +13,7 @@ interface LoginFormValues {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { token } = antdTheme.useToken();
   const { t } = useLocale();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -58,7 +59,7 @@ export default function LoginPage() {
       <Card style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>Sharp Admin</h1>
-          <p style={{ color: "rgba(0,0,0,0.45)", marginTop: 8 }}>
+          <p style={{ color: token.colorTextSecondary, marginTop: 8 }}>
             {t("login.subtitle")}
           </p>
         </div>

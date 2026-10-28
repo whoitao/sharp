@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n";
-import { Input, Table } from "antd";
+import { Input, Table, theme as antdTheme } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
 
@@ -33,6 +33,7 @@ interface PaginatedData {
 const PAGE_SIZE = 10;
 
 export default function StudyRecordsPage() {
+  const { token } = antdTheme.useToken();
   const { locale, t } = useLocale();
   const [records, setRecords] = useState<StudyRecord[]>([]);
   const [total, setTotal] = useState(0);
@@ -42,13 +43,13 @@ export default function StudyRecordsPage() {
 
   const fetchRecords = async (p: number, s: string) => {
     setLoading(true);
-    const token = localStorage.getItem("admin_token");
+    const authToken = localStorage.getItem("admin_token");
     const params = new URLSearchParams({ page: String(p), pageSize: String(PAGE_SIZE) });
     if (s) params.set("search", s);
 
     try {
       const res = await fetch(`/api/admin/study-records?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       const data: PaginatedData = await res.json();
       if (res.ok && Array.isArray(data.data)) {
@@ -122,13 +123,13 @@ export default function StudyRecordsPage() {
       title: t("studyRecords.colCorrect"),
       dataIndex: "correctCount",
       key: "correctCount",
-      render: (value: number) => <span style={{ color: "#52c41a" }}>{value}</span>,
+      render: (value: number) => <span style={{ color: token.colorSuccessText }}>{value}</span>,
     },
     {
       title: t("studyRecords.colWrong"),
       dataIndex: "wrongCount",
       key: "wrongCount",
-      render: (value: number) => <span style={{ color: "#ff4d4f" }}>{value}</span>,
+      render: (value: number) => <span style={{ color: token.colorErrorText }}>{value}</span>,
     },
     {
       title: t("studyRecords.colDuration"),

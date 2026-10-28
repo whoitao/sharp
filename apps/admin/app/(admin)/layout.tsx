@@ -29,7 +29,6 @@ import {
   Layout,
   Menu,
   Space,
-  Spin,
   theme as antdTheme,
   type MenuProps
 } from "antd";
@@ -72,7 +71,7 @@ export default function AdminLayout({
   const { pageSize, setPageSize } = usePageSize();
   const { locale, setLocale, t } = useLocale();
   const {
-    token: { colorBgContainer, colorBorderSecondary, colorBgLayout },
+    token: { colorBgContainer, colorBorderSecondary, colorPrimary },
   } = antdTheme.useToken();
 
   const [username, setUsername] = useState("");
@@ -101,6 +100,7 @@ export default function AdminLayout({
   };
 
   const activeKey = pendingKey ?? pathname;
+  const isNavigating = pendingKey !== null && pendingKey !== pathname;
 
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
@@ -246,7 +246,7 @@ export default function AdminLayout({
                 cursor: "pointer",
               }}
             >
-              <Avatar size={28} style={{ backgroundColor: "#1677ff", fontSize: 12 }}>
+              <Avatar size={28} style={{ backgroundColor: colorPrimary, fontSize: 12 }}>
                 {username ? username[0].toUpperCase() : "A"}
               </Avatar>
               <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -283,24 +283,15 @@ export default function AdminLayout({
           <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", minWidth: 0 }}>
             {pageActions}
           </div>
+          {/* 路由切换只在顶栏下方走一条细进度条，不再用整屏遮罩把内容盖住 */}
+          {isNavigating && (
+            <div className="route-progress">
+              <span style={{ backgroundColor: colorPrimary }} />
+            </div>
+          )}
         </div>
 
         <Content style={{ padding: 8, overflow: "auto", position: "relative", minHeight: 0 }}>
-          {pendingKey && pendingKey !== pathname && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                zIndex: 20,
-                background: colorBgLayout,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Spin size="large" />
-            </div>
-          )}
           {children}
         </Content>
       </Layout>
