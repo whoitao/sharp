@@ -146,6 +146,7 @@ export const en = {
     emptySelected: "No questions in this category.",
     emptyUnselected: "Select a category to view questions.",
     colId: "ID",
+    colCategory: "Category",
     colType: "Type",
     colContent: "Content",
     searchContentPlaceholder: "Search content...",

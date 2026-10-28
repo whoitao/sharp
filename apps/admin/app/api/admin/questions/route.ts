@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         options: { orderBy: { sortNo: "asc" } },
+        category: { select: { name: true } },
         subject: true,
         knowledgePoints: {
           include: { knowledgePoint: true },
@@ -54,6 +55,7 @@ export async function GET(request: NextRequest) {
   const serialize = (q: any) => ({
     id: q.id.toString(),
     categoryId: q.categoryId.toString(),
+    categoryName: q.category?.name ?? null,
     subjectId: q.subjectId?.toString() ?? null,
     subjectName: q.subject?.name ?? null,
     type: q.type,

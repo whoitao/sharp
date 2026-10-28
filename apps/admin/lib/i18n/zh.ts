@@ -148,6 +148,7 @@ export const zh: Messages = {
     emptySelected: "该分类下暂无题目。",
     emptyUnselected: "请选择分类以查看题目。",
     colId: "ID",
+    colCategory: "分类",
     colType: "类型",
     colContent: "内容",
     searchContentPlaceholder: "按内容模糊搜索...",

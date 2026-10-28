@@ -45,6 +45,7 @@ interface QuestionOption {
 interface QuestionItem {
   id: string;
   categoryId: string;
+  categoryName: string | null;
   subjectId: string | null;
   subjectName: string | null;
   type: number;
@@ -509,20 +510,26 @@ export default function QuestionsPage() {
       ),
     },
     {
-      title: t("questions.colType"),
-      dataIndex: "type",
-      key: "type",
-      width: 90,
-      render: (type: number) => <Tag>{typeLabel(type)}</Tag>,
+      title: t("questions.colCategory"),
+      key: "category",
+      width: 130,
+      render: (_, record) =>
+        record.categoryName ? (
+          <span>{record.categoryName}</span>
+        ) : (
+          <span style={{ color: token.colorTextTertiary }}>-</span>
+        ),
     },
-    // 内容列不设宽度，自动占满剩余空间（其余列均显式收窄）
     {
-      title: t("questions.colContent"),
-      dataIndex: "content",
-      key: "content",
-      ellipsis: true,
-      // 富文本以 HTML 存储，列表展示纯文本并把公式渲染出来
-      render: (value: string) => <MathText html={value} />,
+      title: t("questions.subject"),
+      key: "subject",
+      width: 90,
+      render: (_, record) =>
+        record.subjectName ? (
+          <span>{record.subjectName}</span>
+        ) : (
+          <span style={{ color: token.colorTextTertiary }}>-</span>
+        ),
     },
     {
       title: t("questions.knowledgePointsLabel"),
@@ -542,18 +549,21 @@ export default function QuestionsPage() {
         ),
     },
     {
-      title: t("questions.subject"),
-      key: "subject",
+      title: t("questions.colType"),
+      dataIndex: "type",
+      key: "type",
       width: 90,
-      render: (_, record) =>
-        record.subjectName ? (
-          <span>{record.subjectName}</span>
-        ) : (
-          <span style={{ color: token.colorTextTertiary }}>-</span>
-        ),
+      render: (type: number) => <Tag>{typeLabel(type)}</Tag>,
     },
-    { title: t("questions.colDifficulty"), dataIndex: "difficulty", key: "difficulty", width: 70 },
-    { title: t("questions.colScore"), dataIndex: "score", key: "score", width: 70 },
+    // 内容列不设宽度，自动占满剩余空间（其余列均显式收窄）
+    {
+      title: t("questions.colContent"),
+      dataIndex: "content",
+      key: "content",
+      ellipsis: true,
+      // 富文本以 HTML 存储，列表展示纯文本并把公式渲染出来
+      render: (value: string) => <MathText html={value} />,
+    },
     {
       title: t("questions.colOptions"),
       key: "options",
@@ -583,6 +593,8 @@ export default function QuestionsPage() {
         </Popover>
       ),
     },
+    { title: t("questions.colDifficulty"), dataIndex: "difficulty", key: "difficulty", width: 70 },
+    { title: t("questions.colScore"), dataIndex: "score", key: "score", width: 70 },
     {
       title: t("questions.colActions"),
       key: "actions",
