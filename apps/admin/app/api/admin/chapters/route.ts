@@ -13,6 +13,7 @@ function serializeNode(n: any): any {
     semester: n.semester ?? null,
     name: n.name,
     sortOrder: n.sortOrder,
+    questionCount: n.questionCount ?? 0,
     children: (n.children ?? []).map(serializeNode),
   };
 }
@@ -40,7 +41,33 @@ export async function GET(request: NextRequest) {
     orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
   });
 
-  const byId = new Map(all.map((n) => [n.id.toString(), n]));
+  // 每个节点的题数 = 直属题目 + 所有子章节题目（归属唯一，向上聚合）
+  const chapterIds = all.map((n) => n.id);
+  const questionGroups = chapterIds.length
+    ? await prisma.question.groupBy({
+        by: ["chapterId"],
+        where: { chapterId: { in: chapterIds } },
+        _count: { _all: true },
+      })
+    : [];
+  const directCount = new Map(
+    questionGroups.map((g) => [g.chapterId?.toString() ?? "", g._count._all]),
+  );
+  const childrenMap = new Map<string, string[]>();
+  for (const n of all) {
+    const key = n.parentId?.toString() ?? "";
+    if (!childrenMap.has(key)) childrenMap.set(key, []);
+    childrenMap.get(key)!.push(n.id.toString());
+  }
+  const aggregate = (cid: string): number => {
+    let total = directCount.get(cid) ?? 0;
+    for (const child of childrenMap.get(cid) ?? []) total += aggregate(child);
+    return total;
+  };
+
+  const byId = new Map(
+    all.map((n) => [n.id.toString(), { ...n, questionCount: aggregate(n.id.toString()) }]),
+  );
   const rootIds: string[] = [];
   for (const n of all) {
     if (n.parentId == null || !byId.has(n.parentId.toString())) rootIds.push(n.id.toString());

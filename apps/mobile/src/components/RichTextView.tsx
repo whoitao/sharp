@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+    Platform,
     StyleProp,
     StyleSheet,
     Text,
     TextStyle,
     View,
-    ViewStyle,
+    ViewStyle
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { API_BASE_URL } from '../services/api';
@@ -148,6 +149,36 @@ const RichTextView: React.FC<RichTextViewProps> = ({
         <Text style={[{ color, fontSize, lineHeight: resolvedLineHeight }, style]} numberOfLines={numberOfLines}>
           {text}
         </Text>
+      </View>
+    );
+  }
+
+  // react-native-webview 不支持浏览器端，web 上用 iframe srcDoc 渲染同一份文档。
+  // srcDoc iframe 与页面同源，可以直接读取内容高度，无需 postMessage 通道
+  if (Platform.OS === 'web') {
+    return (
+      <View style={containerStyle}>
+        <View style={{ height, pointerEvents: 'none' }}>
+          <iframe
+            srcDoc={documentHtml}
+            style={{ width: '100%', height: '100%', border: 'none', background: 'transparent' }}
+            onLoad={(e) => {
+              const doc = (e.target as HTMLIFrameElement).contentDocument;
+              if (!doc) return;
+              const measure = () => {
+                const h = doc.body ? doc.body.scrollHeight : 0;
+                if (h > 0) setHeight((prev) => (Math.abs(prev - h) > 1 ? h : prev));
+              };
+              measure();
+              setTimeout(measure, 60);
+              setTimeout(measure, 400);
+              // 图片加载、字体替换都会改变高度，用 ResizeObserver 持续同步
+              if (typeof ResizeObserver !== 'undefined' && doc.body) {
+                new ResizeObserver(measure).observe(doc.body);
+              }
+            }}
+          />
+        </View>
       </View>
     );
   }
