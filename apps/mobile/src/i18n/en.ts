@@ -58,11 +58,13 @@ export const en: TranslationKeys = {
 
   // Study
   studySelectCategory: 'Select Category',
+  studyAllCategories: 'All Categories',
   studySelectSubject: 'Select Subject',
   studySelectKnowledgePoint: 'Select Knowledge Point',
   studySelectCategoryFirst: 'Please select a category first',
+  studySelectSubjectFirst: 'Please select a subject first',
   studyNoUnits: 'No units for this filter',
-  studySelectAllFilters: 'Select category, subject and knowledge point',
+  studySelectAllFilters: 'Select subject and knowledge point',
 
   // Common
   loading: 'Loading...',

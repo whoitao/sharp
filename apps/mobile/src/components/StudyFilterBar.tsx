@@ -32,8 +32,10 @@ interface StudyFilterBarProps {
   onSelectCategory: (cat: Category | null) => void;
   onSelectSubject: (sub: Subject | null) => void;
   onSelectKP: (kp: KnowledgePoint | null) => void;
-  /** 允许清除单个已选条件（学习记录页用）；学习页要求三项全选，不传 */
+  /** 允许清除单个已选条件（学习记录页用）；学习页要求科目与知识点必选，不传 */
   allowClear?: boolean;
+  /** 分类为可选项：科目未选时不可选（学习页用，学习记录页不传） */
+  categoryDisabled?: boolean;
   /** 筛选数据加载中的遮罩（学习页初始化时用） */
   loading?: boolean;
 }
@@ -52,6 +54,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   onSelectSubject,
   onSelectKP,
   allowClear = false,
+  categoryDisabled = false,
   loading = false,
 }) => {
   const { colors } = useTheme();
@@ -122,9 +125,11 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
     <View style={[styles.container, { padding: 12 * spacing, paddingTop: 0, gap: 8 * spacing }]}>
       {renderChip(
         selectedCategory?.name ?? null,
-        t.studySelectCategory,
+        // 分类可选：科目已选但未选分类时展示「全部分类」，未选科目时提示先选科目
+        categoryDisabled ? t.studySelectSubjectFirst : t.studyAllCategories,
         () => setCategoryModalVisible(true),
         () => onSelectCategory(null),
+        categoryDisabled,
       )}
       {renderChip(
         selectedSubject ? (

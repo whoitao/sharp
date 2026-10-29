@@ -41,7 +41,7 @@ const initialState: StudyState = {
 export const fetchQuestions = createAsyncThunk(
   'study/fetchQuestions',
   async (params: {
-    /** 考纲练习用分类；教材章节练习用 chapterId，二者必填其一 */
+    /** 考纲练习可选分类（不选=该科目全部题目）；教材章节练习用 chapterId，二者至少有一个 */
     categoryId?: string;
     chapterId?: string;
     unitIndex: number;
@@ -51,9 +51,9 @@ export const fetchQuestions = createAsyncThunk(
     const questions = params.chapterId
       ? await api.getChapterQuestions(params.chapterId, params.unitIndex, params.subjectId)
       : await api.getQuestions(
-          params.categoryId!,
+          params.categoryId ?? null,
           params.unitIndex,
-          params.subjectId,
+          params.subjectId ?? '',
           params.knowledgePointId,
         );
     return {

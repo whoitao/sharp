@@ -427,6 +427,18 @@ export const api = {
     return parentId === '0' ? tree : findCategoryChildren(tree, parentId);
   },
 
+  // 某个科目下有题目的分类树（考试范围），不缓存：题数会随题库变化
+  async getCategoriesBySubject(subjectId: string): Promise<Category[]> {
+    try {
+      const response = await apiClient.get<Category[]>('/api/app/categories', {
+        params: { all: '1', subjectId },
+      });
+      return response.data;
+    } catch {
+      return [];
+    }
+  },
+
   // Subjects
   async getSubjects(): Promise<Subject[]> {
     return dedupeInFlight('subjects', async () => {
@@ -477,30 +489,35 @@ export const api = {
   },
 
   // Units
+  // categoryId 为空表示不限定考试范围，聚合该科目的全部题目
   async getUnits(
-    categoryId: string,
-    subjectId?: string,
+    categoryId: string | null,
+    subjectId: string,
     knowledgePointId?: string,
     page: number = 1,
     pageSize: number = 10
   ): Promise<{ units: UnitInfo[]; totalUnits: number }> {
     try {
-      const params: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
-      if (subjectId) params.subjectId = subjectId;
+      const params: Record<string, string> = {
+        subjectId,
+        page: String(page),
+        pageSize: String(pageSize),
+      };
+      if (categoryId) params.categoryId = categoryId;
       if (knowledgePointId) params.knowledgePointId = knowledgePointId;
       const response = await apiClient.get<{ units: UnitInfo[]; totalUnits: number }>(
-        `/api/app/categories/${categoryId}/units`,
+        '/api/app/units',
         { params },
       );
       return { units: response.data.units, totalUnits: response.data.totalUnits };
     } catch {
       // mock 数据均为英语题，选择非英语科目时返回空
-      if (subjectId && subjectId !== '1') return { units: [], totalUnits: 0 };
+      if (subjectId !== '1') return { units: [], totalUnits: 0 };
       const allCategories = [...mockCategories, ...mockSubCategories];
       const category = allCategories.find((c) => c.id === categoryId);
       const total = category?.questionCount ?? 100;
       const totalUnits = Math.ceil(total / 20);
-      const all = generateMockUnits(categoryId, total, 20);
+      const all = generateMockUnits(categoryId ?? 'all', total, 20);
       const start = (page - 1) * pageSize;
       return { units: all.slice(start, start + pageSize), totalUnits };
     }
@@ -508,24 +525,24 @@ export const api = {
 
   // Questions
   async getQuestions(
-    categoryId: string,
+    categoryId: string | null,
     unitIndex: number,
-    subjectId?: string,
+    subjectId: string,
     knowledgePointId?: string
   ): Promise<Question[]> {
     try {
-      const params: Record<string, string> = {};
-      if (subjectId) params.subjectId = subjectId;
+      const params: Record<string, string> = { subjectId };
+      if (categoryId) params.categoryId = categoryId;
       if (knowledgePointId) params.knowledgePointId = knowledgePointId;
       const response = await apiClient.get<Question[]>(
-        `/api/app/categories/${categoryId}/units/${unitIndex}/questions`,
+        `/api/app/units/${unitIndex}/questions`,
         { params },
       );
       return response.data;
     } catch {
       // mock 数据均为英语题，选择非英语科目时返回空
-      if (subjectId && subjectId !== '1') return [];
-      return generateMockQuestions(categoryId, unitIndex, 20);
+      if (subjectId !== '1') return [];
+      return generateMockQuestions(categoryId ?? 'all', unitIndex, 20);
     }
   },
 
@@ -547,16 +564,12 @@ export const api = {
   },
 
   async getGrades(subjectId: string, publisherId: string): Promise<Grade[]> {
-    const suffix = `${subjectId}:${publisherId}`;
-    return dedupeInFlight(`grades:${suffix}`, async () => {
-      const cached = await getCached<Grade[]>('grades', suffix);
-      if (cached) return cached;
-
+    // 不缓存：grade.chapterCount 会随后台章节/题目维护变化
+    return dedupeInFlight(`grades:${subjectId}:${publisherId}`, async () => {
       try {
         const response = await apiClient.get<Grade[]>('/api/app/grades', {
           params: { subjectId, publisherId },
         });
-        if (response.data.length > 0) await setCached('grades', response.data, suffix);
         return response.data;
       } catch {
         return [];
@@ -699,8 +712,9 @@ export const api = {
 
   // Study sessions
   // 返回该单元之前已完成的一次记录（有则用于答题页展示「上次学习」摘要）
+  // categoryId 为空表示不限定考试范围
   async startStudy(
-    categoryId: string,
+    categoryId: string | null,
     unitIndex: number,
     subjectId?: string,
     knowledgePointId?: string
@@ -711,7 +725,7 @@ export const api = {
       if (knowledgePointId) params.knowledgePointId = knowledgePointId;
       const response = await apiClient.post<{ previous: StudyRecordSummary | null }>(
         '/api/app/study/start',
-        { categoryId, unitIndex },
+        { categoryId: categoryId ?? null, unitIndex },
         { params },
       );
       return { previous: response.data?.previous ?? null };
@@ -723,7 +737,7 @@ export const api = {
 
   // 再学一次：清空该单元之前的学习记录，本次从零开始
   async restartStudy(
-    categoryId: string,
+    categoryId: string | null,
     unitIndex: number,
     subjectId?: string,
     knowledgePointId?: string
@@ -732,14 +746,18 @@ export const api = {
       const params: Record<string, string> = {};
       if (subjectId) params.subjectId = subjectId;
       if (knowledgePointId) params.knowledgePointId = knowledgePointId;
-      await apiClient.post('/api/app/study/restart', { categoryId, unitIndex }, { params });
+      await apiClient.post(
+        '/api/app/study/restart',
+        { categoryId: categoryId ?? null, unitIndex },
+        { params },
+      );
     } catch {
       // silently succeed in mock mode
     }
   },
 
   async finishStudy(
-    categoryId: string,
+    categoryId: string | null,
     unitIndex: number,
     stats: {
       correctCount: number;

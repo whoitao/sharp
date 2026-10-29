@@ -63,12 +63,10 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     const cached = await hasStudyCache();
     if (!cached) setInitialLoading(true);
     try {
-      const [cats, subs, availability] = await Promise.all([
-        api.getCategories('0'),
+      const [subs, availability] = await Promise.all([
         api.getSubjects(),
         api.getTextbookAvailability(),
       ]);
-      setCategories(cats);
       setSubjects(subs);
       setTextbookAvailable(availability.length > 0);
     } catch {
@@ -77,6 +75,34 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       setInitialLoading(false);
     }
   }, []);
+
+  // 分类（考试范围）为可选项，随科目变化：只显示该科目下有题目的分类；切换科目后清空已选
+  useEffect(() => {
+    let cancelled = false;
+    setSelectedCategory(null);
+    if (!selectedSubject) {
+      setCategories([]);
+      return;
+    }
+    (async () => {
+      try {
+        const tree = await api.getCategoriesBySubject(selectedSubject.id);
+        if (!cancelled) setCategories(tree);
+      } catch {
+        if (!cancelled) setCategories([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSubject]);
+
+  // 单元列表的筛选键：科目 + 知识点必选，分类为空表示「全部」
+  const buildUnitsKey = useCallback(
+    (cat: Category | null, sub: Subject | null, kp: KnowledgePoint | null): string | null =>
+      sub && kp ? `${cat?.id ?? 'all'}|${sub.id}|${kp.id}` : null,
+    []
+  );
 
   // 记录最近一次成功加载单元列表时的筛选组合，用于区分“筛选变化”和“回到页面”两种刷新
   const lastUnitsKeyRef = useRef<string | null>(null);
@@ -89,7 +115,8 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
   // 按页加载单元列表：page=1 覆盖列表，page>1 触底追加
   // silent=true 时不显示 loading、失败时保留旧数据（用于回到页面时的静默刷新）
   const fetchUnits = useCallback(async (pageToLoad: number, opts?: { silent?: boolean }) => {
-    if (!selectedCategory || !selectedSubject || !selectedKP) {
+    // 科目与知识点必选；分类不选表示不限考试范围
+    if (!selectedSubject || !selectedKP) {
       setUnits([]);
       totalUnitsRef.current = 0;
       loadedPagesRef.current = 0;
@@ -103,7 +130,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     }
     try {
       const { units: pageUnits, totalUnits } = await api.getUnits(
-        selectedCategory.id,
+        selectedCategory?.id ?? null,
         selectedSubject.id,
         selectedKP.id,
         pageToLoad,
@@ -112,7 +139,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       totalUnitsRef.current = totalUnits;
       loadedPagesRef.current = pageToLoad;
       setUnits((prev) => (pageToLoad === 1 ? pageUnits : [...prev, ...pageUnits]));
-      lastUnitsKeyRef.current = `${selectedCategory.id}|${selectedSubject.id}|${selectedKP.id}`;
+      lastUnitsKeyRef.current = buildUnitsKey(selectedCategory, selectedSubject, selectedKP);
     } catch {
       if (!silent && pageToLoad === 1) setUnits([]);
     } finally {
@@ -122,7 +149,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       }
       setRefreshing(false);
     }
-  }, [selectedCategory, selectedSubject, selectedKP]);
+  }, [selectedCategory, selectedSubject, selectedKP, buildUnitsKey]);
 
   useEffect(() => {
     fetchInitialData();
@@ -148,9 +175,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
   // 否则选中分类/科目/知识点时同一接口会被连发两次
   useFocusEffect(
     useCallback(() => {
-      const key = selectedCategory && selectedSubject && selectedKP
-        ? `${selectedCategory.id}|${selectedSubject.id}|${selectedKP.id}`
-        : null;
+      const key = buildUnitsKey(selectedCategory, selectedSubject, selectedKP);
       if (!key || key !== lastUnitsKeyRef.current) return;
       const pages = loadedPagesRef.current;
       if (pages < 1) return;
@@ -159,7 +184,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
           const refreshed: UnitInfo[] = [];
           for (let p = 1; p <= pages; p += 1) {
             const { units: pageUnits, totalUnits } = await api.getUnits(
-              selectedCategory!.id,
+              selectedCategory?.id ?? null,
               selectedSubject!.id,
               selectedKP!.id,
               p,
@@ -174,7 +199,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
           // 静默刷新失败时保留旧数据
         }
       })();
-    }, [selectedCategory, selectedSubject, selectedKP])
+    }, [selectedCategory, selectedSubject, selectedKP, buildUnitsKey])
   );
 
   // 触底加载下一页
@@ -195,16 +220,16 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
 
   const handleUnitPress = useCallback(
     async (unit: UnitInfo) => {
-      if (pressingUnitIndex !== null || !selectedCategory) return;
+      if (pressingUnitIndex !== null || !selectedSubject) return;
       setPressingUnitIndex(unit.unitIndex);
       try {
         let previousRecord: StudyRecordSummary | null = null;
         try {
           previousRecord = (
             await api.startStudy(
-              selectedCategory.id,
+              selectedCategory?.id ?? null,
               unit.unitIndex,
-              selectedSubject?.id,
+              selectedSubject.id,
               selectedKP?.id
             )
           ).previous;
@@ -213,20 +238,20 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         }
         const result = await dispatch(
           fetchQuestions({
-            categoryId: selectedCategory.id,
+            categoryId: selectedCategory?.id,
             unitIndex: unit.unitIndex,
-            subjectId: selectedSubject?.id,
+            subjectId: selectedSubject.id,
             knowledgePointId: selectedKP?.id,
           })
         );
         if (fetchQuestions.fulfilled.match(result)) {
           navigation.navigate('Quiz', {
-            categoryId: selectedCategory.id,
+            categoryId: selectedCategory?.id,
             unitIndex: unit.unitIndex,
-            categoryName: selectedCategory.name,
-            subjectId: selectedSubject?.id,
+            categoryName: selectedCategory?.name,
+            subjectId: selectedSubject.id,
             knowledgePointId: selectedKP?.id,
-            subjectName: selectedSubject?.name,
+            subjectName: selectedSubject.name,
             knowledgePointName: selectedKP?.name,
             previousRecord,
           });
@@ -260,11 +285,11 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
         <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📋</Text>
         <Text style={[styles.emptyText, { color: colors.textTertiary, fontSize: 16 * font }]}>
-          {selectedCategory && selectedSubject && selectedKP ? t.studyNoUnits : t.studySelectAllFilters}
+          {selectedSubject && selectedKP ? t.studyNoUnits : t.studySelectAllFilters}
         </Text>
       </View>
     ),
-    [spacing, font, colors.textTertiary, selectedCategory, selectedSubject, selectedKP, t.studyNoUnits, t.studySelectAllFilters]
+    [spacing, font, colors.textTertiary, selectedSubject, selectedKP, t.studyNoUnits, t.studySelectAllFilters]
   );
 
   const refreshControl = useMemo(
@@ -312,6 +337,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         onSelectKP={setSelectedKP}
         loading={initialLoading}
         allowClear
+        categoryDisabled={!selectedSubject}
       />
 
       {loading ? (

@@ -112,9 +112,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
       // 复用同一条学习记录：刚完成的成绩作为「上次学习」带入答题页
       previousRecord = chapterId
         ? (await api.startChapterStudy(chapterId, unitIndex, subjectId)).previous
-        : categoryId
-          ? (await api.startStudy(categoryId, unitIndex, subjectId, knowledgePointId)).previous
-          : null;
+        : (await api.startStudy(categoryId ?? null, unitIndex, subjectId, knowledgePointId)).previous;
     } catch {
       // silently proceed even if start fails
     }

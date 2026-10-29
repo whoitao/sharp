@@ -185,9 +185,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           subjectId,
         })
         .catch(() => {});
-    } else if (categoryId) {
+    } else if (categoryId || subjectId) {
       api
-        .finishStudy(categoryId, unitIndex, {
+        .finishStudy(categoryId ?? null, unitIndex, {
           ...stats,
           durationSeconds: elapsedRef.current,
           answers: answerItems,
@@ -454,8 +454,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     // 服务端清掉本单元之前的学习记录，本次从第一题重新开始
     if (chapterId) {
       api.restartChapterStudy(chapterId, unitIndex, subjectId).catch(() => {});
-    } else if (categoryId) {
-      api.restartStudy(categoryId, unitIndex, subjectId, knowledgePointId).catch(() => {});
+    } else if (categoryId || subjectId) {
+      api.restartStudy(categoryId ?? null, unitIndex, subjectId, knowledgePointId).catch(() => {});
     }
     dispatch(restartQuiz());
     setOptionStatuses({});

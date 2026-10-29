@@ -58,11 +58,13 @@ export const zh = {
 
   // Study
   studySelectCategory: '选择分类',
+  studyAllCategories: '全部分类',
   studySelectSubject: '选择科目',
   studySelectKnowledgePoint: '选择知识点',
   studySelectCategoryFirst: '请先选择分类',
+  studySelectSubjectFirst: '请先选择科目',
   studyNoUnits: '该条件下暂无单元',
-  studySelectAllFilters: '请同时选择分类、科目和知识点',
+  studySelectAllFilters: '请选择科目和知识点',
 
   // Common
   loading: '加载中...',
