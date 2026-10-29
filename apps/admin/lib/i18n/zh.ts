@@ -20,6 +20,9 @@ export const zh: Messages = {
     knowledgePoints: "知识点",
     questions: "题目",
     studyRecords: "学习记录",
+    publishers: "教材版本",
+    grades: "年级册别",
+    chapters: "教材章节",
   },
   settings: {
     appearance: "外观",

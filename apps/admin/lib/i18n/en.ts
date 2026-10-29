@@ -18,6 +18,9 @@ export const en = {
     knowledgePoints: "Knowledge Points",
     questions: "Questions",
     studyRecords: "Study Records",
+    publishers: "Publishers",
+    grades: "Grades",
+    chapters: "Chapters",
   },
   settings: {
     appearance: "Appearance",

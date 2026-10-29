@@ -66,10 +66,11 @@ model Subject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  questions       Question[]
-  knowledgePoints KnowledgePoint[]
-  studyRecords    UserStudyRecord[]
+  questions        Question[]
+  knowledgePoints  KnowledgePoint[]
+  studyRecords     UserStudyRecord[]
   questionProgress UserQuestionProgress[]
+  grades           Grade[]
 
   @@index([sortOrder])
 }
@@ -178,6 +179,8 @@ model KnowledgePoint {
   questions QuestionKnowledgePoint[]
   studyRecords UserStudyRecord[]
   questionProgress UserQuestionProgress[]
+  chapterLinks KnowledgePointChapter[]
+  gradeLinks   KnowledgePointGrade[]
 
   @@index([parentId])
   @@index([subjectId])
@@ -192,4 +195,81 @@ model QuestionKnowledgePoint {
 
   @@id([questionId, knowledgePointId])
   @@index([knowledgePointId])
+}
+
+// ===== 教材版本维度 =====
+// 注意：知识点主树是考纲维度（只有一套），Publisher/Grade/Chapter 是教材维度（多套）。
+// 一个知识点可关联多个版本的多个年级、多个章节，通过 KnowledgePointChapter / KnowledgePointGrade 两张表维护。
+
+model Publisher {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @unique          // 人教版 / 苏教版 / 北师大版 / 鲁教版 / 通用
+  createdAt DateTime @default(now())
+
+  grades  Grade[]
+  chapters Chapter[]
+}
+
+// 年级册别：subjectId + publisherId 联合唯一
+// level 7/8/9, semester 1=上 2=下 0=全一册
+model Grade {
+  id          BigInt   @id @default(autoincrement())
+  subjectId   BigInt
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  publisherId BigInt
+  publisher   Publisher @relation(fields: [publisherId], references: [id])
+  level       Int            // 7 / 8 / 9
+  semester    Int            // 1=上 2=下 0=全一册
+  name        String         // "七年级上" / "九年级全一册"
+  sortOrder   Int      @default(0)
+
+  chapters Chapter[]
+  kpLinks  KnowledgePointGrade[]
+
+  @@unique([subjectId, publisherId, level, semester])
+  @@index([subjectId])
+  @@index([publisherId])
+}
+
+// 教材章节树：每个 Grade 有独立的章节树
+model Chapter {
+  id         BigInt    @id @default(autoincrement())
+  gradeId    BigInt
+  grade      Grade     @relation(fields: [gradeId], references: [id])
+  parentId   BigInt?
+  parent     Chapter?  @relation("ChapterTree", fields: [parentId], references: [id])
+  children   Chapter[] @relation("ChapterTree")
+  publisherId BigInt?
+  publisher  Publisher? @relation(fields: [publisherId], references: [id])
+  name       String
+  sortOrder  Int       @default(0)
+
+  kpLinks KnowledgePointChapter[]
+
+  @@index([gradeId])
+  @@index([parentId])
+}
+
+// 知识点 ↔ 章节 关联（多对多核心表）
+model KnowledgePointChapter {
+  knowledgePointId BigInt
+  chapterId        BigInt
+
+  knowledgePoint KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+  chapter        Chapter        @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@id([knowledgePointId, chapterId])
+  @@index([chapterId])
+}
+
+// 知识点 ↔ 年级 冗余关联（加速"按年级查知识点"查询）
+model KnowledgePointGrade {
+  knowledgePointId BigInt
+  gradeId          BigInt
+
+  knowledgePoint KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+  grade          Grade          @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+
+  @@id([knowledgePointId, gradeId])
+  @@index([gradeId])
 }

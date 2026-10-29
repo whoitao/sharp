@@ -7,6 +7,7 @@ import {
   AppstoreOutlined,
   BookOutlined,
   DashboardOutlined,
+  FileTextOutlined,
   GlobalOutlined,
   InfoCircleOutlined,
   LogoutOutlined,
@@ -19,7 +20,8 @@ import {
   SunOutlined,
   TagsOutlined,
   TeamOutlined,
-  UserOutlined,
+  UnorderedListOutlined,
+  UserOutlined
 } from "@ant-design/icons";
 import {
   App,
@@ -46,6 +48,9 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/knowledge-points", icon: <TagsOutlined />, labelKey: "nav.knowledgePoints" },
   { key: "/questions", icon: <QuestionCircleOutlined />, labelKey: "nav.questions" },
   { key: "/study-records", icon: <OrderedListOutlined />, labelKey: "nav.studyRecords" },
+  { key: "/publishers", icon: <FileTextOutlined />, labelKey: "nav.publishers" },
+  { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.grades" },
+  { key: "/chapters", icon: <AppstoreOutlined />, labelKey: "nav.chapters" },
 ];
 
 const THEME_OPTIONS: { value: ThemeMode; labelKey: MessageKey; icon: React.ReactNode }[] = [

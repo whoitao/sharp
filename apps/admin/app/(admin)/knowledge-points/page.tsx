@@ -1,5 +1,6 @@
 "use client";
 
+import IonIcon from "@/components/IonIcon";
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
@@ -40,6 +41,7 @@ interface KPNode {
 interface SubjectItem {
   id: string;
   name: string;
+  icon?: string | null;
 }
 
 interface CreateFormValues {
@@ -136,7 +138,19 @@ export default function KnowledgePointsPage() {
     return convert(tree);
   }, [tree]);
 
-  const subjectOptions = subjects.map((s) => ({ value: s.id, label: s.name }));
+  const subjectOptions = subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }));
+  const subjectOptionRender = (opt: any) => (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+      <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
+      {opt.label}
+    </span>
+  );
+  const subjectLabelRender = (opt: any) => (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+      <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
+      {opt.label}
+    </span>
+  );
 
   const handleCreate = async (values: CreateFormValues) => {
     setSaving(true);
@@ -322,6 +336,8 @@ export default function KnowledgePointsPage() {
             value={selectedSubjectId}
             onChange={(v) => setSelectedSubjectId(v)}
             options={subjectOptions}
+            optionRender={subjectOptionRender}
+            labelRender={subjectLabelRender}
           />
         </Space>
       </Card>
@@ -389,6 +405,8 @@ export default function KnowledgePointsPage() {
               allowClear
               placeholder={t("knowledgePoints.subjectPlaceholder")}
               options={subjectOptions}
+              optionRender={subjectOptionRender}
+              labelRender={subjectLabelRender}
             />
           </Form.Item>
           <Form.Item label={t("knowledgePoints.sortOrder")} name="sortOrder" initialValue={0}>
@@ -431,6 +449,8 @@ export default function KnowledgePointsPage() {
               allowClear
               placeholder={t("knowledgePoints.subjectPlaceholder")}
               options={subjectOptions}
+              optionRender={subjectOptionRender}
+              labelRender={subjectLabelRender}
             />
           </Form.Item>
           <Form.Item label={t("knowledgePoints.sortOrder")} name="sortOrder">
