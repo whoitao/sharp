@@ -10,10 +10,14 @@ export async function POST(request: NextRequest) {
   const { categoryId, unitIndex, chapterId, correctCount, wrongCount, durationSeconds, answers, subjectId, knowledgePointId } = body;
 
   const isChapter = chapterId !== undefined && chapterId !== null;
+  // 考纲练习：分类可选，不选时按科目聚合全部题目
+  const hasCategory = categoryId !== undefined && categoryId !== null;
+  // 记录与进度上的分类：教材练习与无分类的考纲练习都取题目自身分类
+  const categoryFromQuestion = isChapter || !hasCategory;
 
   if (
     unitIndex === undefined ||
-    (categoryId === undefined && !isChapter) ||
+    (categoryId == null && !isChapter && !subjectId) ||
     correctCount === undefined ||
     wrongCount === undefined ||
     durationSeconds === undefined
@@ -36,7 +40,7 @@ export async function POST(request: NextRequest) {
 
   const recordWhere = {
     userId: appUser.id,
-    categoryId: isChapter ? null : BigInt(categoryId),
+    categoryId: categoryFromQuestion ? null : BigInt(categoryId),
     chapterId: isChapter ? BigInt(chapterId) : null,
     unitIndex,
   };
@@ -75,10 +79,10 @@ export async function POST(request: NextRequest) {
     : (filterWhere ?? {});
 
   // Batch update question progress from answers
-  // 进度上的 categoryId 必填：教材章节练习跨分类，取每道题自身的分类；
-  // 考纲练习沿用学习时选择的分类，保持历史口径不变。
+  // 进度上的 categoryId 必填：教材章节练习与未选分类的考纲练习跨分类，取每道题自身的分类；
+  // 选了分类的考纲练习沿用学习时选择的分类，保持历史口径不变。
   const questionCategoryMap = new Map<string, bigint>();
-  if (isChapter && answers && Array.isArray(answers)) {
+  if (categoryFromQuestion && answers && Array.isArray(answers)) {
     const answeredIds = answers
       .filter((a: any) => a?.questionId)
       .map((a: any) => BigInt(a.questionId));
@@ -96,7 +100,7 @@ export async function POST(request: NextRequest) {
       const { questionId, selectedKeys, isCorrect } = answer;
       if (!questionId) continue;
 
-      const progressCategoryId = isChapter
+      const progressCategoryId = categoryFromQuestion
         ? questionCategoryMap.get(String(questionId))
         : BigInt(categoryId);
       // 题目被删除或取不到分类时跳过，避免写入非法外键

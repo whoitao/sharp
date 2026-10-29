@@ -13,22 +13,26 @@ export async function POST(request: NextRequest) {
   const { categoryId, unitIndex, chapterId } = body;
 
   const isChapter = chapterId !== undefined && chapterId !== null;
-  if (unitIndex === undefined || (categoryId === undefined && !isChapter)) {
+  // 考纲练习：分类可选，不选时按科目聚合全部题目
+  const hasCategory = categoryId !== undefined && categoryId !== null;
+
+  const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
+  const knowledgePointIdRaw = request.nextUrl.searchParams.get("knowledgePointId");
+  const subjectId = subjectIdRaw ? BigInt(subjectIdRaw) : null;
+
+  if (unitIndex === undefined || (!isChapter && !hasCategory && !subjectId)) {
     return NextResponse.json(
-      { error: "unitIndex and (categoryId or chapterId) are required" },
+      { error: "unitIndex and (categoryId, chapterId or subjectId) are required" },
       { status: 400 },
     );
   }
 
-  const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
-  const knowledgePointIdRaw = request.nextUrl.searchParams.get("knowledgePointId");
-
   const where = {
     userId: appUser.id,
-    categoryId: isChapter ? null : BigInt(categoryId),
+    categoryId: isChapter || !hasCategory ? null : BigInt(categoryId),
     chapterId: isChapter ? BigInt(chapterId) : null,
     unitIndex,
-    subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : null,
+    subjectId,
     // 章节练习不按知识点筛选，记录上的知识点固定为空
     knowledgePointId: isChapter || !knowledgePointIdRaw ? null : BigInt(knowledgePointIdRaw),
   };

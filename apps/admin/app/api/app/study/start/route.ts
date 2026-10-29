@@ -24,23 +24,25 @@ export async function POST(request: NextRequest) {
   const { categoryId, unitIndex, chapterId } = body;
 
   const isChapter = chapterId !== undefined && chapterId !== null;
-  if (unitIndex === undefined || (categoryId === undefined && !isChapter)) {
-    return NextResponse.json(
-      { error: "unitIndex and (categoryId or chapterId) are required" },
-      { status: 400 },
-    );
-  }
+  // 考纲练习：分类可选，不选时按科目聚合全部题目
+  const hasCategory = categoryId !== undefined && categoryId !== null;
 
   // 可选筛选：科目 / 知识点（查询参数），与 units、questions 接口保持一致的过滤口径
   const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
   const knowledgePointIdRaw = request.nextUrl.searchParams.get("knowledgePointId");
+  const subjectId = subjectIdRaw ? BigInt(subjectIdRaw) : null;
+
+  if (unitIndex === undefined || (!isChapter && !hasCategory && !subjectId)) {
+    return NextResponse.json(
+      { error: "unitIndex and (categoryId, chapterId or subjectId) are required" },
+      { status: 400 },
+    );
+  }
 
   const settings = await prisma.userSettings.findUnique({
     where: { userId: appUser.id },
   });
   const unitSize = settings?.unitSize ?? 20;
-
-  const subjectId = subjectIdRaw ? BigInt(subjectIdRaw) : null;
 
   // 两种来源的取题口径：
   // - 考纲：分类子树 + 可选科目/知识点
@@ -62,14 +64,15 @@ export async function POST(request: NextRequest) {
     questionWhere = where;
     filter = { categoryId: null, chapterId: BigInt(chapterId), subjectId, knowledgePointId: null };
   } else {
-    const allCategoryIds = await getAllCategoryIds(BigInt(categoryId));
-    questionWhere = { categoryId: { in: allCategoryIds } };
-    if (subjectId) questionWhere.subjectId = subjectId;
+    const where: Record<string, unknown> = {};
+    if (hasCategory) where.categoryId = { in: await getAllCategoryIds(BigInt(categoryId)) };
+    if (subjectId) where.subjectId = subjectId;
     if (knowledgePointIdRaw) {
-      questionWhere.knowledgePoints = { some: { knowledgePointId: BigInt(knowledgePointIdRaw) } };
+      where.knowledgePoints = { some: { knowledgePointId: BigInt(knowledgePointIdRaw) } };
     }
+    questionWhere = where;
     filter = {
-      categoryId: BigInt(categoryId),
+      categoryId: hasCategory ? BigInt(categoryId) : null,
       chapterId: null,
       subjectId,
       knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
