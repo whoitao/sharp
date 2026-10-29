@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
 
   const categoryIdRaw = url.searchParams.get("categoryId");
   const knowledgePointIdRaw = url.searchParams.get("knowledgePointId");
+  const gradeIdRaw = url.searchParams.get("gradeId");
+  const tagIdsRaw = url.searchParams.get("tagIds");
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") ?? "10", 10) || 10));
 
@@ -42,6 +44,17 @@ export async function GET(request: NextRequest) {
     questionWhere.knowledgePoints = {
       some: { knowledgePointId: BigInt(knowledgePointIdRaw) },
     };
+  }
+  // 年级：历史数据没有年级（null）视为不限年级，避免存量题被过滤掉
+  if (gradeIdRaw) {
+    questionWhere.OR = [{ gradeId: BigInt(gradeIdRaw) }, { gradeId: null }];
+  }
+  // 标签：多选 chips 命中任意一个即可
+  const tagIds = tagIdsRaw
+    ? tagIdsRaw.split(",").map((s) => s.trim()).filter(Boolean).map((s) => BigInt(s))
+    : [];
+  if (tagIds.length > 0) {
+    questionWhere.tags = { some: { tagId: { in: tagIds } } };
   }
 
   // Get user settings for unit size
@@ -117,6 +130,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     subjectId: subjectIdRaw,
     categoryId: categoryIdRaw,
+    gradeId: gradeIdRaw,
+    tagIds: tagIds.map((t) => t.toString()),
     unitSize,
     totalQuestions,
     totalUnits,

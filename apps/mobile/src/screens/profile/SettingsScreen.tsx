@@ -32,13 +32,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { unitSize, theme, language, density, publisherId, gradeLevel } = useSelector(
+  const { unitSize, theme, language, density, publisherId, gradeId, subjectId } = useSelector(
     (state: RootState) => state.settings,
   );
   const [crashCount, setCrashCount] = useState(0);
   const [logoutVisible, setLogoutVisible] = useState(false);
-  // 教材版本名称，用于展示「我的教材」当前值
+  // 「我的教材」当前值文案需要的名称映射
   const [publisherName, setPublisherName] = useState<string | null>(null);
+  const [gradeName, setGradeName] = useState<string | null>(null);
+  const [subjectName, setSubjectName] = useState<string | null>(null);
 
   const loadCrashCount = useCallback(async () => {
     setCrashCount((await readCrashes()).length);
@@ -51,7 +53,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         const matched = list.find((publisher) => publisher.id === publisherId);
         setPublisherName(matched?.name ?? null);
       });
-    }, [loadCrashCount, publisherId])
+      api.getGrades().then((list) => {
+        setGradeName(list.find((grade) => grade.id === gradeId)?.name ?? null);
+      });
+      api.getSubjects().then((list) => {
+        setSubjectName(list.find((subject) => subject.id === subjectId)?.name ?? null);
+      });
+    }, [loadCrashCount, publisherId, gradeId, subjectId])
   );
 
   // 当前值文案（显示在入口行右侧）
@@ -59,8 +67,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const themeLabel = t[THEME_OPTIONS.find((o) => o.value === theme)?.labelKey ?? 'system'];
   const densityLabel = t[DENSITY_OPTIONS.find((o) => o.value === density)?.labelKey ?? 'densityComfortable'];
   const textbookLabel =
-    publisherId && gradeLevel
-      ? [publisherName, t.textbookGrade(gradeLevel)].filter(Boolean).join(' · ')
+    publisherId && gradeId
+      ? [subjectName, publisherName, gradeName].filter(Boolean).join(' · ')
       : t.textbookNotSet;
 
   // 一级入口：点击进入二级页选择具体值

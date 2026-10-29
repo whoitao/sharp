@@ -20,9 +20,10 @@ import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import {
   setDensity,
-  setGradeLevel,
+  setGradeId,
   setLanguage,
   setPublisherId,
+  setSubjectId,
   setTheme,
   setUnitSize,
   updateSettings
@@ -51,14 +52,14 @@ const SettingOptionScreen: React.FC<SettingOptionScreenProps> = ({ navigation, r
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { unitSize, theme, language, density, publisherId, gradeLevel } = useSelector(
+  const { unitSize, theme, language, density, publisherId, gradeId, subjectId } = useSelector(
     (state: RootState) => state.settings,
   );
 
-  // 「我的教材」可选项：有教材内容的科目 × 版本 × 年级册别（同版本+年级去重）
+  // 「我的教材」可选项：有教材内容的科目 × 版本 × 年级（同科目+版本+年级去重）
   const [textbookLoading, setTextbookLoading] = useState(false);
   const [textbookOptions, setTextbookOptions] = useState<
-    { label: string; publisherId: string; level: number }[]
+    { label: string; publisherId: string; gradeId: string; subjectId: string }[]
   >([]);
 
   useEffect(() => {
@@ -71,28 +72,27 @@ const SettingOptionScreen: React.FC<SettingOptionScreenProps> = ({ navigation, r
           api.getTextbookAvailability(),
           api.getPublishers(),
         ]);
-        const combos = subjects.flatMap((subject) =>
-          publishers.map((publisher) => ({ subject, publisher })),
-        );
-        const pairs = await Promise.all(
-          combos.map(async ({ subject, publisher }) => ({
-            publisher,
-            grades: await api.getGrades(subject.subjectId, publisher.id),
-          })),
-        );
+        const publisherName = new Map(publishers.map((p) => [p.id, p.name]));
         const seen = new Set<string>();
-        const list: { label: string; publisherId: string; level: number }[] = [];
-        for (const { publisher, grades } of pairs) {
-          for (const grade of grades) {
-            if (grade.chapterCount === 0) continue;
-            const dedupeKey = `${publisher.id}-${grade.level}`;
-            if (seen.has(dedupeKey)) continue;
-            seen.add(dedupeKey);
-            list.push({
-              label: `${publisher.name} · ${grade.name}`,
-              publisherId: publisher.id,
-              level: grade.level,
-            });
+        const list: { label: string; publisherId: string; gradeId: string; subjectId: string }[] =
+          [];
+        for (const subject of subjects) {
+          const grades = await api.getGrades(subject.subjectId);
+          const availableGradeIds = new Set(subject.gradeIds ?? []);
+          for (const publisherId of subject.publisherIds ?? []) {
+            for (const grade of grades) {
+              if (grade.chapterCount === 0) continue;
+              if (availableGradeIds.size > 0 && !availableGradeIds.has(grade.id)) continue;
+              const dedupeKey = `${subject.subjectId}-${publisherId}-${grade.id}`;
+              if (seen.has(dedupeKey)) continue;
+              seen.add(dedupeKey);
+              list.push({
+                label: `${subject.subjectName} · ${publisherName.get(publisherId) ?? ''} · ${grade.name}`,
+                publisherId,
+                gradeId: grade.id,
+                subjectId: subject.subjectId,
+              });
+            }
           }
         }
         if (!cancelled) setTextbookOptions(list);
@@ -144,11 +144,21 @@ const SettingOptionScreen: React.FC<SettingOptionScreenProps> = ({ navigation, r
   } else if (key === 'textbook') {
     items = textbookOptions.map((opt) => ({
       label: opt.label,
-      selected: publisherId === opt.publisherId && gradeLevel === opt.level,
+      selected:
+        publisherId === opt.publisherId &&
+        gradeId === opt.gradeId &&
+        subjectId === opt.subjectId,
       onSelect: () => {
         dispatch(setPublisherId(opt.publisherId));
-        dispatch(setGradeLevel(opt.level));
-        dispatch(updateSettings({ publisherId: opt.publisherId, gradeLevel: opt.level }));
+        dispatch(setGradeId(opt.gradeId));
+        dispatch(setSubjectId(opt.subjectId));
+        dispatch(
+          updateSettings({
+            publisherId: opt.publisherId,
+            gradeId: opt.gradeId,
+            subjectId: opt.subjectId,
+          }),
+        );
         navigation.goBack();
       },
     }));

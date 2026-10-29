@@ -2,38 +2,60 @@ import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-/** 年级册别列表：必须按 subjectId + publisherId 过滤，教材版本跨科目共享但年级是科目维度 */
+/**
+ * 年级字典（全局选择器用）。
+ * 可选 subjectId：同时返回该科目下各年级的题目数与教材章节数，方便移动端只展示有内容的年级。
+ */
 export async function GET(request: NextRequest) {
   const appUser = requireAppUser(request);
   if (appUser instanceof NextResponse) return appUser;
 
   const url = new URL(request.url);
-  const subjectId = url.searchParams.get("subjectId");
-  const publisherId = url.searchParams.get("publisherId");
+  const subjectIdRaw = url.searchParams.get("subjectId");
 
-  if (!subjectId || !publisherId) {
+  const grades = await prisma.grade.findMany({
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+  });
+
+  if (!subjectIdRaw) {
     return NextResponse.json(
-      { error: "subjectId and publisherId are required" },
-      { status: 400 },
+      grades.map((g) => ({
+        id: g.id.toString(),
+        name: g.name,
+        stage: g.stage,
+        sortOrder: g.sortOrder,
+      })),
     );
   }
 
-  const grades = await prisma.grade.findMany({
-    where: { subjectId: BigInt(subjectId), publisherId: BigInt(publisherId) },
-    orderBy: [{ level: "asc" }, { semester: "asc" }],
-    include: { _count: { select: { chapters: true } } },
-  });
+  const subjectId = BigInt(subjectIdRaw);
+  const [questionGroups, chapterGroups] = await Promise.all([
+    prisma.question.groupBy({
+      by: ["gradeId"],
+      where: { subjectId },
+      _count: { _all: true },
+    }),
+    prisma.chapter.groupBy({
+      by: ["gradeId"],
+      where: { subjectId },
+      _count: { _all: true },
+    }),
+  ]);
+  const questionCount = new Map(
+    questionGroups.map((g) => [g.gradeId?.toString() ?? "null", g._count._all]),
+  );
+  const chapterCount = new Map(
+    chapterGroups.map((g) => [g.gradeId.toString(), g._count._all]),
+  );
 
   return NextResponse.json(
     grades.map((g) => ({
       id: g.id.toString(),
-      subjectId: g.subjectId.toString(),
-      publisherId: g.publisherId.toString(),
-      level: g.level,
-      semester: g.semester,
       name: g.name,
+      stage: g.stage,
       sortOrder: g.sortOrder,
-      chapterCount: g._count.chapters,
+      questionCount: questionCount.get(g.id.toString()) ?? 0,
+      chapterCount: chapterCount.get(g.id.toString()) ?? 0,
     })),
   );
 }

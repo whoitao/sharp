@@ -48,7 +48,13 @@ export interface Category {
 export interface Question {
   id: string;
   categoryId: string;
+  /** 年级；历史数据可能为空（不限年级） */
+  gradeId: string | null;
   subjectId: string | null;
+  /** 教材章节；教材同步题才有 */
+  chapterId?: string | null;
+  /** 题目来源：exam 真题 / textbook 教材同步 / mock 模拟 / custom 自建 */
+  source?: string;
   type: QuestionType;
   content: string;
   analysis: string | null;
@@ -58,6 +64,7 @@ export interface Question {
   createdAt: string;
   options: QuestionOption[];
   knowledgePoints?: { id: string; name: string; parentId: string | null }[];
+  tags?: { id: string; name: string; type: string }[];
 }
 
 export interface QuestionOption {
@@ -85,9 +92,12 @@ export interface UserSettings {
   theme: Theme;
   language: Language;
   density: Density;
-  /** 「我的教材」：教材版本（publisher）与年级（7/8/9），未设置为 null */
+  /** 全局学习范围：年级 */
+  gradeId?: string | null;
+  /** 全局学习范围：科目 */
+  subjectId?: string | null;
+  /** 「我的教材」：教材版本（publisher） */
   publisherId?: string | null;
-  gradeLevel?: number | null;
 }
 
 export interface Admin {
@@ -130,29 +140,36 @@ export interface KnowledgePoint {
   updatedAt?: string;
 }
 
-// ─── 教材（Publisher / Grade / Chapter）──────────────────────────────────────
+// ─── 教材（Publisher / Grade / Chapter / Tag）───────────────────────────────
 
 export interface Publisher {
   id: string;
   name: string;
-  gradeCount: number;
+  chapterCount: number;
 }
 
+/** 年级字典：小学一年级 ~ 大学四年级，与科目/教材版本无关 */
 export interface Grade {
   id: string;
-  subjectId: string;
-  publisherId: string;
-  level: number;
-  semester: number;
   name: string;
+  /** 小学 / 初中 / 高中 / 大学 */
+  stage: string;
   sortOrder: number;
-  chapterCount: number;
+  /** 该年级下题目数（按科目过滤时返回） */
+  questionCount?: number;
+  chapterCount?: number;
 }
 
 export interface Chapter {
   id: string;
   gradeId: string;
+  subjectId: string;
+  publisherId: string;
   parentId: string | null;
+  /** 1=册 2=章 3=节 */
+  level: number;
+  /** 仅 level=1 有意义：1=上 2=下 0=全一册 */
+  semester: number | null;
   name: string;
   sortOrder: number;
   /** 含后代章节的题目数 */
@@ -160,11 +177,24 @@ export interface Chapter {
   children: Chapter[];
 }
 
+/** 题目标签：type 区分用途 exam 考试类型 / source 题目来源 / difficulty 难度 */
+export interface QuestionTag {
+  id: string;
+  name: string;
+  type: string;
+  sortOrder: number;
+  questionCount?: number;
+}
+
 /** 有教材内容的科目（移动端用它决定是否露出教材入口） */
 export interface TextbookSubjectAvailability {
   subjectId: string;
   subjectName: string;
   publisherCount: number;
+  /** 该科目下已有教材内容的版本 ID */
+  publisherIds: string[];
+  /** 该科目下已有教材内容的年级 ID */
+  gradeIds: string[];
   chapterCount: number;
 }
 
@@ -193,10 +223,12 @@ export interface StudyRecord {
   userId: string;
   /** 教材章节练习没有分类，categoryId 为 null */
   categoryId: string | null;
+  /** 考纲练习的年级（教材练习由章节反推） */
+  gradeId?: string | null;
   /** 教材章节练习来源；考纲练习为 null */
   chapterId?: string | null;
   chapterName?: string | null;
-  /** 教材版本 · 年级，如「人教版 · 七年级上册」 */
+  /** 教材版本 · 年级，如「人教版 · 初一」 */
   textbookLabel?: string | null;
   /** 学习时选择的科目筛选（null = 未筛选） */
   subjectId: string | null;
@@ -318,7 +350,10 @@ export interface UpdateCategoryRequest {
 
 export interface CreateQuestionRequest {
   categoryId: string;
+  gradeId?: string;
   subjectId?: string;
+  chapterId?: string;
+  tagIds?: string[];
   knowledgePointIds?: string[];
   type: QuestionType;
   content: string;
@@ -334,7 +369,10 @@ export interface CreateQuestionRequest {
 }
 
 export interface UpdateQuestionRequest {
+  gradeId?: string | null;
   subjectId?: string;
+  chapterId?: string | null;
+  tagIds?: string[];
   knowledgePointIds?: string[];
   type?: QuestionType;
   content?: string;

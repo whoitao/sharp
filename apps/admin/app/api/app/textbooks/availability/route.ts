@@ -12,35 +12,42 @@ export async function GET(request: NextRequest) {
 
   const chaptersWithQuestions = await prisma.chapter.findMany({
     where: { questions: { some: {} } },
-    select: { id: true, gradeId: true, publisherId: true },
+    select: { id: true, subjectId: true, gradeId: true, publisherId: true },
   });
 
   if (chaptersWithQuestions.length === 0) return NextResponse.json({ subjects: [] });
 
-  const gradeIds = [...new Set(chaptersWithQuestions.map((c) => c.gradeId.toString()))].map((s) => BigInt(s));
-  const grades = await prisma.grade.findMany({
-    where: { id: { in: gradeIds } },
-    select: { id: true, subjectId: true, subject: { select: { name: true } } },
+  const subjects = await prisma.subject.findMany({
+    where: {
+      id: { in: [...new Set(chaptersWithQuestions.map((c) => c.subjectId.toString()))].map((s) => BigInt(s)) },
+    },
+    select: { id: true, name: true },
   });
-  const gradeSubject = new Map(grades.map((g) => [g.id.toString(), g.subjectId.toString()]));
-  const subjectNames = new Map(grades.map((g) => [g.subjectId.toString(), g.subject.name]));
+  const subjectName = new Map(subjects.map((s) => [s.id.toString(), s.name]));
 
-  const bySubject = new Map<string, { publisherIds: Set<string>; chapterCount: number }>();
+  const bySubject = new Map<
+    string,
+    { publisherIds: Set<string>; gradeIds: Set<string>; chapterCount: number }
+  >();
   for (const c of chaptersWithQuestions) {
-    const subjectId = gradeSubject.get(c.gradeId.toString());
-    if (!subjectId) continue;
-    const entry = bySubject.get(subjectId) ?? { publisherIds: new Set<string>(), chapterCount: 0 };
-    if (c.publisherId != null) entry.publisherIds.add(c.publisherId.toString());
+    const subjectId = c.subjectId.toString();
+    const entry =
+      bySubject.get(subjectId) ??
+      { publisherIds: new Set<string>(), gradeIds: new Set<string>(), chapterCount: 0 };
+    entry.publisherIds.add(c.publisherId.toString());
+    entry.gradeIds.add(c.gradeId.toString());
     entry.chapterCount += 1;
     bySubject.set(subjectId, entry);
   }
 
-  const subjects = [...bySubject.entries()].map(([subjectId, v]) => ({
-    subjectId,
-    subjectName: subjectNames.get(subjectId) ?? "",
-    publisherCount: v.publisherIds.size,
-    chapterCount: v.chapterCount,
-  }));
-
-  return NextResponse.json({ subjects });
+  return NextResponse.json({
+    subjects: [...bySubject.entries()].map(([subjectId, v]) => ({
+      subjectId,
+      subjectName: subjectName.get(subjectId) ?? "",
+      publisherCount: v.publisherIds.size,
+      publisherIds: [...v.publisherIds],
+      gradeIds: [...v.gradeIds],
+      chapterCount: v.chapterCount,
+    })),
+  });
 }

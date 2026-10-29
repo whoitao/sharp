@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { categoryId, unitIndex, chapterId, correctCount, wrongCount, durationSeconds, answers, subjectId, knowledgePointId } = body;
+  const { categoryId, gradeId, unitIndex, chapterId, correctCount, wrongCount, durationSeconds, answers, subjectId, knowledgePointId, tagIds } = body;
 
   const isChapter = chapterId !== undefined && chapterId !== null;
   // 考纲练习：分类可选，不选时按科目聚合全部题目
@@ -28,13 +28,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 标签筛选上下文：与 start 保持一致（升序逗号串）
+  const tagFilter =
+    !isChapter && Array.isArray(tagIds) && tagIds.length > 0
+      ? tagIds
+          .map((t: unknown) => String(t))
+          .sort()
+          .join(",")
+      : null;
+
   // 客户端会带上本次的筛选条件：同一单元在不同筛选下各有一条记录，必须按完整键定位。
   // 没带（旧版本客户端）或定位不到时退化为「该单元最新一条」。
   const filterWhere =
-    subjectId !== undefined || knowledgePointId !== undefined
+    subjectId !== undefined ||
+    knowledgePointId !== undefined ||
+    gradeId !== undefined ||
+    tagIds !== undefined
       ? {
           subjectId: subjectId ? BigInt(subjectId) : null,
           knowledgePointId: knowledgePointId ? BigInt(knowledgePointId) : null,
+          gradeId: gradeId ? BigInt(gradeId) : null,
+          tagFilter,
         }
       : null;
 
@@ -69,6 +83,8 @@ export async function POST(request: NextRequest) {
         durationSeconds,
         startedAt: new Date(finishedAt.getTime() - durationSeconds * 1000),
         finishedAt,
+        // 旧记录没有年级时，借本次学习补上
+        ...(gradeId && !isChapter ? { gradeId: BigInt(gradeId) } : {}),
       },
     });
   }

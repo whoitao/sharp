@@ -54,12 +54,14 @@ export const zh = {
   homeNoQuestions: '暂无题目',
   homeStreak: (days: number) => `连续 ${days} 天`,
   homeDaily: '每日挑战',
+  studyByKnowledge: '按知识点学',
   homeReport: '学习报告',
 
   // Study
   studySelectCategory: '选择分类',
   studyAllCategories: '全部分类',
   studySelectSubject: '选择科目',
+  studySelectGrade: '选择年级',
   studySelectKnowledgePoint: '选择知识点',
   studySelectCategoryFirst: '请先选择分类',
   studySelectSubjectFirst: '请先选择科目',
@@ -182,8 +184,6 @@ export const zh = {
   textbookNoQuestions: '本章暂无题目',
   textbookUnitsEmpty: '本章暂无单元',
   textbookChapterQuestions: (num: number) => `${formatCount(num)} 道题`,
-  textbookGrade: (level: number) =>
-    `${['', '', '', '', '', '', '', '七', '八', '九'][level] ?? level}年级`,
 
   // Avatar
   editAvatar: '点击更换头像',

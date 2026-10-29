@@ -61,7 +61,7 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch<AppDispatch>();
   const {
     publisherId: savedPublisherId,
-    gradeLevel: savedGradeLevel,
+    gradeId: savedGradeId,
     initialized: settingsInitialized,
   } = useSelector((state: RootState) => state.settings);
 
@@ -73,7 +73,7 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selectorVisible, setSelectorVisible] = useState(false);
 
-  // 组合出可选的教材列表：有内容的科目 × 版本 × 年级册别
+  // 组合出可选的教材列表：有内容的科目 × 版本（该书已有内容的版本）× 年级（该书已有内容的年级）
   const loadTextbooks = useCallback(async () => {
     const [subjects, publishers] = await Promise.all([
       api.getTextbookAvailability(),
@@ -86,28 +86,26 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
       return;
     }
 
-    const combos = subjects.flatMap((subject) =>
-      publishers.map((publisher) => ({ subject, publisher })),
-    );
-    const gradePairs = await Promise.all(
-      combos.map(async ({ subject, publisher }) => ({
-        subject,
-        publisher,
-        grades: await api.getGrades(subject.subjectId, publisher.id),
-      })),
-    );
-
+    const publisherName = new Map(publishers.map((p) => [p.id, p.name]));
     const list: TextbookOption[] = [];
-    for (const { subject, publisher, grades } of gradePairs) {
-      for (const grade of grades) {
-        if (grade.chapterCount === 0) continue;
-        list.push({
-          subjectId: subject.subjectId,
-          subjectName: subject.subjectName,
-          publisherId: publisher.id,
-          publisherName: publisher.name,
-          grade,
-        });
+    for (const subject of subjects) {
+      const grades = await api.getGrades(subject.subjectId);
+      const availableGradeIds = new Set(subject.gradeIds ?? []);
+      const candidateGrades = grades.filter(
+        (grade) =>
+          (availableGradeIds.size === 0 || availableGradeIds.has(grade.id)) &&
+          (grade.chapterCount ?? 0) > 0,
+      );
+      for (const publisherId of subject.publisherIds ?? []) {
+        for (const grade of candidateGrades) {
+          list.push({
+            subjectId: subject.subjectId,
+            subjectName: subject.subjectName,
+            publisherId,
+            publisherName: publisherName.get(publisherId) ?? '',
+            grade,
+          });
+        }
       }
     }
     setOptions(list);
@@ -116,7 +114,7 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
   const loadChapters = useCallback(async (option: TextbookOption) => {
     setChaptersLoading(true);
     try {
-      const tree = await api.getChapters(option.grade.id, option.subjectId);
+      const tree = await api.getChapters(option.grade.id, option.subjectId, option.publisherId);
       setChapters(tree);
     } finally {
       setChaptersLoading(false);
@@ -147,11 +145,11 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
       if (prev) return prev;
       const saved = options.find(
         (option) =>
-          option.publisherId === savedPublisherId && option.grade.level === savedGradeLevel,
+          option.publisherId === savedPublisherId && option.grade.id === savedGradeId,
       );
       return saved ?? options[0];
     });
-  }, [options, settingsInitialized, savedPublisherId, savedGradeLevel]);
+  }, [options, settingsInitialized, savedPublisherId, savedGradeId]);
 
   useEffect(() => {
     if (!selected) {
@@ -170,9 +168,13 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
   const handleSelect = (option: TextbookOption) => {
     setSelected(option);
     setSelectorVisible(false);
-    // 「我的教材」只持久化版本 + 年级，科目/册别从教材数据中反查
+    // 「我的教材」持久化科目 + 版本 + 年级，首页/学习页与其他入口共用同一套全局范围
     dispatch(
-      updateSettings({ publisherId: option.publisherId, gradeLevel: option.grade.level }),
+      updateSettings({
+        subjectId: option.subjectId,
+        publisherId: option.publisherId,
+        gradeId: option.grade.id,
+      }),
     );
   };
 

@@ -16,9 +16,10 @@ export async function GET(request: NextRequest) {
     theme: settings?.theme ?? "system",
     language: settings?.language ?? "zh",
     density: settings?.density ?? "comfortable",
-    // 「我的教材」：教材练习页默认落到的版本 + 年级
+    // 全局学习范围：年级 + 科目 + 教材版本
+    gradeId: settings?.gradeId?.toString() ?? null,
+    subjectId: settings?.subjectId?.toString() ?? null,
     publisherId: settings?.publisherId?.toString() ?? null,
-    gradeLevel: settings?.gradeLevel ?? null,
   });
 }
 
@@ -27,9 +28,28 @@ export async function PUT(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { unitSize, theme, language, density, publisherId, gradeLevel } = body;
+  const { unitSize, theme, language, density, gradeId, subjectId, publisherId } = body;
 
   const data: Record<string, any> = {};
+
+  if (gradeId !== undefined) {
+    if (gradeId === null) {
+      data.gradeId = null;
+    } else {
+      const exists = await prisma.grade.findUnique({ where: { id: BigInt(gradeId) } });
+      if (!exists) return NextResponse.json({ error: "grade not found" }, { status: 400 });
+      data.gradeId = BigInt(gradeId);
+    }
+  }
+  if (subjectId !== undefined) {
+    if (subjectId === null) {
+      data.subjectId = null;
+    } else {
+      const exists = await prisma.subject.findUnique({ where: { id: BigInt(subjectId) } });
+      if (!exists) return NextResponse.json({ error: "subject not found" }, { status: 400 });
+      data.subjectId = BigInt(subjectId);
+    }
+  }
   if (publisherId !== undefined) {
     if (publisherId === null) {
       data.publisherId = null;
@@ -40,12 +60,6 @@ export async function PUT(request: NextRequest) {
       }
       data.publisherId = BigInt(publisherId);
     }
-  }
-  if (gradeLevel !== undefined) {
-    if (gradeLevel !== null && ![7, 8, 9].includes(gradeLevel)) {
-      return NextResponse.json({ error: "gradeLevel must be 7, 8, 9 or null" }, { status: 400 });
-    }
-    data.gradeLevel = gradeLevel;
   }
   if (unitSize !== undefined) {
     if (unitSize < 5 || unitSize > 100) {
@@ -99,7 +113,8 @@ export async function PUT(request: NextRequest) {
     theme: settings.theme,
     language: settings.language,
     density: settings.density,
+    gradeId: settings.gradeId?.toString() ?? null,
+    subjectId: settings.subjectId?.toString() ?? null,
     publisherId: settings.publisherId?.toString() ?? null,
-    gradeLevel: settings.gradeLevel ?? null,
   });
 }

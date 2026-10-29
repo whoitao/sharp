@@ -10,14 +10,16 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
   const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "20")));
 
-  // 可选筛选：分类 / 科目 / 知识点 / 教材章节（记录上的筛选字段，null 记录只在不传对应参数时命中）
+  // 可选筛选：分类 / 年级 / 科目 / 知识点 / 教材章节（记录上的筛选字段，null 记录只在不传对应参数时命中）
   const categoryId = searchParams.get("categoryId");
+  const gradeId = searchParams.get("gradeId");
   const subjectId = searchParams.get("subjectId");
   const knowledgePointId = searchParams.get("knowledgePointId");
   const chapterId = searchParams.get("chapterId");
 
   const where: Record<string, unknown> = { userId: appUser.id };
   if (categoryId) where.categoryId = BigInt(categoryId);
+  if (gradeId) where.gradeId = BigInt(gradeId);
   if (subjectId) where.subjectId = BigInt(subjectId);
   if (knowledgePointId) where.knowledgePointId = BigInt(knowledgePointId);
   if (chapterId) where.chapterId = BigInt(chapterId);
@@ -34,11 +36,11 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            grade: {
-              select: { name: true, publisher: { select: { name: true } } },
-            },
+            grade: { select: { name: true } },
+            publisher: { select: { name: true } },
           },
         },
+        grade: { select: { name: true } },
       },
     }),
   ]);
@@ -48,13 +50,15 @@ export async function GET(request: NextRequest) {
     userId: r.userId,
     // 教材章节练习的记录没有分类，categoryId 为 null
     categoryId: r.categoryId?.toString() ?? null,
+    gradeId: r.gradeId?.toString() ?? null,
+    gradeName: r.grade?.name ?? r.chapter?.grade?.name ?? null,
     subjectId: r.subjectId?.toString() ?? null,
     knowledgePointId: r.knowledgePointId?.toString() ?? null,
     // 教材章节练习来源；考纲练习为 null
     chapterId: r.chapterId?.toString() ?? null,
     chapterName: r.chapter?.name ?? null,
-    textbookLabel: r.chapter?.grade
-      ? `${r.chapter.grade.publisher?.name ?? ""} · ${r.chapter.grade.name}`.replace(/^ · /, "")
+    textbookLabel: r.chapter?.publisher
+      ? `${r.chapter.publisher.name} · ${r.chapter.grade?.name ?? ""}`.replace(/ · $/, "")
       : null,
     unitIndex: r.unitIndex,
     startedAt: r.startedAt,

@@ -32,10 +32,13 @@ model UserSettings {
   theme    String @default("system")
   language String @default("zh")
   density  String @default("comfortable")
-  // 「我的教材」：教材练习页默认落到对应版本 + 年级
+  // 全局学习范围：年级 + 科目 + 教材版本（「我的教材」）
+  gradeId     BigInt?
+  grade       Grade?     @relation(fields: [gradeId], references: [id])
+  subjectId   BigInt?
+  subject     Subject?   @relation(fields: [subjectId], references: [id])
   publisherId BigInt?
   publisher   Publisher? @relation(fields: [publisherId], references: [id])
-  gradeLevel  Int?
 }
 
 model Admin {
@@ -74,15 +77,34 @@ model Subject {
   knowledgePoints  KnowledgePoint[]
   studyRecords     UserStudyRecord[]
   questionProgress UserQuestionProgress[]
-  grades           Grade[]
+  chapters         Chapter[]
+  settings         UserSettings[]
 
   @@index([sortOrder])
+}
+
+// 年级字典：小学一年级 ~ 大学四年级，与科目/教材版本无关
+model Grade {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @unique // 一年级 / 初一 / 高一 / 大一
+  stage     String            // 小学 / 初中 / 高中 / 大学
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  questions    Question[]
+  chapters     Chapter[]
+  studyRecords UserStudyRecord[]
+  settings     UserSettings[]
+
+  @@index([stage, sortOrder])
 }
 
 model Question {
   id         BigInt   @id @default(autoincrement())
   categoryId BigInt
   category   Category @relation(fields: [categoryId], references: [id])
+  gradeId    BigInt?
+  grade      Grade?   @relation(fields: [gradeId], references: [id])
   subjectId  BigInt?
   subject    Subject? @relation(fields: [subjectId], references: [id])
   type       Int
@@ -91,8 +113,7 @@ model Question {
   difficulty Int      @default(1)
   score      Int      @default(1)
   sortOrder  Int      @default(0)
-  // 教材归属：教材同步题指向所属章节；中考真题/模拟题/自建题为空。
-  // 版本与年级由 chapter → grade → publisher 反推，不冗余存储，避免三处不一致。
+  // 教材归属：教材同步题指向所属章节（章节自带年级/科目/版本），中考真题/模拟题/自建题为空。
   chapterId  BigInt?
   chapter    Chapter? @relation(fields: [chapterId], references: [id])
   // 题目来源：exam 真题 / textbook 教材同步 / mock 模拟 / custom 自建
@@ -102,8 +123,10 @@ model Question {
   options           QuestionOption[]
   progress          UserQuestionProgress[]
   knowledgePoints   QuestionKnowledgePoint[]
+  tags              QuestionTagLink[]
 
   @@index([categoryId])
+  @@index([gradeId])
   @@index([subjectId])
   @@index([chapterId])
   @@index([source])
@@ -121,12 +144,40 @@ model QuestionOption {
   @@index([questionId])
 }
 
+// 题目标签：中考真题 / 模拟题 / 课后练习 / 竞赛题…
+// type 区分用途：exam 考试类型 / source 题目来源 / difficulty 难度
+model QuestionTag {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @unique
+  type      String   @default("source")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  questions QuestionTagLink[]
+
+  @@index([type, sortOrder])
+}
+
+model QuestionTagLink {
+  questionId BigInt
+  tagId      BigInt
+
+  question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag      QuestionTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, tagId])
+  @@index([tagId])
+}
+
 model UserStudyRecord {
   id              String   @id @default(uuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id])
   // 考纲练习记录带分类；教材章节练习跨分类取题，categoryId 为空
   categoryId      BigInt?
+  // 考纲练习的年级（新口径）；教材练习由章节反推，不冗余
+  gradeId         BigInt?
+  grade           Grade?   @relation(fields: [gradeId], references: [id])
   unitIndex       Int
   // 教材章节练习来源；考纲练习时为空。两种来源各自独立计算 unitIndex
   chapterId       BigInt?
@@ -136,6 +187,8 @@ model UserStudyRecord {
   subject          Subject?        @relation(fields: [subjectId], references: [id])
   knowledgePointId BigInt?
   knowledgePoint   KnowledgePoint? @relation(fields: [knowledgePointId], references: [id])
+  // 标签筛选上下文：升序逗号拼接的 tagId（如 "1,3"），空表示未筛选
+  tagFilter       String?
   startedAt       DateTime @default(now())
   finishedAt      DateTime?
   totalQuestions  Int
@@ -145,6 +198,7 @@ model UserStudyRecord {
 
   @@index([userId, startedAt])
   @@index([categoryId])
+  @@index([gradeId])
   @@index([chapterId])
 }
 
@@ -213,7 +267,7 @@ model QuestionKnowledgePoint {
 }
 
 // ===== 教材版本维度 =====
-// 注意：知识点主树是考纲维度（只有一套），Publisher/Grade/Chapter 是教材维度（多套）。
+// 知识点主树是考纲维度（只有一套），Publisher/Chapter 是教材维度（多套）。
 // 题目通过 Question.chapterId 直接归属章节，通过 QuestionKnowledgePoint 归属考纲知识点，两条维度互不依赖。
 
 model Publisher {
@@ -221,47 +275,31 @@ model Publisher {
   name      String   @unique          // 人教版 / 苏教版 / 北师大版 / 鲁教版 / 通用
   createdAt DateTime @default(now())
 
-  grades   Grade[]
   chapters Chapter[]
   settings UserSettings[]
 }
 
-// 年级册别：subjectId + publisherId 联合唯一
-// level 7/8/9, semester 1=上 2=下 0=全一册
-model Grade {
-  id          BigInt   @id @default(autoincrement())
+// 教材章节树：gradeId(年级) + subjectId(科目) + publisherId(版本) + parentId(树)
+// level 1=册（七年级上册）2=章 3=节；semester 仅 level=1 有意义：1=上 2=下 0=全一册
+model Chapter {
+  id          BigInt    @id @default(autoincrement())
+  gradeId     BigInt
+  grade       Grade     @relation(fields: [gradeId], references: [id])
   subjectId   BigInt
-  subject     Subject  @relation(fields: [subjectId], references: [id])
+  subject     Subject   @relation(fields: [subjectId], references: [id])
   publisherId BigInt
   publisher   Publisher @relation(fields: [publisherId], references: [id])
-  level       Int            // 7 / 8 / 9
-  semester    Int            // 1=上 2=下 0=全一册
-  name        String         // "七年级上" / "九年级全一册"
-  sortOrder   Int      @default(0)
-
-  chapters Chapter[]
-
-  @@unique([subjectId, publisherId, level, semester])
-  @@index([subjectId])
-  @@index([publisherId])
-}
-
-// 教材章节树：每个 Grade 有独立的章节树
-model Chapter {
-  id         BigInt    @id @default(autoincrement())
-  gradeId    BigInt
-  grade      Grade     @relation(fields: [gradeId], references: [id])
-  parentId   BigInt?
-  parent     Chapter?  @relation("ChapterTree", fields: [parentId], references: [id])
-  children   Chapter[] @relation("ChapterTree")
-  publisherId BigInt?
-  publisher  Publisher? @relation(fields: [publisherId], references: [id])
-  name       String
-  sortOrder  Int       @default(0)
+  parentId    BigInt?
+  parent      Chapter?  @relation("ChapterTree", fields: [parentId], references: [id])
+  children    Chapter[] @relation("ChapterTree")
+  level       Int       @default(2)
+  semester    Int?
+  name        String
+  sortOrder   Int       @default(0)
 
   studyRecords UserStudyRecord[]
   questions    Question[]
 
-  @@index([gradeId])
+  @@index([gradeId, subjectId, publisherId])
   @@index([parentId])
 }

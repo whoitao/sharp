@@ -26,11 +26,32 @@ export async function POST(request: NextRequest) {
   const isChapter = chapterId !== undefined && chapterId !== null;
   // 考纲练习：分类可选，不选时按科目聚合全部题目
   const hasCategory = categoryId !== undefined && categoryId !== null;
+  // 进度上的分类：教材练习与无分类的考纲练习都取题目自身分类
+  const categoryFromQuestion = isChapter || !hasCategory;
 
-  // 可选筛选：科目 / 知识点（查询参数），与 units、questions 接口保持一致的过滤口径
+  // 可选筛选：科目 / 知识点 / 年级 / 标签（查询参数），与 units、questions 接口保持一致的过滤口径
   const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
   const knowledgePointIdRaw = request.nextUrl.searchParams.get("knowledgePointId");
+  const gradeIdRaw = request.nextUrl.searchParams.get("gradeId");
+  const tagIdsRaw = request.nextUrl.searchParams.get("tagIds");
   const subjectId = subjectIdRaw ? BigInt(subjectIdRaw) : null;
+  const gradeId = gradeIdRaw ? BigInt(gradeIdRaw) : null;
+  // 标签筛选上下文统一成升序逗号串，保证同样的选择得到同样的记录键
+  const tagIds = tagIdsRaw
+    ? tagIdsRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => BigInt(s))
+    : [];
+  const tagFilter =
+    tagIds.length > 0
+      ? tagIds
+          .slice()
+          .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+          .map((t) => t.toString())
+          .join(",")
+      : null;
 
   if (unitIndex === undefined || (!isChapter && !hasCategory && !subjectId)) {
     return NextResponse.json(
@@ -50,9 +71,11 @@ export async function POST(request: NextRequest) {
   let questionWhere: Record<string, unknown>;
   let filter: {
     categoryId: bigint | null;
+    gradeId: bigint | null;
     chapterId: bigint | null;
     subjectId: bigint | null;
     knowledgePointId: bigint | null;
+    tagFilter: string | null;
   };
 
   if (isChapter) {
@@ -62,7 +85,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No questions found for this chapter" }, { status: 404 });
     }
     questionWhere = where;
-    filter = { categoryId: null, chapterId: BigInt(chapterId), subjectId, knowledgePointId: null };
+    filter = {
+      categoryId: null,
+      gradeId: null,
+      chapterId: BigInt(chapterId),
+      subjectId,
+      knowledgePointId: null,
+      tagFilter: null,
+    };
   } else {
     const where: Record<string, unknown> = {};
     if (hasCategory) where.categoryId = { in: await getAllCategoryIds(BigInt(categoryId)) };
@@ -70,12 +100,18 @@ export async function POST(request: NextRequest) {
     if (knowledgePointIdRaw) {
       where.knowledgePoints = { some: { knowledgePointId: BigInt(knowledgePointIdRaw) } };
     }
+    // 年级：历史数据没有年级（null）视为不限年级
+    if (gradeId) where.OR = [{ gradeId }, { gradeId: null }];
+    // 标签多选：命中任意一个即可，与 units 接口口径一致
+    if (tagIds.length > 0) where.tags = { some: { tagId: { in: tagIds } } };
     questionWhere = where;
     filter = {
       categoryId: hasCategory ? BigInt(categoryId) : null,
+      gradeId,
       chapterId: null,
       subjectId,
       knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
+      tagFilter,
     };
   }
 
@@ -158,7 +194,8 @@ export async function POST(request: NextRequest) {
       create: {
         userId: appUser.id,
         questionId: q.id,
-        categoryId: isChapter ? q.categoryId : BigInt(categoryId),
+        // 进度上的分类必填；未选分类时取题目自身分类
+        categoryId: categoryFromQuestion ? q.categoryId : BigInt(categoryId),
         subjectId,
         knowledgePointId: filter.knowledgePointId,
         status: "unseen",

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { Category, KnowledgePoint, Subject } from '@sharp/shared';
+import type { Category, Grade, KnowledgePoint, QuestionTag, Subject } from '@sharp/shared';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -32,6 +32,14 @@ interface StudyFilterBarProps {
   onSelectCategory: (cat: Category | null) => void;
   onSelectSubject: (sub: Subject | null) => void;
   onSelectKP: (kp: KnowledgePoint | null) => void;
+  /** 年级字典（全局学习范围）；不传则不显示年级筛选 */
+  grades?: Grade[];
+  selectedGrade?: Grade | null;
+  onSelectGrade?: (grade: Grade | null) => void;
+  /** 标签 chips（多选，横向过滤） */
+  tags?: QuestionTag[];
+  selectedTagIds?: string[];
+  onToggleTag?: (tagId: string) => void;
   /** 允许清除单个已选条件（学习记录页用）；学习页要求科目与知识点必选，不传 */
   allowClear?: boolean;
   /** 分类为可选项：科目未选时不可选（学习页用，学习记录页不传） */
@@ -41,7 +49,7 @@ interface StudyFilterBarProps {
 }
 
 /**
- * 分类/科目/知识点 三联动筛选条（含三个选择弹窗）。
+ * 年级/科目/分类/知识点 联动筛选条 + 标签 chips。
  * 学习页与学习记录页共用。
  */
 const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
@@ -53,6 +61,12 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   onSelectCategory,
   onSelectSubject,
   onSelectKP,
+  grades,
+  selectedGrade,
+  onSelectGrade,
+  tags,
+  selectedTagIds,
+  onToggleTag,
   allowClear = false,
   categoryDisabled = false,
   loading = false,
@@ -62,6 +76,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   const { t } = useTranslation();
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [subjectModalVisible, setSubjectModalVisible] = useState(false);
+  const [gradeModalVisible, setGradeModalVisible] = useState(false);
   const [kpModalVisible, setKpModalVisible] = useState(false);
 
   // 知识点按学科过滤：学科未选时不可选，选中学科后按 subjectId 拉取
@@ -123,44 +138,123 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
 
   return (
     <View style={[styles.container, { padding: 12 * spacing, paddingTop: 0, gap: 8 * spacing }]}>
-      {renderChip(
-        selectedCategory?.name ?? null,
-        // 分类可选：科目已选但未选分类时展示「全部分类」，未选科目时提示先选科目
-        categoryDisabled ? t.studySelectSubjectFirst : t.studyAllCategories,
-        () => setCategoryModalVisible(true),
-        () => onSelectCategory(null),
-        categoryDisabled,
+      {/* 全局学习范围：年级 + 科目 */}
+      <View style={[styles.row, { gap: 8 * spacing }]}>
+        {grades && onSelectGrade &&
+          renderChip(
+            selectedGrade?.name ?? null,
+            t.studySelectGrade,
+            () => setGradeModalVisible(true),
+            () => onSelectGrade(null),
+          )}
+        {renderChip(
+          selectedSubject ? (
+            <>
+              {isIoniconName(selectedSubject.icon) && (
+                <Ionicons
+                  name={selectedSubject.icon}
+                  size={13 * font}
+                  color={colors.accent}
+                />
+              )}
+              {` ${selectedSubject.name}`}
+            </>
+          ) : null,
+          t.studySelectSubject,
+          () => setSubjectModalVisible(true),
+          () => onSelectSubject(null),
+        )}
+      </View>
+
+      {/* 交叉筛选：考试范围 + 知识点 */}
+      <View style={[styles.row, { gap: 8 * spacing }]}>
+        {renderChip(
+          selectedCategory?.name ?? null,
+          // 分类可选：科目已选但未选分类时展示「全部分类」，未选科目时提示先选科目
+          categoryDisabled ? t.studySelectSubjectFirst : t.studyAllCategories,
+          () => setCategoryModalVisible(true),
+          () => onSelectCategory(null),
+          categoryDisabled,
+        )}
+        {renderChip(
+          selectedKP?.name ?? null,
+          t.studySelectKnowledgePoint,
+          () => setKpModalVisible(true),
+          () => onSelectKP(null),
+          kpDisabled,
+        )}
+      </View>
+
+      {/* 标签 chips：横向多选，与年级/科目/分类/知识点正交 */}
+      {!!tags && tags.length > 0 && !!onToggleTag && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8 * spacing }}
+        >
+          {tags.map((tag) => {
+            const active = selectedTagIds?.includes(tag.id) ?? false;
+            return (
+              <TouchableOpacity
+                key={tag.id}
+                onPress={() => onToggleTag(tag.id)}
+                activeOpacity={0.7}
+                style={[
+                  styles.tagChip,
+                  {
+                    backgroundColor: active ? colors.accent : colors.surface,
+                    borderColor: active ? colors.accent : colors.border,
+                    borderRadius: 999,
+                    paddingVertical: 6 * spacing,
+                    paddingHorizontal: 12 * spacing,
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    color: active ? '#fff' : colors.textSecondary,
+                    fontSize: 12 * font,
+                    fontWeight: '500',
+                  }}
+                >
+                  {tag.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       )}
-      {renderChip(
-        selectedSubject ? (
-          <>
-            {isIoniconName(selectedSubject.icon) && (
-              <Ionicons
-                name={selectedSubject.icon}
-                size={13 * font}
-                color={colors.accent}
-              />
-            )}
-            {` ${selectedSubject.name}`}
-          </>
-        ) : null,
-        t.studySelectSubject,
-        () => setSubjectModalVisible(true),
-        () => onSelectSubject(null),
-      )}
-      {renderChip(
-        selectedKP?.name ?? null,
-        t.studySelectKnowledgePoint,
-        () => setKpModalVisible(true),
-        () => onSelectKP(null),
-        kpDisabled,
-      )}
+
       {loading && (
         <View style={[styles.loadingOverlay, { borderRadius: 8 * radius }]}>
           <ActivityIndicator size="small" color={colors.accent} />
           <Text style={{ fontSize: 13 * font, color: colors.textSecondary }}>{t.loading}</Text>
         </View>
       )}
+
+      <Modal visible={gradeModalVisible} transparent animationType="fade" onRequestClose={() => setGradeModalVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setGradeModalVisible(false)}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text, fontSize: 18 * font }]}>{t.studySelectGrade}</Text>
+            <ScrollView style={styles.modalList}>
+              {(grades ?? []).map((grade) => (
+                <TouchableOpacity
+                  key={grade.id}
+                  style={[styles.modalOption, { borderRadius: 8 * radius }, selectedGrade?.id === grade.id && { backgroundColor: colors.accentLight }]}
+                  onPress={() => {
+                    onSelectGrade?.(grade);
+                    setGradeModalVisible(false);
+                  }}
+                >
+                  <View style={styles.modalOptionRow}>
+                    <Text style={[styles.modalOptionText, { color: colors.text, fontSize: 16 * font }]}>{grade.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <TreePickerModal<Category>
         visible={categoryModalVisible}
@@ -229,7 +323,9 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', padding: 12, paddingTop: 0, gap: 8, position: 'relative' },
+  container: { padding: 12, paddingTop: 0, gap: 8, position: 'relative' },
+  row: { flexDirection: 'row' },
+  tagChip: { borderWidth: 1 },
   chip: { flex: 1, flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   chipDisabled: { opacity: 0.45 },
   chipText: { fontSize: 13, fontWeight: '500' },

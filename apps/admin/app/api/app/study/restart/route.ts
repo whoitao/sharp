@@ -18,7 +18,20 @@ export async function POST(request: NextRequest) {
 
   const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
   const knowledgePointIdRaw = request.nextUrl.searchParams.get("knowledgePointId");
+  const gradeIdRaw = request.nextUrl.searchParams.get("gradeId");
+  const tagIdsRaw = request.nextUrl.searchParams.get("tagIds");
   const subjectId = subjectIdRaw ? BigInt(subjectIdRaw) : null;
+  const gradeId = gradeIdRaw ? BigInt(gradeIdRaw) : null;
+  const tagFilter = tagIdsRaw
+    ? tagIdsRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => BigInt(s))
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        .map((t) => t.toString())
+        .join(",") || null
+    : null;
 
   if (unitIndex === undefined || (!isChapter && !hasCategory && !subjectId)) {
     return NextResponse.json(
@@ -35,6 +48,9 @@ export async function POST(request: NextRequest) {
     subjectId,
     // 章节练习不按知识点筛选，记录上的知识点固定为空
     knowledgePointId: isChapter || !knowledgePointIdRaw ? null : BigInt(knowledgePointIdRaw),
+    // 教材练习不按标签筛选
+    gradeId: isChapter ? null : gradeId,
+    tagFilter: isChapter ? null : tagFilter,
   };
 
   // 一单元一条记录：保留最近的一条重置为本次作答，历史版本残留的多条直接删除

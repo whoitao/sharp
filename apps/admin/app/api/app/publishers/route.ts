@@ -9,14 +9,14 @@ export async function GET(request: NextRequest) {
 
   const publishers = await prisma.publisher.findMany({
     orderBy: { id: "asc" },
-    include: { _count: { select: { grades: true } } },
+    include: { _count: { select: { chapters: true } } },
   });
 
   return NextResponse.json(
     publishers.map((p) => ({
       id: p.id.toString(),
       name: p.name,
-      gradeCount: p._count.grades,
+      chapterCount: p._count.chapters,
     })),
   );
 }

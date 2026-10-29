@@ -57,6 +57,10 @@ export type QuizParams = {
   textbookLabel?: string;
   subjectId?: string;
   subjectName?: string;
+  /** 全局年级筛选（考纲练习）；教材练习由章节反推 */
+  gradeId?: string;
+  /** 标签筛选 chips（多选） */
+  tagIds?: string[];
   knowledgePointId?: string;
   knowledgePointName?: string;
   previousRecord?: StudyRecordSummary | null;
@@ -72,6 +76,8 @@ export type QuizResultParams = {
   chapterName?: string;
   textbookLabel?: string;
   subjectId?: string;
+  gradeId?: string;
+  tagIds?: string[];
   knowledgePointId?: string;
   record?: StudyRecord;
   continueTo?: 'Study' | 'TextbookUnits';

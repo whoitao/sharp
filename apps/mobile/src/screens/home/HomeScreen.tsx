@@ -1,14 +1,18 @@
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SubjectOverview } from '@sharp/shared';
+import type { Grade, Subject, SubjectOverview } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import ScopeSelector from '../../components/ScopeSelector';
 import StreakBadge from '../../components/StreakBadge';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
+import type { AppDispatch, RootState } from '../../stores';
+import { updateSettings } from '../../stores/settingsSlice';
 import QuickEntry from './QuickEntry';
 import SubjectCarousel from './SubjectCarousel';
 import SubjectRow from './SubjectRow';
@@ -23,11 +27,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { spacing, font } = useDensity();
   const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
+  const { gradeId, subjectId } = useSelector((state: RootState) => state.settings);
   const [subjects, setSubjects] = useState<SubjectOverview[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [subjectOptions, setSubjectOptions] = useState<Subject[]>([]);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   // 有教材内容时才露出「教材同步」入口
   const [textbookAvailable, setTextbookAvailable] = useState(false);
+
+  // 全局「年级 + 科目」选择器：选中项从设置中还原
+  const selectedGrade = useMemo(
+    () => grades.find((grade) => grade.id === gradeId) ?? null,
+    [grades, gradeId],
+  );
+  const selectedSubject = useMemo(
+    () => subjectOptions.find((subject) => subject.id === subjectId) ?? null,
+    [subjectOptions, subjectId],
+  );
 
   // 进入首页后的空余时间预拉取学习页搜索数据（分类/科目），
   // api 内部做缓存优先 + 并发去重，与学习页同时挂载也不会产生重复请求
@@ -66,16 +84,35 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, [navigation, streak]);
 
   const loadHome = useCallback(async () => {
-    const [overview, stats, availability] = await Promise.all([
+    const [overview, stats, availability, gradeList, subjectList] = await Promise.all([
       api.getSubjectOverview(),
       api.getStats(),
       api.getTextbookAvailability(),
+      api.getGrades(),
+      api.getSubjects(),
     ]);
     setSubjects(overview);
     setStreak(stats.streak);
     setTextbookAvailable(availability.length > 0);
+    setGrades(gradeList);
+    setSubjectOptions(subjectList);
     setLoading(false);
   }, []);
+
+  // 学习范围变更后写入用户设置，学习页/教材页/记录页共用
+  const handleChangeGrade = useCallback(
+    (grade: Grade | null) => {
+      dispatch(updateSettings({ gradeId: grade?.id ?? null }));
+    },
+    [dispatch],
+  );
+
+  const handleChangeSubject = useCallback(
+    (subject: Subject | null) => {
+      dispatch(updateSettings({ subjectId: subject?.id ?? null }));
+    },
+    [dispatch],
+  );
 
   // 每次回到首页都刷新：从练习页返回时已学比例要跟着变
   useFocusEffect(
@@ -111,14 +148,30 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <ActivityIndicator color={colors.accent} style={{ marginTop: 32 * spacing }} />
         ) : (
           <>
+            {/* 全局学习范围：年级 + 科目（常驻顶部） */}
+            <View style={{ marginBottom: 10 * spacing }}>
+              <ScopeSelector
+                grades={grades}
+                subjects={subjectOptions}
+                selectedGrade={selectedGrade}
+                selectedSubject={selectedSubject}
+                onChangeGrade={handleChangeGrade}
+                onChangeSubject={handleChangeSubject}
+              />
+            </View>
+
             <SubjectCarousel
               items={carouselItems}
               onSelect={goToStudy}
-              onFallbackPress={() => goToStudy()}
+              onFallbackPress={() => goToStudy(selectedSubject?.id)}
             />
 
             <View style={[styles.quickRow, { gap: 8 * spacing, marginTop: 12 * spacing }]}>
-              <QuickEntry icon="calendar-outline" label={t.homeDaily} onPress={() => goToStudy()} />
+              <QuickEntry
+                icon="calendar-outline"
+                label={t.studyByKnowledge}
+                onPress={() => goToStudy(selectedSubject?.id)}
+              />
               <QuickEntry
                 icon="bookmark-outline"
                 label={t.wrongQuestions}

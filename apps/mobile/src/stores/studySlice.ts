@@ -43,6 +43,8 @@ export const fetchQuestions = createAsyncThunk(
   async (params: {
     /** 考纲练习可选分类（不选=该科目全部题目）；教材章节练习用 chapterId，二者至少有一个 */
     categoryId?: string;
+    gradeId?: string;
+    tagIds?: string[];
     chapterId?: string;
     unitIndex: number;
     subjectId?: string;
@@ -50,12 +52,14 @@ export const fetchQuestions = createAsyncThunk(
   }) => {
     const questions = params.chapterId
       ? await api.getChapterQuestions(params.chapterId, params.unitIndex, params.subjectId)
-      : await api.getQuestions(
-          params.categoryId ?? null,
-          params.unitIndex,
-          params.subjectId ?? '',
-          params.knowledgePointId,
-        );
+      : await api.getQuestions({
+          categoryId: params.categoryId ?? null,
+          unitIndex: params.unitIndex,
+          subjectId: params.subjectId ?? '',
+          gradeId: params.gradeId ?? null,
+          knowledgePointId: params.knowledgePointId ?? null,
+          tagIds: params.tagIds,
+        });
     return {
       questions,
       categoryId: params.categoryId ?? null,

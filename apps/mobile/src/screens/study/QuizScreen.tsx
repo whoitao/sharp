@@ -54,6 +54,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     chapterName,
     textbookLabel,
     subjectId,
+    gradeId,
+    tagIds,
     knowledgePointId,
     continueTo,
   } = route.params;
@@ -192,6 +194,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           durationSeconds: elapsedRef.current,
           answers: answerItems,
           subjectId,
+          gradeId,
+          tagIds,
           knowledgePointId,
         })
         .catch(() => {});
@@ -205,6 +209,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       unitIndex,
       categoryName,
       subjectId,
+      gradeId,
+      tagIds,
       knowledgePointId,
       continueTo,
     });
@@ -218,6 +224,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     unitIndex,
     categoryName,
     subjectId,
+    gradeId,
+    tagIds,
     knowledgePointId,
     continueTo,
   ]);
@@ -455,7 +463,16 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     if (chapterId) {
       api.restartChapterStudy(chapterId, unitIndex, subjectId).catch(() => {});
     } else if (categoryId || subjectId) {
-      api.restartStudy(categoryId ?? null, unitIndex, subjectId, knowledgePointId).catch(() => {});
+      api
+        .restartStudy({
+          categoryId: categoryId ?? null,
+          unitIndex,
+          subjectId,
+          gradeId,
+          knowledgePointId,
+          tagIds,
+        })
+        .catch(() => {});
     }
     dispatch(restartQuiz());
     setOptionStatuses({});

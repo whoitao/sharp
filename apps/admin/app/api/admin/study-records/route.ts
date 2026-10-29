@@ -34,11 +34,11 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            grade: {
-              select: { name: true, publisher: { select: { name: true } } },
-            },
+            grade: { select: { name: true } },
+            publisher: { select: { name: true } },
           },
         },
+        grade: { select: { name: true } },
       },
       orderBy: { startedAt: "desc" },
       skip: (page - 1) * pageSize,
@@ -62,12 +62,14 @@ export async function GET(request: NextRequest) {
     user: { username: r.user?.username ?? null, nickname: r.user?.nickname ?? null },
     categoryId: r.categoryId?.toString() ?? null,
     categoryName: r.categoryId ? categoryNameMap.get(r.categoryId.toString()) ?? null : null,
+    gradeId: r.gradeId?.toString() ?? null,
+    gradeName: r.grade?.name ?? r.chapter?.grade?.name ?? null,
     unitIndex: r.unitIndex,
     // 教材章节练习来源（考纲练习为 null）
     chapterId: r.chapterId?.toString() ?? null,
     chapterName: r.chapter?.name ?? null,
-    textbookLabel: r.chapter?.grade
-      ? `${r.chapter.grade.publisher?.name ?? ""} · ${r.chapter.grade.name}`.replace(/^ · /, "")
+    textbookLabel: r.chapter?.publisher
+      ? `${r.chapter.publisher.name} · ${r.chapter.grade?.name ?? ""}`.replace(/ · $/, "")
       : null,
     subjectId: r.subjectId?.toString() ?? null,
     knowledgePointId: r.knowledgePointId?.toString() ?? null,

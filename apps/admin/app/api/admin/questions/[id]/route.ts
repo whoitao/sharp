@@ -11,10 +11,11 @@ export async function PUT(
 
   const { id } = await params;
   const body = await request.json();
-  const { categoryId, subjectId, type, content, analysis, difficulty, score, sortOrder, chapterId, source, options, knowledgePointIds } = body;
+  const { categoryId, gradeId, subjectId, type, content, analysis, difficulty, score, sortOrder, chapterId, source, options, knowledgePointIds, tagIds } = body;
 
   const data: Record<string, any> = {};
   if (categoryId !== undefined) data.categoryId = BigInt(categoryId);
+  if (gradeId !== undefined) data.gradeId = gradeId ? BigInt(gradeId) : null;
   if (subjectId !== undefined) data.subjectId = subjectId ? BigInt(subjectId) : null;
   if (type !== undefined) data.type = type;
   if (content !== undefined) data.content = content;
@@ -23,16 +24,21 @@ export async function PUT(
   if (score !== undefined) data.score = score;
   if (sortOrder !== undefined) data.sortOrder = sortOrder;
 
-  // 教材归属：null / 空字符串表示取消归属；传了值必须存在
+  // 教材归属：null / 空字符串表示取消归属；传了值必须存在，并同步年级与科目
   if (chapterId !== undefined) {
     if (!chapterId) {
       data.chapterId = null;
     } else {
-      const chapter = await prisma.chapter.findUnique({ where: { id: BigInt(chapterId) } });
+      const chapter = await prisma.chapter.findUnique({
+        where: { id: BigInt(chapterId) },
+        select: { id: true, gradeId: true, subjectId: true },
+      });
       if (!chapter) {
         return NextResponse.json({ error: "chapter not found" }, { status: 400 });
       }
       data.chapterId = chapter.id;
+      data.gradeId = chapter.gradeId;
+      data.subjectId = chapter.subjectId;
     }
   }
 
@@ -88,6 +94,19 @@ export async function PUT(
     }
   }
 
+  // Update tags if provided
+  if (Array.isArray(tagIds)) {
+    await prisma.questionTagLink.deleteMany({ where: { questionId: BigInt(id) } });
+    if (tagIds.length > 0) {
+      await prisma.questionTagLink.createMany({
+        data: tagIds.map((tagId: string) => ({
+          questionId: BigInt(id),
+          tagId: BigInt(tagId),
+        })),
+      });
+    }
+  }
+
   const question = await prisma.question.findUnique({
     where: { id: BigInt(id) },
     include: {
@@ -95,6 +114,7 @@ export async function PUT(
       knowledgePoints: {
         include: { knowledgePoint: true },
       },
+      tags: { include: { tag: true } },
     },
   });
 
@@ -106,6 +126,7 @@ export async function PUT(
     ...q,
     id: q.id.toString(),
     categoryId: q.categoryId.toString(),
+    gradeId: q.gradeId?.toString() ?? null,
     subjectId: q.subjectId?.toString() ?? null,
     // BigInt 不能直接 JSON 序列化，必须转字符串
     chapterId: q.chapterId?.toString() ?? null,
@@ -119,6 +140,11 @@ export async function PUT(
       id: qkp.knowledgePoint.id.toString(),
       name: qkp.knowledgePoint.name,
       parentId: qkp.knowledgePoint.parentId?.toString() ?? null,
+    })),
+    tags: (q.tags ?? []).map((link: any) => ({
+      id: link.tag.id.toString(),
+      name: link.tag.name,
+      type: link.tag.type,
     })),
   });
 

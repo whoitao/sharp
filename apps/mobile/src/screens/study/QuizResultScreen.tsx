@@ -41,6 +41,8 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
     chapterName,
     textbookLabel,
     subjectId,
+    gradeId,
+    tagIds,
     knowledgePointId,
     record,
     continueTo,
@@ -112,12 +114,21 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
       // 复用同一条学习记录：刚完成的成绩作为「上次学习」带入答题页
       previousRecord = chapterId
         ? (await api.startChapterStudy(chapterId, unitIndex, subjectId)).previous
-        : (await api.startStudy(categoryId ?? null, unitIndex, subjectId, knowledgePointId)).previous;
+        : (
+            await api.startStudy({
+              categoryId: categoryId ?? null,
+              unitIndex,
+              subjectId,
+              gradeId,
+              knowledgePointId,
+              tagIds,
+            })
+          ).previous;
     } catch {
       // silently proceed even if start fails
     }
     const fetchResult = await dispatch(
-      fetchQuestions({ categoryId, chapterId, unitIndex, subjectId, knowledgePointId })
+      fetchQuestions({ categoryId, chapterId, unitIndex, subjectId, gradeId, tagIds, knowledgePointId })
     );
     if (fetchQuestions.fulfilled.match(fetchResult)) {
       navigation.replace('Quiz', {
@@ -128,6 +139,8 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
         unitIndex,
         categoryName: categoryName ?? '',
         subjectId,
+        gradeId,
+        tagIds,
         knowledgePointId,
         previousRecord,
         continueTo,

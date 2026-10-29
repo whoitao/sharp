@@ -2,91 +2,104 @@ import { requireAdmin } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+const STAGES = ["小学", "初中", "高中", "大学"];
+
+/** 年级字典：纯年级（初一/高一…），与科目、教材版本无关 */
 export async function GET(request: NextRequest) {
   const admin = requireAdmin(request);
   if (admin instanceof NextResponse) return admin;
+
   const url = new URL(request.url);
-  const subjectId = url.searchParams.get("subjectId");
-  const publisherId = url.searchParams.get("publisherId");
-  const where: any = {};
-  if (subjectId) where.subjectId = BigInt(subjectId);
-  if (publisherId) where.publisherId = BigInt(publisherId);
+  const stage = url.searchParams.get("stage");
 
   const grades = await prisma.grade.findMany({
-    where,
-    orderBy: [
-      { subjectId: "asc" },
-      { publisherId: "asc" },
-      { level: "asc" },
-      { semester: "asc" },
-    ],
-    include: {
-      subject: { select: { id: true, name: true } },
-      publisher: { select: { id: true, name: true } },
-      _count: { select: { chapters: true } },
-    },
+    where: stage ? { stage } : undefined,
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    include: { _count: { select: { chapters: true } } },
   });
+
   return NextResponse.json(
     grades.map((g) => ({
       id: g.id.toString(),
-      subjectId: g.subjectId.toString(),
-      subjectName: g.subject.name,
-      publisherId: g.publisherId.toString(),
-      publisherName: g.publisher.name,
-      level: g.level,
-      semester: g.semester,
       name: g.name,
+      stage: g.stage,
       sortOrder: g.sortOrder,
       chapterCount: g._count.chapters,
-    }))
+    })),
   );
 }
 
 export async function POST(request: NextRequest) {
   const admin = requireAdmin(request);
   if (admin instanceof NextResponse) return admin;
+
   const body = await request.json();
-  const { subjectId, publisherId, level, semester, name, sortOrder } = body;
-  if (!subjectId || !publisherId || level == null || semester == null) {
-    return NextResponse.json({ error: "subjectId/publisherId/level/semester required" }, { status: 400 });
+  const { name, stage, sortOrder } = body;
+  if (!name?.trim() || !STAGES.includes(stage)) {
+    return NextResponse.json({ error: "name 与合法 stage 必填" }, { status: 400 });
   }
+
   const grade = await prisma.grade.create({
     data: {
-      subjectId: BigInt(subjectId),
-      publisherId: BigInt(publisherId),
-      level,
-      semester,
-      name: name?.trim() ?? `${level}年级${semester === 1 ? "上" : semester === 2 ? "下" : ""}`,
-      sortOrder: sortOrder ?? level * 10 + semester,
+      name: name.trim(),
+      stage,
+      sortOrder: sortOrder ?? 0,
     },
   });
-  return NextResponse.json({ id: grade.id.toString(), name: grade.name }, { status: 201 });
+  return NextResponse.json(
+    { id: grade.id.toString(), name: grade.name, stage: grade.stage, sortOrder: grade.sortOrder },
+    { status: 201 },
+  );
 }
 
 export async function PATCH(request: NextRequest) {
   const admin = requireAdmin(request);
   if (admin instanceof NextResponse) return admin;
+
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
   const body = await request.json();
-  const data: any = {};
-  if (body.subjectId) data.subjectId = BigInt(body.subjectId);
-  if (body.publisherId) data.publisherId = BigInt(body.publisherId);
-  if (body.level != null) data.level = body.level;
-  if (body.semester != null) data.semester = body.semester;
-  if (body.name) data.name = body.name.trim();
+  const data: Record<string, unknown> = {};
+  if (body.name !== undefined) {
+    if (!body.name?.trim()) return NextResponse.json({ error: "name 不能为空" }, { status: 400 });
+    data.name = body.name.trim();
+  }
+  if (body.stage !== undefined) {
+    if (!STAGES.includes(body.stage)) return NextResponse.json({ error: "stage 非法" }, { status: 400 });
+    data.stage = body.stage;
+  }
   if (body.sortOrder != null) data.sortOrder = body.sortOrder;
-  const g = await prisma.grade.update({ where: { id: BigInt(id) }, data });
-  return NextResponse.json({ id: g.id.toString(), name: g.name });
+
+  const grade = await prisma.grade.update({ where: { id: BigInt(id) }, data });
+  return NextResponse.json({
+    id: grade.id.toString(),
+    name: grade.name,
+    stage: grade.stage,
+    sortOrder: grade.sortOrder,
+  });
 }
 
 export async function DELETE(request: NextRequest) {
   const admin = requireAdmin(request);
   if (admin instanceof NextResponse) return admin;
+
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  await prisma.grade.delete({ where: { id: BigInt(id) } });
+
+  const bigId = BigInt(id);
+  const [chapterCount, questionCount] = await Promise.all([
+    prisma.chapter.count({ where: { gradeId: bigId } }),
+    prisma.question.count({ where: { gradeId: bigId } }),
+  ]);
+  if (chapterCount > 0 || questionCount > 0) {
+    return NextResponse.json(
+      { error: `该年级仍有 ${chapterCount} 个章节、${questionCount} 道题目，不能删除` },
+      { status: 409 },
+    );
+  }
+  await prisma.grade.delete({ where: { id: bigId } });
   return NextResponse.json({ ok: true });
 }

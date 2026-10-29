@@ -35,6 +35,8 @@ export async function GET(
   }
   const categoryIdRaw = url.searchParams.get("categoryId");
   const knowledgePointIdRaw = url.searchParams.get("knowledgePointId");
+  const gradeIdRaw = url.searchParams.get("gradeId");
+  const tagIdsRaw = url.searchParams.get("tagIds");
 
   const settings = await prisma.userSettings.findUnique({
     where: { userId: appUser.id },
@@ -50,6 +52,17 @@ export async function GET(
     questionWhere.knowledgePoints = {
       some: { knowledgePointId: BigInt(knowledgePointIdRaw) },
     };
+  }
+  // 年级：历史数据没有年级（null）视为不限年级，避免存量题被过滤掉
+  if (gradeIdRaw) {
+    questionWhere.OR = [{ gradeId: BigInt(gradeIdRaw) }, { gradeId: null }];
+  }
+  // 标签：多选 chips 命中任意一个即可
+  const tagIds = tagIdsRaw
+    ? tagIdsRaw.split(",").map((s) => s.trim()).filter(Boolean).map((s) => BigInt(s))
+    : [];
+  if (tagIds.length > 0) {
+    questionWhere.tags = { some: { tagId: { in: tagIds } } };
   }
 
   const questions = await prisma.question.findMany({
@@ -78,6 +91,10 @@ export async function GET(
     return {
       id: q.id.toString(),
       categoryId: q.categoryId.toString(),
+      gradeId: q.gradeId?.toString() ?? null,
+      subjectId: q.subjectId?.toString() ?? null,
+      chapterId: q.chapterId?.toString() ?? null,
+      source: q.source,
       type: q.type,
       content: q.content,
       analysis: q.analysis,

@@ -1,5 +1,5 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Category, KnowledgePoint, StudyRecord, Subject } from '@sharp/shared';
+import type { Category, Grade, KnowledgePoint, StudyRecord, Subject } from '@sharp/shared';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -33,24 +33,27 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // 顶部筛选：分类 / 科目 / 知识点（均可不选 = 全部）
+  // 顶部筛选：年级 / 分类 / 科目 / 知识点（均可不选 = 全部）
   const [categories, setCategories] = useState<Category[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null);
   const [selectedKP, setSelectedKP] = useState<KnowledgePoint | null>(null);
 
   const fetchRecords = useCallback(async (pageNum: number = 1) => {
-    // 三个筛选均可不选；不选时展示全部（含教材章节练习记录）
+    // 四个筛选均可不选；不选时展示全部（含教材章节练习记录）
     try {
       setLoading(pageNum === 1);
-      const response = await api.getStudyRecords(
-        pageNum,
-        20,
-        selectedCategory?.id,
-        selectedSubject?.id,
-        selectedKP?.id,
-      );
+      const response = await api.getStudyRecords({
+        page: pageNum,
+        pageSize: 20,
+        categoryId: selectedCategory?.id,
+        subjectId: selectedSubject?.id,
+        gradeId: selectedGrade?.id,
+        knowledgePointId: selectedKP?.id,
+      });
       if (pageNum === 1) {
         setRecords(response.data);
       } else {
@@ -64,18 +67,20 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedCategory, selectedSubject, selectedKP]);
+  }, [selectedCategory, selectedSubject, selectedGrade, selectedKP]);
 
   // 下拉数据源：与学习页同一套接口
   useEffect(() => {
     (async () => {
       try {
-        const [cats, subs] = await Promise.all([
+        const [cats, subs, gradeList] = await Promise.all([
           api.getCategories('0'),
           api.getSubjects(),
+          api.getGrades(),
         ]);
         setCategories(cats);
         setSubjects(subs);
+        setGrades(gradeList);
       } catch {
         // ignore
       }
@@ -218,6 +223,9 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
         onSelectCategory={setSelectedCategory}
         onSelectSubject={setSelectedSubject}
         onSelectKP={setSelectedKP}
+        grades={grades}
+        selectedGrade={selectedGrade}
+        onSelectGrade={setSelectedGrade}
         allowClear
       />
 

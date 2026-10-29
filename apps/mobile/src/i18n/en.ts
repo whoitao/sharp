@@ -54,12 +54,14 @@ export const en: TranslationKeys = {
   homeNoQuestions: 'No questions yet',
   homeStreak: (days: number) => `${days}-day streak`,
   homeDaily: 'Daily Challenge',
+  studyByKnowledge: 'Study by Topic',
   homeReport: 'Study Report',
 
   // Study
   studySelectCategory: 'Select Category',
   studyAllCategories: 'All Categories',
   studySelectSubject: 'Select Subject',
+  studySelectGrade: 'Select Grade',
   studySelectKnowledgePoint: 'Select Knowledge Point',
   studySelectCategoryFirst: 'Please select a category first',
   studySelectSubjectFirst: 'Please select a subject first',
@@ -182,7 +184,6 @@ export const en: TranslationKeys = {
   textbookNoQuestions: 'No questions in this chapter',
   textbookUnitsEmpty: 'No units in this chapter',
   textbookChapterQuestions: (num: number) => `${formatCount(num)} questions`,
-  textbookGrade: (level: number) => `Grade ${level}`,
 
   // Avatar
   editAvatar: 'Tap to change avatar',

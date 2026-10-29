@@ -16,7 +16,6 @@ import { useEffect, useState } from "react";
 type Publisher = {
   id: string;
   name: string;
-  gradeCount: number;
   chapterCount: number;
 };
 
@@ -79,7 +78,7 @@ export default function PublishersPage() {
   const handleDelete = (row: Publisher) => {
     modal.confirm({
       title: `确认删除「${row.name}」？`,
-      content: row.gradeCount > 0 ? `该版本下有 ${row.gradeCount} 个年级，删除会级联清除关联数据` : null,
+      content: row.chapterCount > 0 ? `该版本下有 ${row.chapterCount} 个章节，删除会级联清除关联数据` : null,
       okButtonProps: { danger: true },
       onOk: async () => {
         const r = await fetch(`/api/admin/publishers?id=${row.id}`, { method: "DELETE", headers: authHeaders() });
@@ -93,7 +92,6 @@ export default function PublishersPage() {
   const columns: TableProps<Publisher>["columns"] = [
     { title: "ID", dataIndex: "id", width: 80 },
     { title: "名称", dataIndex: "name" },
-    { title: "年级数", dataIndex: "gradeCount", width: 100, align: "center" },
     { title: "章节数", dataIndex: "chapterCount", width: 100, align: "center" },
     {
       title: "操作",

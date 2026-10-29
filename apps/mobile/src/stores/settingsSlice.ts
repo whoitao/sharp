@@ -7,9 +7,12 @@ interface SettingsState {
   theme: Theme;
   language: Language;
   density: Density;
-  /** 「我的教材」：教材版本与年级，未设置为 null */
+  /** 全局学习范围：年级（小学一年级 ~ 大学四年级） */
+  gradeId: string | null;
+  /** 全局学习范围：科目 */
+  subjectId: string | null;
+  /** 「我的教材」：教材版本（人教版/北师大版…） */
   publisherId: string | null;
-  gradeLevel: number | null;
   isLoading: boolean;
   /** 是否已完成首次加载，用于区分冷启动门控与后续刷新 */
   initialized: boolean;
@@ -20,8 +23,9 @@ const initialState: SettingsState = {
   theme: 'light' as Theme,
   language: 'zh' as Language,
   density: 'comfortable' as Density,
+  gradeId: null,
+  subjectId: null,
   publisherId: null,
-  gradeLevel: null,
   isLoading: false,
   initialized: false,
 };
@@ -37,8 +41,9 @@ export const updateSettings = createAsyncThunk(
     theme?: Theme;
     language?: Language;
     density?: Density;
+    gradeId?: string | null;
+    subjectId?: string | null;
     publisherId?: string | null;
-    gradeLevel?: number | null;
   }) => {
     return await api.updateSettings(settings);
   }
@@ -60,11 +65,14 @@ const settingsSlice = createSlice({
     setDensity(state, action: PayloadAction<Density>) {
       state.density = action.payload;
     },
+    setGradeId(state, action: PayloadAction<string | null>) {
+      state.gradeId = action.payload;
+    },
+    setSubjectId(state, action: PayloadAction<string | null>) {
+      state.subjectId = action.payload;
+    },
     setPublisherId(state, action: PayloadAction<string | null>) {
       state.publisherId = action.payload;
-    },
-    setGradeLevel(state, action: PayloadAction<number | null>) {
-      state.gradeLevel = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -79,8 +87,9 @@ const settingsSlice = createSlice({
         state.theme = action.payload.theme ?? state.theme;
         state.language = action.payload.language ?? state.language;
         state.density = action.payload.density ?? state.density;
+        state.gradeId = action.payload.gradeId ?? null;
+        state.subjectId = action.payload.subjectId ?? null;
         state.publisherId = action.payload.publisherId ?? null;
-        state.gradeLevel = action.payload.gradeLevel ?? null;
       })
       .addCase(loadSettings.rejected, (state) => {
         state.isLoading = false;
@@ -92,8 +101,9 @@ const settingsSlice = createSlice({
         state.theme = action.payload.theme ?? state.theme;
         state.language = action.payload.language ?? state.language;
         state.density = action.payload.density ?? state.density;
+        state.gradeId = action.payload.gradeId ?? null;
+        state.subjectId = action.payload.subjectId ?? null;
         state.publisherId = action.payload.publisherId ?? null;
-        state.gradeLevel = action.payload.gradeLevel ?? null;
       });
   },
 });
@@ -103,7 +113,8 @@ export const {
   setTheme,
   setLanguage,
   setDensity,
+  setGradeId,
+  setSubjectId,
   setPublisherId,
-  setGradeLevel,
 } = settingsSlice.actions;
 export default settingsSlice.reducer;

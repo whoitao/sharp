@@ -47,8 +47,12 @@ interface QuestionItem {
   id: string;
   categoryId: string;
   categoryName: string | null;
+  gradeId: string | null;
+  gradeName: string | null;
   subjectId: string | null;
   subjectName: string | null;
+  chapterId: string | null;
+  chapterName: string | null;
   type: number;
   content: string;
   analysis: string | null;
@@ -58,6 +62,7 @@ interface QuestionItem {
   createdAt: string;
   options: QuestionOption[];
   knowledgePoints: { id: string; name: string; parentId: string | null }[];
+  tags: { id: string; name: string; type: string }[];
 }
 
 interface CategoryOption {
@@ -79,9 +84,33 @@ interface KPNode {
   children: KPNode[];
 }
 
+interface GradeOption {
+  id: string;
+  name: string;
+  stage: string;
+}
+
+interface TagOption {
+  id: string;
+  name: string;
+  type: string;
+}
+
+interface ChapterNode {
+  id: string;
+  name: string;
+  parentId: string | null;
+  level: number;
+  semester: number | null;
+  children?: ChapterNode[];
+}
+
 interface QuestionFormValues {
   categoryId?: string;
+  gradeId?: string;
   subjectId?: string;
+  chapterId?: string;
+  tagIds?: string[];
   knowledgePointIds?: string[];
   type: string;
   content: string;
@@ -105,10 +134,15 @@ export default function QuestionsPage() {
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
+  const [grades, setGrades] = useState<GradeOption[]>([]);
+  const [tags, setTags] = useState<TagOption[]>([]);
+  const [chapterTree, setChapterTree] = useState<ChapterNode[]>([]);
   const [kpTree, setKpTree] = useState<KPNode[]>([]);
   const [filterKpTree, setFilterKpTree] = useState<KPNode[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>();
+  const [selectedGradeId, setSelectedGradeId] = useState<string>();
+  const [selectedTagId, setSelectedTagId] = useState<string>();
   const [selectedKPId, setSelectedKPId] = useState<string>();
   const [searchInput, setSearchInput] = useState("");
   const [searchText, setSearchText] = useState("");
@@ -125,6 +159,7 @@ export default function QuestionsPage() {
   const [questionForm] = Form.useForm<QuestionFormValues>();
   const [importForm] = Form.useForm<{ file: any }>();
   const [formSubjectId, setFormSubjectId] = useState<string>();
+  const [formGradeId, setFormGradeId] = useState<string>();
 
   const typeLabel = (type: number) => {
     switch (type) {
@@ -164,6 +199,51 @@ export default function QuestionsPage() {
       setSubjects(Array.isArray(data) ? data : []);
     } catch {
       setSubjects([]);
+    }
+  };
+
+  const fetchGrades = async () => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch("/api/admin/grades", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setGrades(Array.isArray(data) ? data : []);
+    } catch {
+      setGrades([]);
+    }
+  };
+
+  const fetchTags = async () => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch("/api/admin/tags", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setTags(Array.isArray(data) ? data : []);
+    } catch {
+      setTags([]);
+    }
+  };
+
+  // 题目表单的章节树：需要年级 + 科目，版本不限（树里会带出不同版本）
+  const fetchFormChapters = async (gradeId?: string, subjectId?: string) => {
+    if (!gradeId || !subjectId) {
+      setChapterTree([]);
+      return;
+    }
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch(
+        `/api/admin/chapters?gradeId=${gradeId}&subjectId=${subjectId}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const data = await res.json();
+      setChapterTree(Array.isArray(data) ? data : []);
+    } catch {
+      setChapterTree([]);
     }
   };
 
@@ -208,6 +288,8 @@ export default function QuestionsPage() {
     });
     if (selectedCategoryId) params.append("categoryId", selectedCategoryId);
     if (selectedSubjectId) params.append("subjectId", selectedSubjectId);
+    if (selectedGradeId) params.append("gradeId", selectedGradeId);
+    if (selectedTagId) params.append("tagId", selectedTagId);
     if (selectedKPId) params.append("knowledgePointId", selectedKPId);
     if (searchText.trim()) params.append("search", searchText.trim());
     try {
@@ -228,6 +310,8 @@ export default function QuestionsPage() {
   useEffect(() => {
     fetchCategories();
     fetchSubjects();
+    fetchGrades();
+    fetchTags();
     fetchKnowledgePoints();
     fetchFilterKnowledgePoints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -251,6 +335,19 @@ export default function QuestionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formSubjectId]);
 
+  // 表单里的教材章节树随「年级 + 科目」联动；切换时清空已选章节，避免跨版本错挂
+  const lastFormChapterKeyRef = useRef<string>("");
+  useEffect(() => {
+    fetchFormChapters(formGradeId, formSubjectId);
+    const key = `${formGradeId ?? ""}|${formSubjectId ?? ""}`;
+    if (lastFormChapterKeyRef.current === key) return;
+    lastFormChapterKeyRef.current = key;
+    // 首次挂载 / 程序性填充时不清空，避免把编辑数据里的章节冲掉
+    if (key === "|") return;
+    questionForm.setFieldsValue({ chapterId: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formGradeId, formSubjectId]);
+
   // 顶部筛选：科目切换时联动知识点下拉，并清空已选知识点
   useEffect(() => {
     fetchFilterKnowledgePoints(selectedSubjectId);
@@ -270,13 +367,18 @@ export default function QuestionsPage() {
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategoryId, selectedSubjectId, selectedKPId, searchText, page, pageSize]);
+  }, [selectedCategoryId, selectedSubjectId, selectedGradeId, selectedTagId, selectedKPId, searchText, page, pageSize]);
 
   const resetForm = () => {
     setFormSubjectId(undefined);
+    setFormGradeId(undefined);
+    lastFormChapterKeyRef.current = "|";
     questionForm.setFieldsValue({
       categoryId: selectedCategoryId,
+      gradeId: selectedGradeId,
       subjectId: undefined,
+      chapterId: undefined,
+      tagIds: [],
       knowledgePointIds: [],
       type: "1",
       content: "",
@@ -290,7 +392,10 @@ export default function QuestionsPage() {
 
   const buildPayload = (values: QuestionFormValues) => ({
     categoryId: Number(values.categoryId || selectedCategoryId),
+    gradeId: values.gradeId || undefined,
     subjectId: values.subjectId || undefined,
+    chapterId: values.chapterId || undefined,
+    tagIds: values.tagIds || [],
     knowledgePointIds: values.knowledgePointIds || [],
     type: Number(values.type),
     content: values.content,
@@ -339,16 +444,21 @@ export default function QuestionsPage() {
 
   // 弹窗打开后再填充表单（afterOpenChange 回调），确保 Form 已挂载
   const populateEditForm = (q: QuestionItem) => {
-    // 程序性设置科目：跳过科目联动 effect 中「清空知识点」的逻辑，否则刚填充的知识点会被清空。
-    // 仅在科目实际变化时设置跳过标记，保证标记一定会被 effect 消费，不影响后续手动切换科目
+    // 程序性设置科目/年级：同步章节联动的 key，避免 effect 把刚填充的章节清空
     const nextSubjectId = q.subjectId || undefined;
+    const nextGradeId = q.gradeId || undefined;
+    lastFormChapterKeyRef.current = `${nextGradeId ?? ""}|${nextSubjectId ?? ""}`;
     if (nextSubjectId !== formSubjectId) {
       skipSubjectClearRef.current = true;
       setFormSubjectId(nextSubjectId);
     }
+    if (nextGradeId !== formGradeId) setFormGradeId(nextGradeId);
     questionForm.setFieldsValue({
       categoryId: q.categoryId,
+      gradeId: nextGradeId,
       subjectId: q.subjectId || undefined,
+      chapterId: q.chapterId || undefined,
+      tagIds: q.tags?.map((tag) => tag.id) || [],
       knowledgePointIds: q.knowledgePoints?.map((kp) => kp.id) || [],
       type: String(q.type),
       content: q.content,
@@ -546,6 +656,38 @@ export default function QuestionsPage() {
         ),
     },
     {
+      title: t("questions.colGrade"),
+      key: "grade",
+      width: 80,
+      render: (_, record) =>
+        record.gradeName ? (
+          <span>{record.gradeName}</span>
+        ) : (
+          <span style={{ color: token.colorTextTertiary }}>-</span>
+        ),
+    },
+    {
+      title: t("questions.colTags"),
+      key: "tags",
+      width: 140,
+      render: (_, record) =>
+        record.tags?.length ? (
+          <Space size={2} wrap>
+            {record.tags.map((tag) => (
+              <Tag
+                key={tag.id}
+                color={tag.type === "exam" ? "red" : tag.type === "difficulty" ? "orange" : "blue"}
+                style={{ fontSize: 11 }}
+              >
+                {tag.name}
+              </Tag>
+            ))}
+          </Space>
+        ) : (
+          <span style={{ color: token.colorTextTertiary }}>-</span>
+        ),
+    },
+    {
       title: t("questions.knowledgePointsLabel"),
       key: "knowledgePoints",
       width: 120,
@@ -699,6 +841,66 @@ export default function QuestionsPage() {
           </Form.Item>
         </Col>
         <Col span={12}>
+          <Form.Item
+            label={t("questions.grade")}
+            name="gradeId"
+            rules={[{ required: true, message: t("questions.gradeRequired") }]}
+          >
+            <Select
+              showSearch
+              placeholder={t("questions.gradePlaceholder")}
+              options={grades.map((g) => ({ value: g.id, label: `${g.name}（${g.stage}）` }))}
+              onChange={(v) => setFormGradeId(v)}
+              optionFilterProp="label"
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item label={t("questions.chapter")} name="chapterId">
+            <TreeSelect
+              allowClear
+              treeData={chapterTree.map(function convert(node: ChapterNode): any {
+                return {
+                  value: node.id,
+                  title: `${node.name}${node.level === 1 ? "（册）" : ""}`,
+                  key: node.id,
+                  children: node.children?.map(convert) || [],
+                };
+              })}
+              showSearch={{ treeNodeFilterProp: "title" }}
+              placeholder={
+                formGradeId && formSubjectId
+                  ? t("questions.chapterPlaceholder")
+                  : t("questions.selectGradeFirst")
+              }
+              disabled={!formGradeId || !formSubjectId}
+              treeDefaultExpandAll
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item label={t("questions.tags")} name="tagIds">
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder={t("questions.tagsPlaceholder")}
+              options={["exam", "source", "difficulty"].map((type) => ({
+                label: type === "exam" ? "考试类型" : type === "source" ? "题目来源" : "难度",
+                options: tags
+                  .filter((tag) => tag.type === type)
+                  .map((tag) => ({ value: tag.id, label: tag.name })),
+              }))}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={16}>
+        <Col span={24}>
           <Form.Item
             label={t("questions.knowledgePointsLabel")}
             name="knowledgePointIds"
@@ -881,6 +1083,29 @@ export default function QuestionsPage() {
               {opt.label}
             </span>
           )}
+        />
+        <Select
+          showSearch
+          allowClear
+          style={{ width: 150 }}
+          placeholder={t("questions.gradePlaceholder")}
+          value={selectedGradeId}
+          onChange={(value) => {
+            setSelectedGradeId(value);
+            setPage(1);
+          }}
+          options={grades.map((g) => ({ value: g.id, label: `${g.name}（${g.stage}）` }))}
+        />
+        <Select
+          allowClear
+          style={{ width: 150 }}
+          placeholder={t("questions.colTags")}
+          value={selectedTagId}
+          onChange={(value) => {
+            setSelectedTagId(value);
+            setPage(1);
+          }}
+          options={tags.map((tag) => ({ value: tag.id, label: tag.name }))}
         />
         <TreeSelect
           showSearch

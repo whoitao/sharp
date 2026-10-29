@@ -10,6 +10,7 @@ import type {
   PaginatedResponse,
   Publisher,
   Question,
+  QuestionTag,
   StudyRecord,
   StudyRecordSummary,
   Subject,
@@ -242,7 +243,9 @@ function generateMockQuestions(categoryId: string, unitIndex: number, count: num
     questions.push({
       id: `${catId * 1000 + qIndex}`,
       categoryId,
+      gradeId: null,
       subjectId: null,
+      chapterId: null,
       type: 1,
       content: `第${qIndex}题：以下哪个是 "elucidate" 的正确释义？`,
       analysis: '"elucidate" 意为阐明、解释。',
@@ -490,53 +493,81 @@ export const api = {
 
   // Units
   // categoryId 为空表示不限定考试范围，聚合该科目的全部题目
-  async getUnits(
-    categoryId: string | null,
-    subjectId: string,
-    knowledgePointId?: string,
-    page: number = 1,
-    pageSize: number = 10
-  ): Promise<{ units: UnitInfo[]; totalUnits: number }> {
+  // gradeId 为空表示不限年级；tagIds 为多选 chips，命中任意标签即可
+  async getUnits(params: {
+    subjectId: string;
+    categoryId?: string | null;
+    gradeId?: string | null;
+    knowledgePointId?: string | null;
+    tagIds?: string[];
+    page?: number;
+    pageSize?: number;
+  }): Promise<{ units: UnitInfo[]; totalUnits: number; totalQuestions: number }> {
+    const {
+      subjectId,
+      categoryId,
+      gradeId,
+      knowledgePointId,
+      tagIds,
+      page = 1,
+      pageSize = 10,
+    } = params;
     try {
-      const params: Record<string, string> = {
+      const query: Record<string, string> = {
         subjectId,
         page: String(page),
         pageSize: String(pageSize),
       };
-      if (categoryId) params.categoryId = categoryId;
-      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
-      const response = await apiClient.get<{ units: UnitInfo[]; totalUnits: number }>(
-        '/api/app/units',
-        { params },
-      );
-      return { units: response.data.units, totalUnits: response.data.totalUnits };
+      if (categoryId) query.categoryId = categoryId;
+      if (gradeId) query.gradeId = gradeId;
+      if (knowledgePointId) query.knowledgePointId = knowledgePointId;
+      if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
+      const response = await apiClient.get<{
+        units: UnitInfo[];
+        totalUnits: number;
+        totalQuestions: number;
+      }>('/api/app/units', { params: query });
+      return {
+        units: response.data.units,
+        totalUnits: response.data.totalUnits,
+        totalQuestions: response.data.totalQuestions,
+      };
     } catch {
       // mock 数据均为英语题，选择非英语科目时返回空
-      if (subjectId !== '1') return { units: [], totalUnits: 0 };
+      if (subjectId !== '1') return { units: [], totalUnits: 0, totalQuestions: 0 };
       const allCategories = [...mockCategories, ...mockSubCategories];
       const category = allCategories.find((c) => c.id === categoryId);
       const total = category?.questionCount ?? 100;
       const totalUnits = Math.ceil(total / 20);
       const all = generateMockUnits(categoryId ?? 'all', total, 20);
       const start = (page - 1) * pageSize;
-      return { units: all.slice(start, start + pageSize), totalUnits };
+      return {
+        units: all.slice(start, start + pageSize),
+        totalUnits,
+        totalQuestions: total,
+      };
     }
   },
 
   // Questions
-  async getQuestions(
-    categoryId: string | null,
-    unitIndex: number,
-    subjectId: string,
-    knowledgePointId?: string
-  ): Promise<Question[]> {
+  async getQuestions(params: {
+    subjectId: string;
+    unitIndex: number;
+    categoryId?: string | null;
+    gradeId?: string | null;
+    knowledgePointId?: string | null;
+    tagIds?: string[];
+  }): Promise<Question[]> {
+    const { subjectId, unitIndex, categoryId, gradeId, knowledgePointId, tagIds } = params;
     try {
-      const params: Record<string, string> = { subjectId };
-      if (categoryId) params.categoryId = categoryId;
-      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
+      const query: Record<string, string> = { subjectId };
+      if (categoryId) query.categoryId = categoryId;
+      if (gradeId) query.gradeId = gradeId;
+      if (knowledgePointId) query.knowledgePointId = knowledgePointId;
+      if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
       const response = await apiClient.get<Question[]>(
         `/api/app/units/${unitIndex}/questions`,
-        { params },
+        { params: query },
       );
       return response.data;
     } catch {
@@ -563,13 +594,29 @@ export const api = {
     });
   },
 
-  async getGrades(subjectId: string, publisherId: string): Promise<Grade[]> {
-    // 不缓存：grade.chapterCount 会随后台章节/题目维护变化
-    return dedupeInFlight(`grades:${subjectId}:${publisherId}`, async () => {
+  /**
+   * 年级字典（全局选择器用）。
+   * 传 subjectId 时同时返回该科目下各年级的题目/章节数，可用于只展示有内容的年级。
+   */
+  async getGrades(subjectId?: string): Promise<Grade[]> {
+    // 不缓存：questionCount / chapterCount 会随后台题库维护变化
+    return dedupeInFlight(`grades:${subjectId ?? 'all'}`, async () => {
       try {
-        const response = await apiClient.get<Grade[]>('/api/app/grades', {
-          params: { subjectId, publisherId },
-        });
+        const params = subjectId ? { subjectId } : {};
+        const response = await apiClient.get<Grade[]>('/api/app/grades', { params });
+        return response.data;
+      } catch {
+        return [];
+      }
+    });
+  },
+
+  // 题目标签（横向筛选 chips）；不缓存，标签会随后台维护变化
+  async getTags(subjectId?: string): Promise<QuestionTag[]> {
+    return dedupeInFlight(`tags:${subjectId ?? 'all'}`, async () => {
+      try {
+        const params = subjectId ? { subjectId } : {};
+        const response = await apiClient.get<QuestionTag[]>('/api/app/tags', { params });
         return response.data;
       } catch {
         return [];
@@ -578,19 +625,28 @@ export const api = {
   },
 
   // 章节树（含后代题数）；不缓存，题数会随题目导入变化
-  async getChapters(gradeId: string, subjectId?: string): Promise<Chapter[]> {
-    return dedupeInFlight(`chapters:${gradeId}:${subjectId ?? 'all'}`, async () => {
-      try {
-        const params = subjectId ? { subjectId } : {};
-        const response = await apiClient.get<Chapter[]>(
-          `/api/app/grades/${gradeId}/chapters`,
-          { params },
-        );
-        return response.data;
-      } catch {
-        return [];
-      }
-    });
+  async getChapters(
+    gradeId: string,
+    subjectId?: string,
+    publisherId?: string,
+  ): Promise<Chapter[]> {
+    return dedupeInFlight(
+      `chapters:${gradeId}:${subjectId ?? 'all'}:${publisherId ?? 'all'}`,
+      async () => {
+        try {
+          const params: Record<string, string> = {};
+          if (subjectId) params.subjectId = subjectId;
+          if (publisherId) params.publisherId = publisherId;
+          const response = await apiClient.get<Chapter[]>(
+            `/api/app/grades/${gradeId}/chapters`,
+            { params },
+          );
+          return response.data;
+        } catch {
+          return [];
+        }
+      },
+    );
   },
 
   // 有教材内容的科目；空数组时不露出教材入口
@@ -713,20 +769,25 @@ export const api = {
   // Study sessions
   // 返回该单元之前已完成的一次记录（有则用于答题页展示「上次学习」摘要）
   // categoryId 为空表示不限定考试范围
-  async startStudy(
-    categoryId: string | null,
-    unitIndex: number,
-    subjectId?: string,
-    knowledgePointId?: string
-  ): Promise<{ previous: StudyRecordSummary | null }> {
+  async startStudy(params: {
+    categoryId: string | null;
+    unitIndex: number;
+    subjectId?: string | null;
+    gradeId?: string | null;
+    knowledgePointId?: string | null;
+    tagIds?: string[];
+  }): Promise<{ previous: StudyRecordSummary | null }> {
     try {
-      const params: Record<string, string> = {};
-      if (subjectId) params.subjectId = subjectId;
-      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
+      const { categoryId, unitIndex, subjectId, gradeId, knowledgePointId, tagIds } = params;
+      const query: Record<string, string> = {};
+      if (subjectId) query.subjectId = subjectId;
+      if (gradeId) query.gradeId = gradeId;
+      if (knowledgePointId) query.knowledgePointId = knowledgePointId;
+      if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
       const response = await apiClient.post<{ previous: StudyRecordSummary | null }>(
         '/api/app/study/start',
         { categoryId: categoryId ?? null, unitIndex },
-        { params },
+        { params: query },
       );
       return { previous: response.data?.previous ?? null };
     } catch {
@@ -736,20 +797,25 @@ export const api = {
   },
 
   // 再学一次：清空该单元之前的学习记录，本次从零开始
-  async restartStudy(
-    categoryId: string | null,
-    unitIndex: number,
-    subjectId?: string,
-    knowledgePointId?: string
-  ): Promise<void> {
+  async restartStudy(params: {
+    categoryId: string | null;
+    unitIndex: number;
+    subjectId?: string | null;
+    gradeId?: string | null;
+    knowledgePointId?: string | null;
+    tagIds?: string[];
+  }): Promise<void> {
     try {
-      const params: Record<string, string> = {};
-      if (subjectId) params.subjectId = subjectId;
-      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
+      const { categoryId, unitIndex, subjectId, gradeId, knowledgePointId, tagIds } = params;
+      const query: Record<string, string> = {};
+      if (subjectId) query.subjectId = subjectId;
+      if (gradeId) query.gradeId = gradeId;
+      if (knowledgePointId) query.knowledgePointId = knowledgePointId;
+      if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
       await apiClient.post(
         '/api/app/study/restart',
         { categoryId: categoryId ?? null, unitIndex },
-        { params },
+        { params: query },
       );
     } catch {
       // silently succeed in mock mode
@@ -764,8 +830,10 @@ export const api = {
       wrongCount: number;
       durationSeconds: number;
       answers: AnswerItem[];
-      subjectId?: string;
-      knowledgePointId?: string;
+      subjectId?: string | null;
+      gradeId?: string | null;
+      knowledgePointId?: string | null;
+      tagIds?: string[];
     }
   ): Promise<void> {
     try {
@@ -775,7 +843,9 @@ export const api = {
         ...stats,
         // 同一单元在不同筛选下各有一条记录，服务端按完整键定位
         subjectId: stats.subjectId ?? null,
+        gradeId: stats.gradeId ?? null,
         knowledgePointId: stats.knowledgePointId ?? null,
+        tagIds: stats.tagIds && stats.tagIds.length > 0 ? stats.tagIds : null,
       });
     } catch {
       // silently succeed in mock mode
@@ -783,21 +853,27 @@ export const api = {
   },
 
   // Study records
-  async getStudyRecords(
-    page: number = 1,
-    pageSize: number = 20,
-    categoryId?: string,
-    subjectId?: string,
-    knowledgePointId?: string
-  ): Promise<PaginatedResponse<StudyRecord>> {
+  async getStudyRecords(params: {
+    page?: number;
+    pageSize?: number;
+    categoryId?: string | null;
+    gradeId?: string | null;
+    subjectId?: string | null;
+    knowledgePointId?: string | null;
+    chapterId?: string | null;
+  } = {}): Promise<PaginatedResponse<StudyRecord>> {
+    const { page = 1, pageSize = 20, categoryId, gradeId, subjectId, knowledgePointId, chapterId } =
+      params;
     try {
-      const params: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
-      if (categoryId) params.categoryId = categoryId;
-      if (subjectId) params.subjectId = subjectId;
-      if (knowledgePointId) params.knowledgePointId = knowledgePointId;
+      const query: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
+      if (categoryId) query.categoryId = categoryId;
+      if (gradeId) query.gradeId = gradeId;
+      if (subjectId) query.subjectId = subjectId;
+      if (knowledgePointId) query.knowledgePointId = knowledgePointId;
+      if (chapterId) query.chapterId = chapterId;
       const response = await apiClient.get<PaginatedResponse<StudyRecord>>(
         '/api/app/study/records',
-        { params }
+        { params: query }
       );
       return response.data;
     } catch {
@@ -805,6 +881,8 @@ export const api = {
         id: `record-${i}`,
         userId: '1',
         categoryId: '1',
+        gradeId: null,
+        chapterId: null,
         subjectId: null,
         knowledgePointId: null,
         unitIndex: i,
@@ -882,6 +960,9 @@ export const api = {
         theme: 'light' as Theme,
         language: 'zh' as Language,
         density: 'comfortable' as Density,
+        gradeId: null,
+        subjectId: null,
+        publisherId: null,
       };
     }
   },
@@ -897,6 +978,9 @@ export const api = {
         theme: settings.theme ?? ('light' as Theme),
         language: settings.language ?? ('zh' as Language),
         density: settings.density ?? ('comfortable' as Density),
+        gradeId: settings.gradeId ?? null,
+        subjectId: settings.subjectId ?? null,
+        publisherId: settings.publisherId ?? null,
       };
     }
   },

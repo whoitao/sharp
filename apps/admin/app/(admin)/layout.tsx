@@ -51,6 +51,7 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/publishers", icon: <FileTextOutlined />, labelKey: "nav.publishers" },
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.grades" },
   { key: "/chapters", icon: <AppstoreOutlined />, labelKey: "nav.chapters" },
+  { key: "/tags", icon: <TagsOutlined />, labelKey: "nav.tags" },
 ];
 
 const THEME_OPTIONS: { value: ThemeMode; labelKey: MessageKey; icon: React.ReactNode }[] = [
