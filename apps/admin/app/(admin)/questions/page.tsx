@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageSize } from "@/components/antd-providers";
+import IonIcon from "@/components/IonIcon";
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
@@ -68,6 +69,7 @@ interface CategoryOption {
 interface SubjectOption {
   id: string;
   name: string;
+  icon?: string | null;
 }
 
 interface KPNode {
@@ -499,6 +501,18 @@ export default function QuestionsPage() {
 
   const categoryOptions = flattenCategories(categories);
 
+  const kpNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const walk = (nodes: KPNode[]) => {
+      for (const n of nodes) {
+        map.set(n.id, n.name);
+        if (n.children?.length) walk(n.children);
+      }
+    };
+    walk(kpTree);
+    return map;
+  }, [kpTree]);
+
   const columns: ColumnsType<QuestionItem> = [
     {
       title: t("questions.colId"),
@@ -666,9 +680,21 @@ export default function QuestionsPage() {
             <Select
               showSearch
               allowClear
-              options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+              options={subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }))}
               placeholder={t("questions.subjectPlaceholder")}
               onChange={(v) => setFormSubjectId(v)}
+              optionRender={(opt: any) => (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
+                  {opt.label}
+                </span>
+              )}
+              labelRender={(opt: any) => (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
+                  {opt.label}
+                </span>
+              )}
             />
           </Form.Item>
         </Col>
@@ -676,6 +702,14 @@ export default function QuestionsPage() {
           <Form.Item
             label={t("questions.knowledgePointsLabel")}
             name="knowledgePointIds"
+            getValueFromEvent={(value: any) =>
+              Array.isArray(value) ? value.map((v) => (typeof v === "object" ? v.value : v)) : []
+            }
+            getValueProps={(value: string[] | undefined) => ({
+              value: Array.isArray(value)
+                ? value.map((id) => ({ value: id, label: kpNameMap.get(id) ?? id }))
+                : [],
+            })}
           >
             <TreeSelect
               treeData={kpTree.map(function convert(node: KPNode): any {
@@ -688,6 +722,7 @@ export default function QuestionsPage() {
                 };
               })}
               treeCheckable
+              treeCheckStrictly
               multiple
               // antd v6：搜索配置收敛到 showSearch 对象，按标题过滤
               showSearch={{ treeNodeFilterProp: "title" }}
@@ -833,7 +868,19 @@ export default function QuestionsPage() {
             setSelectedSubjectId(value);
             setPage(1);
           }}
-          options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+          options={subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }))}
+          optionRender={(opt: any) => (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
+              {opt.label}
+            </span>
+          )}
+          labelRender={(opt: any) => (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
+              {opt.label}
+            </span>
+          )}
         />
         <TreeSelect
           showSearch

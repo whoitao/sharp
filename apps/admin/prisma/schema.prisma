@@ -81,8 +81,8 @@ model Question {
   subjectId  BigInt?
   subject    Subject? @relation(fields: [subjectId], references: [id])
   type       Int
-  content    String   @db.VarChar(500)
-  analysis   String?  @db.VarChar(1000)
+  content    String   @db.Text
+  analysis   String?  @db.Text
   difficulty Int      @default(1)
   score      Int      @default(1)
   sortOrder  Int      @default(0)
@@ -101,7 +101,7 @@ model QuestionOption {
   questionId BigInt
   question   Question @relation(fields: [questionId], references: [id])
   optionKey  String   @db.Char(1)
-  content    String   @db.VarChar(500)
+  content    String   @db.Text
   isCorrect  Boolean  @default(false)
   sortNo     Int      @default(0)
 
