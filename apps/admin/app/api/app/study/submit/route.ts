@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
     create: {
       userId: appUser.id,
       questionId: BigInt(questionId),
-      categoryId: question.categoryId,
       subjectId: question.subjectId,
       status: isCorrect ? "correct" : "wrong",
       lastPracticedAt: new Date(),

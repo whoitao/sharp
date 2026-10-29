@@ -49,22 +49,6 @@ model Admin {
   createdAt    DateTime @default(now())
 }
 
-model Category {
-  id        BigInt   @id @default(autoincrement())
-  name      String
-  parentId  BigInt?
-  sortOrder Int      @default(0)
-  icon      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
-  children Category[] @relation("CategoryTree")
-  questions Question[]
-
-  @@index([parentId])
-}
-
 model Subject {
   id        BigInt   @id @default(autoincrement())
   name      String   @unique
@@ -101,8 +85,6 @@ model Grade {
 
 model Question {
   id         BigInt   @id @default(autoincrement())
-  categoryId BigInt
-  category   Category @relation(fields: [categoryId], references: [id])
   gradeId    BigInt?
   grade      Grade?   @relation(fields: [gradeId], references: [id])
   subjectId  BigInt?
@@ -125,7 +107,6 @@ model Question {
   knowledgePoints   QuestionKnowledgePoint[]
   tags              QuestionTagLink[]
 
-  @@index([categoryId])
   @@index([gradeId])
   @@index([subjectId])
   @@index([chapterId])
@@ -173,9 +154,7 @@ model UserStudyRecord {
   id              String   @id @default(uuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id])
-  // 考纲练习记录带分类；教材章节练习跨分类取题，categoryId 为空
-  categoryId      BigInt?
-  // 考纲练习的年级（新口径）；教材练习由章节反推，不冗余
+  // 考纲练习的年级；教材练习由章节反推，不冗余
   gradeId         BigInt?
   grade           Grade?   @relation(fields: [gradeId], references: [id])
   unitIndex       Int
@@ -197,7 +176,6 @@ model UserStudyRecord {
   durationSeconds Int      @default(0)
 
   @@index([userId, startedAt])
-  @@index([categoryId])
   @@index([gradeId])
   @@index([chapterId])
 }
@@ -207,7 +185,6 @@ model UserQuestionProgress {
   user            User     @relation(fields: [userId], references: [id])
   questionId      BigInt
   question        Question @relation(fields: [questionId], references: [id])
-  categoryId      BigInt
   // 练习时选择的筛选条件（null = 未筛选）
   subjectId        BigInt?
   subject          Subject?        @relation(fields: [subjectId], references: [id])
@@ -219,7 +196,6 @@ model UserQuestionProgress {
   wrongCount      Int      @default(0)
 
   @@id([userId, questionId])
-  @@index([categoryId])
   @@index([subjectId])
   @@index([knowledgePointId])
 }

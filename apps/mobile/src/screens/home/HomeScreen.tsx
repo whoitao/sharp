@@ -47,11 +47,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [subjectOptions, subjectId],
   );
 
-  // 进入首页后的空余时间预拉取学习页搜索数据（分类/科目），
+  // 进入首页后的空余时间预拉取学习页搜索数据（科目），
   // api 内部做缓存优先 + 并发去重，与学习页同时挂载也不会产生重复请求
   // 知识点按学科过滤，改为选中学科后再拉取，这里不预取
   useEffect(() => {
-    api.getCategories('0').catch(() => {});
     api.getSubjects().catch(() => {});
   }, []);
 
@@ -83,6 +82,47 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.setOptions({ headerRight: () => <StreakBadge days={streak} /> });
   }, [navigation, streak]);
 
+  // 学习范围变更后写入用户设置，学习页/教材页/记录页共用
+  const handleChangeGrade = useCallback(
+    (grade: Grade | null) => {
+      dispatch(updateSettings({ gradeId: grade?.id ?? null }));
+    },
+    [dispatch],
+  );
+
+  const handleChangeSubject = useCallback(
+    (subject: Subject | null) => {
+      dispatch(updateSettings({ subjectId: subject?.id ?? null }));
+    },
+    [dispatch],
+  );
+
+  // 全局学习范围（年级 + 科目）画在原生 header 左侧：标题同一行，常驻可见
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <View style={{ marginLeft: 16 }}>
+          <ScopeSelector
+            grades={grades}
+            subjects={subjectOptions}
+            selectedGrade={selectedGrade}
+            selectedSubject={selectedSubject}
+            onChangeGrade={handleChangeGrade}
+            onChangeSubject={handleChangeSubject}
+          />
+        </View>
+      ),
+    });
+  }, [
+    navigation,
+    grades,
+    subjectOptions,
+    selectedGrade,
+    selectedSubject,
+    handleChangeGrade,
+    handleChangeSubject,
+  ]);
+
   const loadHome = useCallback(async () => {
     const [overview, stats, availability, gradeList, subjectList] = await Promise.all([
       api.getSubjectOverview(),
@@ -98,21 +138,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setSubjectOptions(subjectList);
     setLoading(false);
   }, []);
-
-  // 学习范围变更后写入用户设置，学习页/教材页/记录页共用
-  const handleChangeGrade = useCallback(
-    (grade: Grade | null) => {
-      dispatch(updateSettings({ gradeId: grade?.id ?? null }));
-    },
-    [dispatch],
-  );
-
-  const handleChangeSubject = useCallback(
-    (subject: Subject | null) => {
-      dispatch(updateSettings({ subjectId: subject?.id ?? null }));
-    },
-    [dispatch],
-  );
 
   // 每次回到首页都刷新：从练习页返回时已学比例要跟着变
   useFocusEffect(
@@ -148,18 +173,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <ActivityIndicator color={colors.accent} style={{ marginTop: 32 * spacing }} />
         ) : (
           <>
-            {/* 全局学习范围：年级 + 科目（常驻顶部） */}
-            <View style={{ marginBottom: 10 * spacing }}>
-              <ScopeSelector
-                grades={grades}
-                subjects={subjectOptions}
-                selectedGrade={selectedGrade}
-                selectedSubject={selectedSubject}
-                onChangeGrade={handleChangeGrade}
-                onChangeSubject={handleChangeSubject}
-              />
-            </View>
-
             <SubjectCarousel
               items={carouselItems}
               onSelect={goToStudy}
@@ -167,11 +180,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             />
 
             <View style={[styles.quickRow, { gap: 8 * spacing, marginTop: 12 * spacing }]}>
-              <QuickEntry
-                icon="calendar-outline"
-                label={t.studyByKnowledge}
-                onPress={() => goToStudy(selectedSubject?.id)}
-              />
               <QuickEntry
                 icon="bookmark-outline"
                 label={t.wrongQuestions}

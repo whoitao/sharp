@@ -1,9 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type {
-  Category,
   Grade,
   KnowledgePoint,
   QuestionTag,
@@ -18,10 +16,10 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import ScopeSelector from '../../components/ScopeSelector';
 import StudyFilterBar from '../../components/StudyFilterBar';
 import UnitItem from '../../components/UnitItem';
 import { useDensity } from '../../hooks/useDensity';
@@ -55,14 +53,10 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     (state: RootState) => state.settings,
   );
 
-  const [categories, setCategories] = useState<Category[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [tags, setTags] = useState<QuestionTag[]>([]);
-  // 有教材内容时才露出「教材同步」入口
-  const [textbookAvailable, setTextbookAvailable] = useState(false);
 
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null);
   const [selectedKP, setSelectedKP] = useState<KnowledgePoint | null>(null);
@@ -82,14 +76,12 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     const cached = await hasStudyCache();
     if (!cached) setInitialLoading(true);
     try {
-      const [subs, availability, gradeList, tagList] = await Promise.all([
+      const [subs, gradeList, tagList] = await Promise.all([
         api.getSubjects(),
-        api.getTextbookAvailability(),
         api.getGrades(),
         api.getTags(),
       ]);
       setSubjects(subs);
-      setTextbookAvailable(availability.length > 0);
       setGrades(gradeList);
       setTags(tagList);
       // 恢复全局「年级 + 科目」学习范围
@@ -109,38 +101,16 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     }
   }, []);
 
-  // 分类（考试范围）为可选项，随科目变化：只显示该科目下有题目的分类；切换科目后清空已选
-  useEffect(() => {
-    let cancelled = false;
-    setSelectedCategory(null);
-    if (!selectedSubject) {
-      setCategories([]);
-      return;
-    }
-    (async () => {
-      try {
-        const tree = await api.getCategoriesBySubject(selectedSubject.id);
-        if (!cancelled) setCategories(tree);
-      } catch {
-        if (!cancelled) setCategories([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedSubject]);
-
-  // 单元列表的筛选键：科目 + 知识点必选，分类为空表示「全部」，年级与标签为可选横向筛选
+  // 单元列表的筛选键：科目 + 知识点必选，年级与标签为可选横向筛选
   const buildUnitsKey = useCallback(
     (
-      cat: Category | null,
       sub: Subject | null,
       kp: KnowledgePoint | null,
       grade: Grade | null,
       tagIds: string[],
     ): string | null =>
       sub && kp
-        ? `${cat?.id ?? 'all'}|${sub.id}|${kp.id}|${grade?.id ?? 'all'}|${tagIds.slice().sort().join(',')}`
+        ? `${sub.id}|${kp.id}|${grade?.id ?? 'all'}|${tagIds.slice().sort().join(',')}`
         : null,
     []
   );
@@ -156,7 +126,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
   // 按页加载单元列表：page=1 覆盖列表，page>1 触底追加
   // silent=true 时不显示 loading、失败时保留旧数据（用于回到页面时的静默刷新）
   const fetchUnits = useCallback(async (pageToLoad: number, opts?: { silent?: boolean }) => {
-    // 科目与知识点必选；分类不选表示不限考试范围
+    // 科目与知识点必选
     if (!selectedSubject || !selectedKP) {
       setUnits([]);
       totalUnitsRef.current = 0;
@@ -171,7 +141,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     }
     try {
       const { units: pageUnits, totalUnits } = await api.getUnits({
-        categoryId: selectedCategory?.id ?? null,
         subjectId: selectedSubject.id,
         gradeId: selectedGrade?.id ?? null,
         knowledgePointId: selectedKP.id,
@@ -183,7 +152,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       loadedPagesRef.current = pageToLoad;
       setUnits((prev) => (pageToLoad === 1 ? pageUnits : [...prev, ...pageUnits]));
       lastUnitsKeyRef.current = buildUnitsKey(
-        selectedCategory,
         selectedSubject,
         selectedKP,
         selectedGrade,
@@ -198,7 +166,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       }
       setRefreshing(false);
     }
-  }, [selectedCategory, selectedSubject, selectedGrade, selectedKP, selectedTagIds, buildUnitsKey]);
+  }, [selectedSubject, selectedGrade, selectedKP, selectedTagIds, buildUnitsKey]);
 
   useEffect(() => {
     fetchInitialData();
@@ -221,11 +189,10 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
 
   // 回到页面时静默刷新已加载页的单元进度（从 Quiz 完成返回时最关键）；
   // 仅当筛选组合与上次成功加载一致时才刷新——筛选变化由上面的 useEffect 负责，
-  // 否则选中分类/科目/知识点时同一接口会被连发两次
+  // 否则选中科目/知识点时同一接口会被连发两次
   useFocusEffect(
     useCallback(() => {
       const key = buildUnitsKey(
-        selectedCategory,
         selectedSubject,
         selectedKP,
         selectedGrade,
@@ -239,7 +206,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
           const refreshed: UnitInfo[] = [];
           for (let p = 1; p <= pages; p += 1) {
             const { units: pageUnits, totalUnits } = await api.getUnits({
-              categoryId: selectedCategory?.id ?? null,
               subjectId: selectedSubject!.id,
               gradeId: selectedGrade?.id ?? null,
               knowledgePointId: selectedKP!.id,
@@ -256,7 +222,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
           // 静默刷新失败时保留旧数据
         }
       })();
-    }, [selectedCategory, selectedSubject, selectedGrade, selectedKP, selectedTagIds, buildUnitsKey])
+    }, [selectedSubject, selectedGrade, selectedKP, selectedTagIds, buildUnitsKey])
   );
 
   // 触底加载下一页
@@ -280,7 +246,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       if (pressingUnitIndex !== null || !selectedSubject) return;
       setPressingUnitIndex(unit.unitIndex);
       const scope = {
-        categoryId: selectedCategory?.id ?? null,
         subjectId: selectedSubject.id,
         gradeId: selectedGrade?.id ?? null,
         knowledgePointId: selectedKP?.id ?? null,
@@ -297,7 +262,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         }
         const result = await dispatch(
           fetchQuestions({
-            categoryId: scope.categoryId ?? undefined,
             unitIndex: unit.unitIndex,
             subjectId: scope.subjectId,
             gradeId: scope.gradeId ?? undefined,
@@ -307,9 +271,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         );
         if (fetchQuestions.fulfilled.match(result)) {
           navigation.navigate('Quiz', {
-            categoryId: scope.categoryId ?? undefined,
             unitIndex: unit.unitIndex,
-            categoryName: selectedCategory?.name,
             subjectId: scope.subjectId,
             gradeId: scope.gradeId ?? undefined,
             knowledgePointId: scope.knowledgePointId ?? undefined,
@@ -323,7 +285,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         setPressingUnitIndex(null);
       }
     },
-    [pressingUnitIndex, selectedCategory, selectedSubject, selectedGrade, selectedKP, selectedTagIds, dispatch, navigation]
+    [pressingUnitIndex, selectedSubject, selectedGrade, selectedKP, selectedTagIds, dispatch, navigation]
   );
 
   // 全局学习范围变更后持久化，首页/教材/记录页共用
@@ -348,6 +310,32 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
     );
   }, []);
+
+  // 全局「年级 + 科目」常驻原生 header 左上角，与首页一致
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <View style={{ marginLeft: 16 }}>
+          <ScopeSelector
+            grades={grades}
+            subjects={subjects}
+            selectedGrade={selectedGrade}
+            selectedSubject={selectedSubject}
+            onChangeGrade={handleSelectGrade}
+            onChangeSubject={handleSelectSubject}
+          />
+        </View>
+      ),
+    });
+  }, [
+    navigation,
+    grades,
+    subjects,
+    selectedGrade,
+    selectedSubject,
+    handleSelectGrade,
+    handleSelectSubject,
+  ]);
 
   const renderItem = useCallback(
     ({ item }: { item: UnitInfo }) => (
@@ -385,40 +373,10 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {textbookAvailable && (
-        <TouchableOpacity
-          style={[
-            styles.textbookEntry,
-            {
-              marginHorizontal: 16 * spacing,
-              marginTop: 8 * spacing,
-              backgroundColor: colors.surface,
-            },
-          ]}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Textbook')}
-        >
-          <View
-            style={[
-              styles.textbookEntryIcon,
-              { backgroundColor: colors.background, borderRadius: 10 * spacing },
-            ]}
-          >
-            <Ionicons name="library-outline" size={20 * font} color={colors.accent} />
-          </View>
-          <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '600', flex: 1 }}>
-            {t.textbookTitle}
-          </Text>
-          <Ionicons name="chevron-forward" size={18 * font} color={colors.textTertiary} />
-        </TouchableOpacity>
-      )}
       <StudyFilterBar
-        categories={categories}
         subjects={subjects}
-        selectedCategory={selectedCategory}
         selectedSubject={selectedSubject}
         selectedKP={selectedKP}
-        onSelectCategory={setSelectedCategory}
         onSelectSubject={handleSelectSubject}
         onSelectKP={setSelectedKP}
         grades={grades}
@@ -429,7 +387,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         onToggleTag={handleToggleTag}
         loading={initialLoading}
         allowClear
-        categoryDisabled={!selectedSubject}
+        hideScope
       />
 
       {loading ? (
@@ -464,20 +422,6 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: 16 },
-  textbookEntry: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  textbookEntryIcon: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
 });
 
 export default StudyScreen;

@@ -2,22 +2,8 @@ import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
-  const ids: bigint[] = [categoryId];
-  const children = await prisma.category.findMany({
-    where: { parentId: categoryId },
-    select: { id: true },
-  });
-  for (const child of children) {
-    const childIds = await getAllCategoryIds(child.id);
-    ids.push(...childIds);
-  }
-  return ids;
-}
-
 /**
- * 单元列表（科目必选、分类可选）。
- * 不选分类时聚合该科目下的全部题目，选中分类时按分类子树取题。
+ * 单元列表（科目必选，年级/知识点/标签可选）。
  */
 export async function GET(request: NextRequest) {
   const appUser = requireAppUser(request);
@@ -29,7 +15,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "subjectId is required" }, { status: 400 });
   }
 
-  const categoryIdRaw = url.searchParams.get("categoryId");
   const knowledgePointIdRaw = url.searchParams.get("knowledgePointId");
   const gradeIdRaw = url.searchParams.get("gradeId");
   const tagIdsRaw = url.searchParams.get("tagIds");
@@ -37,9 +22,6 @@ export async function GET(request: NextRequest) {
   const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") ?? "10", 10) || 10));
 
   const questionWhere: any = { subjectId: BigInt(subjectIdRaw) };
-  if (categoryIdRaw) {
-    questionWhere.categoryId = { in: await getAllCategoryIds(BigInt(categoryIdRaw)) };
-  }
   if (knowledgePointIdRaw) {
     questionWhere.knowledgePoints = {
       some: { knowledgePointId: BigInt(knowledgePointIdRaw) },
@@ -65,15 +47,11 @@ export async function GET(request: NextRequest) {
 
   const totalQuestions = await prisma.question.count({ where: questionWhere });
 
-  // 进度只按本次涉及到的分类取，避免用几千个题目 ID 拼查询条件
-  const categoryGroups = await prisma.question.groupBy({
-    by: ["categoryId"],
-    where: questionWhere,
-  });
+  // 进度按科目范围取，避免用几千个题目 ID 拼查询条件
   const progress = await prisma.userQuestionProgress.findMany({
     where: {
       userId: appUser.id,
-      categoryId: { in: categoryGroups.map((g) => g.categoryId) },
+      OR: [{ subjectId: BigInt(subjectIdRaw) }, { subjectId: null }],
     },
     select: { questionId: true, status: true },
   });
@@ -129,7 +107,6 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     subjectId: subjectIdRaw,
-    categoryId: categoryIdRaw,
     gradeId: gradeIdRaw,
     tagIds: tagIds.map((t) => t.toString()),
     unitSize,

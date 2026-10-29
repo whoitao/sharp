@@ -7,7 +7,6 @@ export async function GET(request: NextRequest) {
   if (admin instanceof NextResponse) return admin;
 
   const { searchParams } = new URL(request.url);
-  const categoryId = searchParams.get("categoryId");
   const subjectId = searchParams.get("subjectId");
   const gradeId = searchParams.get("gradeId");
   const knowledgePointId = searchParams.get("knowledgePointId");
@@ -23,9 +22,6 @@ export async function GET(request: NextRequest) {
   );
 
   const where: any = {};
-  if (categoryId) {
-    where.categoryId = BigInt(categoryId);
-  }
   if (subjectId) {
     where.subjectId = BigInt(subjectId);
   }
@@ -55,7 +51,6 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         options: { orderBy: { sortNo: "asc" } },
-        category: { select: { name: true } },
         subject: true,
         grade: { select: { name: true, stage: true } },
         chapter: {
@@ -80,8 +75,6 @@ export async function GET(request: NextRequest) {
 
   const serialize = (q: any) => ({
     id: q.id.toString(),
-    categoryId: q.categoryId.toString(),
-    categoryName: q.category?.name ?? null,
     gradeId: q.gradeId?.toString() ?? null,
     gradeName: q.grade?.name ?? null,
     subjectId: q.subjectId?.toString() ?? null,
@@ -134,7 +127,6 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const {
-    categoryId,
     gradeId,
     subjectId,
     type,
@@ -150,9 +142,9 @@ export async function POST(request: NextRequest) {
     tagIds,
   } = body;
 
-  if (!categoryId || !type || !content) {
+  if (!type || !content) {
     return NextResponse.json(
-      { error: "categoryId, type, and content are required" },
+      { error: "type and content are required" },
       { status: 400 }
     );
   }
@@ -192,7 +184,6 @@ export async function POST(request: NextRequest) {
 
   const question = await prisma.question.create({
     data: {
-      categoryId: BigInt(categoryId),
       gradeId: finalGradeId,
       subjectId: finalSubjectId,
       type,
@@ -240,7 +231,6 @@ export async function POST(request: NextRequest) {
   const serialize = (q: any) => ({
     ...q,
     id: q.id.toString(),
-    categoryId: q.categoryId.toString(),
     gradeId: q.gradeId?.toString() ?? null,
     subjectId: q.subjectId?.toString() ?? null,
     // BigInt 不能直接 JSON 序列化，必须转字符串

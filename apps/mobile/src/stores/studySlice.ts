@@ -21,7 +21,6 @@ interface StudyState {
   currentIndex: number;
   answers: Record<string, { selectedKeys: string[]; correct: boolean }>;
   startTime: number | null;
-  categoryId: string | null;
   unitIndex: number | null;
   result: QuizResult | null;
   isLoading: boolean;
@@ -32,7 +31,6 @@ const initialState: StudyState = {
   currentIndex: 0,
   answers: {},
   startTime: null,
-  categoryId: null,
   unitIndex: null,
   result: null,
   isLoading: false,
@@ -41,8 +39,7 @@ const initialState: StudyState = {
 export const fetchQuestions = createAsyncThunk(
   'study/fetchQuestions',
   async (params: {
-    /** 考纲练习可选分类（不选=该科目全部题目）；教材章节练习用 chapterId，二者至少有一个 */
-    categoryId?: string;
+    /** 考纲练习按年级/科目/知识点/标签筛选；教材章节练习用 chapterId，二者至少有一个 */
     gradeId?: string;
     tagIds?: string[];
     chapterId?: string;
@@ -53,7 +50,6 @@ export const fetchQuestions = createAsyncThunk(
     const questions = params.chapterId
       ? await api.getChapterQuestions(params.chapterId, params.unitIndex, params.subjectId)
       : await api.getQuestions({
-          categoryId: params.categoryId ?? null,
           unitIndex: params.unitIndex,
           subjectId: params.subjectId ?? '',
           gradeId: params.gradeId ?? null,
@@ -62,8 +58,6 @@ export const fetchQuestions = createAsyncThunk(
         });
     return {
       questions,
-      categoryId: params.categoryId ?? null,
-      chapterId: params.chapterId ?? null,
       unitIndex: params.unitIndex,
     };
   }
@@ -141,14 +135,11 @@ const studySlice = createSlice({
           state,
           action: PayloadAction<{
             questions: Question[];
-            categoryId: string | null;
-            chapterId: string | null;
             unitIndex: number;
           }>,
         ) => {
           state.isLoading = false;
           state.currentQuestions = action.payload.questions;
-          state.categoryId = action.payload.categoryId;
           state.unitIndex = action.payload.unitIndex;
           state.currentIndex = 0;
           state.answers = {};

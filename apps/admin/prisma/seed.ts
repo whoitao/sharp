@@ -12,7 +12,6 @@ async function main() {
   await prisma.userStudyRecord.deleteMany();
   await prisma.questionOption.deleteMany();
   await prisma.question.deleteMany();
-  await prisma.category.deleteMany();
   await prisma.userSettings.deleteMany();
   await prisma.user.deleteMany();
   await prisma.admin.deleteMany();
@@ -28,45 +27,32 @@ async function main() {
   });
   console.log(`Created admin: ${admin.username}`);
 
-  // Create categories: 英语 -> CET4 (parentId=null means top-level)
-  const english = await prisma.category.create({
-    data: {
-      name: "英语",
-      parentId: null,
-      sortOrder: 0,
-      icon: "book",
-    },
+  // 年级与科目：分类已合并进年级，示例数据直接落在年级上
+  const cet4Grade = await prisma.grade.upsert({
+    where: { name: "大一" },
+    update: {},
+    create: { name: "大一", stage: "大学", sortOrder: 10 },
   });
 
-  const cet4 = await prisma.category.create({
-    data: {
-      name: "CET4",
-      parentId: english.id,
-      sortOrder: 0,
-      icon: "graduation-cap",
-    },
+  const gkMathGrade = await prisma.grade.upsert({
+    where: { name: "高三" },
+    update: {},
+    create: { name: "高三", stage: "高中", sortOrder: 6 },
   });
 
-  // Create categories: 数学 -> 高考数学
-  const math = await prisma.category.create({
-    data: {
-      name: "数学",
-      parentId: null,
-      sortOrder: 1,
-      icon: "calculator",
-    },
+  const englishSubject = await prisma.subject.upsert({
+    where: { name: "英语" },
+    update: {},
+    create: { name: "英语", sortOrder: 1 },
   });
 
-  const gkMath = await prisma.category.create({
-    data: {
-      name: "高考数学",
-      parentId: math.id,
-      sortOrder: 0,
-      icon: "sigma",
-    },
+  const mathSubject = await prisma.subject.upsert({
+    where: { name: "数学" },
+    update: {},
+    create: { name: "数学", sortOrder: 2 },
   });
 
-  console.log(`Created categories: 英语/CET4, 数学/高考数学`);
+  console.log(`Created grades: 大一, 高三 / subjects: 英语, 数学`);
 
   // Create sample CET4 questions
   const questions = [
@@ -213,7 +199,8 @@ async function main() {
   for (const q of questions) {
     await prisma.question.create({
       data: {
-        categoryId: cet4.id,
+        gradeId: cet4Grade.id,
+        subjectId: englishSubject.id,
         type: q.type,
         content: q.content,
         analysis: q.analysis,
@@ -304,7 +291,8 @@ async function main() {
   for (const q of mathQuestions) {
     await prisma.question.create({
       data: {
-        categoryId: gkMath.id,
+        gradeId: gkMathGrade.id,
+        subjectId: mathSubject.id,
         type: q.type,
         content: q.content,
         analysis: q.analysis,
@@ -341,14 +329,14 @@ async function main() {
   console.log(`Created test user: ${user.username}`);
 
   // Create sample study records
-  const cet4Id = cet4.id;
-  const gkMathId = gkMath.id;
+  const cet4Id = cet4Grade.id;
+  const gkMathId = gkMathGrade.id;
 
   await prisma.userStudyRecord.createMany({
     data: [
       {
         userId: user.id,
-        categoryId: cet4Id,
+        gradeId: cet4Id,
         unitIndex: 0,
         startedAt: new Date(Date.now() - 86400000 * 5),
         finishedAt: new Date(Date.now() - 86400000 * 5 + 600000),
@@ -359,7 +347,7 @@ async function main() {
       },
       {
         userId: user.id,
-        categoryId: cet4Id,
+        gradeId: cet4Id,
         unitIndex: 1,
         startedAt: new Date(Date.now() - 86400000 * 4),
         finishedAt: new Date(Date.now() - 86400000 * 4 + 720000),
@@ -370,7 +358,7 @@ async function main() {
       },
       {
         userId: user.id,
-        categoryId: cet4Id,
+        gradeId: cet4Id,
         unitIndex: 2,
         startedAt: new Date(Date.now() - 86400000 * 3),
         finishedAt: new Date(Date.now() - 86400000 * 3 + 540000),
@@ -381,7 +369,7 @@ async function main() {
       },
       {
         userId: user.id,
-        categoryId: gkMathId,
+        gradeId: gkMathId,
         unitIndex: 0,
         startedAt: new Date(Date.now() - 86400000 * 2),
         finishedAt: new Date(Date.now() - 86400000 * 2 + 900000),
@@ -392,7 +380,7 @@ async function main() {
       },
       {
         userId: user.id,
-        categoryId: gkMathId,
+        gradeId: gkMathId,
         unitIndex: 1,
         startedAt: new Date(Date.now() - 86400000),
         finishedAt: new Date(Date.now() - 86400000 + 660000),
@@ -403,7 +391,7 @@ async function main() {
       },
       {
         userId: user.id,
-        categoryId: cet4Id,
+        gradeId: cet4Id,
         unitIndex: 3,
         startedAt: new Date(),
         finishedAt: null,

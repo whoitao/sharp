@@ -58,7 +58,7 @@ const ContinueCard: React.FC<ContinueCardProps> = ({ subject, onPress }) => {
                 fontWeight: '700',
               }}
             >
-              {subject ? subject.name : t.selectCategory}
+              {subject ? subject.name : t.studySelectSubject}
             </Text>
             {subject && (
               <Text

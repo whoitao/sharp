@@ -44,8 +44,6 @@ export const en: TranslationKeys = {
 
   // Home
   startLearning: 'Start Learning',
-  selectCategory: 'Choose a category to start',
-  noCategories: 'No categories yet',
   subjectQuestionCount: (num: number) => `${formatCount(num)} questions`,
   subjectProgressLabel: (num: number) => `${num}% learned`,
   homeContinueAction: 'Continue practice',
@@ -58,12 +56,9 @@ export const en: TranslationKeys = {
   homeReport: 'Study Report',
 
   // Study
-  studySelectCategory: 'Select Category',
-  studyAllCategories: 'All Categories',
   studySelectSubject: 'Select Subject',
   studySelectGrade: 'Select Grade',
   studySelectKnowledgePoint: 'Select Knowledge Point',
-  studySelectCategoryFirst: 'Please select a category first',
   studySelectSubjectFirst: 'Please select a subject first',
   studyNoUnits: 'No units for this filter',
   studySelectAllFilters: 'Select subject and knowledge point',

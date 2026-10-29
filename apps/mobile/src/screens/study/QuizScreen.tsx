@@ -47,10 +47,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const { t } = useTranslation();
   const { spacing, font, radius } = useDensity();
   const {
-    categoryId,
     chapterId,
     unitIndex,
-    categoryName,
     chapterName,
     textbookLabel,
     subjectId,
@@ -187,9 +185,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           subjectId,
         })
         .catch(() => {});
-    } else if (categoryId || subjectId) {
+    } else if (subjectId) {
       api
-        .finishStudy(categoryId ?? null, unitIndex, {
+        .finishStudy(unitIndex, {
           ...stats,
           durationSeconds: elapsedRef.current,
           answers: answerItems,
@@ -202,12 +200,10 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     }
 
     navigation.navigate('QuizResult', {
-      categoryId,
       chapterId,
       chapterName,
       textbookLabel,
       unitIndex,
-      categoryName,
       subjectId,
       gradeId,
       tagIds,
@@ -217,12 +213,10 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   }, [
     dispatch,
     navigation,
-    categoryId,
     chapterId,
     chapterName,
     textbookLabel,
     unitIndex,
-    categoryName,
     subjectId,
     gradeId,
     tagIds,
@@ -462,10 +456,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     // 服务端清掉本单元之前的学习记录，本次从第一题重新开始
     if (chapterId) {
       api.restartChapterStudy(chapterId, unitIndex, subjectId).catch(() => {});
-    } else if (categoryId || subjectId) {
+    } else if (subjectId) {
       api
         .restartStudy({
-          categoryId: categoryId ?? null,
           unitIndex,
           subjectId,
           gradeId,

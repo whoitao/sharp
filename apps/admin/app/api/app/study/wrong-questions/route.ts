@@ -34,14 +34,13 @@ export async function GET(request: NextRequest) {
 
   const serialized = progressRecords.map((p: any) => ({
     questionId: p.questionId.toString(),
-    categoryId: p.categoryId.toString(),
     status: p.status,
     lastPracticedAt: p.lastPracticedAt,
     correctCount: p.correctCount,
     wrongCount: p.wrongCount,
     question: {
       id: p.question.id.toString(),
-      categoryId: p.question.categoryId.toString(),
+      gradeId: p.question.gradeId?.toString() ?? null,
       type: p.question.type,
       content: p.question.content,
       analysis: p.question.analysis,

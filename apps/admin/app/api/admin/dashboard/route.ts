@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/middleware";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const admin = requireAdmin(request);
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     todayActiveUsers,
     totalStudySessions,
     todayStudySessions,
-    totalCategories,
+    totalGrades,
     totalQuestions,
   ] = await Promise.all([
     prisma.user.count(),
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     prisma.userStudyRecord.count({
       where: { startedAt: { gte: today } },
     }),
-    prisma.category.count(),
+    prisma.grade.count(),
     prisma.question.count(),
   ]);
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     todayActiveUsers,
     totalStudySessions,
     todayStudySessions,
-    totalCategories,
+    totalGrades,
     totalQuestions,
   });
 }

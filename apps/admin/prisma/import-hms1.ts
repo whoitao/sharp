@@ -4,7 +4,7 @@ import * as path from "path";
 
 const prisma = new PrismaClient();
 
-const CATEGORY_ID = BigInt(36);
+const GRADE_ID = BigInt(12);
 const SUBJECT_ID = BigInt(3);
 const KNOWLEDGE_POINT_ID = BigInt(13);
 const OPTION_KEYS = ["A", "B", "C", "D"] as const;
@@ -39,8 +39,8 @@ async function main() {
   console.log(`读取到 ${allWords.length} 个单词`);
 
   // 2. 校验目标分类 / 科目 / 知识点存在
-  const cat = await prisma.category.findUnique({ where: { id: CATEGORY_ID } });
-  if (!cat) throw new Error(`category ${CATEGORY_ID} 不存在`);
+  const grade = await prisma.grade.findUnique({ where: { id: GRADE_ID } });
+  if (!grade) throw new Error(`grade  不存在`);
   const sub = await prisma.subject.findUnique({ where: { id: SUBJECT_ID } });
   if (!sub) throw new Error(`subject ${SUBJECT_ID} 不存在`);
   const kp = await prisma.knowledgePoint.findUnique({ where: { id: KNOWLEDGE_POINT_ID } });
@@ -50,7 +50,7 @@ async function main() {
   const contentOf = (w: DictWord) =>
     w.ukphone ? `${w.name} /${w.ukphone}/` : w.name;
   const existing = await prisma.question.findMany({
-    where: { categoryId: CATEGORY_ID },
+    where: { gradeId: GRADE_ID },
     select: { content: true },
   });
   const existingContents = new Set(existing.map((q: { content: string }) => q.content));
@@ -64,7 +64,7 @@ async function main() {
 
   // 4. 记录插入前的最大题目 id，用于定位本次新增数据
   const before = await prisma.question.aggregate({
-    where: { categoryId: CATEGORY_ID },
+    where: { gradeId: GRADE_ID },
     _max: { id: true },
   });
   const maxIdBefore = before._max.id ?? BigInt(0);
@@ -73,7 +73,7 @@ async function main() {
   // content = 单词 + 空格 + 英式音标，如 "explosive /ɪk'spləusɪv/"；音标缺失时只用单词
   // sortOrder 递增赋值，避免大量并列导致单元窗口顺序不稳定
   const questionData = words.map((w, index) => ({
-    categoryId: CATEGORY_ID,
+    gradeId: GRADE_ID,
     subjectId: SUBJECT_ID,
     type: 1,
     content: contentOf(w),
@@ -89,7 +89,7 @@ async function main() {
 
   // 7. 回查本次新增题目 id
   const inserted = await prisma.question.findMany({
-    where: { categoryId: CATEGORY_ID, id: { gt: maxIdBefore } },
+    where: { gradeId: GRADE_ID, id: { gt: maxIdBefore } },
     select: { id: true, content: true },
     orderBy: { id: "asc" },
   });
@@ -149,13 +149,13 @@ async function main() {
 
   // 11. 校验统计（仅统计本次新增的题目）
   const total = await prisma.question.count({
-    where: { categoryId: CATEGORY_ID, id: { gt: maxIdBefore } },
+    where: { gradeId: GRADE_ID, id: { gt: maxIdBefore } },
   });
   const optTotal = await prisma.questionOption.count({
-    where: { question: { categoryId: CATEGORY_ID, id: { gt: maxIdBefore } } },
+    where: { question: { gradeId: GRADE_ID, id: { gt: maxIdBefore } } },
   });
   const correctOpt = await prisma.questionOption.count({
-    where: { question: { categoryId: CATEGORY_ID, id: { gt: maxIdBefore } }, isCorrect: true },
+    where: { question: { gradeId: GRADE_ID, id: { gt: maxIdBefore } }, isCorrect: true },
   });
   console.log(
     `校验: 题目 ${total} 条, 选项 ${optTotal} 条, 正确选项 ${correctOpt} 条 (期望 ${total})`

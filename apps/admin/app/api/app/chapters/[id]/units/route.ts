@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * 教材章节 → 单元列表。
- * 取题口径：题目自身的 chapterId 命中章节（含后代章节），**不按 categoryId 过滤**，
+ * 取题口径：题目自身的 chapterId 命中章节（含后代章节），与考纲（年级/知识点）维度互不依赖，
  * 排序沿用 [{sortOrder:'asc'},{id:'asc'}]，保证与题目接口切出的窗口一致。
  */
 export async function GET(
@@ -50,7 +50,7 @@ export async function GET(
     }),
   ]);
 
-  // 进度按题目维度取，章节练习不依赖 categoryId
+  // 进度按题目维度取，章节练习不依赖考纲筛选
   const progress = await prisma.userQuestionProgress.findMany({
     where: { userId: appUser.id, questionId: { in: allQuestions.map((q) => q.id) } },
     select: { questionId: true, status: true, correctCount: true },

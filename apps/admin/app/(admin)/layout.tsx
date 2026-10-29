@@ -43,7 +43,6 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/dashboard", icon: <DashboardOutlined />, labelKey: "nav.dashboard" },
   { key: "/users", icon: <UserOutlined />, labelKey: "nav.users" },
   { key: "/admins", icon: <TeamOutlined />, labelKey: "nav.admins" },
-  { key: "/categories", icon: <AppstoreOutlined />, labelKey: "nav.categories" },
   { key: "/subjects", icon: <BookOutlined />, labelKey: "nav.subjects" },
   { key: "/knowledge-points", icon: <TagsOutlined />, labelKey: "nav.knowledgePoints" },
   { key: "/questions", icon: <QuestionCircleOutlined />, labelKey: "nav.questions" },

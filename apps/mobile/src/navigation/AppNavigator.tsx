@@ -46,11 +46,9 @@ export type AuthStackParamList = {
   Register: undefined;
 };
 
-/** 答题页参数：考纲练习（categoryId）与教材章节练习（chapterId）二选一 */
+/** 答题页参数：考纲练习（gradeId）与教材章节练习（chapterId）二选一 */
 export type QuizParams = {
   unitIndex: number;
-  categoryId?: string;
-  categoryName?: string;
   chapterId?: string;
   chapterName?: string;
   /** 教材面包屑（版本 · 年级 · 章节路径） */
@@ -70,8 +68,6 @@ export type QuizParams = {
 
 export type QuizResultParams = {
   unitIndex: number;
-  categoryId?: string;
-  categoryName?: string;
   chapterId?: string;
   chapterName?: string;
   textbookLabel?: string;
@@ -166,13 +162,9 @@ const AuthNavigator: React.FC = () => (
   </AuthStack.Navigator>
 );
 
-// 答题页标题：分类/章节 - 科目 - 知识点（未选的项自动省略）
+// 答题页标题：章节/科目/知识点（未选的项自动省略）
 const quizTitle = (params: QuizParams): string =>
-  [
-    params.categoryName ?? params.chapterName,
-    params.subjectName,
-    params.knowledgePointName,
-  ]
+  [params.chapterName, params.subjectName, params.knowledgePointName]
     .filter(Boolean)
     .join(' - ');
 

@@ -11,8 +11,8 @@ interface StudyRecord {
     username: string;
     nickname: string | null;
   };
-  categoryId: string;
-  categoryName: string | null;
+  gradeId: string | null;
+  gradeName: string | null;
   unitIndex: number;
   startedAt: string;
   finishedAt: string | null;
@@ -95,9 +95,9 @@ export default function StudyRecordsPage() {
       ),
     },
     {
-      title: t("studyRecords.colCategory"),
-      key: "categoryName",
-      render: (_, record) => record.categoryName ?? t("studyRecords.unknownCategory"),
+      title: t("studyRecords.colGrade"),
+      key: "gradeName",
+      render: (_, record) => record.gradeName ?? "-",
     },
     {
       title: t("studyRecords.colUnit"),

@@ -19,8 +19,7 @@ apps/mobile/
     │   │   ├── LoginScreen.tsx
     │   │   └── RegisterScreen.tsx
     │   ├── home/
-    │   │   ├── HomeScreen.tsx       # Category list
-    │   │   ├── CategoryScreen.tsx   # Sub-categories
+    │   │   ├── HomeScreen.tsx       # Subjects + entries
     │   │   ├── UnitListScreen.tsx   # Unit list
     │   │   ├── QuizScreen.tsx       # Quiz interface
     │   │   └── QuizResultScreen.tsx # Results
@@ -30,7 +29,6 @@ apps/mobile/
     │       ├── RecordsScreen.tsx    # Study history
     │       └── WrongQuestionsScreen.tsx
     ├── components/
-    │   ├── CategoryCard.tsx
     │   ├── UnitItem.tsx
     │   ├── QuizOption.tsx
     │   ├── ProgressBar.tsx
@@ -49,7 +47,7 @@ apps/mobile/
 ## Features
 
 - **Authentication**: Login/Register with JWT token storage
-- **Category Navigation**: Browse categories and sub-categories
+- **Grade & Subject Scope**: Pick grade + subject once, applies across pages
 - **Unit-based Learning**: Dynamic units based on user settings
 - **Interactive Quiz**: 
   - Single choice questions
@@ -100,8 +98,7 @@ Auth Stack (when not logged in)
 
 Main Tabs (when logged in)
 ├── Home Tab
-│   ├── HomeScreen (categories)
-│   ├── CategoryScreen (sub-categories)
+│   ├── HomeScreen (subjects + entries)
 │   ├── UnitListScreen (units)
 │   ├── QuizScreen (quiz)
 │   └── QuizResultScreen (results)

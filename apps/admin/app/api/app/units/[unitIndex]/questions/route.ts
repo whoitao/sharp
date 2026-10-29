@@ -2,21 +2,8 @@ import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
-  const ids: bigint[] = [categoryId];
-  const children = await prisma.category.findMany({
-    where: { parentId: categoryId },
-    select: { id: true },
-  });
-  for (const child of children) {
-    const childIds = await getAllCategoryIds(child.id);
-    ids.push(...childIds);
-  }
-  return ids;
-}
-
 /**
- * 单元题目（科目必选、分类可选）。
+ * 单元题目（科目必选，年级/知识点/标签可选）。
  * 与单元列表使用完全相同的过滤条件与排序，保证题目窗口一致。
  */
 export async function GET(
@@ -33,7 +20,6 @@ export async function GET(
   if (!subjectIdRaw) {
     return NextResponse.json({ error: "subjectId is required" }, { status: 400 });
   }
-  const categoryIdRaw = url.searchParams.get("categoryId");
   const knowledgePointIdRaw = url.searchParams.get("knowledgePointId");
   const gradeIdRaw = url.searchParams.get("gradeId");
   const tagIdsRaw = url.searchParams.get("tagIds");
@@ -45,9 +31,6 @@ export async function GET(
   const unitIndex = parseInt(unitIndexParam);
 
   const questionWhere: any = { subjectId: BigInt(subjectIdRaw) };
-  if (categoryIdRaw) {
-    questionWhere.categoryId = { in: await getAllCategoryIds(BigInt(categoryIdRaw)) };
-  }
   if (knowledgePointIdRaw) {
     questionWhere.knowledgePoints = {
       some: { knowledgePointId: BigInt(knowledgePointIdRaw) },
@@ -90,7 +73,6 @@ export async function GET(
     const p = progressMap.get(q.id.toString()) as any;
     return {
       id: q.id.toString(),
-      categoryId: q.categoryId.toString(),
       gradeId: q.gradeId?.toString() ?? null,
       subjectId: q.subjectId?.toString() ?? null,
       chapterId: q.chapterId?.toString() ?? null,

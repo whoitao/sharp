@@ -11,10 +11,9 @@ export async function PUT(
 
   const { id } = await params;
   const body = await request.json();
-  const { categoryId, gradeId, subjectId, type, content, analysis, difficulty, score, sortOrder, chapterId, source, options, knowledgePointIds, tagIds } = body;
+  const { gradeId, subjectId, type, content, analysis, difficulty, score, sortOrder, chapterId, source, options, knowledgePointIds, tagIds } = body;
 
   const data: Record<string, any> = {};
-  if (categoryId !== undefined) data.categoryId = BigInt(categoryId);
   if (gradeId !== undefined) data.gradeId = gradeId ? BigInt(gradeId) : null;
   if (subjectId !== undefined) data.subjectId = subjectId ? BigInt(subjectId) : null;
   if (type !== undefined) data.type = type;
@@ -125,7 +124,6 @@ export async function PUT(
   const serialize = (q: any) => ({
     ...q,
     id: q.id.toString(),
-    categoryId: q.categoryId.toString(),
     gradeId: q.gradeId?.toString() ?? null,
     subjectId: q.subjectId?.toString() ?? null,
     // BigInt 不能直接 JSON 序列化，必须转字符串

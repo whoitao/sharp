@@ -57,7 +57,7 @@ app.use(async (ctx) => {
       data: questions.map((q) => ({
         ...q,
         id: q.id.toString(),
-        categoryId: q.categoryId.toString(),
+        gradeId: q.gradeId?.toString() ?? null,
         options: q.options.map((o) => ({
           ...o,
           id: o.id.toString(),

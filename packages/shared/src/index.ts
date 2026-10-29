@@ -33,21 +33,8 @@ export enum Density {
   SPACIOUS = 'spacious',
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  parentId: string;
-  sortOrder: number;
-  icon: string | null;
-  createdAt: string;
-  updatedAt: string;
-  children?: Category[];
-  questionCount?: number;
-}
-
 export interface Question {
   id: string;
-  categoryId: string;
   /** 年级；历史数据可能为空（不限年级） */
   gradeId: string | null;
   subjectId: string | null;
@@ -221,8 +208,6 @@ export interface UnitInfo {
 export interface StudyRecord {
   id: string;
   userId: string;
-  /** 教材章节练习没有分类，categoryId 为 null */
-  categoryId: string | null;
   /** 考纲练习的年级（教材练习由章节反推） */
   gradeId?: string | null;
   /** 教材章节练习来源；考纲练习为 null */
@@ -255,7 +240,6 @@ export interface StudyRecordSummary {
 export interface QuestionProgress {
   userId: string;
   questionId: string;
-  categoryId: string;
   status: QuestionStatus;
   lastPracticedAt: string | null;
   correctCount: number;
@@ -276,7 +260,7 @@ export interface DashboardStats {
   todayActiveUsers: number;
   totalStudySessions: number;
   todayStudySessions: number;
-  totalCategories: number;
+  totalGrades: number;
   totalQuestions: number;
 }
 
@@ -316,7 +300,11 @@ export interface SubmitAnswerRequest {
 }
 
 export interface StartStudyRequest {
-  categoryId: string;
+  gradeId?: string;
+  subjectId?: string;
+  chapterId?: string;
+  knowledgePointId?: string;
+  tagIds?: string[];
   unitIndex: number;
 }
 
@@ -327,7 +315,11 @@ export interface AnswerItem {
 }
 
 export interface FinishStudyRequest {
-  categoryId: string;
+  gradeId?: string;
+  subjectId?: string;
+  chapterId?: string;
+  knowledgePointId?: string;
+  tagIds?: string[];
   unitIndex: number;
   correctCount: number;
   wrongCount: number;
@@ -335,22 +327,8 @@ export interface FinishStudyRequest {
   answers: AnswerItem[];
 }
 
-export interface CreateCategoryRequest {
-  name: string;
-  parentId: string;
-  sortOrder?: number;
-  icon?: string;
-}
-
-export interface UpdateCategoryRequest {
-  name?: string;
-  sortOrder?: number;
-  icon?: string;
-}
-
 export interface CreateQuestionRequest {
-  categoryId: string;
-  gradeId?: string;
+  gradeId: string;
   subjectId?: string;
   chapterId?: string;
   tagIds?: string[];

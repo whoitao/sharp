@@ -4,7 +4,7 @@ import * as path from "path";
 
 const prisma = new PrismaClient();
 
-const CATEGORY_ID = BigInt(37);
+const GRADE_ID = BigInt(13);
 const SUBJECT_ID = BigInt(3);
 const KNOWLEDGE_POINT_ID = BigInt(10);
 const OPTION_KEYS = ["A", "B", "C", "D"] as const;
@@ -39,8 +39,8 @@ async function main() {
   console.log(`读取到 ${words.length} 个单词`);
 
   // 2. 校验目标分类 / 科目 / 知识点存在
-  const cat = await prisma.category.findUnique({ where: { id: CATEGORY_ID } });
-  if (!cat) throw new Error(`category ${CATEGORY_ID} 不存在`);
+  const grade = await prisma.grade.findUnique({ where: { id: GRADE_ID } });
+  if (!grade) throw new Error(`grade  不存在`);
   const sub = await prisma.subject.findUnique({ where: { id: SUBJECT_ID } });
   if (!sub) throw new Error(`subject ${SUBJECT_ID} 不存在`);
   const kp = await prisma.knowledgePoint.findUnique({ where: { id: KNOWLEDGE_POINT_ID } });
@@ -51,7 +51,7 @@ async function main() {
   const contentOf = (w: DictWord) =>
     w.ukphone ? `${w.name} /${w.ukphone}/` : w.name;
   const questionData = words.map((w) => ({
-    categoryId: CATEGORY_ID,
+    gradeId: GRADE_ID,
     subjectId: SUBJECT_ID,
     type: 1,
     content: contentOf(w),
@@ -67,7 +67,7 @@ async function main() {
 
   // 5. 回查题目 id（content 唯一，用它映射）
   const inserted = await prisma.question.findMany({
-    where: { categoryId: CATEGORY_ID },
+    where: { gradeId: GRADE_ID },
     select: { id: true, content: true },
     orderBy: { id: "asc" },
   });
@@ -120,12 +120,12 @@ async function main() {
   console.log(`插入知识点关联: ${kpCreated.count} 条`);
 
   // 9. 校验统计
-  const total = await prisma.question.count({ where: { categoryId: CATEGORY_ID } });
+  const total = await prisma.question.count({ where: { gradeId: GRADE_ID } });
   const optTotal = await prisma.questionOption.count({
-    where: { question: { categoryId: CATEGORY_ID } },
+    where: { question: { gradeId: GRADE_ID } },
   });
   const correctOpt = await prisma.questionOption.count({
-    where: { question: { categoryId: CATEGORY_ID }, isCorrect: true },
+    where: { question: { gradeId: GRADE_ID }, isCorrect: true },
   });
   console.log(
     `校验: 题目 ${total} 条, 选项 ${optTotal} 条, 正确选项 ${correctOpt} 条 (期望 ${total})`

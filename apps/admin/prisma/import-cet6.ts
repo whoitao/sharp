@@ -4,7 +4,7 @@ import * as path from "path";
 
 const prisma = new PrismaClient();
 
-const CATEGORY_ID = BigInt(37);
+const GRADE_ID = BigInt(13);
 const SUBJECT_ID = BigInt(3);
 const KNOWLEDGE_POINT_ID = BigInt(11); // CET-6
 const OPTION_KEYS = ["A", "B", "C", "D"] as const;
@@ -39,8 +39,8 @@ async function main() {
   console.log(`读取到 ${words.length} 个单词`);
 
   // 2. 校验目标分类 / 科目 / 知识点存在
-  const cat = await prisma.category.findUnique({ where: { id: CATEGORY_ID } });
-  if (!cat) throw new Error(`category ${CATEGORY_ID} 不存在`);
+  const grade = await prisma.grade.findUnique({ where: { id: GRADE_ID } });
+  if (!grade) throw new Error(`grade  不存在`);
   const sub = await prisma.subject.findUnique({ where: { id: SUBJECT_ID } });
   if (!sub) throw new Error(`subject ${SUBJECT_ID} 不存在`);
   const kp = await prisma.knowledgePoint.findUnique({ where: { id: KNOWLEDGE_POINT_ID } });
@@ -57,7 +57,7 @@ async function main() {
   const contentOf = (w: DictWord) =>
     w.ukphone ? `${w.name} /${w.ukphone}/` : w.name;
   const questionData = words.map((w) => ({
-    categoryId: CATEGORY_ID,
+    gradeId: GRADE_ID,
     subjectId: SUBJECT_ID,
     type: 1,
     content: contentOf(w),
@@ -135,7 +135,7 @@ async function main() {
   // 10. 校验统计
   const cet6Count = await prisma.question.count({
     where: {
-      categoryId: CATEGORY_ID,
+      gradeId: GRADE_ID,
       knowledgePoints: { some: { knowledgePointId: KNOWLEDGE_POINT_ID } },
     },
   });

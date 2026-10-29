@@ -45,8 +45,6 @@ interface QuestionOption {
 
 interface QuestionItem {
   id: string;
-  categoryId: string;
-  categoryName: string | null;
   gradeId: string | null;
   gradeName: string | null;
   subjectId: string | null;
@@ -63,12 +61,6 @@ interface QuestionItem {
   options: QuestionOption[];
   knowledgePoints: { id: string; name: string; parentId: string | null }[];
   tags: { id: string; name: string; type: string }[];
-}
-
-interface CategoryOption {
-  id: string;
-  name: string;
-  children: CategoryOption[];
 }
 
 interface SubjectOption {
@@ -106,7 +98,6 @@ interface ChapterNode {
 }
 
 interface QuestionFormValues {
-  categoryId?: string;
   gradeId?: string;
   subjectId?: string;
   chapterId?: string;
@@ -127,19 +118,27 @@ const DEFAULT_OPTIONS: QuestionOption[] = ["A", "B", "C", "D"].map((key) => ({
   isCorrect: false,
 }));
 
+/** 年级下拉按学段分组：初中 → 初一/初二/初三，用户只选一次，分类由此推导 */
+const stageGroups = (grades: GradeOption[]) => {
+  const map = new Map<string, { value: string; label: string }[]>();
+  for (const g of grades) {
+    if (!map.has(g.stage)) map.set(g.stage, []);
+    map.get(g.stage)!.push({ value: g.id, label: g.name });
+  }
+  return Array.from(map, ([stage, options]) => ({ label: stage, options }));
+};
+
 export default function QuestionsPage() {
   const { message } = App.useApp();
   const { token } = antdTheme.useToken();
   const { t } = useLocale();
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
   const [grades, setGrades] = useState<GradeOption[]>([]);
   const [tags, setTags] = useState<TagOption[]>([]);
   const [chapterTree, setChapterTree] = useState<ChapterNode[]>([]);
   const [kpTree, setKpTree] = useState<KPNode[]>([]);
   const [filterKpTree, setFilterKpTree] = useState<KPNode[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>();
   const [selectedGradeId, setSelectedGradeId] = useState<string>();
   const [selectedTagId, setSelectedTagId] = useState<string>();
@@ -160,6 +159,7 @@ export default function QuestionsPage() {
   const [importForm] = Form.useForm<{ file: any }>();
   const [formSubjectId, setFormSubjectId] = useState<string>();
   const [formGradeId, setFormGradeId] = useState<string>();
+  const [importGradeId, setImportGradeId] = useState<string>();
 
   const typeLabel = (type: number) => {
     switch (type) {
@@ -173,19 +173,6 @@ export default function QuestionsPage() {
         return t("questions.typeFillBlank");
       default:
         return t("questions.typeUnknown", { n: type });
-    }
-  };
-
-  const fetchCategories = async () => {
-    const token = localStorage.getItem("admin_token");
-    try {
-      const res = await fetch("/api/admin/categories", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setCategories(Array.isArray(data) ? data : []);
-    } catch {
-      setCategories([]);
     }
   };
 
@@ -286,7 +273,6 @@ export default function QuestionsPage() {
       page: String(page),
       pageSize: String(pageSize),
     });
-    if (selectedCategoryId) params.append("categoryId", selectedCategoryId);
     if (selectedSubjectId) params.append("subjectId", selectedSubjectId);
     if (selectedGradeId) params.append("gradeId", selectedGradeId);
     if (selectedTagId) params.append("tagId", selectedTagId);
@@ -308,7 +294,6 @@ export default function QuestionsPage() {
   };
 
   useEffect(() => {
-    fetchCategories();
     fetchSubjects();
     fetchGrades();
     fetchTags();
@@ -367,14 +352,13 @@ export default function QuestionsPage() {
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategoryId, selectedSubjectId, selectedGradeId, selectedTagId, selectedKPId, searchText, page, pageSize]);
+  }, [selectedSubjectId, selectedGradeId, selectedTagId, selectedKPId, searchText, page, pageSize]);
 
   const resetForm = () => {
     setFormSubjectId(undefined);
     setFormGradeId(undefined);
     lastFormChapterKeyRef.current = "|";
     questionForm.setFieldsValue({
-      categoryId: selectedCategoryId,
       gradeId: selectedGradeId,
       subjectId: undefined,
       chapterId: undefined,
@@ -391,7 +375,6 @@ export default function QuestionsPage() {
   };
 
   const buildPayload = (values: QuestionFormValues) => ({
-    categoryId: Number(values.categoryId || selectedCategoryId),
     gradeId: values.gradeId || undefined,
     subjectId: values.subjectId || undefined,
     chapterId: values.chapterId || undefined,
@@ -413,9 +396,8 @@ export default function QuestionsPage() {
   });
 
   const handleCreate = async (values: QuestionFormValues) => {
-    const categoryId = values.categoryId || selectedCategoryId;
-    if (!categoryId) {
-      message.warning(t("questions.selectCategoryWarning"));
+    if (!values.gradeId && !values.chapterId) {
+      message.warning(t("questions.gradeRequired"));
       return;
     }
     setSaving(true);
@@ -454,7 +436,6 @@ export default function QuestionsPage() {
     }
     if (nextGradeId !== formGradeId) setFormGradeId(nextGradeId);
     questionForm.setFieldsValue({
-      categoryId: q.categoryId,
       gradeId: nextGradeId,
       subjectId: q.subjectId || undefined,
       chapterId: q.chapterId || undefined,
@@ -524,8 +505,8 @@ export default function QuestionsPage() {
   };
 
   const handleImport = async (values: { file: any }) => {
-    if (!selectedCategoryId) {
-      message.error(t("questions.categoryRequired"));
+    if (!importGradeId) {
+      message.error(t("questions.gradeRequired"));
       return;
     }
     const fileObj: File | undefined =
@@ -540,7 +521,7 @@ export default function QuestionsPage() {
     try {
       const token = localStorage.getItem("admin_token");
       const fd = new FormData();
-      fd.append("categoryId", String(selectedCategoryId));
+      fd.append("gradeId", String(importGradeId));
       fd.append("file", fileObj);
       const res = await fetch("/api/admin/questions/import", {
         method: "POST",
@@ -595,22 +576,6 @@ export default function QuestionsPage() {
     }
   };
 
-  const flattenCategories = (
-    cats: CategoryOption[],
-    prefix = ""
-  ): { value: string; label: string }[] => {
-    const result: { value: string; label: string }[] = [];
-    cats.forEach((cat) => {
-      result.push({ value: cat.id, label: prefix + cat.name });
-      if (cat.children.length > 0) {
-        result.push(...flattenCategories(cat.children, prefix + cat.name + " / "));
-      }
-    });
-    return result;
-  };
-
-  const categoryOptions = flattenCategories(categories);
-
   const kpNameMap = useMemo(() => {
     const map = new Map<string, string>();
     const walk = (nodes: KPNode[]) => {
@@ -632,17 +597,6 @@ export default function QuestionsPage() {
       render: (value: string) => (
         <span style={{ fontFamily: "monospace", fontSize: 12 }}>{value}</span>
       ),
-    },
-    {
-      title: t("questions.colCategory"),
-      key: "category",
-      width: 130,
-      render: (_, record) =>
-        record.categoryName ? (
-          <span>{record.categoryName}</span>
-        ) : (
-          <span style={{ color: token.colorTextTertiary }}>-</span>
-        ),
     },
     {
       title: t("questions.subject"),
@@ -784,35 +738,7 @@ export default function QuestionsPage() {
       initialValues={{ type: "1", difficulty: 1, score: 1, sortOrder: 0 }}
       onFinish={isEdit ? handleUpdate : handleCreate}
     >
-      {/* 布局：分类|类型 / 科目|知识点 / 分值|难度 / 题目内容 / 选项 / 解析 / 排序 */}
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            label={t("questions.category")}
-            name="categoryId"
-            rules={[{ required: true, message: t("questions.categoryRequired") }]}
-          >
-            <Select
-              showSearch
-              options={categoryOptions}
-              placeholder={t("questions.chooseCategory")}
-            />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item label={t("questions.type")} name="type">
-            <Select
-              options={[
-                { value: "1", label: t("questions.typeSingle") },
-                { value: "2", label: t("questions.typeMultiple") },
-                { value: "3", label: t("questions.typeTrueFalse") },
-                { value: "4", label: t("questions.typeFillBlank") },
-              ]}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-
+      {/* 布局：科目|年级（分组） / 类型|教材章节 / 标签 / 分值|难度 / 题目内容 / 选项 / 解析 / 排序 */}
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
@@ -846,18 +772,30 @@ export default function QuestionsPage() {
             name="gradeId"
             rules={[{ required: true, message: t("questions.gradeRequired") }]}
           >
+            {/* 年级按学段分组，选一次即可：分类由年级推导，不再单独选择 */}
             <Select
-              showSearch
+              showSearch={{ optionFilterProp: "label" }}
               placeholder={t("questions.gradePlaceholder")}
-              options={grades.map((g) => ({ value: g.id, label: `${g.name}（${g.stage}）` }))}
+              options={stageGroups(grades)}
               onChange={(v) => setFormGradeId(v)}
-              optionFilterProp="label"
             />
           </Form.Item>
         </Col>
       </Row>
 
       <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item label={t("questions.type")} name="type">
+            <Select
+              options={[
+                { value: "1", label: t("questions.typeSingle") },
+                { value: "2", label: t("questions.typeMultiple") },
+                { value: "3", label: t("questions.typeTrueFalse") },
+                { value: "4", label: t("questions.typeFillBlank") },
+              ]}
+            />
+          </Form.Item>
+        </Col>
         <Col span={12}>
           <Form.Item label={t("questions.chapter")} name="chapterId">
             <TreeSelect
@@ -882,7 +820,10 @@ export default function QuestionsPage() {
             />
           </Form.Item>
         </Col>
-        <Col span={12}>
+      </Row>
+
+      <Row gutter={16}>
+        <Col span={24}>
           <Form.Item label={t("questions.tags")} name="tagIds">
             <Select
               mode="multiple"
@@ -1052,18 +993,6 @@ export default function QuestionsPage() {
           showSearch
           allowClear
           style={{ width: 200 }}
-          placeholder={t("questions.chooseCategory")}
-          value={selectedCategoryId}
-          onChange={(value) => {
-            setSelectedCategoryId(value);
-            setPage(1);
-          }}
-          options={categoryOptions}
-        />
-        <Select
-          showSearch
-          allowClear
-          style={{ width: 200 }}
           placeholder={t("questions.subjectPlaceholder")}
           value={selectedSubjectId}
           onChange={(value) => {
@@ -1224,10 +1153,23 @@ export default function QuestionsPage() {
         onOk={() => importForm.submit()}
         destroyOnHidden={false}
         afterOpenChange={(open) => {
-          if (open) importForm.resetFields();
+          if (open) {
+            importForm.resetFields();
+            // 默认使用当前筛选的年级，导入时整批题的年级归属
+            setImportGradeId(selectedGradeId);
+          }
         }}
       >
         <Form form={importForm} layout="vertical" onFinish={handleImport}>
+          <Form.Item label={t("questions.grade")} required>
+            <Select
+              showSearch={{ optionFilterProp: "label" }}
+              placeholder={t("questions.gradePlaceholder")}
+              value={importGradeId}
+              onChange={(v) => setImportGradeId(v)}
+              options={stageGroups(grades)}
+            />
+          </Form.Item>
           <p style={{ color: token.colorTextTertiary }}>
             {t("questions.importFormat")}
           </p>

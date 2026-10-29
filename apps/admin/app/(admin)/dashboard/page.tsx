@@ -3,11 +3,11 @@
 import { useThemeMode } from "@/components/antd-providers";
 import { useLocale, type MessageKey } from "@/lib/i18n";
 import {
-  AppstoreOutlined,
-  BookOutlined,
-  QuestionCircleOutlined,
-  UserAddOutlined,
-  UserOutlined,
+    AppstoreOutlined,
+    BookOutlined,
+    QuestionCircleOutlined,
+    UserAddOutlined,
+    UserOutlined,
 } from "@ant-design/icons";
 import { App, Card, Col, Result, Row, Spin, theme as antdTheme } from "antd";
 import { useEffect, useState } from "react";
@@ -18,7 +18,7 @@ interface DashboardStats {
   todayActiveUsers: number;
   totalStudySessions: number;
   todayStudySessions: number;
-  totalCategories: number;
+  totalGrades: number;
   totalQuestions: number;
 }
 
@@ -77,7 +77,7 @@ export default function DashboardPage() {
     { titleKey: "dashboard.todayActiveUsers", value: stats.todayActiveUsers, icon: <UserOutlined />, light: "#722ed1", dark: "#9254de" },
     { titleKey: "dashboard.totalStudySessions", value: stats.totalStudySessions, icon: <BookOutlined />, light: "#fa8c16", dark: "#ffa940" },
     { titleKey: "dashboard.todayStudySessions", value: stats.todayStudySessions, icon: <BookOutlined />, light: "#13c2c2", dark: "#36cfc9" },
-    { titleKey: "dashboard.totalCategories", value: stats.totalCategories, icon: <AppstoreOutlined />, light: "#2f54eb", dark: "#597ef7" },
+    { titleKey: "dashboard.totalGrades", value: stats.totalGrades, icon: <AppstoreOutlined />, light: "#2f54eb", dark: "#597ef7" },
     { titleKey: "dashboard.totalQuestions", value: stats.totalQuestions, icon: <QuestionCircleOutlined />, light: "#eb2f96", dark: "#f759ab" },
   ];
 

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { Category, Grade, KnowledgePoint, QuestionTag, Subject } from '@sharp/shared';
+import type { Grade, KnowledgePoint, QuestionTag, Subject } from '@sharp/shared';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -24,12 +24,9 @@ function isIoniconName(value?: string | null): value is IoniconName {
 }
 
 interface StudyFilterBarProps {
-  categories: Category[];
   subjects: Subject[];
-  selectedCategory: Category | null;
   selectedSubject: Subject | null;
   selectedKP: KnowledgePoint | null;
-  onSelectCategory: (cat: Category | null) => void;
   onSelectSubject: (sub: Subject | null) => void;
   onSelectKP: (kp: KnowledgePoint | null) => void;
   /** 年级字典（全局学习范围）；不传则不显示年级筛选 */
@@ -42,23 +39,20 @@ interface StudyFilterBarProps {
   onToggleTag?: (tagId: string) => void;
   /** 允许清除单个已选条件（学习记录页用）；学习页要求科目与知识点必选，不传 */
   allowClear?: boolean;
-  /** 分类为可选项：科目未选时不可选（学习页用，学习记录页不传） */
-  categoryDisabled?: boolean;
+  /** 隐藏「年级 + 科目」行（学习页把它们放在原生 header，页面内不再重复展示） */
+  hideScope?: boolean;
   /** 筛选数据加载中的遮罩（学习页初始化时用） */
   loading?: boolean;
 }
 
 /**
- * 年级/科目/分类/知识点 联动筛选条 + 标签 chips。
+ * 年级/科目/知识点 联动筛选条 + 标签 chips。
  * 学习页与学习记录页共用。
  */
 const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
-  categories,
   subjects,
-  selectedCategory,
   selectedSubject,
   selectedKP,
-  onSelectCategory,
   onSelectSubject,
   onSelectKP,
   grades,
@@ -68,13 +62,12 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   selectedTagIds,
   onToggleTag,
   allowClear = false,
-  categoryDisabled = false,
+  hideScope = false,
   loading = false,
 }) => {
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
-  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [subjectModalVisible, setSubjectModalVisible] = useState(false);
   const [gradeModalVisible, setGradeModalVisible] = useState(false);
   const [kpModalVisible, setKpModalVisible] = useState(false);
@@ -138,7 +131,8 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
 
   return (
     <View style={[styles.container, { padding: 12 * spacing, paddingTop: 0, gap: 8 * spacing }]}>
-      {/* 全局学习范围：年级 + 科目 */}
+      {/* 全局学习范围：年级 + 科目（学习页已挪到原生 header，传 hideScope 隐藏） */}
+      {!hideScope && (
       <View style={[styles.row, { gap: 8 * spacing }]}>
         {grades && onSelectGrade &&
           renderChip(
@@ -165,17 +159,10 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
           () => onSelectSubject(null),
         )}
       </View>
+      )}
 
-      {/* 交叉筛选：考试范围 + 知识点 */}
+      {/* 交叉筛选：知识点 */}
       <View style={[styles.row, { gap: 8 * spacing }]}>
-        {renderChip(
-          selectedCategory?.name ?? null,
-          // 分类可选：科目已选但未选分类时展示「全部分类」，未选科目时提示先选科目
-          categoryDisabled ? t.studySelectSubjectFirst : t.studyAllCategories,
-          () => setCategoryModalVisible(true),
-          () => onSelectCategory(null),
-          categoryDisabled,
-        )}
         {renderChip(
           selectedKP?.name ?? null,
           t.studySelectKnowledgePoint,
@@ -185,7 +172,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
         )}
       </View>
 
-      {/* 标签 chips：横向多选，与年级/科目/分类/知识点正交 */}
+      {/* 标签 chips：横向多选，与年级/科目/知识点正交 */}
       {!!tags && tags.length > 0 && !!onToggleTag && (
         <ScrollView
           horizontal
@@ -255,22 +242,6 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
           </View>
         </TouchableOpacity>
       </Modal>
-
-      <TreePickerModal<Category>
-        visible={categoryModalVisible}
-        title={t.studySelectCategory}
-        roots={categories}
-        selectedId={selectedCategory?.id ?? null}
-        colors={colors}
-        emptyText={t.noData}
-        defaultExpandAll
-        onClose={() => setCategoryModalVisible(false)}
-        onSelect={(node) => {
-          onSelectCategory(node);
-          setCategoryModalVisible(false);
-        }}
-        loadChildren={(node) => api.getCategories(node.id)}
-      />
 
       <Modal visible={subjectModalVisible} transparent animationType="fade" onRequestClose={() => setSubjectModalVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setSubjectModalVisible(false)}>

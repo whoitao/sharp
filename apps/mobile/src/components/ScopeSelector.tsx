@@ -54,17 +54,7 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
     icon?: React.ReactNode,
   ) => (
     <TouchableOpacity
-      style={[
-        styles.chip,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          borderRadius: 999,
-          paddingVertical: 6 * spacing,
-          paddingHorizontal: 12 * spacing,
-          gap: 4 * spacing,
-        },
-      ]}
+      style={[styles.chip, { paddingVertical: 4 * spacing, gap: 2 * spacing }]}
       activeOpacity={0.7}
       onPress={onPress}
     >
@@ -132,7 +122,7 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
-  chip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, maxWidth: '55%' },
+  chip: { flexDirection: 'row', alignItems: 'center', maxWidth: '55%' },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

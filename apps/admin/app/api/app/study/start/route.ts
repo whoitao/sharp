@@ -3,31 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { chapterQuestionWhere, getChapterSubtreeIds } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
 
-async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
-  const ids: bigint[] = [categoryId];
-  const children = await prisma.category.findMany({
-    where: { parentId: categoryId },
-    select: { id: true },
-  });
-  for (const child of children) {
-    const childIds = await getAllCategoryIds(child.id);
-    ids.push(...childIds);
-  }
-  return ids;
-}
-
 export async function POST(request: NextRequest) {
   const appUser = requireAppUser(request);
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { categoryId, unitIndex, chapterId } = body;
+  const { unitIndex, chapterId } = body;
 
   const isChapter = chapterId !== undefined && chapterId !== null;
-  // 考纲练习：分类可选，不选时按科目聚合全部题目
-  const hasCategory = categoryId !== undefined && categoryId !== null;
-  // 进度上的分类：教材练习与无分类的考纲练习都取题目自身分类
-  const categoryFromQuestion = isChapter || !hasCategory;
 
   // 可选筛选：科目 / 知识点 / 年级 / 标签（查询参数），与 units、questions 接口保持一致的过滤口径
   const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
@@ -53,9 +36,9 @@ export async function POST(request: NextRequest) {
           .join(",")
       : null;
 
-  if (unitIndex === undefined || (!isChapter && !hasCategory && !subjectId)) {
+  if (unitIndex === undefined || (!isChapter && !subjectId)) {
     return NextResponse.json(
-      { error: "unitIndex and (categoryId, chapterId or subjectId) are required" },
+      { error: "unitIndex and (chapterId or subjectId) are required" },
       { status: 400 },
     );
   }
@@ -66,11 +49,10 @@ export async function POST(request: NextRequest) {
   const unitSize = settings?.unitSize ?? 20;
 
   // 两种来源的取题口径：
-  // - 考纲：分类子树 + 可选科目/知识点
-  // - 教材：章节（含后代）关联知识点命中的题，不按分类过滤
+  // - 考纲：科目 + 可选年级/知识点/标签
+  // - 教材：章节（含后代）关联知识点命中的题
   let questionWhere: Record<string, unknown>;
   let filter: {
-    categoryId: bigint | null;
     gradeId: bigint | null;
     chapterId: bigint | null;
     subjectId: bigint | null;
@@ -86,7 +68,6 @@ export async function POST(request: NextRequest) {
     }
     questionWhere = where;
     filter = {
-      categoryId: null,
       gradeId: null,
       chapterId: BigInt(chapterId),
       subjectId,
@@ -95,7 +76,6 @@ export async function POST(request: NextRequest) {
     };
   } else {
     const where: Record<string, unknown> = {};
-    if (hasCategory) where.categoryId = { in: await getAllCategoryIds(BigInt(categoryId)) };
     if (subjectId) where.subjectId = subjectId;
     if (knowledgePointIdRaw) {
       where.knowledgePoints = { some: { knowledgePointId: BigInt(knowledgePointIdRaw) } };
@@ -106,7 +86,6 @@ export async function POST(request: NextRequest) {
     if (tagIds.length > 0) where.tags = { some: { tagId: { in: tagIds } } };
     questionWhere = where;
     filter = {
-      categoryId: hasCategory ? BigInt(categoryId) : null,
       gradeId,
       chapterId: null,
       subjectId,
@@ -120,7 +99,7 @@ export async function POST(request: NextRequest) {
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     skip: unitIndex * unitSize,
     take: unitSize,
-    select: { id: true, categoryId: true },
+    select: { id: true },
   });
 
   if (questions.length === 0) {
@@ -177,7 +156,6 @@ export async function POST(request: NextRequest) {
       });
 
   // Mark questions as seen (upsert progress)
-  // 进度上的 categoryId 用题目自身的分类：教材章节练习跨分类，取不到统一分类
   for (const q of questions) {
     await prisma.userQuestionProgress.upsert({
       where: {
@@ -194,8 +172,6 @@ export async function POST(request: NextRequest) {
       create: {
         userId: appUser.id,
         questionId: q.id,
-        // 进度上的分类必填；未选分类时取题目自身分类
-        categoryId: categoryFromQuestion ? q.categoryId : BigInt(categoryId),
         subjectId,
         knowledgePointId: filter.knowledgePointId,
         status: "unseen",
@@ -207,7 +183,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(
     {
       id: record.id,
-      categoryId: record.categoryId?.toString() ?? null,
+      gradeId: record.gradeId?.toString() ?? null,
       chapterId: record.chapterId?.toString() ?? null,
       unitIndex: record.unitIndex,
       totalQuestions: record.totalQuestions,

@@ -48,7 +48,7 @@ export async function GET(
     const p = progressMap.get(q.id.toString());
     return {
       id: q.id.toString(),
-      categoryId: q.categoryId.toString(),
+      gradeId: q.gradeId?.toString() ?? null,
       type: q.type,
       content: q.content,
       analysis: q.analysis,

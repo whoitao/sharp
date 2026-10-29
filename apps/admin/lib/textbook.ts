@@ -29,7 +29,7 @@ export async function getChapterSubtreeIds(chapterId: bigint): Promise<bigint[]>
 /**
  * 章节练习的题目过滤条件：直接命中题目自身的 chapterId（含后代章节）。
  * 关键两点：
- * 1. 不按 categoryId 过滤 —— 教材章节跨考纲分类取题
+ * 1. 只看题目自身的 chapterId —— 章节归属与考纲归属是两条独立维度
  * 2. 不经过知识点间接取题 —— 章节归属是题目自身的字段，间接取题会把全站同知识点的题都卷进来
  * 章节 id 集合为空时返回 null，调用方直接当作「无题」处理。
  */

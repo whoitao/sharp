@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/middleware";
 import * as XLSX from "xlsx";
 
 const HEADERS = [
-  "category_id",
+  "grade_id",
   "subject_id",
   "knowledge_point_ids",
   "type",

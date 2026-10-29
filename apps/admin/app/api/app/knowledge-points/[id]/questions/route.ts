@@ -61,7 +61,7 @@ export async function GET(
   const serialize = (q: any) => ({
     ...q,
     id: q.id.toString(),
-    categoryId: q.categoryId.toString(),
+    gradeId: q.gradeId?.toString() ?? null,
     subjectId: q.subjectId?.toString() ?? null,
     options: q.options.map((o: any) => ({
       ...o,

@@ -10,15 +10,13 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
   const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "20")));
 
-  // 可选筛选：分类 / 年级 / 科目 / 知识点 / 教材章节（记录上的筛选字段，null 记录只在不传对应参数时命中）
-  const categoryId = searchParams.get("categoryId");
+  // 可选筛选：年级 / 科目 / 知识点 / 教材章节（记录上的筛选字段，null 记录只在不传对应参数时命中）
   const gradeId = searchParams.get("gradeId");
   const subjectId = searchParams.get("subjectId");
   const knowledgePointId = searchParams.get("knowledgePointId");
   const chapterId = searchParams.get("chapterId");
 
   const where: Record<string, unknown> = { userId: appUser.id };
-  if (categoryId) where.categoryId = BigInt(categoryId);
   if (gradeId) where.gradeId = BigInt(gradeId);
   if (subjectId) where.subjectId = BigInt(subjectId);
   if (knowledgePointId) where.knowledgePointId = BigInt(knowledgePointId);
@@ -48,8 +46,6 @@ export async function GET(request: NextRequest) {
   const serialized = records.map((r) => ({
     id: r.id,
     userId: r.userId,
-    // 教材章节练习的记录没有分类，categoryId 为 null
-    categoryId: r.categoryId?.toString() ?? null,
     gradeId: r.gradeId?.toString() ?? null,
     gradeName: r.grade?.name ?? r.chapter?.grade?.name ?? null,
     subjectId: r.subjectId?.toString() ?? null,

@@ -10,11 +10,9 @@ export async function POST(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { categoryId, unitIndex, chapterId } = body;
+  const { unitIndex, chapterId } = body;
 
   const isChapter = chapterId !== undefined && chapterId !== null;
-  // 考纲练习：分类可选，不选时按科目聚合全部题目
-  const hasCategory = categoryId !== undefined && categoryId !== null;
 
   const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
   const knowledgePointIdRaw = request.nextUrl.searchParams.get("knowledgePointId");
@@ -33,16 +31,15 @@ export async function POST(request: NextRequest) {
         .join(",") || null
     : null;
 
-  if (unitIndex === undefined || (!isChapter && !hasCategory && !subjectId)) {
+  if (unitIndex === undefined || (!isChapter && !subjectId)) {
     return NextResponse.json(
-      { error: "unitIndex and (categoryId, chapterId or subjectId) are required" },
+      { error: "unitIndex and (chapterId or subjectId) are required" },
       { status: 400 },
     );
   }
 
   const where = {
     userId: appUser.id,
-    categoryId: isChapter || !hasCategory ? null : BigInt(categoryId),
     chapterId: isChapter ? BigInt(chapterId) : null,
     unitIndex,
     subjectId,

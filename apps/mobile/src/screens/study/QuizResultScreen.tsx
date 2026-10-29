@@ -34,10 +34,8 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const {
-    categoryId,
     chapterId,
     unitIndex,
-    categoryName,
     chapterName,
     textbookLabel,
     subjectId,
@@ -116,7 +114,6 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
         ? (await api.startChapterStudy(chapterId, unitIndex, subjectId)).previous
         : (
             await api.startStudy({
-              categoryId: categoryId ?? null,
               unitIndex,
               subjectId,
               gradeId,
@@ -128,16 +125,14 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
       // silently proceed even if start fails
     }
     const fetchResult = await dispatch(
-      fetchQuestions({ categoryId, chapterId, unitIndex, subjectId, gradeId, tagIds, knowledgePointId })
+      fetchQuestions({ chapterId, unitIndex, subjectId, gradeId, tagIds, knowledgePointId })
     );
     if (fetchQuestions.fulfilled.match(fetchResult)) {
       navigation.replace('Quiz', {
-        categoryId,
         chapterId,
         chapterName,
         textbookLabel,
         unitIndex,
-        categoryName: categoryName ?? '',
         subjectId,
         gradeId,
         tagIds,

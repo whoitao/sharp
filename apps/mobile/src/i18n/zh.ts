@@ -44,8 +44,6 @@ export const zh = {
 
   // Home
   startLearning: '开始学习',
-  selectCategory: '选择一个分类开始练习',
-  noCategories: '暂无分类',
   subjectQuestionCount: (num: number) => `${formatCount(num)} 道题`,
   subjectProgressLabel: (num: number) => `已学 ${num}%`,
   homeContinueAction: '继续练习',
@@ -58,12 +56,9 @@ export const zh = {
   homeReport: '学习报告',
 
   // Study
-  studySelectCategory: '选择分类',
-  studyAllCategories: '全部分类',
   studySelectSubject: '选择科目',
   studySelectGrade: '选择年级',
   studySelectKnowledgePoint: '选择知识点',
-  studySelectCategoryFirst: '请先选择分类',
   studySelectSubjectFirst: '请先选择科目',
   studyNoUnits: '该条件下暂无单元',
   studySelectAllFilters: '请选择科目和知识点',

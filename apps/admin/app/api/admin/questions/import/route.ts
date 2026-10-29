@@ -3,19 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 
-async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
-  const ids: bigint[] = [categoryId];
-  const children = await prisma.category.findMany({
-    where: { parentId: categoryId },
-    select: { id: true },
-  });
-  for (const child of children) {
-    const childIds = await getAllCategoryIds(child.id);
-    ids.push(...childIds);
-  }
-  return ids;
-}
-
 export async function POST(request: NextRequest) {
   const admin = requireAdmin(request);
   if (admin instanceof NextResponse) return admin;
@@ -25,20 +12,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "multipart form data required" }, { status: 400 });
   }
   const file = formData.get("file") as File | null;
-  const categoryIdRaw = formData.get("categoryId");
+  const gradeIdRaw = formData.get("gradeId");
 
-  if (!file || !categoryIdRaw) {
+  if (!file || !gradeIdRaw) {
     return NextResponse.json(
-      { error: "categoryId and file are required" },
+      { error: "gradeId and file are required" },
       { status: 400 }
     );
   }
 
-  const selectedCategoryId = BigInt(String(categoryIdRaw));
+  const selectedGradeId = BigInt(String(gradeIdRaw));
+  const selectedGrade = await prisma.grade.findUnique({
+    where: { id: selectedGradeId },
+    select: { id: true },
+  });
+  if (!selectedGrade) {
+    return NextResponse.json({ error: "gradeId not found" }, { status: 400 });
+  }
 
   try {
-    const allCategoryIds = await getAllCategoryIds(selectedCategoryId);
-
     const buf = Buffer.from(await file.arrayBuffer());
     const wb = XLSX.read(buf, { type: "buffer" });
     const sheetName = wb.SheetNames[0];
@@ -71,19 +63,17 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // category_id（可选，默认使用导入时选中的分类）
-        let targetCategoryId = selectedCategoryId;
-        const cidRaw = String(row.category_id ?? "").trim();
-        if (cidRaw) {
-          const cid = BigInt(cidRaw);
-          if (allCategoryIds.includes(cid)) {
-            targetCategoryId = cid;
-          } else {
-            errors.push(
-              `Row ${rowNo}: category_id "${cidRaw}" not in selected category tree`
-            );
+        // grade_id（可选，默认使用导入时选中的年级）
+        let targetGradeId = selectedGradeId;
+        const gidRaw = String(row.grade_id ?? "").trim();
+        if (gidRaw) {
+          const gid = BigInt(gidRaw);
+          const grade = await prisma.grade.findUnique({ where: { id: gid } });
+          if (!grade) {
+            errors.push(`Row ${rowNo}: grade_id "${gidRaw}" not found`);
             continue;
           }
+          targetGradeId = gid;
         }
 
         // subject_id（可选）
@@ -178,7 +168,7 @@ export async function POST(request: NextRequest) {
 
         await prisma.question.create({
           data: {
-            categoryId: targetCategoryId,
+            gradeId: targetGradeId,
             subjectId,
             type,
             content,

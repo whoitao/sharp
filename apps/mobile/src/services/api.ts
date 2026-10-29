@@ -1,6 +1,5 @@
 import type {
   AnswerItem,
-  Category,
   Chapter,
   Density,
   Grade,
@@ -24,205 +23,12 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 import { Platform } from 'react-native';
 import { dedupeInFlight } from '../utils/dedupe';
 import { storage } from '../utils/storage';
-import { CATEGORY_ALL_CACHE_SUFFIX, getCached, setCached } from '../utils/studyCache';
+import { getCached, setCached } from '../utils/studyCache';
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://admin.sharp.whoitao.top/";
 
 // ─── Mock data for offline/demo mode ───────────────────────────────────────────
-const mockCategories: Category[] = [
-  {
-    id: '1',
-    name: '小学',
-    parentId: '0',
-    sortOrder: 1,
-    icon: 'book',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 600,
-  },
-  {
-    id: '2',
-    name: '初中',
-    parentId: '0',
-    sortOrder: 2,
-    icon: 'book',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 400,
-  },
-  {
-    id: '3',
-    name: '高中',
-    parentId: '0',
-    sortOrder: 3,
-    icon: 'book',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 400,
-  },
-];
-
-const mockSubCategories: Category[] = [
-  // 小学
-  {
-    id: '11',
-    name: '一年级',
-    parentId: '1',
-    sortOrder: 1,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '12',
-    name: '二年级',
-    parentId: '1',
-    sortOrder: 2,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '13',
-    name: '三年级',
-    parentId: '1',
-    sortOrder: 3,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '14',
-    name: '四年级',
-    parentId: '1',
-    sortOrder: 4,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '15',
-    name: '五年级',
-    parentId: '1',
-    sortOrder: 5,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '16',
-    name: '六年级',
-    parentId: '1',
-    sortOrder: 6,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  // 初中
-  {
-    id: '21',
-    name: '初一',
-    parentId: '2',
-    sortOrder: 1,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '22',
-    name: '初二',
-    parentId: '2',
-    sortOrder: 2,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '23',
-    name: '初三',
-    parentId: '2',
-    sortOrder: 3,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '24',
-    name: '中考',
-    parentId: '2',
-    sortOrder: 4,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  // 高中
-  {
-    id: '31',
-    name: '高一',
-    parentId: '3',
-    sortOrder: 1,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '32',
-    name: '高二',
-    parentId: '3',
-    sortOrder: 2,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '33',
-    name: '高三',
-    parentId: '3',
-    sortOrder: 3,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-  {
-    id: '34',
-    name: '高考',
-    parentId: '3',
-    sortOrder: 4,
-    icon: 'star',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    questionCount: 100,
-    children: [],
-  },
-];
-
 const mockSubjects: Subject[] = [
   { id: '1', name: '英语', icon: null, sortOrder: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
   { id: '2', name: '数学', icon: null, sortOrder: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
@@ -235,14 +41,12 @@ const mockKnowledgePoints: KnowledgePoint[] = [
   { id: '3', name: '阅读理解', parentId: null, subjectId: '1', sortOrder: 2, children: [], questionCount: 0 },
 ];
 
-function generateMockQuestions(categoryId: string, unitIndex: number, count: number): Question[] {
+function generateMockQuestions(unitIndex: number, count: number): Question[] {
   const questions: Question[] = [];
-  const catId = parseInt(categoryId);
   for (let i = 0; i < count; i++) {
     const qIndex = unitIndex * count + i + 1;
     questions.push({
-      id: `${catId * 1000 + qIndex}`,
-      categoryId,
+      id: `${qIndex}`,
       gradeId: null,
       subjectId: null,
       chapterId: null,
@@ -255,32 +59,32 @@ function generateMockQuestions(categoryId: string, unitIndex: number, count: num
       createdAt: new Date().toISOString(),
       options: [
         {
-          id: `${catId * 10000 + qIndex * 10 + 1}`,
-          questionId: `${catId * 1000 + qIndex}`,
+          id: `${qIndex * 10 + 1}`,
+          questionId: `${qIndex}`,
           optionKey: 'A',
           content: '阐明，解释',
           isCorrect: true,
           sortNo: 1,
         },
         {
-          id: `${catId * 10000 + qIndex * 10 + 2}`,
-          questionId: `${catId * 1000 + qIndex}`,
+          id: `${qIndex * 10 + 2}`,
+          questionId: `${qIndex}`,
           optionKey: 'B',
           content: '混淆，使模糊',
           isCorrect: false,
           sortNo: 2,
         },
         {
-          id: `${catId * 10000 + qIndex * 10 + 3}`,
-          questionId: `${catId * 1000 + qIndex}`,
+          id: `${qIndex * 10 + 3}`,
+          questionId: `${qIndex}`,
           optionKey: 'C',
           content: '消除，移除',
           isCorrect: false,
           sortNo: 3,
         },
         {
-          id: `${catId * 10000 + qIndex * 10 + 4}`,
-          questionId: `${catId * 1000 + qIndex}`,
+          id: `${qIndex * 10 + 4}`,
+          questionId: `${qIndex}`,
           optionKey: 'D',
           content: '增加，提升',
           isCorrect: false,
@@ -292,7 +96,7 @@ function generateMockQuestions(categoryId: string, unitIndex: number, count: num
   return questions;
 }
 
-function generateMockUnits(categoryId: string, totalQuestions: number, unitSize: number): UnitInfo[] {
+function generateMockUnits(totalQuestions: number, unitSize: number): UnitInfo[] {
   const unitCount = Math.ceil(totalQuestions / unitSize);
   const units: UnitInfo[] = [];
   for (let i = 0; i < unitCount; i++) {
@@ -345,55 +149,10 @@ const createApiClient = (): AxiosInstance => {
 
 const apiClient = createApiClient();
 
-/** 接口不可用时把 mock 分类组装成树，保持与接口返回结构一致 */
-const buildMockCategoryTree = (parentId: string): Category[] =>
-  [...mockCategories, ...mockSubCategories]
-    .filter((c) => c.parentId === parentId)
-    .map((c) => ({ ...c, children: buildMockCategoryTree(c.id) }));
-
 /** 优先透出后端返回的业务错误文案，避免把所有失败都笼统归为网络错误 */
 const apiErrorMessage = (err: unknown, fallback: string): string => {
-  const data = (err as AxiosError<{ error?: string }>)?.response?.data;
+  const data = (err as AxiosError<{ error?: string }>).response?.data;
   return data?.error ?? fallback;
-};
-
-/**
- * 加载完整分类树：分类只缓存这一个接口（all=1），其余层级都从这棵树上取
- */
-const loadCategoryTree = (): Promise<Category[]> =>
-  dedupeInFlight('categories:allTree', async () => {
-    // 1. 优先读本地缓存（只缓存 allTree 这一份数据）
-    const cached = await getCached<Category[]>('categories', CATEGORY_ALL_CACHE_SUFFIX);
-    if (cached) return cached;
-
-    // 2. 缓存未命中，一次拉取整棵树
-    try {
-      const response = await apiClient.get<Category[]>('/api/app/categories', {
-        params: { all: '1' },
-      });
-      // 仅缓存「带 children 字段的整棵树」，避免把其他形式的返回固化 24 小时
-      const isFullTree =
-        response.data.length > 0 && response.data.every((item) => Array.isArray(item.children));
-      if (isFullTree) {
-        await setCached('categories', response.data, CATEGORY_ALL_CACHE_SUFFIX);
-      }
-      return response.data;
-    } catch {
-      // 接口失败时临时返回 mock，但不写入缓存，下次仍会重试接口
-      return buildMockCategoryTree('0');
-    }
-  });
-
-/** 从整棵分类树里取某个节点的子级，避免再发 parentId 请求 */
-const findCategoryChildren = (nodes: Category[], parentId: string): Category[] => {
-  for (const node of nodes) {
-    if (node.id === parentId) return node.children ?? [];
-    if (node.children?.length) {
-      const matched = findCategoryChildren(node.children, parentId);
-      if (matched.length > 0) return matched;
-    }
-  }
-  return [];
 };
 
 // ─── API Methods ───────────────────────────────────────────────────────────────
@@ -421,25 +180,6 @@ export const api = {
     }
     // 后端注册接口只返回 user，不返回 token，需再用同一凭据登录换取 token
     return api.login(username, password);
-  },
-
-  // Categories
-  async getCategories(parentId: string): Promise<Category[]> {
-    // 分类数据全部来自整棵树；非根节点直接从树里取子级，不再单独请求
-    const tree = await loadCategoryTree();
-    return parentId === '0' ? tree : findCategoryChildren(tree, parentId);
-  },
-
-  // 某个科目下有题目的分类树（考试范围），不缓存：题数会随题库变化
-  async getCategoriesBySubject(subjectId: string): Promise<Category[]> {
-    try {
-      const response = await apiClient.get<Category[]>('/api/app/categories', {
-        params: { all: '1', subjectId },
-      });
-      return response.data;
-    } catch {
-      return [];
-    }
   },
 
   // Subjects
@@ -492,11 +232,9 @@ export const api = {
   },
 
   // Units
-  // categoryId 为空表示不限定考试范围，聚合该科目的全部题目
   // gradeId 为空表示不限年级；tagIds 为多选 chips，命中任意标签即可
   async getUnits(params: {
     subjectId: string;
-    categoryId?: string | null;
     gradeId?: string | null;
     knowledgePointId?: string | null;
     tagIds?: string[];
@@ -505,7 +243,6 @@ export const api = {
   }): Promise<{ units: UnitInfo[]; totalUnits: number; totalQuestions: number }> {
     const {
       subjectId,
-      categoryId,
       gradeId,
       knowledgePointId,
       tagIds,
@@ -518,7 +255,6 @@ export const api = {
         page: String(page),
         pageSize: String(pageSize),
       };
-      if (categoryId) query.categoryId = categoryId;
       if (gradeId) query.gradeId = gradeId;
       if (knowledgePointId) query.knowledgePointId = knowledgePointId;
       if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
@@ -535,11 +271,9 @@ export const api = {
     } catch {
       // mock 数据均为英语题，选择非英语科目时返回空
       if (subjectId !== '1') return { units: [], totalUnits: 0, totalQuestions: 0 };
-      const allCategories = [...mockCategories, ...mockSubCategories];
-      const category = allCategories.find((c) => c.id === categoryId);
-      const total = category?.questionCount ?? 100;
+      const total = 100;
       const totalUnits = Math.ceil(total / 20);
-      const all = generateMockUnits(categoryId ?? 'all', total, 20);
+      const all = generateMockUnits(total, 20);
       const start = (page - 1) * pageSize;
       return {
         units: all.slice(start, start + pageSize),
@@ -553,15 +287,13 @@ export const api = {
   async getQuestions(params: {
     subjectId: string;
     unitIndex: number;
-    categoryId?: string | null;
     gradeId?: string | null;
     knowledgePointId?: string | null;
     tagIds?: string[];
   }): Promise<Question[]> {
-    const { subjectId, unitIndex, categoryId, gradeId, knowledgePointId, tagIds } = params;
+    const { subjectId, unitIndex, gradeId, knowledgePointId, tagIds } = params;
     try {
       const query: Record<string, string> = { subjectId };
-      if (categoryId) query.categoryId = categoryId;
       if (gradeId) query.gradeId = gradeId;
       if (knowledgePointId) query.knowledgePointId = knowledgePointId;
       if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
@@ -573,7 +305,7 @@ export const api = {
     } catch {
       // mock 数据均为英语题，选择非英语科目时返回空
       if (subjectId !== '1') return [];
-      return generateMockQuestions(categoryId ?? 'all', unitIndex, 20);
+      return generateMockQuestions(unitIndex, 20);
     }
   },
 
@@ -768,9 +500,7 @@ export const api = {
 
   // Study sessions
   // 返回该单元之前已完成的一次记录（有则用于答题页展示「上次学习」摘要）
-  // categoryId 为空表示不限定考试范围
   async startStudy(params: {
-    categoryId: string | null;
     unitIndex: number;
     subjectId?: string | null;
     gradeId?: string | null;
@@ -778,7 +508,7 @@ export const api = {
     tagIds?: string[];
   }): Promise<{ previous: StudyRecordSummary | null }> {
     try {
-      const { categoryId, unitIndex, subjectId, gradeId, knowledgePointId, tagIds } = params;
+      const { unitIndex, subjectId, gradeId, knowledgePointId, tagIds } = params;
       const query: Record<string, string> = {};
       if (subjectId) query.subjectId = subjectId;
       if (gradeId) query.gradeId = gradeId;
@@ -786,7 +516,7 @@ export const api = {
       if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
       const response = await apiClient.post<{ previous: StudyRecordSummary | null }>(
         '/api/app/study/start',
-        { categoryId: categoryId ?? null, unitIndex },
+        { unitIndex },
         { params: query },
       );
       return { previous: response.data?.previous ?? null };
@@ -798,7 +528,6 @@ export const api = {
 
   // 再学一次：清空该单元之前的学习记录，本次从零开始
   async restartStudy(params: {
-    categoryId: string | null;
     unitIndex: number;
     subjectId?: string | null;
     gradeId?: string | null;
@@ -806,24 +535,19 @@ export const api = {
     tagIds?: string[];
   }): Promise<void> {
     try {
-      const { categoryId, unitIndex, subjectId, gradeId, knowledgePointId, tagIds } = params;
+      const { unitIndex, subjectId, gradeId, knowledgePointId, tagIds } = params;
       const query: Record<string, string> = {};
       if (subjectId) query.subjectId = subjectId;
       if (gradeId) query.gradeId = gradeId;
       if (knowledgePointId) query.knowledgePointId = knowledgePointId;
       if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
-      await apiClient.post(
-        '/api/app/study/restart',
-        { categoryId: categoryId ?? null, unitIndex },
-        { params: query },
-      );
+      await apiClient.post('/api/app/study/restart', { unitIndex }, { params: query });
     } catch {
       // silently succeed in mock mode
     }
   },
 
   async finishStudy(
-    categoryId: string | null,
     unitIndex: number,
     stats: {
       correctCount: number;
@@ -838,7 +562,6 @@ export const api = {
   ): Promise<void> {
     try {
       await apiClient.post('/api/app/study/finish', {
-        categoryId,
         unitIndex,
         ...stats,
         // 同一单元在不同筛选下各有一条记录，服务端按完整键定位
@@ -856,17 +579,14 @@ export const api = {
   async getStudyRecords(params: {
     page?: number;
     pageSize?: number;
-    categoryId?: string | null;
     gradeId?: string | null;
     subjectId?: string | null;
     knowledgePointId?: string | null;
     chapterId?: string | null;
   } = {}): Promise<PaginatedResponse<StudyRecord>> {
-    const { page = 1, pageSize = 20, categoryId, gradeId, subjectId, knowledgePointId, chapterId } =
-      params;
+    const { page = 1, pageSize = 20, gradeId, subjectId, knowledgePointId, chapterId } = params;
     try {
       const query: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
-      if (categoryId) query.categoryId = categoryId;
       if (gradeId) query.gradeId = gradeId;
       if (subjectId) query.subjectId = subjectId;
       if (knowledgePointId) query.knowledgePointId = knowledgePointId;
@@ -880,7 +600,6 @@ export const api = {
       const mockRecords: StudyRecord[] = Array.from({ length: 5 }, (_, i) => ({
         id: `record-${i}`,
         userId: '1',
-        categoryId: '1',
         gradeId: null,
         chapterId: null,
         subjectId: null,
@@ -922,13 +641,14 @@ export const api = {
   },
 
   // Wrong questions
-  async getWrongQuestions(categoryId?: string): Promise<Question[]> {
+  async getWrongQuestions(params?: { gradeId?: string; subjectId?: string }): Promise<Question[]> {
     try {
-      const params = categoryId ? { categoryId } : {};
+      const query: Record<string, string> = {};
+      if (params?.gradeId) query.gradeId = params.gradeId;
+      if (params?.subjectId) query.subjectId = params.subjectId;
       const response = await apiClient.get<{
         data: Array<{
           questionId: string;
-          categoryId: string;
           status: string;
           lastPracticedAt: string;
           correctCount: number;
@@ -940,11 +660,11 @@ export const api = {
         pageSize: number;
         totalPages: number;
       }>('/api/app/study/wrong-questions', {
-        params,
+        params: query,
       });
       return response.data.data.map((item) => item.question);
     } catch {
-      return generateMockQuestions('1', 0, 5);
+      return generateMockQuestions(0, 5);
     }
   },
 
