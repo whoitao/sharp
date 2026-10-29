@@ -1,11 +1,11 @@
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
-import { chapterQuestionWhere, getChapterKnowledgePointIds } from "@/lib/textbook";
+import { chapterQuestionWhere, getChapterSubtreeIds } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
  * 教材章节 → 单元列表。
- * 取题口径：章节（含后代）关联的知识点命中的题目，**不按 categoryId 过滤**，
+ * 取题口径：题目自身的 chapterId 命中章节（含后代章节），**不按 categoryId 过滤**，
  * 排序沿用 [{sortOrder:'asc'},{id:'asc'}]，保证与题目接口切出的窗口一致。
  */
 export async function GET(
@@ -26,8 +26,8 @@ export async function GET(
   const settings = await prisma.userSettings.findUnique({ where: { userId: appUser.id } });
   const unitSize = settings?.unitSize ?? 20;
 
-  const kpIds = await getChapterKnowledgePointIds(chapterId);
-  const questionWhere = chapterQuestionWhere(kpIds, subjectIdRaw ? BigInt(subjectIdRaw) : null);
+  const chapterIds = await getChapterSubtreeIds(chapterId);
+  const questionWhere = chapterQuestionWhere(chapterIds, subjectIdRaw ? BigInt(subjectIdRaw) : null);
 
   if (!questionWhere) {
     return NextResponse.json({

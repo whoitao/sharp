@@ -91,6 +91,12 @@ model Question {
   difficulty Int      @default(1)
   score      Int      @default(1)
   sortOrder  Int      @default(0)
+  // 教材归属：教材同步题指向所属章节；中考真题/模拟题/自建题为空。
+  // 版本与年级由 chapter → grade → publisher 反推，不冗余存储，避免三处不一致。
+  chapterId  BigInt?
+  chapter    Chapter? @relation(fields: [chapterId], references: [id])
+  // 题目来源：exam 真题 / textbook 教材同步 / mock 模拟 / custom 自建
+  source     String   @default("custom")
   createdAt  DateTime @default(now())
 
   options           QuestionOption[]
@@ -99,6 +105,8 @@ model Question {
 
   @@index([categoryId])
   @@index([subjectId])
+  @@index([chapterId])
+  @@index([source])
 }
 
 model QuestionOption {
@@ -188,8 +196,6 @@ model KnowledgePoint {
   questions QuestionKnowledgePoint[]
   studyRecords UserStudyRecord[]
   questionProgress UserQuestionProgress[]
-  chapterLinks KnowledgePointChapter[]
-  gradeLinks   KnowledgePointGrade[]
 
   @@index([parentId])
   @@index([subjectId])
@@ -208,7 +214,7 @@ model QuestionKnowledgePoint {
 
 // ===== 教材版本维度 =====
 // 注意：知识点主树是考纲维度（只有一套），Publisher/Grade/Chapter 是教材维度（多套）。
-// 一个知识点可关联多个版本的多个年级、多个章节，通过 KnowledgePointChapter / KnowledgePointGrade 两张表维护。
+// 题目通过 Question.chapterId 直接归属章节，通过 QuestionKnowledgePoint 归属考纲知识点，两条维度互不依赖。
 
 model Publisher {
   id        BigInt   @id @default(autoincrement())
@@ -234,7 +240,6 @@ model Grade {
   sortOrder   Int      @default(0)
 
   chapters Chapter[]
-  kpLinks  KnowledgePointGrade[]
 
   @@unique([subjectId, publisherId, level, semester])
   @@index([subjectId])
@@ -254,33 +259,9 @@ model Chapter {
   name       String
   sortOrder  Int       @default(0)
 
-  kpLinks      KnowledgePointChapter[]
   studyRecords UserStudyRecord[]
+  questions    Question[]
 
   @@index([gradeId])
   @@index([parentId])
-}
-
-// 知识点 ↔ 章节 关联（多对多核心表）
-model KnowledgePointChapter {
-  knowledgePointId BigInt
-  chapterId        BigInt
-
-  knowledgePoint KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
-  chapter        Chapter        @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-
-  @@id([knowledgePointId, chapterId])
-  @@index([chapterId])
-}
-
-// 知识点 ↔ 年级 冗余关联（加速"按年级查知识点"查询）
-model KnowledgePointGrade {
-  knowledgePointId BigInt
-  gradeId          BigInt
-
-  knowledgePoint KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
-  grade          Grade          @relation(fields: [gradeId], references: [id], onDelete: Cascade)
-
-  @@id([knowledgePointId, gradeId])
-  @@index([gradeId])
 }

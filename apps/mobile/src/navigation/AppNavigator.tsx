@@ -26,6 +26,9 @@ import HomeScreen from '../screens/home/HomeScreen';
 import QuizResultScreen from '../screens/study/QuizResultScreen';
 import QuizScreen from '../screens/study/QuizScreen';
 import StudyScreen from '../screens/study/StudyScreen';
+// Textbook screens
+import ChapterUnitsScreen from '../screens/textbook/ChapterUnitsScreen';
+import TextbookScreen from '../screens/textbook/TextbookScreen';
 
 // Profile screens
 import type { SettingKey } from '../constants/settings';
@@ -43,20 +46,68 @@ export type AuthStackParamList = {
   Register: undefined;
 };
 
+/** 答题页参数：考纲练习（categoryId）与教材章节练习（chapterId）二选一 */
+export type QuizParams = {
+  unitIndex: number;
+  categoryId?: string;
+  categoryName?: string;
+  chapterId?: string;
+  chapterName?: string;
+  /** 教材面包屑（版本 · 年级 · 章节路径） */
+  textbookLabel?: string;
+  subjectId?: string;
+  subjectName?: string;
+  knowledgePointId?: string;
+  knowledgePointName?: string;
+  previousRecord?: StudyRecordSummary | null;
+  /** 完成后「继续学习」返回到哪个页面，默认 Study */
+  continueTo?: 'Study' | 'TextbookUnits';
+};
+
+export type QuizResultParams = {
+  unitIndex: number;
+  categoryId?: string;
+  categoryName?: string;
+  chapterId?: string;
+  chapterName?: string;
+  textbookLabel?: string;
+  subjectId?: string;
+  knowledgePointId?: string;
+  record?: StudyRecord;
+  continueTo?: 'Study' | 'TextbookUnits';
+};
+
+/** 教材章节列表 → 单元列表 */
+export type TextbookUnitsParams = {
+  chapterId: string;
+  chapterName: string;
+  /** 版本 · 年级 */
+  textbookLabel?: string;
+  /** 从章到当前节的路径，展示在单元列表顶部 */
+  breadcrumb?: string;
+  subjectId?: string;
+};
+
 export type HomeStackParamList = {
   Home: undefined;
   // 首页也注册一份错题本/学习记录/练习结果：从首页进入返回首页，从「我的」进入返回「我的」
   WrongQuestions: undefined;
   Records: undefined;
-  QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; subjectId?: string; knowledgePointId?: string; record?: StudyRecord };
+  QuizResult: QuizResultParams;
+  // 教材同步（独立入口，不改动考纲学习流程）
+  Textbook: undefined;
+  TextbookUnits: TextbookUnitsParams;
+  Quiz: QuizParams;
 };
 
 export type StudyStackParamList = {
   // subjectId：首页点学科行直达该学科（进页面后自动选中，随后由 StudyScreen 清掉参数）
   Study: { subjectId?: string } | undefined;
   // previousRecord：本单元上一次已完成的学习记录（有则答题页展示「上次学习」摘要）
-  Quiz: { categoryId: string; unitIndex: number; categoryName: string; subjectId?: string; knowledgePointId?: string; subjectName?: string; knowledgePointName?: string; previousRecord?: StudyRecordSummary | null };
-  QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; subjectId?: string; knowledgePointId?: string; record?: StudyRecord };
+  Quiz: QuizParams;
+  QuizResult: QuizResultParams;
+  Textbook: undefined;
+  TextbookUnits: TextbookUnitsParams;
 };
 
 export type ProfileStackParamList = {
@@ -67,7 +118,7 @@ export type ProfileStackParamList = {
   WrongQuestions: undefined;
   CrashLog: undefined;
   // 从学习记录进入时：在 ProfileTab 内展示练习结果，不跨 Tab 切换，保持底部高亮在"我的"
-  QuizResult: { categoryId: string; unitIndex: number; categoryName?: string; subjectId?: string; knowledgePointId?: string; record?: StudyRecord };
+  QuizResult: QuizResultParams;
 };
 
 export type MainTabParamList = {
@@ -109,6 +160,16 @@ const AuthNavigator: React.FC = () => (
   </AuthStack.Navigator>
 );
 
+// 答题页标题：分类/章节 - 科目 - 知识点（未选的项自动省略）
+const quizTitle = (params: QuizParams): string =>
+  [
+    params.categoryName ?? params.chapterName,
+    params.subjectName,
+    params.knowledgePointName,
+  ]
+    .filter(Boolean)
+    .join(' - ');
+
 // ── Home Stack Navigator ─────────────────────────────────────────────────────
 
 const HomeStackNavigator: React.FC = () => {
@@ -149,6 +210,26 @@ const HomeStackNavigator: React.FC = () => {
       component={withGradient(QuizResultScreen)}
       options={{ title: t.quizResultTitle }}
     />
+    {/* 教材同步：独立入口，不改动考纲学习流程 */}
+    <HomeStack.Screen
+      name="Textbook"
+      component={withGradient(TextbookScreen)}
+      options={{ title: t.textbookTitle }}
+    />
+    <HomeStack.Screen
+      name="TextbookUnits"
+      component={withGradient(ChapterUnitsScreen)}
+      options={({ route }) => ({ title: route.params.chapterName })}
+    />
+    <HomeStack.Screen
+      name="Quiz"
+      component={withGradient(QuizScreen)}
+      options={({ route }) => ({
+        title: quizTitle(route.params),
+        headerBackVisible: false,
+        headerLeft: () => null,
+      })}
+    />
     </HomeStack.Navigator>
   );
 };
@@ -180,14 +261,7 @@ const StudyStackNavigator: React.FC = () => {
       name="Quiz"
       component={withGradient(QuizScreen)}
       options={({ route }) => ({
-        // 顶部标题：分类 - 科目 - 知识点（未选的项自动省略）
-        title: [
-          route.params.categoryName,
-          route.params.subjectName,
-          route.params.knowledgePointName,
-        ]
-          .filter(Boolean)
-          .join(' - '),
+        title: quizTitle(route.params),
         headerBackVisible: false,
         headerLeft: () => null,
       })}
@@ -198,6 +272,17 @@ const StudyStackNavigator: React.FC = () => {
       options={{
         title: t.quizResultTitle,
       }}
+    />
+    {/* 教材同步：从学习页进入，保持在 StudyTab 内 */}
+    <StudyStack.Screen
+      name="Textbook"
+      component={withGradient(TextbookScreen)}
+      options={{ title: t.textbookTitle }}
+    />
+    <StudyStack.Screen
+      name="TextbookUnits"
+      component={withGradient(ChapterUnitsScreen)}
+      options={({ route }) => ({ title: route.params.chapterName })}
     />
     </StudyStack.Navigator>
   );

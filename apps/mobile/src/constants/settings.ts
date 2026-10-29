@@ -2,7 +2,7 @@ import type { Density, Language, Theme } from '@sharp/shared';
 import type { StringTranslationKey } from '../i18n/zh';
 
 /** 设置二级页对应的设置项 */
-export type SettingKey = 'density' | 'unitSize' | 'theme' | 'language';
+export type SettingKey = 'density' | 'unitSize' | 'theme' | 'language' | 'textbook';
 
 export const UNIT_SIZE_OPTIONS = [20, 30, 50, 100] as const;
 

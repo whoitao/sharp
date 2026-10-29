@@ -1,5 +1,6 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Category, KnowledgePoint, StudyRecordSummary, Subject, UnitInfo } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -9,6 +10,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from 'react-native';
 import { useDispatch } from 'react-redux';
@@ -43,6 +45,8 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  // 有教材内容时才露出「教材同步」入口
+  const [textbookAvailable, setTextbookAvailable] = useState(false);
 
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
@@ -59,12 +63,14 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     const cached = await hasStudyCache();
     if (!cached) setInitialLoading(true);
     try {
-      const [cats, subs] = await Promise.all([
+      const [cats, subs, availability] = await Promise.all([
         api.getCategories('0'),
         api.getSubjects(),
+        api.getTextbookAvailability(),
       ]);
       setCategories(cats);
       setSubjects(subs);
+      setTextbookAvailable(availability.length > 0);
     } catch {
       // ignore
     } finally {
@@ -268,6 +274,33 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+      {textbookAvailable && (
+        <TouchableOpacity
+          style={[
+            styles.textbookEntry,
+            {
+              marginHorizontal: 16 * spacing,
+              marginTop: 8 * spacing,
+              backgroundColor: colors.surface,
+            },
+          ]}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Textbook')}
+        >
+          <View
+            style={[
+              styles.textbookEntryIcon,
+              { backgroundColor: colors.background, borderRadius: 10 * spacing },
+            ]}
+          >
+            <Ionicons name="library-outline" size={20 * font} color={colors.accent} />
+          </View>
+          <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '600', flex: 1 }}>
+            {t.textbookTitle}
+          </Text>
+          <Ionicons name="chevron-forward" size={18 * font} color={colors.textTertiary} />
+        </TouchableOpacity>
+      )}
       <StudyFilterBar
         categories={categories}
         subjects={subjects}
@@ -313,6 +346,20 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: 16 },
+  textbookEntry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  textbookEntryIcon: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
 });
 
 export default StudyScreen;

@@ -41,23 +41,15 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   const [selectedKP, setSelectedKP] = useState<KnowledgePoint | null>(null);
 
   const fetchRecords = useCallback(async (pageNum: number = 1) => {
-    // 三个筛选条件都选中后才发起查询
-    if (!selectedCategory || !selectedSubject || !selectedKP) {
-      setRecords([]);
-      setTotalPages(1);
-      setPage(1);
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
+    // 三个筛选均可不选；不选时展示全部（含教材章节练习记录）
     try {
       setLoading(pageNum === 1);
       const response = await api.getStudyRecords(
         pageNum,
         20,
-        selectedCategory.id,
-        selectedSubject.id,
-        selectedKP.id,
+        selectedCategory?.id,
+        selectedSubject?.id,
+        selectedKP?.id,
       );
       if (pageNum === 1) {
         setRecords(response.data);
@@ -110,7 +102,10 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
     // 直接在 ProfileStack 内跳转到 QuizResult，不跨 Tab。
     // 这样底部高亮保持在"我的"，符合用户从学习记录查看结果的预期。
     navigation.navigate('QuizResult', {
-      categoryId: record.categoryId,
+      categoryId: record.categoryId ?? undefined,
+      chapterId: record.chapterId ?? undefined,
+      chapterName: record.chapterName ?? undefined,
+      textbookLabel: record.textbookLabel ?? undefined,
       unitIndex: record.unitIndex,
       subjectId: record.subjectId ?? undefined,
       knowledgePointId: record.knowledgePointId ?? undefined,
@@ -146,6 +141,17 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
         onPress={() => handleRecordPress(item)}
         activeOpacity={0.7}
       >
+        {!!item.chapterName && (
+          <Text
+            style={[
+              styles.recordSource,
+              { color: colors.text, fontSize: 13 * font, marginBottom: 8 * spacing },
+            ]}
+            numberOfLines={1}
+          >
+            {[item.textbookLabel, item.chapterName].filter(Boolean).join(' · ')}
+          </Text>
+        )}
         <View style={[styles.recordHeader, { marginBottom: 14 * spacing }]}>
           <Text style={[styles.recordDate, { color: colors.textSecondary, fontSize: 14 * font }]}>{formatDate(item.startedAt)}</Text>
           <View
@@ -232,15 +238,9 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
             <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
-              {selectedCategory && selectedSubject && selectedKP ? (
-                <>
-                  <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📊</Text>
-                  <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 4 * spacing }]}>{t.recordsEmpty}</Text>
-                  <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 14 * font }]}>{t.recordsEmptySub}</Text>
-                </>
-              ) : (
-                <Text style={[styles.emptyText, { color: colors.textTertiary, fontSize: 16 * font }]}>{t.studySelectAllFilters}</Text>
-              )}
+              <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📊</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 4 * spacing }]}>{t.recordsEmpty}</Text>
+              <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 14 * font }]}>{t.recordsEmptySub}</Text>
             </View>
           }
           ListFooterComponent={
@@ -288,6 +288,9 @@ const styles = StyleSheet.create({
   recordDate: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  recordSource: {
+    fontWeight: '600',
   },
   scoreBadge: {
     paddingHorizontal: 10,

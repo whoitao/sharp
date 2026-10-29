@@ -85,6 +85,9 @@ export interface UserSettings {
   theme: Theme;
   language: Language;
   density: Density;
+  /** 「我的教材」：教材版本（publisher）与年级（7/8/9），未设置为 null */
+  publisherId?: string | null;
+  gradeLevel?: number | null;
 }
 
 export interface Admin {
@@ -127,6 +130,54 @@ export interface KnowledgePoint {
   updatedAt?: string;
 }
 
+// ─── 教材（Publisher / Grade / Chapter）──────────────────────────────────────
+
+export interface Publisher {
+  id: string;
+  name: string;
+  gradeCount: number;
+}
+
+export interface Grade {
+  id: string;
+  subjectId: string;
+  publisherId: string;
+  level: number;
+  semester: number;
+  name: string;
+  sortOrder: number;
+  chapterCount: number;
+}
+
+export interface Chapter {
+  id: string;
+  gradeId: string;
+  parentId: string | null;
+  name: string;
+  sortOrder: number;
+  /** 含后代章节的题目数 */
+  questionCount: number;
+  children: Chapter[];
+}
+
+/** 有教材内容的科目（移动端用它决定是否露出教材入口） */
+export interface TextbookSubjectAvailability {
+  subjectId: string;
+  subjectName: string;
+  publisherCount: number;
+  chapterCount: number;
+}
+
+export interface ChapterUnitList {
+  chapterId: string;
+  unitSize: number;
+  totalQuestions: number;
+  totalUnits: number;
+  page: number;
+  pageSize: number;
+  units: UnitInfo[];
+}
+
 export interface UnitInfo {
   unitIndex: number;
   startIndex: number;
@@ -140,7 +191,13 @@ export interface UnitInfo {
 export interface StudyRecord {
   id: string;
   userId: string;
-  categoryId: string;
+  /** 教材章节练习没有分类，categoryId 为 null */
+  categoryId: string | null;
+  /** 教材章节练习来源；考纲练习为 null */
+  chapterId?: string | null;
+  chapterName?: string | null;
+  /** 教材版本 · 年级，如「人教版 · 七年级上册」 */
+  textbookLabel?: string | null;
   /** 学习时选择的科目筛选（null = 未筛选） */
   subjectId: string | null;
   /** 学习时选择的知识点筛选（null = 未筛选） */

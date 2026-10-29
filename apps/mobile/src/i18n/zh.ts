@@ -170,6 +170,19 @@ export const zh = {
   crashLogClear: '清空',
   crashLogClearConfirm: '确定清空全部崩溃日志吗？',
 
+  // Textbook（教材同步）
+  textbookTitle: '教材同步',
+  textbookMy: '我的教材',
+  textbookNotSet: '未设置',
+  textbookSelectTitle: '选择教材',
+  textbookEmpty: '当前还没有教材内容，录入章节题目后会出现在这里',
+  textbookNoChapters: '该教材暂无章节',
+  textbookNoQuestions: '本章暂无题目',
+  textbookUnitsEmpty: '本章暂无单元',
+  textbookChapterQuestions: (num: number) => `${formatCount(num)} 道题`,
+  textbookGrade: (level: number) =>
+    `${['', '', '', '', '', '', '', '七', '八', '九'][level] ?? level}年级`,
+
   // Avatar
   editAvatar: '点击更换头像',
   avatarUploading: '正在上传头像…',

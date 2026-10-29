@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
   const categoryId = searchParams.get("categoryId");
   const subjectId = searchParams.get("subjectId");
   const knowledgePointId = searchParams.get("knowledgePointId");
+  const chapterId = searchParams.get("chapterId");
+  const source = searchParams.get("source");
   const search = searchParams.get("search")?.trim();
 
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
@@ -30,6 +32,12 @@ export async function GET(request: NextRequest) {
       some: { knowledgePointId: BigInt(knowledgePointId) },
     };
   }
+  if (chapterId) {
+    where.chapterId = BigInt(chapterId);
+  }
+  if (source) {
+    where.source = source;
+  }
   if (search) {
     where.content = { contains: search, mode: "insensitive" };
   }
@@ -41,6 +49,13 @@ export async function GET(request: NextRequest) {
         options: { orderBy: { sortNo: "asc" } },
         category: { select: { name: true } },
         subject: true,
+        chapter: {
+          select: {
+            id: true,
+            name: true,
+            grade: { select: { name: true, publisher: { select: { name: true } } } },
+          },
+        },
         knowledgePoints: {
           include: { knowledgePoint: true },
         },
@@ -64,6 +79,13 @@ export async function GET(request: NextRequest) {
     difficulty: q.difficulty,
     score: q.score,
     sortOrder: q.sortOrder,
+    // 教材归属与来源
+    chapterId: q.chapterId?.toString() ?? null,
+    chapterName: q.chapter?.name ?? null,
+    textbookLabel: q.chapter?.grade
+      ? `${q.chapter.grade.publisher?.name ?? ""} · ${q.chapter.grade.name}`.replace(/^ · /, "")
+      : null,
+    source: q.source,
     createdAt: q.createdAt,
     options: q.options.map((o: any) => ({
       id: o.id.toString(),
@@ -102,6 +124,8 @@ export async function POST(request: NextRequest) {
     difficulty = 1,
     score = 1,
     sortOrder = 0,
+    chapterId,
+    source = "custom",
     options,
     knowledgePointIds,
   } = body;
@@ -120,6 +144,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 教材归属校验：传了 chapterId 必须存在，避免写入非法外键
+  let chapterBigInt: bigint | null = null;
+  if (chapterId) {
+    const chapter = await prisma.chapter.findUnique({ where: { id: BigInt(chapterId) } });
+    if (!chapter) {
+      return NextResponse.json({ error: "chapter not found" }, { status: 400 });
+    }
+    chapterBigInt = chapter.id;
+  }
+
+  if (!["exam", "textbook", "mock", "custom"].includes(source)) {
+    return NextResponse.json(
+      { error: "source must be one of exam/textbook/mock/custom" },
+      { status: 400 }
+    );
+  }
+
   const question = await prisma.question.create({
     data: {
       categoryId: BigInt(categoryId),
@@ -130,6 +171,8 @@ export async function POST(request: NextRequest) {
       difficulty,
       score,
       sortOrder,
+      chapterId: chapterBigInt,
+      source,
       options: {
         create: options.map((opt: any, idx: number) => ({
           optionKey: opt.optionKey,
@@ -161,6 +204,9 @@ export async function POST(request: NextRequest) {
     id: q.id.toString(),
     categoryId: q.categoryId.toString(),
     subjectId: q.subjectId?.toString() ?? null,
+    // BigInt 不能直接 JSON 序列化，必须转字符串
+    chapterId: q.chapterId?.toString() ?? null,
+    source: q.source,
     options: q.options.map((o: any) => ({
       ...o,
       id: o.id.toString(),

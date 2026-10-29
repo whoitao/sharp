@@ -22,14 +22,15 @@ import RichTextView from '../../components/RichTextView';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
-import type { StudyStackParamList } from '../../navigation/AppNavigator';
+import type { QuizParams, QuizResultParams } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { store as reduxStore } from '../../stores';
 import { finishQuiz, recordAnswer, restartQuiz, setCurrentIndex } from '../../stores/studySlice';
 
-type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'Quiz'>;
-type QuizRouteProp = RouteProp<StudyStackParamList, 'Quiz'>;
+type QuizParamList = { Quiz: QuizParams; QuizResult: QuizResultParams };
+type NavigationProp = NativeStackNavigationProp<QuizParamList, 'Quiz'>;
+type QuizRouteProp = RouteProp<QuizParamList, 'Quiz'>;
 
 interface QuizScreenProps {
   navigation: NavigationProp;
@@ -45,7 +46,17 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const { spacing, font, radius } = useDensity();
-  const { categoryId, unitIndex, categoryName, subjectId, knowledgePointId } = route.params;
+  const {
+    categoryId,
+    chapterId,
+    unitIndex,
+    categoryName,
+    chapterName,
+    textbookLabel,
+    subjectId,
+    knowledgePointId,
+    continueTo,
+  } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { currentQuestions, currentIndex, answers, isLoading } = useSelector(
     (state: RootState) => state.study
@@ -164,24 +175,52 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       { correctCount: 0, wrongCount: 0 }
     );
 
-    api
-      .finishStudy(categoryId, unitIndex, {
-        ...stats,
-        durationSeconds: elapsedRef.current,
-        answers: answerItems,
-        subjectId,
-        knowledgePointId,
-      })
-      .catch(() => {});
+    if (chapterId) {
+      // 教材章节练习：记录去重键为 chapterId + unitIndex
+      api
+        .finishChapterStudy(chapterId, unitIndex, {
+          ...stats,
+          durationSeconds: elapsedRef.current,
+          answers: answerItems,
+          subjectId,
+        })
+        .catch(() => {});
+    } else if (categoryId) {
+      api
+        .finishStudy(categoryId, unitIndex, {
+          ...stats,
+          durationSeconds: elapsedRef.current,
+          answers: answerItems,
+          subjectId,
+          knowledgePointId,
+        })
+        .catch(() => {});
+    }
 
     navigation.navigate('QuizResult', {
       categoryId,
+      chapterId,
+      chapterName,
+      textbookLabel,
       unitIndex,
       categoryName,
       subjectId,
       knowledgePointId,
+      continueTo,
     });
-  }, [dispatch, navigation, categoryId, unitIndex, categoryName, subjectId, knowledgePointId]);
+  }, [
+    dispatch,
+    navigation,
+    categoryId,
+    chapterId,
+    chapterName,
+    textbookLabel,
+    unitIndex,
+    categoryName,
+    subjectId,
+    knowledgePointId,
+    continueTo,
+  ]);
 
   const goNextQuestion = useCallback(() => {
     if (isLastQuestion) {
@@ -413,7 +452,11 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
       pendingNextRef.current = null;
     }
     // 服务端清掉本单元之前的学习记录，本次从第一题重新开始
-    api.restartStudy(categoryId, unitIndex, subjectId, knowledgePointId).catch(() => {});
+    if (chapterId) {
+      api.restartChapterStudy(chapterId, unitIndex, subjectId).catch(() => {});
+    } else if (categoryId) {
+      api.restartStudy(categoryId, unitIndex, subjectId, knowledgePointId).catch(() => {});
+    }
     dispatch(restartQuiz());
     setOptionStatuses({});
     setSelectedKeys([]);

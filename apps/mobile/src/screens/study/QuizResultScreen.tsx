@@ -14,14 +14,15 @@ import RichTextView from '../../components/RichTextView';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
-import type { StudyStackParamList } from '../../navigation/AppNavigator';
+import type { QuizParams, QuizResultParams } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { fetchQuestions, resetStudy } from '../../stores/studySlice';
 import { htmlToText } from '../../utils/richText';
 
-type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'QuizResult'>;
-type QuizResultRouteProp = RouteProp<StudyStackParamList, 'QuizResult'>;
+type QuizResultParamList = { Quiz: QuizParams; QuizResult: QuizResultParams };
+type NavigationProp = NativeStackNavigationProp<QuizResultParamList, 'QuizResult'>;
+type QuizResultRouteProp = RouteProp<QuizResultParamList, 'QuizResult'>;
 
 interface QuizResultScreenProps {
   navigation: NavigationProp;
@@ -32,7 +33,18 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
-  const { categoryId, unitIndex, categoryName, subjectId, knowledgePointId, record } = route.params;
+  const {
+    categoryId,
+    chapterId,
+    unitIndex,
+    categoryName,
+    chapterName,
+    textbookLabel,
+    subjectId,
+    knowledgePointId,
+    record,
+    continueTo,
+  } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { result: liveResult } = useSelector((state: RootState) => state.study);
 
@@ -98,23 +110,29 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
     let previousRecord: StudyRecordSummary | null = null;
     try {
       // 复用同一条学习记录：刚完成的成绩作为「上次学习」带入答题页
-      previousRecord = (
-        await api.startStudy(categoryId, unitIndex, subjectId, knowledgePointId)
-      ).previous;
+      previousRecord = chapterId
+        ? (await api.startChapterStudy(chapterId, unitIndex, subjectId)).previous
+        : categoryId
+          ? (await api.startStudy(categoryId, unitIndex, subjectId, knowledgePointId)).previous
+          : null;
     } catch {
       // silently proceed even if start fails
     }
     const fetchResult = await dispatch(
-      fetchQuestions({ categoryId, unitIndex, subjectId, knowledgePointId })
+      fetchQuestions({ categoryId, chapterId, unitIndex, subjectId, knowledgePointId })
     );
     if (fetchQuestions.fulfilled.match(fetchResult)) {
       navigation.replace('Quiz', {
         categoryId,
+        chapterId,
+        chapterName,
+        textbookLabel,
         unitIndex,
         categoryName: categoryName ?? '',
         subjectId,
         knowledgePointId,
         previousRecord,
+        continueTo,
       });
     }
   };
@@ -125,7 +143,8 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
       // 从学习记录进入时，返回来时所在栈的记录列表（首页或「我的」）
       navigation.goBack();
     } else {
-      navigation.popTo('Study');
+      // 教材章节练习返回到章节单元列表，考纲练习回到学习页
+      (navigation as any).popTo(continueTo ?? 'Study');
     }
   };
 
@@ -221,11 +240,13 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
         </View>
       )}
 
-      {/* Action buttons */}
+      {/* Action buttons：学习记录详情页没有答题页路由，只提供返回 */}
       <View style={[styles.actions, { gap: 12 * spacing }]}>
-        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.surface, borderColor: colors.accent, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleRetry} activeOpacity={0.8}>
-          <Text style={[styles.retryText, { color: colors.accent, fontSize: 16 * font }]}>{t.retry}</Text>
-        </TouchableOpacity>
+        {!isRecordView && (
+          <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.surface, borderColor: colors.accent, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleRetry} activeOpacity={0.8}>
+            <Text style={[styles.retryText, { color: colors.accent, fontSize: 16 * font }]}>{t.retry}</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={[styles.continueButton, { backgroundColor: colors.accent, borderRadius: 12 * radius, paddingVertical: 16 * spacing }]} onPress={handleContinue} activeOpacity={0.8}>
           <Text style={[styles.continueText, { fontSize: 16 * font }]}>{isRecordView ? t.back : t.continueStudy}</Text>
         </TouchableOpacity>

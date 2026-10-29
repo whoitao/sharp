@@ -1,16 +1,20 @@
 import type {
   AnswerItem,
   Category,
+  Chapter,
   Density,
+  Grade,
   KnowledgePoint,
   Language,
   LoginResponse,
   PaginatedResponse,
+  Publisher,
   Question,
   StudyRecord,
   StudyRecordSummary,
   Subject,
   SubjectOverview,
+  TextbookSubjectAvailability,
   Theme,
   UnitInfo,
   UserSettings
@@ -522,6 +526,174 @@ export const api = {
       // mock 数据均为英语题，选择非英语科目时返回空
       if (subjectId && subjectId !== '1') return [];
       return generateMockQuestions(categoryId, unitIndex, 20);
+    }
+  },
+
+  // 教材（Publisher / Grade / Chapter）
+  // 教材元数据变化很少，沿用 24 小时本地缓存
+  async getPublishers(): Promise<Publisher[]> {
+    return dedupeInFlight('publishers', async () => {
+      const cached = await getCached<Publisher[]>('publishers');
+      if (cached) return cached;
+
+      try {
+        const response = await apiClient.get<Publisher[]>('/api/app/publishers');
+        if (response.data.length > 0) await setCached('publishers', response.data);
+        return response.data;
+      } catch {
+        return [];
+      }
+    });
+  },
+
+  async getGrades(subjectId: string, publisherId: string): Promise<Grade[]> {
+    const suffix = `${subjectId}:${publisherId}`;
+    return dedupeInFlight(`grades:${suffix}`, async () => {
+      const cached = await getCached<Grade[]>('grades', suffix);
+      if (cached) return cached;
+
+      try {
+        const response = await apiClient.get<Grade[]>('/api/app/grades', {
+          params: { subjectId, publisherId },
+        });
+        if (response.data.length > 0) await setCached('grades', response.data, suffix);
+        return response.data;
+      } catch {
+        return [];
+      }
+    });
+  },
+
+  // 章节树（含后代题数）；不缓存，题数会随题目导入变化
+  async getChapters(gradeId: string, subjectId?: string): Promise<Chapter[]> {
+    return dedupeInFlight(`chapters:${gradeId}:${subjectId ?? 'all'}`, async () => {
+      try {
+        const params = subjectId ? { subjectId } : {};
+        const response = await apiClient.get<Chapter[]>(
+          `/api/app/grades/${gradeId}/chapters`,
+          { params },
+        );
+        return response.data;
+      } catch {
+        return [];
+      }
+    });
+  },
+
+  // 有教材内容的科目；空数组时不露出教材入口
+  async getTextbookAvailability(): Promise<TextbookSubjectAvailability[]> {
+    return dedupeInFlight('textbookAvailability', async () => {
+      try {
+        const response = await apiClient.get<{ subjects: TextbookSubjectAvailability[] }>(
+          '/api/app/textbooks/availability',
+        );
+        return response.data.subjects ?? [];
+      } catch {
+        return [];
+      }
+    });
+  },
+
+  async getChapterUnits(
+    chapterId: string,
+    subjectId?: string,
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<{ units: UnitInfo[]; totalUnits: number; totalQuestions: number }> {
+    try {
+      const params: Record<string, string> = {
+        page: String(page),
+        pageSize: String(pageSize),
+      };
+      if (subjectId) params.subjectId = subjectId;
+      const response = await apiClient.get<{
+        units: UnitInfo[];
+        totalUnits: number;
+        totalQuestions: number;
+      }>(`/api/app/chapters/${chapterId}/units`, { params });
+      return {
+        units: response.data.units,
+        totalUnits: response.data.totalUnits,
+        totalQuestions: response.data.totalQuestions,
+      };
+    } catch {
+      return { units: [], totalUnits: 0, totalQuestions: 0 };
+    }
+  },
+
+  async getChapterQuestions(
+    chapterId: string,
+    unitIndex: number,
+    subjectId?: string,
+  ): Promise<Question[]> {
+    try {
+      const params: Record<string, string> = {};
+      if (subjectId) params.subjectId = subjectId;
+      const response = await apiClient.get<Question[]>(
+        `/api/app/chapters/${chapterId}/units/${unitIndex}/questions`,
+        { params },
+      );
+      return response.data;
+    } catch {
+      return [];
+    }
+  },
+
+  // 教材章节学习：记录去重键为 chapterId + unitIndex
+  async startChapterStudy(
+    chapterId: string,
+    unitIndex: number,
+    subjectId?: string,
+  ): Promise<{ previous: StudyRecordSummary | null }> {
+    try {
+      const params: Record<string, string> = {};
+      if (subjectId) params.subjectId = subjectId;
+      const response = await apiClient.post<{ previous: StudyRecordSummary | null }>(
+        '/api/app/study/start',
+        { chapterId, unitIndex },
+        { params },
+      );
+      return { previous: response.data?.previous ?? null };
+    } catch {
+      return { previous: null };
+    }
+  },
+
+  async restartChapterStudy(
+    chapterId: string,
+    unitIndex: number,
+    subjectId?: string,
+  ): Promise<void> {
+    try {
+      const params: Record<string, string> = {};
+      if (subjectId) params.subjectId = subjectId;
+      await apiClient.post('/api/app/study/restart', { chapterId, unitIndex }, { params });
+    } catch {
+      // silently succeed in mock mode
+    }
+  },
+
+  async finishChapterStudy(
+    chapterId: string,
+    unitIndex: number,
+    stats: {
+      correctCount: number;
+      wrongCount: number;
+      durationSeconds: number;
+      answers: AnswerItem[];
+      subjectId?: string;
+    },
+  ): Promise<void> {
+    try {
+      await apiClient.post('/api/app/study/finish', {
+        chapterId,
+        unitIndex,
+        ...stats,
+        subjectId: stats.subjectId ?? null,
+        knowledgePointId: null,
+      });
+    } catch {
+      // silently succeed in mock mode
     }
   },
 

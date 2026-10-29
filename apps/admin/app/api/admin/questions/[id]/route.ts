@@ -11,7 +11,7 @@ export async function PUT(
 
   const { id } = await params;
   const body = await request.json();
-  const { categoryId, subjectId, type, content, analysis, difficulty, score, sortOrder, options, knowledgePointIds } = body;
+  const { categoryId, subjectId, type, content, analysis, difficulty, score, sortOrder, chapterId, source, options, knowledgePointIds } = body;
 
   const data: Record<string, any> = {};
   if (categoryId !== undefined) data.categoryId = BigInt(categoryId);
@@ -22,6 +22,29 @@ export async function PUT(
   if (difficulty !== undefined) data.difficulty = difficulty;
   if (score !== undefined) data.score = score;
   if (sortOrder !== undefined) data.sortOrder = sortOrder;
+
+  // 教材归属：null / 空字符串表示取消归属；传了值必须存在
+  if (chapterId !== undefined) {
+    if (!chapterId) {
+      data.chapterId = null;
+    } else {
+      const chapter = await prisma.chapter.findUnique({ where: { id: BigInt(chapterId) } });
+      if (!chapter) {
+        return NextResponse.json({ error: "chapter not found" }, { status: 400 });
+      }
+      data.chapterId = chapter.id;
+    }
+  }
+
+  if (source !== undefined) {
+    if (!["exam", "textbook", "mock", "custom"].includes(source)) {
+      return NextResponse.json(
+        { error: "source must be one of exam/textbook/mock/custom" },
+        { status: 400 }
+      );
+    }
+    data.source = source;
+  }
 
   // If options are provided, delete old and create new
   if (options && Array.isArray(options)) {
@@ -84,6 +107,9 @@ export async function PUT(
     id: q.id.toString(),
     categoryId: q.categoryId.toString(),
     subjectId: q.subjectId?.toString() ?? null,
+    // BigInt 不能直接 JSON 序列化，必须转字符串
+    chapterId: q.chapterId?.toString() ?? null,
+    source: q.source,
     options: q.options.map((o: any) => ({
       ...o,
       id: o.id.toString(),

@@ -170,6 +170,18 @@ export const en: TranslationKeys = {
   crashLogClear: 'Clear',
   crashLogClearConfirm: 'Clear all crash logs?',
 
+  // Textbook
+  textbookTitle: 'Textbooks',
+  textbookMy: 'My Textbook',
+  textbookNotSet: 'Not set',
+  textbookSelectTitle: 'Select textbook',
+  textbookEmpty: 'No textbook content yet. Chapters will appear once questions are added.',
+  textbookNoChapters: 'No chapters in this textbook',
+  textbookNoQuestions: 'No questions in this chapter',
+  textbookUnitsEmpty: 'No units in this chapter',
+  textbookChapterQuestions: (num: number) => `${formatCount(num)} questions`,
+  textbookGrade: (level: number) => `Grade ${level}`,
+
   // Avatar
   editAvatar: 'Tap to change avatar',
   avatarUploading: 'Uploading avatar…',

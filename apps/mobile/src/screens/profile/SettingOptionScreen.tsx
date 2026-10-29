@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   DENSITY_OPTIONS,
@@ -16,8 +16,17 @@ import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { StringTranslationKey } from '../../i18n/zh';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
+import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
-import { setDensity, setLanguage, setTheme, setUnitSize, updateSettings } from '../../stores/settingsSlice';
+import {
+  setDensity,
+  setGradeLevel,
+  setLanguage,
+  setPublisherId,
+  setTheme,
+  setUnitSize,
+  updateSettings
+} from '../../stores/settingsSlice';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'SettingOption'>;
 type RouteProps = RouteProp<ProfileStackParamList, 'SettingOption'>;
@@ -33,6 +42,7 @@ const TITLE_KEYS: Record<SettingKey, StringTranslationKey> = {
   unitSize: 'unitSize',
   theme: 'theme',
   language: 'language',
+  textbook: 'textbookMy',
 };
 
 const SettingOptionScreen: React.FC<SettingOptionScreenProps> = ({ navigation, route }) => {
@@ -41,7 +51,61 @@ const SettingOptionScreen: React.FC<SettingOptionScreenProps> = ({ navigation, r
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { unitSize, theme, language, density } = useSelector((state: RootState) => state.settings);
+  const { unitSize, theme, language, density, publisherId, gradeLevel } = useSelector(
+    (state: RootState) => state.settings,
+  );
+
+  // 「我的教材」可选项：有教材内容的科目 × 版本 × 年级册别（同版本+年级去重）
+  const [textbookLoading, setTextbookLoading] = useState(false);
+  const [textbookOptions, setTextbookOptions] = useState<
+    { label: string; publisherId: string; level: number }[]
+  >([]);
+
+  useEffect(() => {
+    if (key !== 'textbook') return;
+    let cancelled = false;
+    (async () => {
+      setTextbookLoading(true);
+      try {
+        const [subjects, publishers] = await Promise.all([
+          api.getTextbookAvailability(),
+          api.getPublishers(),
+        ]);
+        const combos = subjects.flatMap((subject) =>
+          publishers.map((publisher) => ({ subject, publisher })),
+        );
+        const pairs = await Promise.all(
+          combos.map(async ({ subject, publisher }) => ({
+            publisher,
+            grades: await api.getGrades(subject.subjectId, publisher.id),
+          })),
+        );
+        const seen = new Set<string>();
+        const list: { label: string; publisherId: string; level: number }[] = [];
+        for (const { publisher, grades } of pairs) {
+          for (const grade of grades) {
+            if (grade.chapterCount === 0) continue;
+            const dedupeKey = `${publisher.id}-${grade.level}`;
+            if (seen.has(dedupeKey)) continue;
+            seen.add(dedupeKey);
+            list.push({
+              label: `${publisher.name} · ${grade.name}`,
+              publisherId: publisher.id,
+              level: grade.level,
+            });
+          }
+        }
+        if (!cancelled) setTextbookOptions(list);
+      } catch {
+        if (!cancelled) setTextbookOptions([]);
+      } finally {
+        if (!cancelled) setTextbookLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [key]);
 
   useEffect(() => {
     navigation.setOptions({ title: t[TITLE_KEYS[key]] });
@@ -77,6 +141,17 @@ const SettingOptionScreen: React.FC<SettingOptionScreenProps> = ({ navigation, r
         dispatch(updateSettings({ language: opt.value }));
       },
     }));
+  } else if (key === 'textbook') {
+    items = textbookOptions.map((opt) => ({
+      label: opt.label,
+      selected: publisherId === opt.publisherId && gradeLevel === opt.level,
+      onSelect: () => {
+        dispatch(setPublisherId(opt.publisherId));
+        dispatch(setGradeLevel(opt.level));
+        dispatch(updateSettings({ publisherId: opt.publisherId, gradeLevel: opt.level }));
+        navigation.goBack();
+      },
+    }));
   } else {
     items = UNIT_SIZE_OPTIONS.map((size) => ({
       label: String(size),
@@ -93,26 +168,44 @@ const SettingOptionScreen: React.FC<SettingOptionScreenProps> = ({ navigation, r
       style={[styles.container, { backgroundColor: 'transparent' }]}
       contentContainerStyle={[styles.content, { padding: 16 * spacing, paddingTop: 0, paddingBottom: 40 * spacing }]}
     >
-      <View style={[styles.card, { backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: 12 * radius, paddingHorizontal: 16 * spacing }]}>
-        {items.map((item, index) => (
-          <TouchableOpacity
-            key={item.label}
-            style={[
-              styles.row,
-              {
-                paddingVertical: 16 * spacing,
-                borderBottomColor: colors.borderLight,
-                borderBottomWidth: index === items.length - 1 ? 0 : StyleSheet.hairlineWidth,
-              },
-            ]}
-            onPress={item.onSelect}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.rowLabel, { color: colors.text, fontSize: 16 * font }]}>{item.label}</Text>
-            {item.selected && <Ionicons name="checkmark" size={20 * font} color={colors.accent} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      {key === 'textbook' && textbookLoading ? (
+        <ActivityIndicator color={colors.accent} style={{ marginTop: 24 * spacing }} />
+      ) : key === 'textbook' && items.length === 0 ? (
+        <Text
+          style={{
+            color: colors.textTertiary,
+            fontSize: 14 * font,
+            textAlign: 'center',
+            marginTop: 24 * spacing,
+            lineHeight: 21 * font,
+          }}
+        >
+          {t.textbookEmpty}
+        </Text>
+      ) : (
+        <View style={[styles.card, { backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: 12 * radius, paddingHorizontal: 16 * spacing }]}>
+          {items.map((item, index) => (
+            <TouchableOpacity
+              key={item.label}
+              style={[
+                styles.row,
+                {
+                  paddingVertical: 16 * spacing,
+                  borderBottomColor: colors.borderLight,
+                  borderBottomWidth: index === items.length - 1 ? 0 : StyleSheet.hairlineWidth,
+                },
+              ]}
+              onPress={item.onSelect}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.rowLabel, { color: colors.text, fontSize: 16 * font, flex: 1 }]} numberOfLines={1}>
+                {item.label}
+              </Text>
+              {item.selected && <Ionicons name="checkmark" size={20 * font} color={colors.accent} />}
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 };

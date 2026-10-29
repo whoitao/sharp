@@ -26,37 +26,19 @@ export async function getChapterSubtreeIds(chapterId: bigint): Promise<bigint[]>
   return ids;
 }
 
-/** 章节（含所有后代章节）关联的知识点 id 集合，去重 */
-export async function getChapterKnowledgePointIds(chapterId: bigint): Promise<bigint[]> {
-  const chapterIds = await getChapterSubtreeIds(chapterId);
-  const links = await prisma.knowledgePointChapter.findMany({
-    where: { chapterId: { in: chapterIds } },
-    select: { knowledgePointId: true },
-  });
-  const seen = new Set<string>();
-  const ids: bigint[] = [];
-  for (const l of links) {
-    const key = l.knowledgePointId.toString();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    ids.push(l.knowledgePointId);
-  }
-  return ids;
-}
-
 /**
- * 章节练习的题目过滤条件。
- * 关键：不按 categoryId 过滤 —— 教材章节跨考纲分类取题，带上分类会漏掉大量题目。
- * 知识点集合为空时返回 null，调用方直接当作「无题」处理。
+ * 章节练习的题目过滤条件：直接命中题目自身的 chapterId（含后代章节）。
+ * 关键两点：
+ * 1. 不按 categoryId 过滤 —— 教材章节跨考纲分类取题
+ * 2. 不经过知识点间接取题 —— 章节归属是题目自身的字段，间接取题会把全站同知识点的题都卷进来
+ * 章节 id 集合为空时返回 null，调用方直接当作「无题」处理。
  */
 export function chapterQuestionWhere(
-  kpIds: bigint[],
+  chapterIds: bigint[],
   subjectId?: bigint | null,
 ): Record<string, unknown> | null {
-  if (kpIds.length === 0) return null;
-  const where: Record<string, unknown> = {
-    knowledgePoints: { some: { knowledgePointId: { in: kpIds } } },
-  };
+  if (chapterIds.length === 0) return null;
+  const where: Record<string, unknown> = { chapterId: { in: chapterIds } };
   if (subjectId) where.subjectId = subjectId;
   return where;
 }

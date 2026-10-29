@@ -1,6 +1,6 @@
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
-import { chapterQuestionWhere, getChapterKnowledgePointIds } from "@/lib/textbook";
+import { chapterQuestionWhere, getChapterSubtreeIds } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
 
 async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
   };
 
   if (isChapter) {
-    const kpIds = await getChapterKnowledgePointIds(BigInt(chapterId));
-    const where = chapterQuestionWhere(kpIds, subjectId);
+    const chapterIds = await getChapterSubtreeIds(BigInt(chapterId));
+    const where = chapterQuestionWhere(chapterIds, subjectId);
     if (!where) {
       return NextResponse.json({ error: "No questions found for this chapter" }, { status: 404 });
     }

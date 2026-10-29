@@ -1,6 +1,6 @@
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
-import { chapterQuestionWhere, getChapterKnowledgePointIds } from "@/lib/textbook";
+import { chapterQuestionWhere, getChapterSubtreeIds } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
 
 /** 教材章节某个单元的题目（口径与 units 接口完全一致） */
@@ -25,8 +25,8 @@ export async function GET(
   const settings = await prisma.userSettings.findUnique({ where: { userId: appUser.id } });
   const unitSize = settings?.unitSize ?? 20;
 
-  const kpIds = await getChapterKnowledgePointIds(chapterId);
-  const questionWhere = chapterQuestionWhere(kpIds, subjectIdRaw ? BigInt(subjectIdRaw) : null);
+  const chapterIds = await getChapterSubtreeIds(chapterId);
+  const questionWhere = chapterQuestionWhere(chapterIds, subjectIdRaw ? BigInt(subjectIdRaw) : null);
 
   if (!questionWhere) return NextResponse.json([]);
 

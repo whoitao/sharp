@@ -26,6 +26,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [subjects, setSubjects] = useState<SubjectOverview[]>([]);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
+  // 有教材内容时才露出「教材同步」入口
+  const [textbookAvailable, setTextbookAvailable] = useState(false);
 
   // 进入首页后的空余时间预拉取学习页搜索数据（分类/科目），
   // api 内部做缓存优先 + 并发去重，与学习页同时挂载也不会产生重复请求
@@ -64,9 +66,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, [navigation, streak]);
 
   const loadHome = useCallback(async () => {
-    const [overview, stats] = await Promise.all([api.getSubjectOverview(), api.getStats()]);
+    const [overview, stats, availability] = await Promise.all([
+      api.getSubjectOverview(),
+      api.getStats(),
+      api.getTextbookAvailability(),
+    ]);
     setSubjects(overview);
     setStreak(stats.streak);
+    setTextbookAvailable(availability.length > 0);
     setLoading(false);
   }, []);
 
@@ -122,6 +129,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 label={t.homeReport}
                 onPress={() => navigation.navigate('Records')}
               />
+              {textbookAvailable && (
+                <QuickEntry
+                  icon="library-outline"
+                  label={t.textbookTitle}
+                  onPress={() => navigation.navigate('Textbook')}
+                />
+              )}
             </View>
 
             <View

@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Question } from '@sharp/shared';
 import { api } from '../services/api';
 
@@ -41,18 +41,27 @@ const initialState: StudyState = {
 export const fetchQuestions = createAsyncThunk(
   'study/fetchQuestions',
   async (params: {
-    categoryId: string;
+    /** 考纲练习用分类；教材章节练习用 chapterId，二者必填其一 */
+    categoryId?: string;
+    chapterId?: string;
     unitIndex: number;
     subjectId?: string;
     knowledgePointId?: string;
   }) => {
-    const questions = await api.getQuestions(
-      params.categoryId,
-      params.unitIndex,
-      params.subjectId,
-      params.knowledgePointId,
-    );
-    return { questions, categoryId: params.categoryId, unitIndex: params.unitIndex };
+    const questions = params.chapterId
+      ? await api.getChapterQuestions(params.chapterId, params.unitIndex, params.subjectId)
+      : await api.getQuestions(
+          params.categoryId!,
+          params.unitIndex,
+          params.subjectId,
+          params.knowledgePointId,
+        );
+    return {
+      questions,
+      categoryId: params.categoryId ?? null,
+      chapterId: params.chapterId ?? null,
+      unitIndex: params.unitIndex,
+    };
   }
 );
 
@@ -124,7 +133,15 @@ const studySlice = createSlice({
       })
       .addCase(
         fetchQuestions.fulfilled,
-        (state, action: PayloadAction<{ questions: Question[]; categoryId: string; unitIndex: number }>) => {
+        (
+          state,
+          action: PayloadAction<{
+            questions: Question[];
+            categoryId: string | null;
+            chapterId: string | null;
+            unitIndex: number;
+          }>,
+        ) => {
           state.isLoading = false;
           state.currentQuestions = action.payload.questions;
           state.categoryId = action.payload.categoryId;

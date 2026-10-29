@@ -99,6 +99,26 @@ export async function POST(request: NextRequest) {
           subjectId = sid;
         }
 
+        // chapter_id（可选）：教材章节归属，传了必须存在
+        let chapterId: bigint | null = null;
+        const chapRaw = String(row.chapter_id ?? "").trim();
+        if (chapRaw) {
+          const cid = BigInt(chapRaw);
+          const chapter = await prisma.chapter.findUnique({ where: { id: cid } });
+          if (!chapter) {
+            errors.push(`Row ${rowNo}: chapter_id "${chapRaw}" not found`);
+            continue;
+          }
+          chapterId = cid;
+        }
+
+        // source（可选）：exam 真题 / textbook 教材同步 / mock 模拟 / custom 自建
+        const source = String(row.source ?? "").trim() || "custom";
+        if (!["exam", "textbook", "mock", "custom"].includes(source)) {
+          errors.push(`Row ${rowNo}: Invalid source "${source}"`);
+          continue;
+        }
+
         // knowledge_point_ids（可选，多个用 | 分隔）
         let kpIds: bigint[] = [];
         const kpRaw = String(row.knowledge_point_ids ?? "").trim();
@@ -166,6 +186,8 @@ export async function POST(request: NextRequest) {
             difficulty,
             score,
             sortOrder,
+            chapterId,
+            source,
             options: {
               create: optionEntries.map((o, idx) => ({
                 optionKey: o.key,
