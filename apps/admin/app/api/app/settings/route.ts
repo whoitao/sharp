@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAppUser } from "@/lib/middleware";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const appUser = requireAppUser(request);
@@ -16,6 +16,9 @@ export async function GET(request: NextRequest) {
     theme: settings?.theme ?? "system",
     language: settings?.language ?? "zh",
     density: settings?.density ?? "comfortable",
+    // 「我的教材」：教材练习页默认落到的版本 + 年级
+    publisherId: settings?.publisherId?.toString() ?? null,
+    gradeLevel: settings?.gradeLevel ?? null,
   });
 }
 
@@ -24,9 +27,26 @@ export async function PUT(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { unitSize, theme, language, density } = body;
+  const { unitSize, theme, language, density, publisherId, gradeLevel } = body;
 
   const data: Record<string, any> = {};
+  if (publisherId !== undefined) {
+    if (publisherId === null) {
+      data.publisherId = null;
+    } else {
+      const exists = await prisma.publisher.findUnique({ where: { id: BigInt(publisherId) } });
+      if (!exists) {
+        return NextResponse.json({ error: "publisher not found" }, { status: 400 });
+      }
+      data.publisherId = BigInt(publisherId);
+    }
+  }
+  if (gradeLevel !== undefined) {
+    if (gradeLevel !== null && ![7, 8, 9].includes(gradeLevel)) {
+      return NextResponse.json({ error: "gradeLevel must be 7, 8, 9 or null" }, { status: 400 });
+    }
+    data.gradeLevel = gradeLevel;
+  }
   if (unitSize !== undefined) {
     if (unitSize < 5 || unitSize > 100) {
       return NextResponse.json(
@@ -79,5 +99,7 @@ export async function PUT(request: NextRequest) {
     theme: settings.theme,
     language: settings.language,
     density: settings.density,
+    publisherId: settings.publisherId?.toString() ?? null,
+    gradeLevel: settings.gradeLevel ?? null,
   });
 }

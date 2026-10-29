@@ -4,17 +4,19 @@ import { NextRequest, NextResponse } from "next/server";
 
 // 再学一次：清掉本单元（同一组筛选条件下）之前的学习记录，从零开始新的一次。
 // 题目进度（对错标记）和每日统计属于跨次学习的累计数据，这里不动。
+// 教材章节练习与考纲练习各自独立计单元，靠 chapterId 区分。
 export async function POST(request: NextRequest) {
   const appUser = requireAppUser(request);
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { categoryId, unitIndex } = body;
+  const { categoryId, unitIndex, chapterId } = body;
 
-  if (categoryId === undefined || unitIndex === undefined) {
+  const isChapter = chapterId !== undefined && chapterId !== null;
+  if (unitIndex === undefined || (categoryId === undefined && !isChapter)) {
     return NextResponse.json(
-      { error: "categoryId and unitIndex are required" },
-      { status: 400 }
+      { error: "unitIndex and (categoryId or chapterId) are required" },
+      { status: 400 },
     );
   }
 
@@ -23,10 +25,12 @@ export async function POST(request: NextRequest) {
 
   const where = {
     userId: appUser.id,
-    categoryId: BigInt(categoryId),
+    categoryId: isChapter ? null : BigInt(categoryId),
+    chapterId: isChapter ? BigInt(chapterId) : null,
     unitIndex,
     subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : null,
-    knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
+    // 章节练习不按知识点筛选，记录上的知识点固定为空
+    knowledgePointId: isChapter || !knowledgePointIdRaw ? null : BigInt(knowledgePointIdRaw),
   };
 
   // 一单元一条记录：保留最近的一条重置为本次作答，历史版本残留的多条直接删除

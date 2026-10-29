@@ -32,6 +32,10 @@ model UserSettings {
   theme    String @default("system")
   language String @default("zh")
   density  String @default("comfortable")
+  // 「我的教材」：教材练习页默认落到对应版本 + 年级
+  publisherId BigInt?
+  publisher   Publisher? @relation(fields: [publisherId], references: [id])
+  gradeLevel  Int?
 }
 
 model Admin {
@@ -113,8 +117,12 @@ model UserStudyRecord {
   id              String   @id @default(uuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id])
-  categoryId      BigInt
+  // 考纲练习记录带分类；教材章节练习跨分类取题，categoryId 为空
+  categoryId      BigInt?
   unitIndex       Int
+  // 教材章节练习来源；考纲练习时为空。两种来源各自独立计算 unitIndex
+  chapterId       BigInt?
+  chapter         Chapter? @relation(fields: [chapterId], references: [id])
   // 学习时选择的筛选条件（null = 未筛选）；记录的是用户行为上下文，与题目自身的多对多知识点无关
   subjectId        BigInt?
   subject          Subject?        @relation(fields: [subjectId], references: [id])
@@ -129,6 +137,7 @@ model UserStudyRecord {
 
   @@index([userId, startedAt])
   @@index([categoryId])
+  @@index([chapterId])
 }
 
 model UserQuestionProgress {
@@ -206,8 +215,9 @@ model Publisher {
   name      String   @unique          // 人教版 / 苏教版 / 北师大版 / 鲁教版 / 通用
   createdAt DateTime @default(now())
 
-  grades  Grade[]
+  grades   Grade[]
   chapters Chapter[]
+  settings UserSettings[]
 }
 
 // 年级册别：subjectId + publisherId 联合唯一
@@ -244,7 +254,8 @@ model Chapter {
   name       String
   sortOrder  Int       @default(0)
 
-  kpLinks KnowledgePointChapter[]
+  kpLinks      KnowledgePointChapter[]
+  studyRecords UserStudyRecord[]
 
   @@index([gradeId])
   @@index([parentId])

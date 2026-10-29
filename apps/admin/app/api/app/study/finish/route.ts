@@ -7,17 +7,19 @@ export async function POST(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { categoryId, unitIndex, correctCount, wrongCount, durationSeconds, answers, subjectId, knowledgePointId } = body;
+  const { categoryId, unitIndex, chapterId, correctCount, wrongCount, durationSeconds, answers, subjectId, knowledgePointId } = body;
+
+  const isChapter = chapterId !== undefined && chapterId !== null;
 
   if (
-    categoryId === undefined ||
     unitIndex === undefined ||
+    (categoryId === undefined && !isChapter) ||
     correctCount === undefined ||
     wrongCount === undefined ||
     durationSeconds === undefined
   ) {
     return NextResponse.json(
-      { error: "categoryId, unitIndex, correctCount, wrongCount, and durationSeconds are required" },
+      { error: "unitIndex, (categoryId or chapterId), correctCount, wrongCount, and durationSeconds are required" },
       { status: 400 }
     );
   }
@@ -34,7 +36,8 @@ export async function POST(request: NextRequest) {
 
   const recordWhere = {
     userId: appUser.id,
-    categoryId: BigInt(categoryId),
+    categoryId: isChapter ? null : BigInt(categoryId),
+    chapterId: isChapter ? BigInt(chapterId) : null,
     unitIndex,
   };
 
@@ -72,10 +75,32 @@ export async function POST(request: NextRequest) {
     : (filterWhere ?? {});
 
   // Batch update question progress from answers
+  // 进度上的 categoryId 必填：教材章节练习跨分类，取每道题自身的分类；
+  // 考纲练习沿用学习时选择的分类，保持历史口径不变。
+  const questionCategoryMap = new Map<string, bigint>();
+  if (isChapter && answers && Array.isArray(answers)) {
+    const answeredIds = answers
+      .filter((a: any) => a?.questionId)
+      .map((a: any) => BigInt(a.questionId));
+    if (answeredIds.length > 0) {
+      const rows = await prisma.question.findMany({
+        where: { id: { in: answeredIds } },
+        select: { id: true, categoryId: true },
+      });
+      for (const row of rows) questionCategoryMap.set(row.id.toString(), row.categoryId);
+    }
+  }
+
   if (answers && Array.isArray(answers)) {
     for (const answer of answers) {
       const { questionId, selectedKeys, isCorrect } = answer;
       if (!questionId) continue;
+
+      const progressCategoryId = isChapter
+        ? questionCategoryMap.get(String(questionId))
+        : BigInt(categoryId);
+      // 题目被删除或取不到分类时跳过，避免写入非法外键
+      if (progressCategoryId == null) continue;
 
       await prisma.userQuestionProgress.upsert({
         where: {
@@ -94,7 +119,7 @@ export async function POST(request: NextRequest) {
         create: {
           userId: appUser.id,
           questionId: BigInt(questionId),
-          categoryId: BigInt(categoryId),
+          categoryId: progressCategoryId,
           ...filter,
           status: isCorrect ? "correct" : "wrong",
           lastPracticedAt: new Date(),

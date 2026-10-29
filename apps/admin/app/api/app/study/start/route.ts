@@ -1,5 +1,6 @@
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { chapterQuestionWhere, getChapterKnowledgePointIds } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
 
 async function getAllCategoryIds(categoryId: bigint): Promise<bigint[]> {
@@ -20,12 +21,13 @@ export async function POST(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { categoryId, unitIndex } = body;
+  const { categoryId, unitIndex, chapterId } = body;
 
-  if (categoryId === undefined || unitIndex === undefined) {
+  const isChapter = chapterId !== undefined && chapterId !== null;
+  if (unitIndex === undefined || (categoryId === undefined && !isChapter)) {
     return NextResponse.json(
-      { error: "categoryId and unitIndex are required" },
-      { status: 400 }
+      { error: "unitIndex and (categoryId or chapterId) are required" },
+      { status: 400 },
     );
   }
 
@@ -38,18 +40,39 @@ export async function POST(request: NextRequest) {
   });
   const unitSize = settings?.unitSize ?? 20;
 
-  const allCategoryIds = await getAllCategoryIds(BigInt(categoryId));
+  const subjectId = subjectIdRaw ? BigInt(subjectIdRaw) : null;
 
-  // Get questions for this unit (including subcategories), 科目/知识点筛选与 units 接口一致
-  const questionWhere: Record<string, unknown> = {
-    categoryId: { in: allCategoryIds },
+  // 两种来源的取题口径：
+  // - 考纲：分类子树 + 可选科目/知识点
+  // - 教材：章节（含后代）关联知识点命中的题，不按分类过滤
+  let questionWhere: Record<string, unknown>;
+  let filter: {
+    categoryId: bigint | null;
+    chapterId: bigint | null;
+    subjectId: bigint | null;
+    knowledgePointId: bigint | null;
   };
-  if (subjectIdRaw) {
-    questionWhere.subjectId = BigInt(subjectIdRaw);
-  }
-  if (knowledgePointIdRaw) {
-    questionWhere.knowledgePoints = {
-      some: { knowledgePointId: BigInt(knowledgePointIdRaw) },
+
+  if (isChapter) {
+    const kpIds = await getChapterKnowledgePointIds(BigInt(chapterId));
+    const where = chapterQuestionWhere(kpIds, subjectId);
+    if (!where) {
+      return NextResponse.json({ error: "No questions found for this chapter" }, { status: 404 });
+    }
+    questionWhere = where;
+    filter = { categoryId: null, chapterId: BigInt(chapterId), subjectId, knowledgePointId: null };
+  } else {
+    const allCategoryIds = await getAllCategoryIds(BigInt(categoryId));
+    questionWhere = { categoryId: { in: allCategoryIds } };
+    if (subjectId) questionWhere.subjectId = subjectId;
+    if (knowledgePointIdRaw) {
+      questionWhere.knowledgePoints = { some: { knowledgePointId: BigInt(knowledgePointIdRaw) } };
+    }
+    filter = {
+      categoryId: BigInt(categoryId),
+      chapterId: null,
+      subjectId,
+      knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
     };
   }
 
@@ -58,23 +81,15 @@ export async function POST(request: NextRequest) {
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     skip: unitIndex * unitSize,
     take: unitSize,
-    select: { id: true },
+    select: { id: true, categoryId: true },
   });
 
   if (questions.length === 0) {
-    return NextResponse.json(
-      { error: "No questions found for this unit" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "No questions found for this unit" }, { status: 404 });
   }
 
   // 同一单元 + 同一组筛选条件只保留一条记录：
   // 已完成的记录原样保留并回传给客户端展示「上次学习」，未完成的记录重置为本次作答
-  const filter = {
-    categoryId: BigInt(categoryId),
-    subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : null,
-    knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
-  };
   // 优先保留最近一次已完成的记录（展示「上次学习」更有意义），没有时才用最近的未完成记录
   const candidates = await prisma.userStudyRecord.findMany({
     where: { userId: appUser.id, unitIndex, ...filter },
@@ -123,6 +138,7 @@ export async function POST(request: NextRequest) {
       });
 
   // Mark questions as seen (upsert progress)
+  // 进度上的 categoryId 用题目自身的分类：教材章节练习跨分类，取不到统一分类
   for (const q of questions) {
     await prisma.userQuestionProgress.upsert({
       where: {
@@ -133,27 +149,31 @@ export async function POST(request: NextRequest) {
       },
       update: {
         lastPracticedAt: new Date(),
-        subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : null,
-        knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
+        subjectId,
+        knowledgePointId: filter.knowledgePointId,
       },
       create: {
         userId: appUser.id,
         questionId: q.id,
-        categoryId: BigInt(categoryId),
-        subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : null,
-        knowledgePointId: knowledgePointIdRaw ? BigInt(knowledgePointIdRaw) : null,
+        categoryId: isChapter ? q.categoryId : BigInt(categoryId),
+        subjectId,
+        knowledgePointId: filter.knowledgePointId,
         status: "unseen",
         lastPracticedAt: new Date(),
       },
     });
   }
 
-  return NextResponse.json({
-    id: record.id,
-    categoryId: record.categoryId.toString(),
-    unitIndex: record.unitIndex,
-    totalQuestions: record.totalQuestions,
-    startedAt: record.startedAt,
-    previous,
-  }, { status: existing ? 200 : 201 });
+  return NextResponse.json(
+    {
+      id: record.id,
+      categoryId: record.categoryId?.toString() ?? null,
+      chapterId: record.chapterId?.toString() ?? null,
+      unitIndex: record.unitIndex,
+      totalQuestions: record.totalQuestions,
+      startedAt: record.startedAt,
+      previous,
+    },
+    { status: existing ? 200 : 201 },
+  );
 }
