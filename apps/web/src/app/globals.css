@@ -2,72 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * 设计令牌：与移动端 apps/mobile/src/theme/colors.ts 保持一致。
+ * 同一主题内 surface 只做同色相明度阶梯，层级靠明度差 + 边线/阴影表达，
+ * 避免卡片与背景差色相（比如蓝灰卡片配绿色底）导致的割裂感。
+ */
 @layer base {
   :root {
-    --border: 214.3 31.8% 91.4%;
+    /* ── 背景 / 表面 ── */
+    --background: 150 30% 96%;       /* #F2F8F5 薄荷绿底 */
+    --surface: 0 0% 100%;            /* #FFFFFF 卡片主表面 */
+    --surface-secondary: 150 33% 98%; /* #F7FBF9 次级表面 */
 
-    --background: 0 0% 100%;
+    /* ── 文字 ── */
+    --foreground: 152 4% 10%;         /* #10231A 主文字 */
+    --foreground-secondary: 152 9% 36%; /* #4F6B5E 次级文字 */
+    --foreground-tertiary: 153 7% 40%;  /* #5C7268 三级文字 */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
-    --input: 214.3 31.8% 91.4%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 160.1 84.1% 39.4%;
-    --primary-foreground: 210 40% 98%;
-    --radius: .5rem;
-    --ring: 160.1 84.1% 39.4%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* ── 边线 ── */
+    --border: 144 17% 89%;           /* #DDE7E1 */
+    --border-light: 150 20% 94%;     /* #EDF3F0 */
+
+    /* ── 主色（移动端 accent） ── */
+    --primary: 160 84% 39%;          /* #10B981 emerald-500 */
+    --primary-strong: 160 84% 27%;   /* #0B7F58 承载文字时用 */
+    --primary-light: 151 58% 92%;    /* #DDF6EA 浅强调底 */
+    --primary-foreground: 0 0% 100%;
+
+    /* ── shadcn 兼容映射 ── */
+    --card: var(--surface);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface);
+    --popover-foreground: var(--foreground);
+    --secondary: var(--surface-secondary);
+    --secondary-foreground: var(--foreground-secondary);
+    --muted: var(--surface-secondary);
+    --muted-foreground: var(--foreground-secondary);
+    --accent: var(--primary-light);
+    --accent-foreground: var(--primary-strong);
+    --input: var(--border);
+    --ring: var(--primary);
+    --destructive: 0 72% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --radius: 0.75rem;
   }
 
   .dark {
-    --border: 217.2 32.6% 17.5%;
+    /* ── 背景 / 表面 ── */
+    --background: 162 31% 6%;        /* #0B1512 */
+    --surface: 155 23% 10%;          /* #14201B */
+    --surface-secondary: 152 22% 14%; /* #1B2A23 */
 
-    --background: 222.2 84% 4.9%;
+    /* ── 文字 ── */
+    --foreground: 144 24% 96%;       /* #F2F7F4 */
+    --foreground-secondary: 150 13% 69%; /* #A6BAB0 */
+    --foreground-tertiary: 153 11% 62%; /* #93A99F */
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --foreground: 210 40% 98%;
-    --input: 217.2 32.6% 17.5%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 158.1 64.4% 51.6%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --ring: 158.1 64.4% 51.6%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* ── 边线 ── */
+    --border: 152 16% 18%;           /* #27362F */
+    --border-light: 152 20% 15%;     /* #1F2E27 */
+
+    /* ── 主色 ── */
+    --primary: 158 64% 52%;          /* #34D399 emerald-400 */
+    --primary-strong: 158 64% 52%;
+    --primary-light: 158 53% 15%;    /* #123B2C */
+    --primary-foreground: 155 23% 10%;
+
+    /* ── shadcn 兼容映射 ── */
+    --card: var(--surface);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface);
+    --popover-foreground: var(--foreground);
+    --secondary: var(--surface-secondary);
+    --secondary-foreground: var(--foreground-secondary);
+    --muted: var(--surface-secondary);
+    --muted-foreground: var(--foreground-secondary);
+    --accent: var(--primary-light);
+    --accent-foreground: var(--primary);
+    --input: var(--border);
+    --ring: var(--primary);
+    --destructive: 0 70% 81%;
+    --destructive-foreground: 155 23% 10%;
   }
-}
 
-@layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 卡片统一阴影：浅绿/深色两套 */
+  .card-shadow {
+    box-shadow:
+      0 1px 2px rgba(16, 35, 26, 0.04),
+      0 4px 12px rgba(16, 35, 26, 0.04);
+  }
+  .dark .card-shadow {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.25);
   }
 }

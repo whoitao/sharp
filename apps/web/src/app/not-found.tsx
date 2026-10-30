@@ -12,7 +12,7 @@ export default function NotFound() {
       <h1 className="text-6xl font-bold tracking-tighter">
         {t("notFound.title")}
       </h1>
-      <p className="max-w-[500px] text-lg text-muted-foreground">
+      <p className="max-w-[500px] text-lg text-foreground-secondary">
         {t("notFound.description")}
       </p>
       <Link href="/">

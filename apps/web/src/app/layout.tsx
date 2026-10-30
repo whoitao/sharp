@@ -1,7 +1,8 @@
+import { ClientStoreProvider } from "@/components/client-store-provider";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { LocaleProvider } from "@/lib/i18n";
-import { StoreProvider } from "@/store/provider";
+import { themeInitScript } from "@/lib/theme-init";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -17,8 +18,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <StoreProvider>
+        <ClientStoreProvider>
           <LocaleProvider>
             <div className="flex min-h-screen flex-col">
               <Navbar />
@@ -28,7 +32,7 @@ export default function RootLayout({
               <Footer />
             </div>
           </LocaleProvider>
-        </StoreProvider>
+        </ClientStoreProvider>
       </body>
     </html>
   );

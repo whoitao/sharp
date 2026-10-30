@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { buildAvatarUrl } from '@sharp/shared';
 import { Image } from 'expo-image';
@@ -19,6 +20,7 @@ import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
+import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { uploadAvatar } from '../../stores/authSlice';
 
@@ -39,7 +41,31 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { publisherId, gradeId, subjectId } = useSelector((state: RootState) => state.settings);
   const [isUploading, setIsUploading] = useState(false);
+  // 「我的教材」当前值文案需要的名称映射
+  const [publisherName, setPublisherName] = useState<string | null>(null);
+  const [gradeName, setGradeName] = useState<string | null>(null);
+  const [subjectName, setSubjectName] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      api.getPublishers().then((list) => {
+        setPublisherName(list.find((publisher) => publisher.id === publisherId)?.name ?? null);
+      });
+      api.getGrades().then((list) => {
+        setGradeName(list.find((grade) => grade.id === gradeId)?.name ?? null);
+      });
+      api.getSubjects().then((list) => {
+        setSubjectName(list.find((subject) => subject.id === subjectId)?.name ?? null);
+      });
+    }, [publisherId, gradeId, subjectId])
+  );
+
+  const textbookLabel =
+    (publisherId && gradeId
+      ? [subjectName, publisherName, gradeName].filter(Boolean).join(' · ')
+      : '') || t.textbookNotSet;
 
   // DB 里只存相对路径 {userId}/avatars/avatar.{ext}，展示层拼完整 URL
   // 兼容历史：如果 user.avatar 已是完整 https:// URL，buildAvatarUrl 原样返回
@@ -105,7 +131,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     }
   }, [dispatch, isUploading, t]);
 
-  const menuItems: { label: string; icon: MenuIcon; onPress: () => void }[] = [
+  const menuItems: { label: string; value?: string; icon: MenuIcon; onPress: () => void }[] = [
+    {
+      label: t.textbookMy,
+      value: textbookLabel,
+      icon: 'book-outline',
+      onPress: () => navigation.navigate('SettingOption', { key: 'textbook' }),
+    },
     {
       label: t.studyRecords,
       icon: 'time-outline',
@@ -175,6 +207,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               <Ionicons name={item.icon} size={20 * font} color={colors.accent} />
             </View>
             <Text style={[styles.menuLabel, { color: colors.text, fontSize: 16 * font }]}>{item.label}</Text>
+            {!!item.value && (
+              <Text
+                style={[styles.menuValue, { color: colors.textSecondary, fontSize: 13 * font, marginRight: 6 * spacing }]}
+                numberOfLines={1}
+              >
+                {item.value}
+              </Text>
+            )}
             <Ionicons name="chevron-forward" size={20 * font} color={colors.textTertiary} />
           </TouchableOpacity>
         ))}
@@ -272,6 +312,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
+  },
+  menuValue: {
+    fontSize: 13,
+    maxWidth: '50%',
   },
   menuArrow: {
     fontSize: 22,

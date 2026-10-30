@@ -1,11 +1,12 @@
 "use client";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLocale, type Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -29,11 +30,11 @@ export function Navbar() {
   const { locale, setLocale, t } = useLocale();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border-light bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-14 max-w-[1200px] items-center px-4">
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <span className="font-bold text-xl text-primary">Sharp</span>
+            <span className="text-xl font-bold text-primary">Sharp</span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             {navItems.map((item) => (
@@ -41,10 +42,10 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "transition-colors hover:text-foreground/80",
+                  "transition-colors hover:text-foreground",
                   pathname === item.href
                     ? "text-foreground"
-                    : "text-foreground/60"
+                    : "text-foreground-secondary"
                 )}
               >
                 {t(item.labelKey)}
@@ -52,7 +53,8 @@ export function Navbar() {
             ))}
           </nav>
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-2">
+        <div className="flex flex-1 items-center justify-end space-x-1">
+          <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">

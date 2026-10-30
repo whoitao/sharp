@@ -11,7 +11,13 @@ export default {
     extend: {
       colors: {
         background: "hsl(var(--background))",
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          secondary: "hsl(var(--surface-secondary))",
+        },
         foreground: "hsl(var(--foreground))",
+        "foreground-secondary": "hsl(var(--foreground-secondary))",
+        "foreground-tertiary": "hsl(var(--foreground-tertiary))",
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
@@ -23,6 +29,8 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          strong: "hsl(var(--primary-strong))",
+          light: "hsl(var(--primary-light))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -41,6 +49,7 @@ export default {
           foreground: "hsl(var(--destructive-foreground))",
         },
         border: "hsl(var(--border))",
+        "border-light": "hsl(var(--border-light))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         chart: {

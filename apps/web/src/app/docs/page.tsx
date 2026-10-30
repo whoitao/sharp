@@ -16,7 +16,7 @@ export default function Docs() {
         <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl">
           {t("docs.title")}
         </h1>
-        <p className="text-lg text-muted-foreground">{t("docs.subtitle")}</p>
+        <p className="text-lg text-foreground-secondary">{t("docs.subtitle")}</p>
       </div>
 
       <div className="mx-auto mt-12 max-w-[58rem] space-y-8">
@@ -25,18 +25,18 @@ export default function Docs() {
           return (
             <div
               key={section.title}
-              className="rounded-lg border bg-card p-6 shadow-sm"
+              className="rounded-lg border border-border bg-surface p-6 card-shadow"
             >
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Icon className="h-6 w-6 text-primary" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-light">
+                  <Icon className="h-6 w-6 text-primary-strong" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold mb-2">{section.title}</h2>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <h2 className="mb-2 text-xl font-bold">{section.title}</h2>
+                  <p className="mb-4 text-sm text-foreground-secondary">
                     {section.description}
                   </p>
-                  <pre className="overflow-x-auto rounded-md bg-muted p-4 text-sm">
+                  <pre className="overflow-x-auto rounded-md bg-surface-secondary p-4 text-sm">
                     <code>{section.content}</code>
                   </pre>
                 </div>

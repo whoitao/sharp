@@ -20,7 +20,7 @@ export default function Home() {
             <span className="text-primary">{t("home.heroHighlight")}</span>
             {t("home.heroSuffix") ? ` ${t("home.heroSuffix")}` : ""}
           </h1>
-          <p className="max-w-[750px] text-lg text-muted-foreground sm:text-xl">
+          <p className="max-w-[750px] text-lg text-foreground-secondary sm:text-xl">
             {t("home.heroSubtitle")}
           </p>
         </div>
@@ -37,12 +37,12 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="space-y-6 bg-slate-50 py-8 dark:bg-slate-900 md:py-12 lg:py-24">
+      <section className="space-y-6 bg-surface-secondary py-8 md:py-12 lg:py-24">
         <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
           <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
             {t("home.featuresTitle")}
           </h2>
-          <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
+          <p className="max-w-[85%] leading-normal text-foreground-secondary sm:text-lg sm:leading-7">
             {t("home.featuresSubtitle")}
           </p>
         </div>
@@ -52,13 +52,13 @@ export default function Home() {
             return (
               <div
                 key={feature.title}
-                className="relative overflow-hidden rounded-lg border bg-background p-6"
+                className="relative overflow-hidden rounded-lg border border-border bg-surface p-6 card-shadow transition-transform hover:-translate-y-0.5"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 mb-4">
-                  <Icon className="h-6 w-6 text-primary" />
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-light">
+                  <Icon className="h-6 w-6 text-primary-strong" />
                 </div>
-                <h3 className="font-bold mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="mb-2 font-bold">{feature.title}</h3>
+                <p className="text-sm text-foreground-secondary">
                   {feature.description}
                 </p>
               </div>
@@ -73,7 +73,7 @@ export default function Home() {
           <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
             {t("home.ctaTitle")}
           </h2>
-          <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
+          <p className="max-w-[85%] leading-normal text-foreground-secondary sm:text-lg sm:leading-7">
             {t("home.ctaSubtitle")}
           </p>
           <Link href="/docs">

@@ -16,7 +16,6 @@ import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
-import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { logout } from '../../stores/authSlice';
 import { readCrashes } from '../../utils/crashLog';
@@ -32,15 +31,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { unitSize, theme, language, density, publisherId, gradeId, subjectId } = useSelector(
+  const { unitSize, theme, language, density } = useSelector(
     (state: RootState) => state.settings,
   );
   const [crashCount, setCrashCount] = useState(0);
   const [logoutVisible, setLogoutVisible] = useState(false);
-  // 「我的教材」当前值文案需要的名称映射
-  const [publisherName, setPublisherName] = useState<string | null>(null);
-  const [gradeName, setGradeName] = useState<string | null>(null);
-  const [subjectName, setSubjectName] = useState<string | null>(null);
 
   const loadCrashCount = useCallback(async () => {
     setCrashCount((await readCrashes()).length);
@@ -49,31 +44,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       void loadCrashCount();
-      api.getPublishers().then((list) => {
-        const matched = list.find((publisher) => publisher.id === publisherId);
-        setPublisherName(matched?.name ?? null);
-      });
-      api.getGrades().then((list) => {
-        setGradeName(list.find((grade) => grade.id === gradeId)?.name ?? null);
-      });
-      api.getSubjects().then((list) => {
-        setSubjectName(list.find((subject) => subject.id === subjectId)?.name ?? null);
-      });
-    }, [loadCrashCount, publisherId, gradeId, subjectId])
+    }, [loadCrashCount])
   );
 
   // 当前值文案（显示在入口行右侧）
   const languageLabel = t[LANGUAGE_OPTIONS.find((o) => o.value === language)?.labelKey ?? 'chinese'];
   const themeLabel = t[THEME_OPTIONS.find((o) => o.value === theme)?.labelKey ?? 'system'];
   const densityLabel = t[DENSITY_OPTIONS.find((o) => o.value === density)?.labelKey ?? 'densityComfortable'];
-  const textbookLabel =
-    publisherId && gradeId
-      ? [subjectName, publisherName, gradeName].filter(Boolean).join(' · ')
-      : t.textbookNotSet;
 
   // 一级入口：点击进入二级页选择具体值
   const settingRows: { key: SettingKey; label: string; value: string }[] = [
-    { key: 'textbook', label: t.textbookMy, value: textbookLabel },
     { key: 'language', label: t.language, value: languageLabel },
     { key: 'theme', label: t.theme, value: themeLabel },
     { key: 'density', label: t.displayDensity, value: densityLabel },

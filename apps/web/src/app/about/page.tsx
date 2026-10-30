@@ -27,27 +27,27 @@ export default function About() {
         <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl">
           {t("about.title")}
         </h1>
-        <p className="text-lg text-muted-foreground max-w-[750px]">
+        <p className="text-lg text-foreground-secondary max-w-[750px]">
           {t("about.subtitle")}
         </p>
       </div>
 
       <div className="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Mission */}
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <h2 className="text-2xl font-bold mb-4">{t("about.missionTitle")}</h2>
-          <p className="text-muted-foreground leading-relaxed">
+        <div className="rounded-lg border border-border bg-surface p-6 card-shadow">
+          <h2 className="mb-4 text-2xl font-bold">{t("about.missionTitle")}</h2>
+          <p className="leading-relaxed text-foreground-secondary">
             {t("about.missionText")}
           </p>
         </div>
 
         {/* Features Highlight */}
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <h2 className="text-2xl font-bold mb-4">{t("about.whyTitle")}</h2>
-          <ul className="space-y-2 text-muted-foreground text-sm">
+        <div className="rounded-lg border border-border bg-surface p-6 card-shadow">
+          <h2 className="mb-4 text-2xl font-bold">{t("about.whyTitle")}</h2>
+          <ul className="space-y-2 text-sm text-foreground-secondary">
             {dict.about.whyItems.map((item) => (
               <li key={item.label} className="flex items-start gap-2">
-                <span className="text-primary font-bold shrink-0">•</span>
+                <span className="shrink-0 font-bold text-primary-strong">•</span>
                 <span>
                   <strong>{item.label}</strong> {item.text}
                 </span>
@@ -57,9 +57,9 @@ export default function About() {
         </div>
 
         {/* Contact */}
-        <div className="rounded-lg border bg-card p-6 shadow-sm text-center">
-          <h2 className="text-2xl font-bold mb-4">{t("about.contactTitle")}</h2>
-          <p className="text-muted-foreground mb-5 text-sm">{t("about.contactText")}</p>
+        <div className="rounded-lg border border-border bg-surface p-6 card-shadow text-center">
+          <h2 className="mb-4 text-2xl font-bold">{t("about.contactTitle")}</h2>
+          <p className="mb-5 text-sm text-foreground-secondary">{t("about.contactText")}</p>
           <div className="flex flex-col gap-2">
             <Button variant="outline" size="lg" asChild>
               <a
@@ -86,10 +86,10 @@ export default function About() {
       </div>
 
       {/* Footer */}
-      <div className="mx-auto mt-12 max-w-[58rem] text-center text-sm text-muted-foreground">
+      <div className="mx-auto mt-12 max-w-[58rem] text-center text-sm text-foreground-secondary">
         <p className="flex items-center justify-center gap-1">
           {t("about.footerA")}{" "}
-          <Heart className="h-4 w-4 text-red-500 fill-red-500" />{" "}
+          <Heart className="h-4 w-4 text-destructive fill-destructive" />{" "}
           {t("about.footerB")}
         </p>
       </div>
