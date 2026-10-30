@@ -58,6 +58,41 @@ export function stripHtml(html?: string | null): string {
   return (box.textContent || "").replace(/\u00a0/g, " ").trim();
 }
 
+/**
+ * 历史/导入数据里的公式是 `$latex$` 纯文本，而编辑器的数学节点只认 `data-latex` 属性。
+ * 回填前把文本里的 `$...$` / `$$...$$` 包成数学节点，否则编辑器里只会显示 LaTeX 源码。
+ */
+export function mountDollarMath(html?: string | null): string {
+  if (!html || typeof document === "undefined" || !html.includes("$")) return html || "";
+  const box = document.createElement("div");
+  box.innerHTML = html;
+  const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+  const targets: Text[] = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    if (node.parentElement?.closest('[data-type="inline-math"], [data-type="block-math"]')) continue;
+    if (/\$[^$\n]+\$/.test(node.nodeValue || "")) targets.push(node);
+  }
+  for (const node of targets) {
+    const text = node.nodeValue || "";
+    const re = /\$\$([^$]+)\$\$|\$([^$\n]+)\$/g;
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(text)) !== null) {
+      if (match.index > last) frag.appendChild(document.createTextNode(text.slice(last, match.index)));
+      const span = document.createElement("span");
+      span.setAttribute("data-type", "inline-math");
+      span.setAttribute("data-latex", (match[1] ?? match[2]).trim());
+      frag.appendChild(span);
+      last = match.index + match[0].length;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    node.replaceWith(frag);
+  }
+  return box.innerHTML;
+}
+
 const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 /** 长边上限：压缩后题干图片在手机上足够清晰，又不至于拖慢接口 */
 const MAX_IMAGE_EDGE = 1600;
@@ -155,7 +190,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   const editor = useEditor({
     extensions,
-    content: value || "",
+    content: mountDollarMath(value),
     editable: !disabled,
     // Next.js SSR 下必须关闭首次立即渲染，否则会 hydration 不一致
     immediatelyRender: false,
@@ -232,7 +267,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     lastValueRef.current = next;
     const current = editor.isEmpty ? "" : editor.getHTML();
     if (next !== current) {
-      editor.commands.setContent(next, { emitUpdate: false });
+      editor.commands.setContent(mountDollarMath(next), { emitUpdate: false });
     }
   }, [value, editor]);
 
