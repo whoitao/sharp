@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    Platform,
-    StyleProp,
-    StyleSheet,
-    Text,
-    TextStyle,
-    View,
-    ViewStyle
+  Platform,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { API_BASE_URL } from '../services/api';
@@ -54,17 +54,19 @@ function buildDocument(html: string, fontSize: number, color: string, lineHeight
   img { display: block; max-width: 100%; height: auto; margin: 4px 0; border-radius: 4px; }
   .katex { font-size: 1.05em; }
   .katex-display { margin: 6px 0; overflow-x: auto; overflow-y: hidden; }
-  /* 表格固定铺满宽度：WebView 禁用了滚动，超宽内容会被裁掉 */
-  table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 6px 0; }
+  /* 表格先按内容自适应宽度；超出容器时由脚本等比缩小字号，仍放不下才回退为定宽换行 */
+  table { width: auto; max-width: 100%; border-collapse: collapse; table-layout: auto; margin: 6px 0; }
   td, th {
     border: 1px solid ${color}33;
-    padding: 4px 6px;
+    padding: 3px 5px;
     vertical-align: top;
-    word-break: break-word;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
   }
   th { font-weight: 600; }
   td p, th p { margin: 0; }
+  /* 回退态：定宽铺满，允许长内容折行 */
+  table.fit-fallback { width: 100% !important; table-layout: fixed; }
+  table.fit-fallback td, table.fit-fallback th { white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -99,16 +101,40 @@ ${html}
       }
     } catch (e) {}
 
+    // 表格自适应：按内容实际宽度等比缩小字号，尽量在可视区域内完整展示；
+    // 缩到最小仍放不下时，回退为定宽铺满 + 折行（避免被 WebView 裁掉）
+    function fitTables() {
+      var max = document.documentElement.clientWidth || 0;
+      if (!max) return;
+      var tables = document.querySelectorAll('table');
+      for (var i = 0; i < tables.length; i++) {
+        var t = tables[i];
+        t.classList.remove('fit-fallback');
+        t.style.fontSize = '';
+        var width = t.scrollWidth;
+        if (!width || width <= max) continue;
+        var base = parseFloat(window.getComputedStyle(t).fontSize) || 16;
+        var target = base * (max / width) * 0.98;
+        t.style.fontSize = Math.max(target, base * 0.5) + 'px';
+        if (t.scrollWidth > max + 1) {
+          t.style.fontSize = '';
+          t.classList.add('fit-fallback');
+        }
+      }
+    }
+
     function send() {
       var h = document.body ? document.body.scrollHeight : 0;
       if (h > 0 && window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage(String(h));
       }
     }
-    window.addEventListener('load', send);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(send);
-    setTimeout(send, 60);
-    setTimeout(send, 400);
+    window.addEventListener('load', function () { fitTables(); send(); });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { fitTables(); send(); });
+    }
+    setTimeout(function () { fitTables(); send(); }, 60);
+    setTimeout(function () { fitTables(); send(); }, 400);
     // 图片加载、字体替换都会改变高度，用 ResizeObserver 持续同步
     if (window.ResizeObserver) new ResizeObserver(send).observe(document.body);
   })();

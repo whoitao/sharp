@@ -599,8 +599,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
         </View>
         <RichTextView
           html={currentQuestion.content}
-          fontSize={18 * font}
-          lineHeight={28 * font}
+          fontSize={16 * font}
+          lineHeight={25 * font}
           color={colors.text}
           style={styles.questionContent}
         />
