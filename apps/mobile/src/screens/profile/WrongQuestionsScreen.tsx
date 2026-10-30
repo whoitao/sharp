@@ -75,7 +75,7 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
               key={option.id}
               style={[
                 styles.optionRow,
-                { paddingVertical: 8 * spacing, paddingHorizontal: 10 * spacing, borderRadius: 8 * radius, marginBottom: 4 * spacing },
+                { paddingVertical: 8 * spacing, paddingHorizontal: 10 * spacing, borderRadius: 12 * radius, marginBottom: 4 * spacing },
                 option.isCorrect && { backgroundColor: colors.accentLight },
               ]}
             >

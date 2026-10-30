@@ -639,7 +639,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
                 paddingHorizontal: 48 * spacing,
                 backgroundColor:
                   selectedKeys.length === 0 ? colors.border : colors.primary,
-                borderRadius: 10 * radius,
+                borderRadius: 12 * radius,
                 paddingVertical: 14 * spacing,
               },
             ]}
@@ -702,14 +702,14 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
             </Text>
             <View style={[styles.confirmActions, { gap: 10 * spacing }]}>
               <TouchableOpacity
-                style={[styles.confirmButton, { backgroundColor: colors.background, borderRadius: 8 * radius, paddingVertical: 11 * spacing }]}
+                style={[styles.confirmButton, { backgroundColor: colors.background, borderRadius: 12 * radius, paddingVertical: 11 * spacing }]}
                 onPress={() => setQuitConfirmVisible(false)}
                 activeOpacity={0.8}
               >
                 <Text style={{ color: colors.textSecondary, fontSize: 15 * font }}>{t.cancel}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmButton, { backgroundColor: colors.error, borderRadius: 8 * radius, paddingVertical: 11 * spacing }]}
+                style={[styles.confirmButton, { backgroundColor: colors.error, borderRadius: 12 * radius, paddingVertical: 11 * spacing }]}
                 onPress={confirmQuit}
                 activeOpacity={0.8}
               >
@@ -737,14 +737,14 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
             </Text>
             <View style={[styles.confirmActions, { gap: 10 * spacing }]}>
               <TouchableOpacity
-                style={[styles.confirmButton, { backgroundColor: colors.background, borderRadius: 8 * radius, paddingVertical: 11 * spacing }]}
+                style={[styles.confirmButton, { backgroundColor: colors.background, borderRadius: 12 * radius, paddingVertical: 11 * spacing }]}
                 onPress={() => setRestartConfirmVisible(false)}
                 activeOpacity={0.8}
               >
                 <Text style={{ color: colors.textSecondary, fontSize: 15 * font }}>{t.cancel}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmButton, { backgroundColor: colors.accentStrong, borderRadius: 8 * radius, paddingVertical: 11 * spacing }]}
+                style={[styles.confirmButton, { backgroundColor: colors.accentStrong, borderRadius: 12 * radius, paddingVertical: 11 * spacing }]}
                 onPress={confirmRestart}
                 activeOpacity={0.8}
               >

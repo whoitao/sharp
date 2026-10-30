@@ -163,14 +163,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, { borderColor: colors.border, borderRadius: 10 * radius, paddingVertical: 12 * spacing }]}
+                style={[styles.modalButton, { borderColor: colors.border, borderRadius: 12 * radius, paddingVertical: 12 * spacing }]}
                 onPress={() => setLogoutVisible(false)}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.modalButtonText, { color: colors.textSecondary, fontSize: 15 * font }]}>{t.cancel}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonDanger, { borderRadius: 10 * radius, paddingVertical: 12 * spacing }]}
+                style={[styles.modalButton, styles.modalButtonDanger, { borderRadius: 12 * radius, paddingVertical: 12 * spacing }]}
                 onPress={confirmLogout}
                 activeOpacity={0.7}
               >

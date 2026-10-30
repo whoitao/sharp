@@ -48,6 +48,7 @@ export const zh = {
   subjectProgressLabel: (num: number) => `已学 ${num}%`,
   homeContinueAction: '继续练习',
   homeSubjects: '学科',
+  homeCurrentSubject: '当前科目',
   homeSubjectCount: (num: number) => `${num} 个`,
   homeNoQuestions: '暂无题目',
   homeStreak: (days: number) => `连续 ${days} 天`,
@@ -56,12 +57,19 @@ export const zh = {
   homeReport: '学习报告',
 
   // Study
+  studySelectScope: '选择年级和科目',
   studySelectSubject: '选择科目',
   studySelectGrade: '选择年级',
   studySelectKnowledgePoint: '选择知识点',
   studySelectSubjectFirst: '请先选择科目',
   studyNoUnits: '该条件下暂无单元',
   studySelectAllFilters: '请选择科目和知识点',
+
+  // 双入口
+  studyByChapter: '按章节学',
+  studyByChapterDesc: '人教版 · 七上\n第一章 有理数',
+  studyByKnowledgePoint: '按知识点学',
+  studyByKnowledgePointDesc: '三角函数\n一元二次方程',
 
   // Common
   loading: '加载中...',

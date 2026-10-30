@@ -69,7 +69,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
       <View style={[styles.center, { backgroundColor: 'transparent' }]}>
         <Text style={[styles.noResultText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 16 * spacing }]}>{t.noResultData}</Text>
         <TouchableOpacity
-          style={[styles.backButton, { backgroundColor: colors.primary, borderRadius: 10 * radius, paddingVertical: 12 * spacing, paddingHorizontal: 32 * spacing }]}
+          style={[styles.backButton, { backgroundColor: colors.primary, borderRadius: 12 * radius, paddingVertical: 12 * spacing, paddingHorizontal: 32 * spacing }]}
           onPress={() => navigation.goBack()}
         >
           <Text style={[styles.backButtonText, { fontSize: 15 * font }]}>{t.back}</Text>

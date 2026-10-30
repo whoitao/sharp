@@ -70,7 +70,7 @@ const TreeRow = memo(function TreeRow({
         {
           paddingVertical: 12 * spacing,
           paddingRight: 12 * spacing,
-          borderRadius: 8 * radius,
+          borderRadius: 12 * radius,
           paddingLeft: (8 + depth * 20) * spacing,
         },
         selected && { backgroundColor: colors.accentLight },

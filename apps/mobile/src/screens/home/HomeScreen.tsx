@@ -6,6 +6,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import { useDispatch, useSelector } from 'react-redux';
 import ScopeSelector from '../../components/ScopeSelector';
 import StreakBadge from '../../components/StreakBadge';
+import TagFilterBar from '../../components/TagFilterBar';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -36,6 +37,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   // 有教材内容时才露出「教材同步」入口
   const [textbookAvailable, setTextbookAvailable] = useState(false);
+  // 标签筛选（目前用 mock 数据，后续接入 QuestionTag 表）
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+  const mockTags = [
+    { id: '1', name: '中考真题' },
+    { id: '2', name: '模拟题' },
+    { id: '3', name: '课后练习' },
+    { id: '4', name: '竞赛' },
+  ];
 
   // 全局「年级 + 科目」选择器：选中项从设置中还原
   const selectedGrade = useMemo(
@@ -206,17 +215,36 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               ]}
             >
               <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '700' }}>
-                {t.homeSubjects}
+                {selectedSubject ? t.homeCurrentSubject : t.homeSubjects}
               </Text>
               <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font }}>
-                {t.homeSubjectCount(subjects.length)}
+                {selectedSubject
+                  ? `${selectedSubject.name}`
+                  : t.homeSubjectCount(subjects.length)}
               </Text>
             </View>
 
+            {/* 标签筛选条 */}
+            <TagFilterBar
+              tags={mockTags}
+              selectedTagId={selectedTagId}
+              onSelectTag={setSelectedTagId}
+            />
+
             {subjects.length === 0 ? (
-              <Text style={{ color: colors.textSecondary, fontSize: 14 * font }}>{t.noData}</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 14 * font, marginTop: 12 * spacing }}>{t.noData}</Text>
+            ) : selectedSubject ? (
+              // 选了具体科目：只显示该科目的单卡片
+              <View style={{ gap: 9 * spacing, marginTop: 12 * spacing }}>
+                {subjects
+                  .filter((s) => s.id === selectedSubject.id)
+                  .map((subject) => (
+                    <SubjectRow key={subject.id} item={subject} onPress={() => goToStudy(subject.id)} />
+                  ))}
+              </View>
             ) : (
-              <View style={{ gap: 9 * spacing }}>
+              // 没选科目：显示所有学科列表
+              <View style={{ gap: 9 * spacing, marginTop: 12 * spacing }}>
                 {subjects.map((subject) => (
                   <SubjectRow key={subject.id} item={subject} onPress={() => goToStudy(subject.id)} />
                 ))}

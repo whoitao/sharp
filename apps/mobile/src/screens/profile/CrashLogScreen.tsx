@@ -145,7 +145,7 @@ const CrashLogScreen: React.FC = () => {
               styles.clearButton,
               {
                 borderColor: colors.errorLight,
-                borderRadius: 10 * radius,
+                borderRadius: 12 * radius,
                 paddingVertical: 10 * spacing,
                 marginTop: 12 * spacing,
               },

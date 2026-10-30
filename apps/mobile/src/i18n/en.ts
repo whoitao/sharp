@@ -48,6 +48,7 @@ export const en: TranslationKeys = {
   subjectProgressLabel: (num: number) => `${num}% learned`,
   homeContinueAction: 'Continue practice',
   homeSubjects: 'Subjects',
+  homeCurrentSubject: 'Current Subject',
   homeSubjectCount: (num: number) => `${num} ${num === 1 ? 'subject' : 'subjects'}`,
   homeNoQuestions: 'No questions yet',
   homeStreak: (days: number) => `${days}-day streak`,
@@ -56,12 +57,19 @@ export const en: TranslationKeys = {
   homeReport: 'Study Report',
 
   // Study
+  studySelectScope: 'Select Grade & Subject',
   studySelectSubject: 'Select Subject',
   studySelectGrade: 'Select Grade',
   studySelectKnowledgePoint: 'Select Knowledge Point',
   studySelectSubjectFirst: 'Please select a subject first',
   studyNoUnits: 'No units for this filter',
   studySelectAllFilters: 'Select subject and knowledge point',
+
+  // Dual entry
+  studyByChapter: 'By Chapter',
+  studyByChapterDesc: 'PEP · Grade 7\nCh.1 Rational Numbers',
+  studyByKnowledgePoint: 'By Topic',
+  studyByKnowledgePointDesc: 'Trigonometry\nQuadratic Equations',
 
   // Common
   loading: 'Loading...',

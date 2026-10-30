@@ -111,7 +111,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   ) => (
     <TouchableOpacity
       disabled={disabled}
-      style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 10 * spacing, paddingHorizontal: 12 * spacing, borderRadius: 8 * radius }, disabled && styles.chipDisabled]}
+      style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 10 * spacing, paddingHorizontal: 12 * spacing, borderRadius: 12 * radius }, disabled && styles.chipDisabled]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -191,7 +191,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
                   {
                     backgroundColor: active ? colors.accent : colors.surface,
                     borderColor: active ? colors.accent : colors.border,
-                    borderRadius: 999,
+                    borderRadius: 6 * radius,
                     paddingVertical: 6 * spacing,
                     paddingHorizontal: 12 * spacing,
                   },
@@ -227,7 +227,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
               {(grades ?? []).map((grade) => (
                 <TouchableOpacity
                   key={grade.id}
-                  style={[styles.modalOption, { borderRadius: 8 * radius }, selectedGrade?.id === grade.id && { backgroundColor: colors.accentLight }]}
+                  style={[styles.modalOption, { borderRadius: 12 * radius }, selectedGrade?.id === grade.id && { backgroundColor: colors.accentLight }]}
                   onPress={() => {
                     onSelectGrade?.(grade);
                     setGradeModalVisible(false);
@@ -251,7 +251,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
               {subjects.map((sub) => (
                 <TouchableOpacity
                   key={sub.id}
-                  style={[styles.modalOption, { borderRadius: 8 * radius }, selectedSubject?.id === sub.id && { backgroundColor: colors.accentLight }]}
+                  style={[styles.modalOption, { borderRadius: 12 * radius }, selectedSubject?.id === sub.id && { backgroundColor: colors.accentLight }]}
                   onPress={() => {
                     onSelectSubject(sub);
                     setSubjectModalVisible(false);

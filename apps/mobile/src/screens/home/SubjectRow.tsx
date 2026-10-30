@@ -35,7 +35,7 @@ const SubjectRow: React.FC<SubjectRowProps> = ({ item, onPress }) => {
         {
           backgroundColor: empty ? colors.surfaceSecondary : colors.surface,
           borderColor: empty ? colors.borderLight : colors.border,
-          borderRadius: 14 * radius,
+          borderRadius: 12 * radius,
           padding: 12 * spacing,
         },
       ]}

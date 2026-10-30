@@ -15,10 +15,8 @@ interface ScopeSelectorProps {
   onChangeSubject: (subject: Subject | null) => void;
 }
 
-type PickerMode = 'grade' | 'subject' | null;
-
 /**
- * 全局「年级 + 科目」学习范围选择器。
+ * 全局「年级 + 科目」学习范围选择器（胶囊按钮）。
  * 首页常驻展示，修改后写入用户设置，学习页/教材页/记录页共用同一套范围。
  */
 const ScopeSelector: React.FC<ScopeSelectorProps> = ({
@@ -32,86 +30,131 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
-  const [mode, setMode] = useState<PickerMode>(null);
+  const [visible, setVisible] = useState(false);
 
-  const options: { id: string; name: string }[] =
-    mode === 'grade' ? grades : mode === 'subject' ? subjects : [];
-  const currentId = mode === 'grade' ? selectedGrade?.id : selectedSubject?.id;
-
-  const handlePick = (id: string) => {
-    if (mode === 'grade') {
-      onChangeGrade(grades.find((g) => g.id === id) ?? null);
-    } else if (mode === 'subject') {
-      onChangeSubject(subjects.find((s) => s.id === id) ?? null);
+  const displayText = (() => {
+    if (selectedGrade && selectedSubject) {
+      return `${selectedGrade.name} · ${selectedSubject.name}`;
     }
-    setMode(null);
+    if (selectedGrade) return selectedGrade.name;
+    if (selectedSubject) return selectedSubject.name;
+    return t.studySelectScope;
+  })();
+
+  const handlePickGrade = (id: string) => {
+    onChangeGrade(grades.find((g) => g.id === id) ?? null);
   };
 
-  const chip = (
-    value: string | null,
-    placeholder: string,
-    onPress: () => void,
-    icon?: React.ReactNode,
-  ) => (
-    <TouchableOpacity
-      style={[styles.chip, { paddingVertical: 4 * spacing, gap: 2 * spacing }]}
-      activeOpacity={0.7}
-      onPress={onPress}
-    >
-      {icon}
-      <Text
-        style={{
-          color: value ? colors.text : colors.textTertiary,
-          fontSize: 13 * font,
-          fontWeight: '600',
-        }}
-        numberOfLines={1}
-      >
-        {value ?? placeholder}
-      </Text>
-      <Ionicons name="chevron-down" size={12 * font} color={colors.textTertiary} />
-    </TouchableOpacity>
-  );
+  const handlePickSubject = (id: string) => {
+    onChangeSubject(subjects.find((s) => s.id === id) ?? null);
+  };
 
   return (
     <>
-      <View style={[styles.row, { gap: 8 * spacing }]}>
-        {chip(selectedGrade?.name ?? null, t.studySelectGrade, () => setMode('grade'))}
-        {chip(
-          selectedSubject?.name ?? null,
-          t.studySelectSubject,
-          () => setMode('subject'),
-        )}
-      </View>
+      <TouchableOpacity
+        style={[
+          styles.capsule,
+          {
+            borderRadius: 12 * radius,
+            paddingVertical: 6 * spacing,
+          },
+        ]}
+        activeOpacity={0.6}
+        onPress={() => setVisible(true)}
+      >
+        <Text
+          style={{
+            color: selectedGrade || selectedSubject ? colors.text : colors.textTertiary,
+            fontSize: 13 * font,
+            fontWeight: '600',
+          }}
+          numberOfLines={1}
+        >
+          {displayText}
+        </Text>
+        <Ionicons name="chevron-down" size={12 * font} color={colors.textTertiary} style={{ marginLeft: 4 * spacing }} />
+      </TouchableOpacity>
 
-      <Modal visible={mode !== null} transparent animationType="fade" onRequestClose={() => setMode(null)}>
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setMode(null)}>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setVisible(false)}>
           <View
             style={[
               styles.sheet,
               { backgroundColor: colors.surface, borderRadius: 16 * radius, padding: 16 * spacing },
             ]}
           >
-            <Text style={{ color: colors.text, fontSize: 17 * font, fontWeight: '600', marginBottom: 8 * spacing }}>
-              {mode === 'grade' ? t.studySelectGrade : t.studySelectSubject}
+            <Text style={{ color: colors.text, fontSize: 17 * font, fontWeight: '600', marginBottom: 12 * spacing }}>
+              {t.studySelectScope}
             </Text>
-            <ScrollView style={{ maxHeight: 360 }}>
-              {options.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[
-                    styles.option,
-                    { paddingVertical: 12 * spacing, borderRadius: 8 * radius },
-                    currentId === item.id && { backgroundColor: colors.accentLight },
-                  ]}
-                  onPress={() => handlePick(item.id)}
-                >
-                  <Text style={{ color: colors.text, fontSize: 15 * font }}>{item.name}</Text>
-                  {currentId === item.id && (
-                    <Ionicons name="checkmark" size={18 * font} color={colors.accent} />
-                  )}
-                </TouchableOpacity>
-              ))}
+
+            {/* 年级 */}
+            <Text style={{ color: colors.textSecondary, fontSize: 13 * font, fontWeight: '600', marginBottom: 8 * spacing }}>
+              {t.studySelectGrade}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 * spacing }}>
+              <View style={{ flexDirection: 'row', gap: 8 * spacing }}>
+                {grades.map((grade) => (
+                  <TouchableOpacity
+                    key={grade.id}
+                    style={[
+                      styles.optionChip,
+                      {
+                        backgroundColor: selectedGrade?.id === grade.id ? colors.accentLight : colors.background,
+                        borderColor: selectedGrade?.id === grade.id ? colors.accent : colors.border,
+                        borderRadius: 12 * radius,
+                        paddingHorizontal: 12 * spacing,
+                        paddingVertical: 8 * spacing,
+                      },
+                    ]}
+                    onPress={() => handlePickGrade(grade.id)}
+                  >
+                    <Text
+                      style={{
+                        color: selectedGrade?.id === grade.id ? colors.accent : colors.text,
+                        fontSize: 14 * font,
+                        fontWeight: '500',
+                      }}
+                    >
+                      {grade.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* 科目 */}
+            <Text style={{ color: colors.textSecondary, fontSize: 13 * font, fontWeight: '600', marginBottom: 8 * spacing }}>
+              {t.studySelectSubject}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row', gap: 8 * spacing }}>
+                {subjects.map((subject) => (
+                  <TouchableOpacity
+                    key={subject.id}
+                    style={[
+                      styles.optionChip,
+                      {
+                        backgroundColor: selectedSubject?.id === subject.id ? colors.accentLight : colors.background,
+                        borderColor: selectedSubject?.id === subject.id ? colors.accent : colors.border,
+                        borderRadius: 12 * radius,
+                        paddingHorizontal: 12 * spacing,
+                        paddingVertical: 8 * spacing,
+                      },
+                    ]}
+                    onPress={() => handlePickSubject(subject.id)}
+                  >
+                    <Text
+                      style={{
+                        color: selectedSubject?.id === subject.id ? colors.accent : colors.text,
+                        fontSize: 14 * font,
+                        fontWeight: '500',
+                      }}
+                    >
+                      {subject.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </ScrollView>
           </View>
         </TouchableOpacity>
@@ -121,8 +164,10 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
 };
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center' },
-  chip: { flexDirection: 'row', alignItems: 'center', maxWidth: '55%' },
+  capsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -130,11 +175,8 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   sheet: { width: '100%' },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
+  optionChip: {
+    borderWidth: StyleSheet.hairlineWidth,
   },
 });
 

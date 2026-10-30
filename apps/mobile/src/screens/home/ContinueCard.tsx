@@ -25,7 +25,7 @@ const ContinueCard: React.FC<ContinueCardProps> = ({ subject, onPress }) => {
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const onAccent = isDark ? colors.background : ON_ACCENT_LIGHT;
-  const borderRadius = 16 * radius;
+  const borderRadius = 12 * radius;
 
   return (
     <View style={[styles.shadow, cardShadow(isDark), { borderRadius }]}>
@@ -48,13 +48,13 @@ const ContinueCard: React.FC<ContinueCardProps> = ({ subject, onPress }) => {
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <View style={[styles.row, { padding: 16 * spacing, gap: 12 * spacing }]}>
+        <View style={[styles.row, { padding: 12 * spacing, gap: 10 * spacing }]}>
           <View style={styles.main}>
             <Text
               numberOfLines={1}
               style={{
                 color: colors.text,
-                fontSize: (subject ? 22 : 18) * font,
+                fontSize: (subject ? 18 : 16) * font,
                 fontWeight: '700',
               }}
             >
@@ -65,8 +65,8 @@ const ContinueCard: React.FC<ContinueCardProps> = ({ subject, onPress }) => {
                 numberOfLines={1}
                 style={{
                   color: colors.textSecondary,
-                  fontSize: 12.5 * font,
-                  marginTop: 3 * spacing,
+                  fontSize: 12 * font,
+                  marginTop: 2 * spacing,
                 }}
               >
                 {t.subjectQuestionCount(subject.questionCount)} · {t.subjectProgressLabel(subject.progress)}
@@ -77,20 +77,20 @@ const ContinueCard: React.FC<ContinueCardProps> = ({ subject, onPress }) => {
                 styles.cta,
                 {
                   backgroundColor: colors.accentStrong,
-                  borderRadius: 10 * radius,
-                  marginTop: 12 * spacing,
-                  paddingHorizontal: 14 * spacing,
+                  borderRadius: 6 * radius,
+                  marginTop: 8 * spacing,
+                  paddingHorizontal: 10 * spacing,
                 },
               ]}
             >
-              <Text style={{ color: onAccent, fontSize: 13 * font, fontWeight: '600' }}>
+              <Text style={{ color: onAccent, fontSize: 12 * font, fontWeight: '600' }}>
                 {subject ? t.homeContinueAction : t.startLearning}
               </Text>
               <Ionicons
                 name="arrow-forward"
-                size={13 * font}
+                size={12 * font}
                 color={onAccent}
-                style={{ marginLeft: 6 * spacing }}
+                style={{ marginLeft: 4 * spacing }}
               />
             </View>
           </View>
@@ -100,9 +100,9 @@ const ContinueCard: React.FC<ContinueCardProps> = ({ subject, onPress }) => {
                 styles.ring,
                 {
                   borderColor: colors.accent,
-                  width: 64 * spacing,
-                  height: 64 * spacing,
-                  borderRadius: 32 * spacing,
+                  width: 52 * spacing,
+                  height: 52 * spacing,
+                  borderRadius: 26 * spacing,
                 },
               ]}
             >
@@ -119,10 +119,10 @@ const ContinueCard: React.FC<ContinueCardProps> = ({ subject, onPress }) => {
 
 const styles = StyleSheet.create({
   shadow: {
-    borderRadius: 16,
+    borderRadius: 12,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   row: {
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    height: 34,
+    height: 28,
   },
   ring: {
     borderWidth: 2,
