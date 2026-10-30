@@ -25,6 +25,7 @@ interface FlatRow<T extends TreeNode> {
   expanded: boolean;
   loading: boolean;
   selected: boolean;
+  trailing: string | null;
 }
 
 interface TreePickerModalProps<T extends TreeNode> {
@@ -40,6 +41,8 @@ interface TreePickerModalProps<T extends TreeNode> {
   loadChildren?: (node: T) => Promise<T[]>;
   /** 打开时默认展开所有已携带 children 的节点（直到叶子） */
   defaultExpandAll?: boolean;
+  /** 行尾附加文案（如题目数），返回 null 则不展示 */
+  getTrailing?: (node: T) => string | null;
 }
 
 interface TreeRowProps {
@@ -61,7 +64,7 @@ const TreeRow = memo(function TreeRow({
   onSelect,
   onToggle,
 }: TreeRowProps) {
-  const { node, depth, hasChildren, expanded, loading, selected } = row;
+  const { node, depth, hasChildren, expanded, loading, selected, trailing } = row;
 
   return (
     <TouchableOpacity
@@ -103,6 +106,11 @@ const TreeRow = memo(function TreeRow({
       >
         {node.name}
       </Text>
+      {trailing ? (
+        <Text style={[styles.trailingText, { color: colors.textTertiary, fontSize: 13 * font, marginLeft: 8 * spacing }]}>
+          {trailing}
+        </Text>
+      ) : null}
     </TouchableOpacity>
   );
 });
@@ -118,6 +126,7 @@ function TreePickerModal<T extends TreeNode>({
   onSelect,
   loadChildren,
   defaultExpandAll = false,
+  getTrailing,
 }: TreePickerModalProps<T>) {
   const { spacing, font, radius } = useDensity();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -240,13 +249,14 @@ function TreePickerModal<T extends TreeNode>({
           expanded,
           loading: loadingIds.has(node.id),
           selected: selectedId === node.id,
+          trailing: getTrailing ? getTrailing(node) : null,
         });
         if (expanded) walk(children, depth + 1, [...ancestors, node.id]);
       }
     };
     walk(roots, 0, []);
     return out;
-  }, [roots, expandedIds, lazyChildren, loadingIds, selectedId, loadChildren]);
+  }, [roots, expandedIds, lazyChildren, loadingIds, selectedId, loadChildren, getTrailing]);
 
   const renderItem = useCallback(
     ({ item }: { item: FlatRow<T> }) => (
@@ -329,6 +339,7 @@ const styles = StyleSheet.create({
   },
   arrowButton: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1, fontSize: 16, marginLeft: 4 },
+  trailingText: { fontWeight: '500' },
   emptyText: { fontSize: 15, textAlign: 'center', paddingVertical: 24 },
 });
 

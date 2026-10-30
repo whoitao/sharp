@@ -189,7 +189,7 @@ const HomeStackNavigator: React.FC = () => {
     <HomeStack.Screen
       name="Home"
       component={withGradient(HomeScreen)}
-      options={{ title: 'Sharp' }}
+      options={{ title: t.home }}
     />
     {/* 从首页快捷入口进入的错题本 / 学习记录，返回时回到首页 */}
     <HomeStack.Screen

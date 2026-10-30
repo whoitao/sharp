@@ -283,6 +283,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
         colors={colors}
         emptyText={t.noData}
         defaultExpandAll
+        getTrailing={(node) => `${node.questionCount ?? 0}`}
         onClose={() => setKpModalVisible(false)}
         onSelect={(node) => {
           onSelectKP(node);

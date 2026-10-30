@@ -38,10 +38,15 @@ export async function GET(request: NextRequest) {
   const buildTree = (parentId: string | null): any[] => {
     return items
       .filter((item) => item.parentId === parentId)
-      .map((item) => ({
-        ...item,
-        children: buildTree(item.id),
-      }));
+      .map((item) => {
+        const children = buildTree(item.id);
+        return {
+          ...item,
+          children,
+          // 父节点的题数需要包含所有下级知识点，便于选择时判断分支体量
+          questionCount: item.questionCount + children.reduce((sum, child) => sum + child.questionCount, 0),
+        };
+      });
   };
 
   return NextResponse.json(buildTree(null));
