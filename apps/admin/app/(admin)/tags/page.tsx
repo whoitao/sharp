@@ -1,20 +1,21 @@
 "use client";
 
+import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
 import {
-  App,
-  Button,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Table,
-  Tag,
-  type TableProps,
+    App,
+    Button,
+    Form,
+    Input,
+    InputNumber,
+    Modal,
+    Select,
+    Space,
+    Table,
+    Tag,
+    type TableProps,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type QuestionTag = {
   id: string;
@@ -135,13 +136,23 @@ export default function TagsPage() {
     },
   ];
 
+  const headerActions = useMemo(
+    () => (
+      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        新建标签
+      </Button>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  usePageActions(headerActions);
+
   return (
     <div>
       <div style={{ marginBottom: 12, display: "flex", alignItems: "center" }}>
         <div style={{ flex: 1, color: "#888" }}>
           标签用于横向筛选题目：中考真题 / 模拟题 / 课后练习…，可与年级、科目、章节、知识点自由叠加。
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建标签</Button>
       </div>
       <Table
         rowKey="id"

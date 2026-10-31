@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
 import {
     App,
@@ -11,7 +12,7 @@ import {
     Table,
     type TableProps,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Publisher = {
   id: string;
@@ -105,11 +106,19 @@ export default function PublishersPage() {
     },
   ];
 
+  const headerActions = useMemo(
+    () => (
+      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        新建版本
+      </Button>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  usePageActions(headerActions);
+
   return (
     <div>
-      <div style={{ marginBottom: 12, textAlign: "right" }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建版本</Button>
-      </div>
       <Table
         rowKey="id"
         size="small"

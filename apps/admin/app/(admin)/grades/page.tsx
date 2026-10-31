@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
 import {
     App,
@@ -14,7 +15,7 @@ import {
     Tag,
     type TableProps,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Grade = {
   id: string;
@@ -111,6 +112,17 @@ export default function GradesPage() {
     });
   };
 
+  const headerActions = useMemo(
+    () => (
+      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        新建年级
+      </Button>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  usePageActions(headerActions);
+
   const columns: TableProps<Grade>["columns"] = [
     { title: "ID", dataIndex: "id", width: 80 },
     {
@@ -144,8 +156,6 @@ export default function GradesPage() {
           options={STAGES.map((s) => ({ value: s, label: s }))}
           onChange={setFilterStage}
         />
-        <div style={{ flex: 1 }} />
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建年级</Button>
       </div>
       <Table
         rowKey="id"

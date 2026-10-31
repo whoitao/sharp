@@ -1,19 +1,20 @@
 "use client";
 
+import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
 import {
-  App,
-  Button,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Space,
-  Table,
-  Tag,
-  type TableProps,
+    App,
+    Button,
+    Form,
+    Input,
+    InputNumber,
+    Modal,
+    Space,
+    Table,
+    Tag,
+    type TableProps,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Stage = {
   id: string;
@@ -120,6 +121,17 @@ export default function StagesPage() {
     });
   };
 
+  const headerActions = useMemo(
+    () => (
+      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        新建学段
+      </Button>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  usePageActions(headerActions);
+
   const columns: TableProps<Stage>["columns"] = [
     { title: "ID", dataIndex: "id", width: 80 },
     {
@@ -144,10 +156,6 @@ export default function StagesPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 12, display: "flex", gap: 12, alignItems: "center" }}>
-        <div style={{ flex: 1 }} />
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建学段</Button>
-      </div>
       <Table
         rowKey="id"
         size="small"
