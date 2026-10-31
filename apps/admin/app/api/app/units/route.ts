@@ -1,3 +1,4 @@
+import { getKnowledgePointSubtreeIds } from "@/lib/knowledge-point";
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
@@ -23,8 +24,10 @@ export async function GET(request: NextRequest) {
 
   const questionWhere: any = { subjectId: BigInt(subjectIdRaw) };
   if (knowledgePointIdRaw) {
+    // 选中父级知识点时命中整个子树的题目
+    const kpIds = await getKnowledgePointSubtreeIds(BigInt(knowledgePointIdRaw));
     questionWhere.knowledgePoints = {
-      some: { knowledgePointId: BigInt(knowledgePointIdRaw) },
+      some: { knowledgePointId: { in: kpIds } },
     };
   }
   // 年级：历史数据没有年级（null）视为不限年级，避免存量题被过滤掉

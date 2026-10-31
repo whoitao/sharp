@@ -1,3 +1,4 @@
+import { getKnowledgePointSubtreeIds } from "@/lib/knowledge-point";
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { chapterQuestionWhere, getChapterSubtreeIds } from "@/lib/textbook";
@@ -78,7 +79,9 @@ export async function POST(request: NextRequest) {
     const where: Record<string, unknown> = {};
     if (subjectId) where.subjectId = subjectId;
     if (knowledgePointIdRaw) {
-      where.knowledgePoints = { some: { knowledgePointId: BigInt(knowledgePointIdRaw) } };
+      // 选中父级知识点时命中整个子树的题目
+      const kpIds = await getKnowledgePointSubtreeIds(BigInt(knowledgePointIdRaw));
+      where.knowledgePoints = { some: { knowledgePointId: { in: kpIds } } };
     }
     // 年级：历史数据没有年级（null）视为不限年级
     if (gradeId) where.OR = [{ gradeId }, { gradeId: null }];

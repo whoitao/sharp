@@ -194,4 +194,21 @@ export const en: TranslationKeys = {
   avatarUploadFailed: 'Avatar upload failed, please try again',
   avatarTooLarge: 'Avatar is larger than 1MB, pick another image',
   avatarPermission: 'Photo library permission is required to change the avatar',
+
+  // Profile info
+  profileInfo: 'Profile Info',
+  avatar: 'Avatar',
+  nickname: 'Nickname',
+  nicknamePlaceholder: 'Enter a nickname',
+  nicknameEmpty: 'Nickname cannot be empty',
+  nicknameUpdateFailed: 'Failed to update nickname, please try again',
+  gender: 'Gender',
+  genderMale: 'Male',
+  genderFemale: 'Female',
+  genderUpdateFailed: 'Failed to update gender, please try again',
+  phone: 'Phone',
+  phonePlaceholder: 'Enter phone number',
+  phoneInvalid: 'Invalid phone number',
+  phoneUpdateFailed: 'Failed to update phone number, please try again',
+  notSet: 'Not set',
 };

@@ -3,29 +3,21 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { buildAvatarUrl } from '@sharp/shared';
 import { Image } from 'expo-image';
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
-import * as ImagePicker from 'expo-image-picker';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
-import type { AppDispatch, RootState } from '../../stores';
-import { uploadAvatar } from '../../stores/authSlice';
-
-/** 头像统一压到 512px 方形 JPEG，远小于服务端 1MB 上限 */
-const AVATAR_SIZE = 512;
+import type { RootState } from '../../stores';
 
 // 与 api.ts 的 API_BASE_URL 同款兜底：release 构建若未内联 .env 变量，process.env 里会是 undefined，
 // 缺了它 buildAvatarUrl 只能返回 null，头像永远显示不出（安卓 APK 实测缺失）
@@ -44,10 +36,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
-  const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const { publisherId, gradeId, subjectId } = useSelector((state: RootState) => state.settings);
-  const [isUploading, setIsUploading] = useState(false);
   // 「我的教材」当前值文案需要的名称映射
   const [publisherName, setPublisherName] = useState<string | null>(null);
   const [gradeName, setGradeName] = useState<string | null>(null);
@@ -95,47 +85,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     shadowOpacity: isDark ? 0 : 0.04,
   };
 
-  const handleChangeAvatar = useCallback(async () => {
-    if (isUploading) return;
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(t.avatarPermission);
-      return;
-    }
-
-    const picked = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsEditing: true,
-      // iOS 的方形裁剪框本身是固定的，aspect 只在 Android 生效
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (picked.canceled) return;
-    const source = picked.assets[0]?.uri;
-    if (!source) return;
-
-    setIsUploading(true);
-    let stage = 'compress'; // TEMP-DIAG
-    try {
-      const context = ImageManipulator.manipulate(source);
-      context.resize({ width: AVATAR_SIZE, height: AVATAR_SIZE });
-      const rendered = await context.renderAsync();
-      const result = await rendered.saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
-      stage = 'upload'; // TEMP-DIAG
-      await dispatch(uploadAvatar({ uri: result.uri, name: 'avatar.jpg', type: 'image/jpeg' })).unwrap();
-    } catch (err: any) { // TEMP-DIAG
-      if (err === 'tooLarge') {
-        Alert.alert(t.avatarTooLarge);
-      } else {
-        const detail = typeof err === 'string' ? err : `${err?.name ?? 'Error'}: ${err?.message ?? String(err)}`;
-        Alert.alert(t.avatarUploadFailed, `[诊断·${stage}] ${detail}`.slice(0, 400));
-      }
-    } finally {
-      setIsUploading(false);
-    }
-  }, [dispatch, isUploading, t]);
-
   const menuItems: { label: string; value?: string; icon: MenuIcon; onPress: () => void }[] = [
     {
       label: t.textbookMy,
@@ -162,38 +111,36 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} contentContainerStyle={[styles.content, { paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 40 * spacing }]}>
-      {/* User info */}
-      <View style={[styles.userCard, userCardStyle, { padding: 24 * spacing, borderRadius: 12 * radius, marginBottom: 20 * spacing }]}>
-        <TouchableOpacity
-          style={[styles.avatarContainer, { backgroundColor: colors.accentLight, width: 72 * spacing, height: 72 * spacing, borderRadius: 36 * spacing, marginBottom: 14 * spacing, elevation: isDark ? 0 : 2, shadowOpacity: isDark ? 0 : 0.08 }]}
-          onPress={handleChangeAvatar}
-          activeOpacity={0.75}
-          disabled={isUploading}
-        >
+      {/* User info — 整块点击进入「个人信息」 */}
+      <TouchableOpacity
+        style={[styles.userCard, userCardStyle, { paddingHorizontal: 16 * spacing, paddingVertical: 20 * spacing, borderRadius: 12 * radius, marginBottom: 20 * spacing }]}
+        onPress={() => navigation.navigate('ProfileInfo')}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.avatarContainer, { backgroundColor: colors.accentLight, width: 56 * spacing, height: 56 * spacing, borderRadius: 28 * spacing, elevation: isDark ? 0 : 2, shadowOpacity: isDark ? 0 : 0.08 }]}>
           {avatarUrl ? (
             <Image
               source={avatarUrl}
-              style={[styles.avatarImage, { borderRadius: 36 * spacing }]}
+              style={[styles.avatarImage, { borderRadius: 28 * spacing }]}
               contentFit="cover"
               transition={150}
             />
           ) : (
-            <Text style={[styles.avatar, { color: colors.accentStrong, fontSize: 30 * font }]}>
+            <Text style={[styles.avatar, { color: colors.accentStrong, fontSize: 24 * font }]}>
               {user?.nickname?.[0]?.toUpperCase() ?? user?.username?.[0]?.toUpperCase() ?? '?'}
             </Text>
           )}
-          {isUploading && (
-            <View style={[styles.avatarOverlay, { borderRadius: 36 * spacing }]}>
-              <ActivityIndicator color="#FFFFFF" />
-            </View>
-          )}
-        </TouchableOpacity>
-        <Text style={[styles.username, { color: colors.text, fontSize: 20 * font, marginBottom: 4 * spacing }]}>{user?.nickname ?? user?.username ?? t.defaultUser}</Text>
-        <Text style={[styles.userSub, { color: colors.textSecondary, fontSize: 14 * font }]}>@{user?.username ?? ''}</Text>
-        <Text style={[styles.avatarHint, { color: colors.textSecondary, fontSize: 12 * font, marginTop: 8 * spacing }]}>
-          {isUploading ? t.avatarUploading : t.editAvatar}
-        </Text>
-      </View>
+        </View>
+        <View style={[styles.userInfo, { marginLeft: 14 * spacing }]}>
+          <Text style={[styles.username, { color: colors.text, fontSize: 18 * font, marginBottom: 2 * spacing }]} numberOfLines={1}>
+            {user?.nickname ?? user?.username ?? t.defaultUser}
+          </Text>
+          <Text style={[styles.userSub, { color: colors.textSecondary, fontSize: 13 * font }]} numberOfLines={1}>
+            @{user?.username ?? ''}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20 * font} color={colors.textTertiary} />
+      </TouchableOpacity>
 
       {/* Menu */}
       <View style={[styles.menuSection, listCardStyle, { borderRadius: 12 * radius, marginBottom: 24 * spacing }]}>
@@ -238,9 +185,11 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   userCard: {
-    borderRadius: 12,
-    padding: 24,
+    flexDirection: 'row',
     alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -249,12 +198,11 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   avatarContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -262,29 +210,24 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   avatar: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: '700',
   },
   avatarImage: {
     width: '100%',
     height: '100%',
   },
-  avatarOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-  },
-  avatarHint: {
-    fontSize: 12,
+  userInfo: {
+    flex: 1,
+    marginLeft: 14,
   },
   username: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   userSub: {
-    fontSize: 14,
+    fontSize: 13,
   },
   menuSection: {
     borderRadius: 12,

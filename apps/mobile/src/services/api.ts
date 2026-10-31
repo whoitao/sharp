@@ -753,6 +753,11 @@ export const api = {
       clearTimeout(timer);
     }
   },
+  // 更新个人资料（昵称/性别/手机号，至少传一个字段）
+  async updateProfile(patch: { nickname?: string; gender?: string; phone?: string }): Promise<{ nickname?: string; gender?: string | null; phone?: string | null }> {
+    const response = await apiClient.patch<{ nickname?: string; gender?: string | null; phone?: string | null }>('/api/app/profile', patch);
+    return response.data;
+  },
 };
 
 export default api;

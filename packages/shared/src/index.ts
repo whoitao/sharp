@@ -68,6 +68,8 @@ export interface User {
   username: string;
   nickname: string | null;
   avatar: string | null;
+  gender: string | null;
+  phone: string | null;
   status: UserStatus;
   createdAt: string;
   updatedAt: string;

@@ -194,6 +194,23 @@ export const zh = {
   avatarUploadFailed: '头像上传失败，请稍后重试',
   avatarTooLarge: '头像体积超过 1MB，请重新选择',
   avatarPermission: '需要相册权限才能更换头像',
+
+  // Profile info
+  profileInfo: '个人信息',
+  avatar: '头像',
+  nickname: '昵称',
+  nicknamePlaceholder: '请输入昵称',
+  nicknameEmpty: '昵称不能为空',
+  nicknameUpdateFailed: '昵称修改失败，请稍后重试',
+  gender: '性别',
+  genderMale: '男',
+  genderFemale: '女',
+  genderUpdateFailed: '性别修改失败，请稍后重试',
+  phone: '手机号',
+  phonePlaceholder: '请输入手机号',
+  phoneInvalid: '手机号格式不正确',
+  phoneUpdateFailed: '手机号修改失败，请稍后重试',
+  notSet: '未设置',
 };
 
 export type TranslationKeys = typeof zh;

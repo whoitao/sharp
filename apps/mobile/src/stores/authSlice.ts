@@ -83,6 +83,22 @@ export const uploadAvatar = createAsyncThunk(
   }
 );
 
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (patch: { nickname?: string; gender?: string; phone?: string }, { getState, rejectWithValue }) => {
+    try {
+      const updated = await api.updateProfile(patch);
+      const current = (getState() as RootState).auth.user;
+      if (current) {
+        await storage.setUser({ ...current, ...updated } as unknown as Record<string, unknown>);
+      }
+      return updated;
+    } catch (err: any) {
+      return rejectWithValue(err?.message ?? 'update failed');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -148,6 +164,12 @@ const authSlice = createSlice({
       .addCase(uploadAvatar.fulfilled, (state, action: PayloadAction<string>) => {
         if (state.user) {
           state.user.avatar = action.payload;
+        }
+      })
+      // profile（昵称/性别/手机号）
+      .addCase(updateProfile.fulfilled, (state, action: PayloadAction<{ nickname?: string; gender?: string | null; phone?: string | null }>) => {
+        if (state.user) {
+          Object.assign(state.user, action.payload);
         }
       });
   },

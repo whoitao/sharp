@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(password);
     const user = await prisma.user.create({
       data: { username, passwordHash },
-      select: { id: true, username: true, nickname: true, avatar: true, status: true, createdAt: true },
+      select: { id: true, username: true, nickname: true, avatar: true, gender: true, phone: true, status: true, createdAt: true },
     });
 
     // Create default settings
