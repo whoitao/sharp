@@ -27,6 +27,11 @@ import { uploadAvatar } from '../../stores/authSlice';
 /** 头像统一压到 512px 方形 JPEG，远小于服务端 1MB 上限 */
 const AVATAR_SIZE = 512;
 
+// 与 api.ts 的 API_BASE_URL 同款兜底：release 构建若未内联 .env 变量，process.env 里会是 undefined，
+// 缺了它 buildAvatarUrl 只能返回 null，头像永远显示不出（安卓 APK 实测缺失）
+const SUPABASE_URL =
+  process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'https://faliyecwupijgmjbvzca.supabase.co';
+
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
 interface ProfileScreenProps {
@@ -70,7 +75,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   // DB 里只存相对路径 {userId}/avatars/avatar.{ext}，展示层拼完整 URL
   // 兼容历史：如果 user.avatar 已是完整 https:// URL，buildAvatarUrl 原样返回
   const avatarUrl = useMemo(
-    () => buildAvatarUrl(user?.avatar ?? null, process.env.EXPO_PUBLIC_SUPABASE_URL),
+    () => buildAvatarUrl(user?.avatar ?? null, SUPABASE_URL),
     [user?.avatar]
   );
 
