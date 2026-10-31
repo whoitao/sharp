@@ -73,11 +73,37 @@ export async function GET(request: NextRequest) {
     if (n.parentId == null || !byId.has(n.parentId.toString())) rootIds.push(n.id.toString());
   }
 
-  const buildTree = (ids: string[]): any[] => {
+  // 根节点（册）排序：年级 → 科目 → 教材版本 → 上册/下册
+  // 年级、科目用各自的 sortOrder（未配置时按 id），教材版本按 publisher 创建顺序（id）
+  const [gradeRows, subjectRows] = await Promise.all([
+    prisma.grade.findMany({ select: { id: true, sortOrder: true } }),
+    prisma.subject.findMany({ select: { id: true, sortOrder: true } }),
+  ]);
+  const gradeOrder = new Map(gradeRows.map((g) => [g.id.toString(), g.sortOrder]));
+  const subjectOrder = new Map(subjectRows.map((s) => [s.id.toString(), s.sortOrder]));
+  const idCompare = (a: any, b: any) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const bigCompare = (a: bigint, b: bigint) => (a < b ? -1 : a > b ? 1 : 0);
+  // 1=上册 2=下册 0=全一册，其余（未设置）排最后
+  const semesterRank = (semester: number | null) =>
+    semester === 1 ? 0 : semester === 2 ? 1 : semester === 0 ? 2 : 3;
+  const rootCompare = (a: any, b: any) =>
+    (gradeOrder.get(a.gradeId.toString()) ?? 0) - (gradeOrder.get(b.gradeId.toString()) ?? 0) ||
+    (subjectOrder.get(a.subjectId.toString()) ?? 0) - (subjectOrder.get(b.subjectId.toString()) ?? 0) ||
+    bigCompare(a.subjectId, b.subjectId) ||
+    bigCompare(a.publisherId, b.publisherId) ||
+    semesterRank(a.semester) - semesterRank(b.semester) ||
+    a.sortOrder - b.sortOrder ||
+    idCompare(a, b);
+
+  const buildTree = (ids: string[], isRoot = false): any[] => {
     const nodes = ids
       .map((id) => byId.get(id))
       .filter((n): n is NonNullable<typeof n> => n != null);
-    nodes.sort((a, b) => a.sortOrder - b.sortOrder || Number(a.id) - Number(b.id));
+    nodes.sort(
+      isRoot
+        ? rootCompare
+        : (a, b) => a.sortOrder - b.sortOrder || idCompare(a, b),
+    );
     return nodes.map((n) => {
       const childIds: string[] = [];
       for (const c of all) {
@@ -87,7 +113,7 @@ export async function GET(request: NextRequest) {
     });
   };
 
-  return NextResponse.json(buildTree(rootIds));
+  return NextResponse.json(buildTree(rootIds, true));
 }
 
 export async function POST(request: NextRequest) {

@@ -216,6 +216,7 @@ export default function ChaptersPage() {
           options={grades}
           onChange={setSelectedGrade}
           showSearch
+          allowClear
           optionFilterProp="label"
         />
         <Select
@@ -225,6 +226,7 @@ export default function ChaptersPage() {
           options={subjects}
           onChange={setSelectedSubject}
           showSearch
+          allowClear
           optionFilterProp="label"
         />
         <Select
@@ -234,6 +236,7 @@ export default function ChaptersPage() {
           options={publishers}
           onChange={setSelectedPublisher}
           showSearch
+          allowClear
           optionFilterProp="label"
         />
         <div style={{ flex: 1 }} />
