@@ -33,6 +33,8 @@ interface RichTextEditorProps {
   value?: string;
   onChange?: (html: string) => void;
   minHeight?: number;
+  /** 内容区最大高度（px），超出后内容区垂直滚动，工具栏保持固定 */
+  maxHeight?: number;
   /** 选项类的小尺寸输入：工具栏更紧凑、无多余留白 */
   compact?: boolean;
   disabled?: boolean;
@@ -148,6 +150,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
   minHeight = 80,
+  maxHeight,
   compact = false,
   disabled = false,
   style,
@@ -484,7 +487,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </Dropdown>
         )}
       </div>
-      <div style={{ padding: compact ? "4px 8px" : "8px 10px" }}>
+      <div
+        style={{
+          padding: compact ? "4px 8px" : "8px 10px",
+          maxHeight,
+          overflowY: maxHeight ? "auto" : undefined,
+        }}
+      >
         <EditorContent editor={editor} />
       </div>
       <Modal

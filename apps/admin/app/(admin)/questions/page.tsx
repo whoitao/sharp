@@ -738,13 +738,10 @@ export default function QuestionsPage() {
       initialValues={{ type: "1", difficulty: 1, score: 1, sortOrder: 0 }}
       onFinish={isEdit ? handleUpdate : handleCreate}
     >
-      {/* 布局：科目|年级（分组） / 类型|教材章节 / 标签 / 分值|难度 / 题目内容 / 选项 / 解析 / 排序 */}
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            label={t("questions.subject")}
-            name="subjectId"
-          >
+      {/* 左右布局：左侧 3（基础属性） / 右侧 6（题目内容、选项、解析） */}
+      <Row gutter={[24, 0]}>
+        <Col xs={24} md={8}>
+          <Form.Item label={t("questions.subject")} name="subjectId">
             <Select
               showSearch
               allowClear
@@ -765,8 +762,7 @@ export default function QuestionsPage() {
               )}
             />
           </Form.Item>
-        </Col>
-        <Col span={12}>
+
           <Form.Item
             label={t("questions.grade")}
             name="gradeId"
@@ -780,11 +776,7 @@ export default function QuestionsPage() {
               onChange={(v) => setFormGradeId(v)}
             />
           </Form.Item>
-        </Col>
-      </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
           <Form.Item label={t("questions.type")} name="type">
             <Select
               options={[
@@ -795,8 +787,7 @@ export default function QuestionsPage() {
               ]}
             />
           </Form.Item>
-        </Col>
-        <Col span={12}>
+
           <Form.Item label={t("questions.chapter")} name="chapterId">
             <TreeSelect
               allowClear
@@ -819,11 +810,7 @@ export default function QuestionsPage() {
               style={{ width: "100%" }}
             />
           </Form.Item>
-        </Col>
-      </Row>
 
-      <Row gutter={16}>
-        <Col span={24}>
           <Form.Item label={t("questions.tags")} name="tagIds">
             <Select
               mode="multiple"
@@ -837,11 +824,7 @@ export default function QuestionsPage() {
               }))}
             />
           </Form.Item>
-        </Col>
-      </Row>
 
-      <Row gutter={16}>
-        <Col span={24}>
           <Form.Item
             label={t("questions.knowledgePointsLabel")}
             name="knowledgePointIds"
@@ -879,81 +862,79 @@ export default function QuestionsPage() {
               style={{ width: "100%" }}
             />
           </Form.Item>
-        </Col>
-      </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item label={t("questions.score")} name="score">
-            <InputNumber min={1} style={{ width: "100%" }} />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item label={t("questions.difficultyLabel")} name="difficulty">
-            <InputNumber min={1} max={5} style={{ width: "100%" }} />
-          </Form.Item>
-        </Col>
-      </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label={t("questions.score")} name="score">
+                <InputNumber min={1} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label={t("questions.difficultyLabel")} name="difficulty">
+                <InputNumber min={1} max={5} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
 
-      <Form.Item
-        label={t("questions.content")}
-        name="content"
-        rules={[{ required: true, message: t("questions.contentRequired") }]}
-      >
-        <RichTextEditor minHeight={72} />
-      </Form.Item>
-
-      <Form.List name="options">
-        {(fields, { add, remove }) => (
-          <Form.Item label={t("questions.options")}>
-            <Space orientation="vertical" style={{ width: "100%" }} size={8}>
-              {fields.map((field) => (
-                <Space key={field.key} align="baseline" style={{ width: "100%" }}>
-                  <Form.Item name={[field.name, "optionKey"]} noStyle>
-                    <Input style={{ width: 56 }} maxLength={1} />
-                  </Form.Item>
-                  <Form.Item name={[field.name, "content"]} noStyle>
-                    <RichTextEditor
-                      compact
-                      minHeight={28}
-                      style={{ width: 380 }}
-                    />
-                  </Form.Item>
-                  <Form.Item name={[field.name, "isCorrect"]} valuePropName="checked" noStyle>
-                    <Checkbox>{t("questions.correct")}</Checkbox>
-                  </Form.Item>
-                  <Button type="text" danger size="small" onClick={() => remove(field.name)}>
-                    {t("questions.remove")}
-                  </Button>
-                </Space>
-              ))}
-              <Button
-                type="dashed"
-                block
-                onClick={() => {
-                  const count = questionForm.getFieldValue("options")?.length ?? 0;
-                  add({
-                    optionKey: String.fromCharCode(65 + count),
-                    content: "",
-                    isCorrect: false,
-                  });
-                }}
-              >
-                {t("questions.addOption")}
-              </Button>
-            </Space>
-          </Form.Item>
-        )}
-      </Form.List>
-
-      <Form.Item label={t("questions.analysisOptional")} name="analysis">
-        <RichTextEditor minHeight={56} />
-      </Form.Item>
-
-      <Row gutter={16}>
-        <Col span={12}>
           <Form.Item label={t("questions.sortOrder")} name="sortOrder">
             <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+        </Col>
+
+        <Col xs={24} md={16}>
+          <Form.Item
+            label={t("questions.content")}
+            name="content"
+            rules={[{ required: true, message: t("questions.contentRequired") }]}
+          >
+            <RichTextEditor minHeight={72} maxHeight={300} />
+          </Form.Item>
+
+          <Form.List name="options">
+            {(fields, { add, remove }) => (
+              <Form.Item label={t("questions.options")}>
+                <Space orientation="vertical" style={{ width: "100%" }} size={8}>
+                  {fields.map((field) => (
+                    <Space key={field.key} align="baseline" style={{ width: "100%" }}>
+                      <Form.Item name={[field.name, "optionKey"]} noStyle>
+                        <Input style={{ width: 56 }} maxLength={1} />
+                      </Form.Item>
+                      <Form.Item name={[field.name, "content"]} noStyle>
+                        <RichTextEditor
+                          compact
+                          minHeight={28}
+                          style={{ width: 380 }}
+                        />
+                      </Form.Item>
+                      <Form.Item name={[field.name, "isCorrect"]} valuePropName="checked" noStyle>
+                        <Checkbox>{t("questions.correct")}</Checkbox>
+                      </Form.Item>
+                      <Button type="text" danger size="small" onClick={() => remove(field.name)}>
+                        {t("questions.remove")}
+                      </Button>
+                    </Space>
+                  ))}
+                  <Button
+                    type="dashed"
+                    block
+                    onClick={() => {
+                      const count = questionForm.getFieldValue("options")?.length ?? 0;
+                      add({
+                        optionKey: String.fromCharCode(65 + count),
+                        content: "",
+                        isCorrect: false,
+                      });
+                    }}
+                  >
+                    {t("questions.addOption")}
+                  </Button>
+                </Space>
+              </Form.Item>
+            )}
+          </Form.List>
+
+          <Form.Item label={t("questions.analysisOptional")} name="analysis">
+            <RichTextEditor minHeight={56} />
           </Form.Item>
         </Col>
       </Row>
@@ -1094,7 +1075,7 @@ export default function QuestionsPage() {
       <Modal
         title={t("questions.createTitle")}
         open={createOpen}
-        width={720}
+        width={1080}
         onCancel={() => setCreateOpen(false)}
         confirmLoading={saving}
         okText={t("questions.createQuestion")}
@@ -1111,7 +1092,7 @@ export default function QuestionsPage() {
       <Modal
         title={t("questions.editTitle")}
         open={editOpen}
-        width={720}
+        width={1080}
         onCancel={() => {
           setEditOpen(false);
           setSelectedQuestion(null);
