@@ -69,11 +69,25 @@ model Subject {
   @@index([sortOrder])
 }
 
+// 学段字典：小学 / 初中 / 高中 / 大学
+model Stage {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  grades          Grade[]
+  knowledgePoints KnowledgePoint[]
+
+  @@index([sortOrder])
+}
+
 // 年级字典：小学一年级 ~ 大学四年级，与科目/教材版本无关
 model Grade {
   id        BigInt   @id @default(autoincrement())
   name      String   @unique // 一年级 / 初一 / 高一 / 大一
-  stage     String            // 小学 / 初中 / 高中 / 大学
+  stageId   BigInt
+  stage     Stage    @relation(fields: [stageId], references: [id])
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 
@@ -82,7 +96,7 @@ model Grade {
   studyRecords UserStudyRecord[]
   settings     UserSettings[]
 
-  @@index([stage, sortOrder])
+  @@index([stageId, sortOrder])
 }
 
 model Question {
@@ -218,6 +232,7 @@ model KnowledgePoint {
   name      String
   parentId  BigInt?
   subjectId BigInt?
+  stageId   BigInt
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -225,12 +240,15 @@ model KnowledgePoint {
   parent    KnowledgePoint?  @relation("KnowledgePointTree", fields: [parentId], references: [id])
   children  KnowledgePoint[] @relation("KnowledgePointTree")
   subject   Subject?         @relation(fields: [subjectId], references: [id])
+  stage     Stage            @relation(fields: [stageId], references: [id])
   questions QuestionKnowledgePoint[]
   studyRecords UserStudyRecord[]
   questionProgress UserQuestionProgress[]
 
   @@index([parentId])
   @@index([subjectId])
+  @@index([stageId, subjectId, parentId, sortOrder])
+  @@unique([stageId, subjectId, parentId, name])
 }
 
 model QuestionKnowledgePoint {

@@ -4,6 +4,7 @@ import { PAGE_SIZE_OPTIONS, usePageSize, useThemeMode, type ThemeMode } from "@/
 import { PageActionsContext } from "@/components/page-actions";
 import { useLocale, type Locale, type MessageKey } from "@/lib/i18n";
 import {
+  ApartmentOutlined,
   AppstoreOutlined,
   BookOutlined,
   DashboardOutlined,
@@ -49,6 +50,7 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/study-records", icon: <OrderedListOutlined />, labelKey: "nav.studyRecords" },
   { key: "/publishers", icon: <FileTextOutlined />, labelKey: "nav.publishers" },
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.grades" },
+  { key: "/stages", icon: <ApartmentOutlined />, labelKey: "nav.stages" },
   { key: "/chapters", icon: <AppstoreOutlined />, labelKey: "nav.chapters" },
   { key: "/tags", icon: <TagsOutlined />, labelKey: "nav.tags" },
 ];

@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       include: {
         options: { orderBy: { sortNo: "asc" } },
         subject: true,
-        grade: { select: { name: true, stage: true } },
+        grade: { select: { name: true } },
         chapter: {
           select: {
             id: true,

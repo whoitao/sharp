@@ -1,5 +1,7 @@
 "use client";
 
+import IonIcon from "@/components/IonIcon";
+import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
 import {
     App,
@@ -31,7 +33,7 @@ type ChapterNode = {
   children?: ChapterNode[];
 };
 
-type Option = { value: string; label: string };
+type Option = { value: string; label: string; icon?: string | null; stage?: string };
 
 const LEVEL_LABEL: Record<number, string> = { 1: "册", 2: "章", 3: "节" };
 const SEMESTER_LABEL: Record<number, string> = { 0: "全一册", 1: "上册", 2: "下册" };
@@ -62,8 +64,8 @@ export default function ChaptersPage() {
       fetch("/api/admin/subjects", { headers: authHeaders() }).then((r) => r.json()),
       fetch("/api/admin/publishers", { headers: authHeaders() }).then((r) => r.json()),
     ]);
-    setGrades(gr.map((g: any) => ({ value: g.id, label: `${g.name}（${g.stage}）` })));
-    setSubjects(sr.map((s: any) => ({ value: s.id, label: s.name })));
+    setGrades(gr.map((g: any) => ({ value: g.id, label: `${g.name}（${g.stage}）`, stage: g.stage })));
+    setSubjects(sr.map((s: any) => ({ value: s.id, label: s.name, icon: s.icon })));
     setPublishers(pr.map((p: any) => ({ value: p.id, label: p.name })));
   };
 
@@ -109,6 +111,17 @@ export default function ChaptersPage() {
   const countDescendants = (node: ChapterNode): number =>
     (node.children ?? []).reduce((sum, c) => sum + 1 + countDescendants(c), 0);
 
+  // 年级按学段分组展示：小学 / 初中，组内保持原有顺序
+  const gradeGroups = useMemo(() => {
+    const map = new Map<string, Option[]>();
+    for (const g of grades) {
+      const stage = g.stage || "其他";
+      if (!map.has(stage)) map.set(stage, []);
+      map.get(stage)!.push(g);
+    }
+    return Array.from(map, ([stage, options]) => ({ label: stage, options }));
+  }, [grades]);
+
   const treeData = useMemo<DataNode[]>(() => {
     const subjectNames = new Map(subjects.map((s) => [s.value, s.label]));
     const build = (ns: ChapterNode[]): DataNode[] =>
@@ -136,6 +149,17 @@ export default function ChaptersPage() {
     form.setFieldsValue({ parentId: null, sortOrder: 0, semester: 1 });
     setModalOpen(true);
   };
+
+  const headerActions = useMemo(
+    () => (
+      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        新建章节
+      </Button>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedGrade, selectedSubject, selectedPublisher],
+  );
+  usePageActions(headerActions);
 
   const openEdit = (node: ChapterNode) => {
     setEditing(node);
@@ -217,7 +241,7 @@ export default function ChaptersPage() {
           placeholder="选择年级"
           style={{ width: 200 }}
           value={selectedGrade}
-          options={grades}
+          options={gradeGroups}
           onChange={setSelectedGrade}
           showSearch
           allowClear
@@ -232,6 +256,18 @@ export default function ChaptersPage() {
           showSearch
           allowClear
           optionFilterProp="label"
+          optionRender={(opt: any) => (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
+              {opt.label}
+            </span>
+          )}
+          labelRender={(opt: any) => (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
+              {opt.label}
+            </span>
+          )}
         />
         <Select
           placeholder="教材版本"
@@ -243,8 +279,6 @@ export default function ChaptersPage() {
           allowClear
           optionFilterProp="label"
         />
-        <div style={{ flex: 1 }} />
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建章节</Button>
       </div>
 
       {!selectedGrade ? (

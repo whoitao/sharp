@@ -27,17 +27,34 @@ async function main() {
   });
   console.log(`Created admin: ${admin.username}`);
 
+  // 学段字典（年级的上级维度）
+  const stageSeeds = [
+    { name: "小学", sortOrder: 1 },
+    { name: "初中", sortOrder: 2 },
+    { name: "高中", sortOrder: 3 },
+    { name: "大学", sortOrder: 4 },
+  ];
+  const stageMap = new Map<string, bigint>();
+  for (const s of stageSeeds) {
+    const stage = await prisma.stage.upsert({
+      where: { name: s.name },
+      update: { sortOrder: s.sortOrder },
+      create: s,
+    });
+    stageMap.set(stage.name, stage.id);
+  }
+
   // 年级与科目：分类已合并进年级，示例数据直接落在年级上
   const cet4Grade = await prisma.grade.upsert({
     where: { name: "大一" },
     update: {},
-    create: { name: "大一", stage: "大学", sortOrder: 10 },
+    create: { name: "大一", stageId: stageMap.get("大学")!, sortOrder: 10 },
   });
 
   const gkMathGrade = await prisma.grade.upsert({
     where: { name: "高三" },
     update: {},
-    create: { name: "高三", stage: "高中", sortOrder: 6 },
+    create: { name: "高三", stageId: stageMap.get("高中")!, sortOrder: 6 },
   });
 
   const englishSubject = await prisma.subject.upsert({

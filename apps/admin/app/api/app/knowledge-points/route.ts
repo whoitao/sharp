@@ -8,10 +8,14 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const subjectId = searchParams.get("subjectId");
+  const stageId = searchParams.get("stageId");
 
   const where: any = {};
   if (subjectId) {
     where.subjectId = BigInt(subjectId);
+  }
+  if (stageId) {
+    where.stageId = BigInt(stageId);
   }
 
   const knowledgePoints = await prisma.knowledgePoint.findMany({
@@ -29,6 +33,7 @@ export async function GET(request: NextRequest) {
     name: kp.name,
     parentId: kp.parentId?.toString() ?? null,
     subjectId: kp.subjectId?.toString() ?? null,
+    stageId: kp.stageId.toString(),
     sortOrder: kp.sortOrder,
     questionCount: kp._count.questions,
   });

@@ -2,7 +2,27 @@ import { requireAdmin } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-const STAGES = ["小学", "初中", "高中", "大学"];
+/** 解析学段：优先 stageId，其次按学段名称匹配；两者都无效返回 null */
+async function resolveStageId(
+  stageId?: string | number | null,
+  stageName?: string | null,
+): Promise<bigint | null> {
+  if (stageId != null && stageId !== "") {
+    const stage = await prisma.stage.findUnique({
+      where: { id: BigInt(stageId) },
+      select: { id: true },
+    });
+    return stage?.id ?? null;
+  }
+  if (stageName) {
+    const stage = await prisma.stage.findUnique({
+      where: { name: stageName },
+      select: { id: true },
+    });
+    return stage?.id ?? null;
+  }
+  return null;
+}
 
 /** 年级字典：纯年级（初一/高一…），与科目、教材版本无关 */
 export async function GET(request: NextRequest) {
@@ -10,19 +30,25 @@ export async function GET(request: NextRequest) {
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
-  const stage = url.searchParams.get("stage");
+  const stageId = url.searchParams.get("stageId");
+  const stageName = url.searchParams.get("stage");
 
   const grades = await prisma.grade.findMany({
-    where: stage ? { stage } : undefined,
+    where: stageId
+      ? { stageId: BigInt(stageId) }
+      : stageName
+        ? { stage: { name: stageName } }
+        : undefined,
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-    include: { _count: { select: { chapters: true } } },
+    include: { _count: { select: { chapters: true } }, stage: { select: { name: true } } },
   });
 
   return NextResponse.json(
     grades.map((g) => ({
       id: g.id.toString(),
       name: g.name,
-      stage: g.stage,
+      stageId: g.stageId.toString(),
+      stage: g.stage.name,
       sortOrder: g.sortOrder,
       chapterCount: g._count.chapters,
     })),
@@ -34,20 +60,28 @@ export async function POST(request: NextRequest) {
   if (admin instanceof NextResponse) return admin;
 
   const body = await request.json();
-  const { name, stage, sortOrder } = body;
-  if (!name?.trim() || !STAGES.includes(stage)) {
-    return NextResponse.json({ error: "name 与合法 stage 必填" }, { status: 400 });
+  const { name, stageId, stage, sortOrder } = body;
+  const resolvedStageId = await resolveStageId(stageId, stage);
+  if (!name?.trim() || !resolvedStageId) {
+    return NextResponse.json({ error: "name 与合法 stageId 必填" }, { status: 400 });
   }
 
   const grade = await prisma.grade.create({
     data: {
       name: name.trim(),
-      stage,
+      stageId: resolvedStageId,
       sortOrder: sortOrder ?? 0,
     },
+    include: { stage: { select: { name: true } } },
   });
   return NextResponse.json(
-    { id: grade.id.toString(), name: grade.name, stage: grade.stage, sortOrder: grade.sortOrder },
+    {
+      id: grade.id.toString(),
+      name: grade.name,
+      stageId: grade.stageId.toString(),
+      stage: grade.stage.name,
+      sortOrder: grade.sortOrder,
+    },
     { status: 201 },
   );
 }
@@ -66,17 +100,23 @@ export async function PATCH(request: NextRequest) {
     if (!body.name?.trim()) return NextResponse.json({ error: "name 不能为空" }, { status: 400 });
     data.name = body.name.trim();
   }
-  if (body.stage !== undefined) {
-    if (!STAGES.includes(body.stage)) return NextResponse.json({ error: "stage 非法" }, { status: 400 });
-    data.stage = body.stage;
+  if (body.stageId !== undefined || body.stage !== undefined) {
+    const resolvedStageId = await resolveStageId(body.stageId, body.stage);
+    if (!resolvedStageId) return NextResponse.json({ error: "stageId 非法" }, { status: 400 });
+    data.stageId = resolvedStageId;
   }
   if (body.sortOrder != null) data.sortOrder = body.sortOrder;
 
-  const grade = await prisma.grade.update({ where: { id: BigInt(id) }, data });
+  const grade = await prisma.grade.update({
+    where: { id: BigInt(id) },
+    data,
+    include: { stage: { select: { name: true } } },
+  });
   return NextResponse.json({
     id: grade.id.toString(),
     name: grade.name,
-    stage: grade.stage,
+    stageId: grade.stageId.toString(),
+    stage: grade.stage.name,
     sortOrder: grade.sortOrder,
   });
 }

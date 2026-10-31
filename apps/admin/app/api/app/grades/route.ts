@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
 
   const grades = await prisma.grade.findMany({
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    include: { stage: { select: { id: true, name: true } } },
   });
 
   if (!subjectIdRaw) {
@@ -22,7 +23,8 @@ export async function GET(request: NextRequest) {
       grades.map((g) => ({
         id: g.id.toString(),
         name: g.name,
-        stage: g.stage,
+        stageId: g.stage.id.toString(),
+        stage: g.stage.name,
         sortOrder: g.sortOrder,
       })),
     );
@@ -52,7 +54,8 @@ export async function GET(request: NextRequest) {
     grades.map((g) => ({
       id: g.id.toString(),
       name: g.name,
-      stage: g.stage,
+      stageId: g.stage.id.toString(),
+      stage: g.stage.name,
       sortOrder: g.sortOrder,
       questionCount: questionCount.get(g.id.toString()) ?? 0,
       chapterCount: chapterCount.get(g.id.toString()) ?? 0,

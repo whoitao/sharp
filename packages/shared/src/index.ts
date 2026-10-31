@@ -141,6 +141,8 @@ export interface Publisher {
 export interface Grade {
   id: string;
   name: string;
+  /** 所属学段 id（Stage 字典表主键） */
+  stageId?: string;
   /** 小学 / 初中 / 高中 / 大学 */
   stage: string;
   sortOrder: number;

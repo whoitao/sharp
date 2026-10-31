@@ -19,6 +19,7 @@ export const en = {
     studyRecords: "Study Records",
     publishers: "Publishers",
     grades: "Grades",
+    stages: "Stages",
     chapters: "Chapters",
     tags: "Tags",
   },
@@ -214,6 +215,9 @@ export const en = {
     updateFailed: "Failed to update knowledge point",
     selectSubject: "Subject",
     allSubjects: "All Subjects",
+    stage: "Stage",
+    stagePlaceholder: "Select a stage...",
+    stageRequired: "Please select a stage",
     searchQuestions: "Search Questions",
   },
 };

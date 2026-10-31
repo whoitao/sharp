@@ -21,6 +21,7 @@ export const zh: Messages = {
     studyRecords: "学习记录",
     publishers: "教材版本",
     grades: "年级",
+    stages: "学段",
     chapters: "教材章节",
     tags: "标签",
   },
@@ -215,6 +216,9 @@ export const zh: Messages = {
     updateFailed: "更新知识点失败",
     selectSubject: "科目",
     allSubjects: "全部科目",
+    stage: "所属学段",
+    stagePlaceholder: "请选择学段...",
+    stageRequired: "请选择学段",
     searchQuestions: "搜索题目",
   },
 };

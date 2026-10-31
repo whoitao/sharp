@@ -81,7 +81,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    // 学科变化后已选知识点不再有效，需要清空
+    // 学科/学段变化后已选知识点不再有效，需要清空
     onSelectKPRef.current(null);
     if (!selectedSubject) {
       setSubjectKPs([]);
@@ -89,7 +89,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
     }
     (async () => {
       try {
-        const tree = await api.getKnowledgePoints(selectedSubject.id);
+        const tree = await api.getKnowledgePoints(selectedSubject.id, selectedGrade?.stageId);
         if (!cancelled) setSubjectKPs(tree);
       } catch {
         if (!cancelled) setSubjectKPs([]);
@@ -98,7 +98,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [selectedSubject]);
+  }, [selectedSubject, selectedGrade?.stageId]);
 
   const kpDisabled = !selectedSubject;
 

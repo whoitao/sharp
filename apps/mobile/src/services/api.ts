@@ -213,16 +213,19 @@ export const api = {
   },
 
   // Knowledge Points
-  async getKnowledgePoints(subjectId?: string): Promise<KnowledgePoint[]> {
-    return dedupeInFlight(`knowledgePoints:${subjectId ?? 'all'}`, async () => {
-      const cached = await getCached<KnowledgePoint[]>('knowledgePoints', subjectId);
+  async getKnowledgePoints(subjectId?: string, stageId?: string): Promise<KnowledgePoint[]> {
+    const cacheSuffix = `${subjectId ?? 'all'}|${stageId ?? 'all'}`;
+    return dedupeInFlight(`knowledgePoints:${cacheSuffix}`, async () => {
+      const cached = await getCached<KnowledgePoint[]>('knowledgePoints', cacheSuffix);
       if (cached) return cached;
 
       try {
-        const params = subjectId ? { subjectId } : {};
+        const params: Record<string, string> = {};
+        if (subjectId) params.subjectId = subjectId;
+        if (stageId) params.stageId = stageId;
         const response = await apiClient.get<KnowledgePoint[]>('/api/app/knowledge-points', { params });
         if (response.data.length > 0) {
-          await setCached('knowledgePoints', response.data, subjectId);
+          await setCached('knowledgePoints', response.data, cacheSuffix);
         }
         return response.data;
       } catch {

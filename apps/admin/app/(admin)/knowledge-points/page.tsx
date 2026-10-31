@@ -4,27 +4,27 @@ import IonIcon from "@/components/IonIcon";
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
-    DeleteOutlined,
-    EditOutlined,
-    PlusOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import type { TreeDataNode } from "antd";
 import {
-    App,
-    Button,
-    Card,
-    Empty,
-    Form,
-    Input,
-    InputNumber,
-    Modal,
-    Select,
-    Space,
-    Spin,
-    Tag,
-    Tree,
-    TreeSelect,
-    Typography,
+  App,
+  Button,
+  Card,
+  Empty,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Space,
+  Spin,
+  Tag,
+  Tree,
+  TreeSelect,
+  Typography,
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
@@ -33,6 +33,7 @@ interface KPNode {
   name: string;
   parentId: string | null;
   subjectId: string | null;
+  stageId: string;
   sortOrder: number;
   questionCount: number;
   children: KPNode[];
@@ -44,10 +45,16 @@ interface SubjectItem {
   icon?: string | null;
 }
 
+interface StageItem {
+  id: string;
+  name: string;
+}
+
 interface CreateFormValues {
   name: string;
   parentId: string;
   subjectId: string | undefined;
+  stageId: string;
   sortOrder: number;
 }
 
@@ -62,6 +69,7 @@ export default function KnowledgePointsPage() {
   const { t } = useLocale();
   const [tree, setTree] = useState<KPNode[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
+  const [stages, setStages] = useState<StageItem[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -89,12 +97,33 @@ export default function KnowledgePointsPage() {
     }
   };
 
+  const fetchStages = async () => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch("/api/admin/grades", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const map = new Map<string, StageItem>();
+      if (Array.isArray(data)) {
+        for (const g of data) {
+          if (g?.stageId) map.set(g.stageId, { id: g.stageId, name: g.stage });
+        }
+      }
+      setStages(Array.from(map.values()));
+    } catch {
+      setStages([]);
+    }
+  };
+
   const fetchTree = async () => {
     setLoading(true);
     const token = localStorage.getItem("admin_token");
     try {
-      const url = selectedSubjectId
-        ? `/api/admin/knowledge-points?subjectId=${selectedSubjectId}`
+      const params = new URLSearchParams();
+      if (selectedSubjectId) params.set("subjectId", selectedSubjectId);
+      const url = params.toString()
+        ? `/api/admin/knowledge-points?${params.toString()}`
         : "/api/admin/knowledge-points";
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -120,6 +149,7 @@ export default function KnowledgePointsPage() {
 
   useEffect(() => {
     fetchSubjects();
+    fetchStages();
   }, []);
 
   useEffect(() => {
@@ -138,6 +168,7 @@ export default function KnowledgePointsPage() {
     return convert(tree);
   }, [tree]);
 
+  const stageOptions = stages.map((s) => ({ value: s.id, label: s.name }));
   const subjectOptions = subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }));
   const subjectOptionRender = (opt: any) => (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -166,6 +197,7 @@ export default function KnowledgePointsPage() {
           name: values.name,
           parentId: values.parentId === "0" ? null : values.parentId,
           subjectId: values.subjectId || null,
+          stageId: values.stageId || undefined,
           sortOrder: values.sortOrder ?? 0,
         }),
       });
@@ -239,6 +271,7 @@ export default function KnowledgePointsPage() {
       name: "",
       parentId: parent.id,
       subjectId: parent.subjectId || selectedSubjectId,
+      stageId: parent.stageId || "",
       sortOrder: 0,
     });
     setCreateOpen(true);
@@ -311,6 +344,7 @@ export default function KnowledgePointsPage() {
             name: "",
             parentId: "0",
             subjectId: selectedSubjectId,
+            stageId: "",
             sortOrder: 0,
           });
           setCreateOpen(true);
@@ -398,6 +432,16 @@ export default function KnowledgePointsPage() {
                 ...parentTreeData,
               ]}
               placeholder={t("knowledgePoints.parentPlaceholder")}
+            />
+          </Form.Item>
+          <Form.Item
+            label={t("knowledgePoints.stage")}
+            name="stageId"
+            rules={[{ required: true, message: t("knowledgePoints.stageRequired") }]}
+          >
+            <Select
+              placeholder={t("knowledgePoints.stagePlaceholder")}
+              options={stageOptions}
             />
           </Form.Item>
           <Form.Item label={t("knowledgePoints.subjectOptional")} name="subjectId">
