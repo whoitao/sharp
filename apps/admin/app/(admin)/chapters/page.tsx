@@ -110,17 +110,21 @@ export default function ChaptersPage() {
     (node.children ?? []).reduce((sum, c) => sum + 1 + countDescendants(c), 0);
 
   const treeData = useMemo<DataNode[]>(() => {
+    const subjectNames = new Map(subjects.map((s) => [s.value, s.label]));
     const build = (ns: ChapterNode[]): DataNode[] =>
       ns.map((n) => {
+        // 册节点带上科目名，便于在混合科目视图下快速区分
+        const subjectPrefix =
+          n.level === 1 && subjectNames.has(n.subjectId) ? `[${subjectNames.get(n.subjectId)}]-` : "";
         const node: DataNode = {
           key: n.id,
-          title: `${n.name}${n.level === 1 && n.semester != null ? `（${SEMESTER_LABEL[n.semester] ?? ""}）` : ""} · ${n.questionCount} 题`,
+          title: `${subjectPrefix}${n.name}${n.level === 1 && n.semester != null ? `（${SEMESTER_LABEL[n.semester] ?? ""}）` : ""} · ${n.questionCount} 题`,
         };
         if (n.children?.length) node.children = build(n.children);
         return node;
       });
     return build(tree);
-  }, [tree]);
+  }, [tree, subjects]);
 
   const openCreate = () => {
     if (!selectedGrade || !selectedSubject || !selectedPublisher) {

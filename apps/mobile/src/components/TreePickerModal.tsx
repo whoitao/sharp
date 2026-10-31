@@ -71,10 +71,10 @@ const TreeRow = memo(function TreeRow({
       style={[
         styles.row,
         {
-          paddingVertical: 12 * spacing,
+          paddingVertical: 6 * spacing,
           paddingRight: 12 * spacing,
-          borderRadius: 12 * radius,
-          paddingLeft: (8 + depth * 20) * spacing,
+          borderRadius: 8 * radius,
+          paddingLeft: (8 + depth * 18) * spacing,
         },
         selected && { backgroundColor: colors.accentLight },
       ]}
@@ -98,7 +98,7 @@ const TreeRow = memo(function TreeRow({
           )}
         </TouchableOpacity>
       ) : (
-        <View style={[styles.arrowButton, { width: 28 * spacing, height: 28 * spacing }]} />
+        <View style={[styles.arrowButton, { width: 20 * spacing, height: 20 * spacing }]} />
       )}
       <Text
         style={[styles.rowText, { color: colors.text, fontSize: 16 * font, marginLeft: 4 * spacing }]}
@@ -332,12 +332,11 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 6,
     paddingRight: 12,
     borderRadius: 8,
-    marginBottom: 2,
   },
-  arrowButton: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  arrowButton: { width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1, fontSize: 16, marginLeft: 4 },
   trailingText: { fontWeight: '500' },
   emptyText: { fontSize: 15, textAlign: 'center', paddingVertical: 24 },
