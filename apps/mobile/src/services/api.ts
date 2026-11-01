@@ -254,6 +254,7 @@ export const api = {
   async getUnits(params: {
     subjectId: string;
     gradeId?: string | null;
+    publisherId?: string | null;
     knowledgePointId?: string | null;
     tagIds?: string[];
     page?: number;
@@ -262,6 +263,7 @@ export const api = {
     const {
       subjectId,
       gradeId,
+      publisherId,
       knowledgePointId,
       tagIds,
       page = 1,
@@ -274,6 +276,7 @@ export const api = {
         pageSize: String(pageSize),
       };
       if (gradeId) query.gradeId = gradeId;
+      if (publisherId) query.publisherId = publisherId;
       if (knowledgePointId) query.knowledgePointId = knowledgePointId;
       if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
       const response = await apiClient.get<{

@@ -70,7 +70,7 @@ export default function KnowledgePointsPage() {
   const [tree, setTree] = useState<KPNode[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [stages, setStages] = useState<StageItem[]>([]);
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string | undefined>();
+  const [selectedStageId, setSelectedStageId] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -121,7 +121,7 @@ export default function KnowledgePointsPage() {
     const token = localStorage.getItem("admin_token");
     try {
       const params = new URLSearchParams();
-      if (selectedSubjectId) params.set("subjectId", selectedSubjectId);
+      if (selectedStageId) params.set("stageId", selectedStageId);
       const url = params.toString()
         ? `/api/admin/knowledge-points?${params.toString()}`
         : "/api/admin/knowledge-points";
@@ -155,7 +155,7 @@ export default function KnowledgePointsPage() {
   useEffect(() => {
     fetchTree();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSubjectId]);
+  }, [selectedStageId]);
 
   const parentTreeData = useMemo(() => {
     const convert = (nodes: KPNode[]): TreeDataNode[] =>
@@ -270,7 +270,7 @@ export default function KnowledgePointsPage() {
     setPendingCreateValues({
       name: "",
       parentId: parent.id,
-      subjectId: parent.subjectId || selectedSubjectId,
+      subjectId: parent.subjectId || undefined,
       stageId: parent.stageId || "",
       sortOrder: 0,
     });
@@ -343,8 +343,8 @@ export default function KnowledgePointsPage() {
           setPendingCreateValues({
             name: "",
             parentId: "0",
-            subjectId: selectedSubjectId,
-            stageId: "",
+            subjectId: undefined,
+            stageId: selectedStageId ?? "",
             sortOrder: 0,
           });
           setCreateOpen(true);
@@ -354,7 +354,7 @@ export default function KnowledgePointsPage() {
       </Button>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, selectedSubjectId]
+    [t, selectedStageId]
   );
   usePageActions(headerActions);
 
@@ -362,16 +362,14 @@ export default function KnowledgePointsPage() {
     <div>
       <Card size="small" style={{ marginBottom: 10 }}>
         <Space>
-          <span>{t("knowledgePoints.selectSubject")}</span>
+          <span>{t("knowledgePoints.selectStage")}</span>
           <Select
             allowClear
             style={{ width: 200 }}
-            placeholder={t("knowledgePoints.allSubjects")}
-            value={selectedSubjectId}
-            onChange={(v) => setSelectedSubjectId(v)}
-            options={subjectOptions}
-            optionRender={subjectOptionRender}
-            labelRender={subjectLabelRender}
+            placeholder={t("knowledgePoints.allStages")}
+            value={selectedStageId}
+            onChange={(v) => setSelectedStageId(v)}
+            options={stageOptions}
           />
         </Space>
       </Card>

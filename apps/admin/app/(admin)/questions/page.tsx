@@ -1004,7 +1004,7 @@ export default function QuestionsPage() {
             setSelectedGradeId(value);
             setPage(1);
           }}
-          options={grades.map((g) => ({ value: g.id, label: `${g.name}（${g.stage}）` }))}
+          options={grades.map((g) => ({ value: g.id, label: g.name }))}
         />
         <Select
           allowClear

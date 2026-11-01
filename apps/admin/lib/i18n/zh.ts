@@ -216,6 +216,8 @@ export const zh: Messages = {
     updateFailed: "更新知识点失败",
     selectSubject: "科目",
     allSubjects: "全部科目",
+    selectStage: "学段",
+    allStages: "全部学段",
     stage: "所属学段",
     stagePlaceholder: "请选择学段...",
     stageRequired: "请选择学段",

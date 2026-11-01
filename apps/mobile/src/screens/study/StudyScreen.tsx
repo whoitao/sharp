@@ -100,16 +100,17 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     }
   }, []);
 
-  // 单元列表的筛选键：科目 + 知识点必选，年级与标签为可选横向筛选
+  // 单元列表的筛选键：科目 + 知识点必选，年级/教材版本/标签为可选横向筛选
   const buildUnitsKey = useCallback(
     (
       sub: Subject | null,
       kp: KnowledgePoint | null,
       grade: Grade | null,
+      publisher: string | null,
       tagIds: string[],
     ): string | null =>
       sub && kp
-        ? `${sub.id}|${kp.id}|${grade?.id ?? 'all'}|${tagIds.slice().sort().join(',')}`
+        ? `${sub.id}|${kp.id}|${grade?.id ?? 'all'}|${publisher ?? 'all'}|${tagIds.slice().sort().join(',')}`
         : null,
     []
   );
@@ -142,6 +143,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       const { units: pageUnits, totalUnits } = await api.getUnits({
         subjectId: selectedSubject.id,
         gradeId: selectedGrade?.id ?? null,
+        publisherId: savedPublisherId ?? null,
         knowledgePointId: selectedKP.id,
         tagIds: selectedTagIds,
         page: pageToLoad,
@@ -154,6 +156,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         selectedSubject,
         selectedKP,
         selectedGrade,
+        savedPublisherId ?? null,
         selectedTagIds,
       );
     } catch {
@@ -165,7 +168,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       }
       setRefreshing(false);
     }
-  }, [selectedSubject, selectedGrade, selectedKP, selectedTagIds, buildUnitsKey]);
+  }, [selectedSubject, selectedGrade, selectedKP, savedPublisherId, selectedTagIds, buildUnitsKey]);
 
   useEffect(() => {
     fetchInitialData();
@@ -195,6 +198,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         selectedSubject,
         selectedKP,
         selectedGrade,
+        savedPublisherId ?? null,
         selectedTagIds,
       );
       if (!key || key !== lastUnitsKeyRef.current) return;
@@ -207,6 +211,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
             const { units: pageUnits, totalUnits } = await api.getUnits({
               subjectId: selectedSubject!.id,
               gradeId: selectedGrade?.id ?? null,
+              publisherId: savedPublisherId ?? null,
               knowledgePointId: selectedKP!.id,
               tagIds: selectedTagIds,
               page: p,
@@ -221,7 +226,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
           // 静默刷新失败时保留旧数据
         }
       })();
-    }, [selectedSubject, selectedGrade, selectedKP, selectedTagIds, buildUnitsKey])
+    }, [selectedSubject, selectedGrade, selectedKP, savedPublisherId, selectedTagIds, buildUnitsKey])
   );
 
   // 触底加载下一页

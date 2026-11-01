@@ -215,6 +215,8 @@ export const en = {
     updateFailed: "Failed to update knowledge point",
     selectSubject: "Subject",
     allSubjects: "All Subjects",
+    selectStage: "Stage",
+    allStages: "All Stages",
     stage: "Stage",
     stagePlaceholder: "Select a stage...",
     stageRequired: "Please select a stage",

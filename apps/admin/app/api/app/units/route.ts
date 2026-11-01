@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
 
   const knowledgePointIdRaw = url.searchParams.get("knowledgePointId");
   const gradeIdRaw = url.searchParams.get("gradeId");
+  const publisherIdRaw = url.searchParams.get("publisherId");
   const tagIdsRaw = url.searchParams.get("tagIds");
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") ?? "10", 10) || 10));
@@ -33,6 +34,10 @@ export async function GET(request: NextRequest) {
   // 年级：历史数据没有年级（null）视为不限年级，避免存量题被过滤掉
   if (gradeIdRaw) {
     questionWhere.OR = [{ gradeId: BigInt(gradeIdRaw) }, { gradeId: null }];
+  }
+  // 教材版本：按章节归属严格匹配，无章节的题目（真题/模拟/自建）不计入版本过滤
+  if (publisherIdRaw) {
+    questionWhere.chapter = { publisherId: BigInt(publisherIdRaw) };
   }
   // 标签：多选 chips 命中任意一个即可
   const tagIds = tagIdsRaw

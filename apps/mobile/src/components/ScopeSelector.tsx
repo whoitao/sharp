@@ -6,26 +6,16 @@ import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
 
-// 科目图标前缀：按科目名匹配，未命中的用通用书签图标
-const SUBJECT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  语文: 'book-outline',
-  数学: 'calculator-outline',
-  英语: 'language-outline',
-  物理: 'magnet-outline',
-  化学: 'flask-outline',
-  生物: 'leaf-outline',
-  历史: 'hourglass-outline',
-  地理: 'earth-outline',
-  政治: 'flag-outline',
-  道德与法治: 'flag-outline',
-  科学: 'bulb-outline',
-  体育: 'barbell-outline',
-  音乐: 'musical-notes-outline',
-  美术: 'color-palette-outline',
-  信息科技: 'laptop-outline',
-};
-const getSubjectIcon = (name: string): keyof typeof Ionicons.glyphMap =>
-  SUBJECT_ICONS[name] ?? 'bookmark-outline';
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+/** 后端存的是 Ionicons 名称，历史/异常值不渲染图标，仅显示文字 */
+function isIoniconName(value?: string | null): value is IoniconName {
+  return !!value && value in Ionicons.glyphMap;
+}
+
+/** 科目图标优先用后端 Subject.icon 维护的 Ionicons 名称，缺失时回退到通用书签图标 */
+const getSubjectIcon = (icon: string | null): IoniconName =>
+  isIoniconName(icon) ? icon : 'bookmark-outline';
 
 interface ScopeSelectorProps {
   grades: Grade[];
@@ -206,7 +196,7 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
                     ]}
                     onPress={() => handlePickSubject(subject.id)}
                   >
-                    <Ionicons name={getSubjectIcon(subject.name)} size={14 * font} color={tint} />
+                    <Ionicons name={getSubjectIcon(subject.icon)} size={14 * font} color={tint} />
                     <Text
                       style={{
                         color: active ? colors.accent : colors.text,

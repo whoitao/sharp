@@ -64,7 +64,7 @@ export default function ChaptersPage() {
       fetch("/api/admin/subjects", { headers: authHeaders() }).then((r) => r.json()),
       fetch("/api/admin/publishers", { headers: authHeaders() }).then((r) => r.json()),
     ]);
-    setGrades(gr.map((g: any) => ({ value: g.id, label: `${g.name}（${g.stage}）`, stage: g.stage })));
+    setGrades(gr.map((g: any) => ({ value: g.id, label: g.name, stage: g.stage })));
     setSubjects(sr.map((s: any) => ({ value: s.id, label: s.name, icon: s.icon })));
     setPublishers(pr.map((p: any) => ({ value: p.id, label: p.name })));
   };
