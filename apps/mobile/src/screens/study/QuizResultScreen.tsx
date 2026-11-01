@@ -40,6 +40,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
     textbookLabel,
     subjectId,
     gradeId,
+    publisherId,
     tagIds,
     knowledgePointId,
     record,
@@ -117,6 +118,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
               unitIndex,
               subjectId,
               gradeId,
+              publisherId,
               knowledgePointId,
               tagIds,
             })
@@ -125,7 +127,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
       // silently proceed even if start fails
     }
     const fetchResult = await dispatch(
-      fetchQuestions({ chapterId, unitIndex, subjectId, gradeId, tagIds, knowledgePointId })
+      fetchQuestions({ chapterId, unitIndex, subjectId, gradeId, publisherId, tagIds, knowledgePointId })
     );
     if (fetchQuestions.fulfilled.match(fetchResult)) {
       navigation.replace('Quiz', {
@@ -135,6 +137,7 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
         unitIndex,
         subjectId,
         gradeId,
+        publisherId,
         tagIds,
         knowledgePointId,
         previousRecord,

@@ -10,10 +10,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSelector } from 'react-redux';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
 import { api } from '../services/api';
+import type { RootState } from '../stores';
 import TreePickerModal from './TreePickerModal';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -73,6 +75,8 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   const [kpModalVisible, setKpModalVisible] = useState(false);
 
   // 知识点按学科过滤：学科未选时不可选，选中学科后按 subjectId 拉取
+  // 「我的教材」版本（全局设置）参与题数重算，切换版本后树自动刷新
+  const publisherId = useSelector((state: RootState) => state.settings.publisherId);
   const [subjectKPs, setSubjectKPs] = useState<KnowledgePoint[]>([]);
   const onSelectKPRef = useRef(onSelectKP);
   useEffect(() => {
@@ -81,7 +85,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    // 学科/学段变化后已选知识点不再有效，需要清空
+    // 学科/学段/年级/教材版本变化后已选知识点不再有效，需要清空
     onSelectKPRef.current(null);
     if (!selectedSubject) {
       setSubjectKPs([]);
@@ -89,7 +93,12 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
     }
     (async () => {
       try {
-        const tree = await api.getKnowledgePoints(selectedSubject.id, selectedGrade?.stageId);
+        const tree = await api.getKnowledgePoints(
+          selectedSubject.id,
+          selectedGrade?.stageId,
+          selectedGrade?.id ?? null,
+          publisherId,
+        );
         if (!cancelled) setSubjectKPs(tree);
       } catch {
         if (!cancelled) setSubjectKPs([]);
@@ -98,7 +107,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [selectedSubject, selectedGrade?.stageId]);
+  }, [selectedSubject, selectedGrade?.stageId, selectedGrade?.id, publisherId]);
 
   const kpDisabled = !selectedSubject;
 

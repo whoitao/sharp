@@ -1,10 +1,31 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { Grade, Subject } from '@sharp/shared';
 import React, { useMemo, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
+
+// 科目图标前缀：按科目名匹配，未命中的用通用书签图标
+const SUBJECT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  语文: 'book-outline',
+  数学: 'calculator-outline',
+  英语: 'language-outline',
+  物理: 'magnet-outline',
+  化学: 'flask-outline',
+  生物: 'leaf-outline',
+  历史: 'hourglass-outline',
+  地理: 'earth-outline',
+  政治: 'flag-outline',
+  道德与法治: 'flag-outline',
+  科学: 'bulb-outline',
+  体育: 'barbell-outline',
+  音乐: 'musical-notes-outline',
+  美术: 'color-palette-outline',
+  信息科技: 'laptop-outline',
+};
+const getSubjectIcon = (name: string): keyof typeof Ionicons.glyphMap =>
+  SUBJECT_ICONS[name] ?? 'bookmark-outline';
 
 interface ScopeSelectorProps {
   grades: Grade[];
@@ -94,64 +115,90 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
               { backgroundColor: colors.surface, borderRadius: 16 * radius, padding: 16 * spacing },
             ]}
           >
+            {/* 右上角关闭按钮（点遮罩也可关闭） */}
+            <TouchableOpacity
+              onPress={() => setVisible(false)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={{
+                position: 'absolute',
+                top: 12 * spacing,
+                right: 12 * spacing,
+                zIndex: 1,
+              }}
+            >
+              <Ionicons name="close" size={20 * font} color={colors.textTertiary} />
+            </TouchableOpacity>
+
             {/* 年级（按学段分组） */}
             <Text style={{ color: colors.textSecondary, fontSize: 13 * font, fontWeight: '600', marginBottom: 8 * spacing }}>
               {t.studySelectGrade}
             </Text>
             <View style={{ marginBottom: 12 * spacing, gap: 8 * spacing }}>
               {gradeGroups.map(([stage, stageGrades]) => (
-                <View key={stage} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ color: colors.textTertiary, fontSize: 13 * font, width: 40 * spacing }}>
+                <View key={stage} style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  <Text
+                    style={{
+                      color: colors.textTertiary,
+                      fontSize: 13 * font,
+                      width: 40 * spacing,
+                      // 与首行胶囊垂直居中对齐
+                      marginTop: 9 * spacing,
+                    }}
+                  >
                     {stage}
                   </Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', gap: 8 * spacing }}>
-                      {stageGrades.map((grade) => (
-                        <TouchableOpacity
-                          key={grade.id}
-                          style={[
-                            styles.optionChip,
-                            {
-                              backgroundColor: selectedGrade?.id === grade.id ? colors.accentLight : colors.background,
-                              borderColor: selectedGrade?.id === grade.id ? colors.accent : colors.border,
-                              borderRadius: 12 * radius,
-                              paddingHorizontal: 12 * spacing,
-                              paddingVertical: 8 * spacing,
-                            },
-                          ]}
-                          onPress={() => handlePickGrade(grade.id)}
+                  {/* 换行展示：年级多（如小学六个）时不再横向滚动裁切 */}
+                  <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 8 * spacing }}>
+                    {stageGrades.map((grade) => (
+                      <TouchableOpacity
+                        key={grade.id}
+                        style={[
+                          styles.optionChip,
+                          {
+                            backgroundColor: selectedGrade?.id === grade.id ? colors.accentLight : colors.background,
+                            borderColor: selectedGrade?.id === grade.id ? colors.accent : colors.border,
+                            borderRadius: 12 * radius,
+                            paddingHorizontal: 12 * spacing,
+                            paddingVertical: 8 * spacing,
+                          },
+                        ]}
+                        onPress={() => handlePickGrade(grade.id)}
+                      >
+                        <Text
+                          style={{
+                            color: selectedGrade?.id === grade.id ? colors.accent : colors.text,
+                            fontSize: 14 * font,
+                            fontWeight: '500',
+                          }}
                         >
-                          <Text
-                            style={{
-                              color: selectedGrade?.id === grade.id ? colors.accent : colors.text,
-                              fontSize: 14 * font,
-                              fontWeight: '500',
-                            }}
-                          >
-                            {grade.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
+                          {grade.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
               ))}
             </View>
 
-            {/* 科目 */}
+            {/* 科目（换行展示 + 图标前缀） */}
             <Text style={{ color: colors.textSecondary, fontSize: 13 * font, fontWeight: '600', marginBottom: 8 * spacing }}>
               {t.studySelectSubject}
             </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: 'row', gap: 8 * spacing }}>
-                {subjects.map((subject) => (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 * spacing }}>
+              {subjects.map((subject) => {
+                const active = selectedSubject?.id === subject.id;
+                const tint = active ? colors.accent : colors.textSecondary;
+                return (
                   <TouchableOpacity
                     key={subject.id}
                     style={[
                       styles.optionChip,
                       {
-                        backgroundColor: selectedSubject?.id === subject.id ? colors.accentLight : colors.background,
-                        borderColor: selectedSubject?.id === subject.id ? colors.accent : colors.border,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4 * spacing,
+                        backgroundColor: active ? colors.accentLight : colors.background,
+                        borderColor: active ? colors.accent : colors.border,
                         borderRadius: 12 * radius,
                         paddingHorizontal: 12 * spacing,
                         paddingVertical: 8 * spacing,
@@ -159,9 +206,10 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
                     ]}
                     onPress={() => handlePickSubject(subject.id)}
                   >
+                    <Ionicons name={getSubjectIcon(subject.name)} size={14 * font} color={tint} />
                     <Text
                       style={{
-                        color: selectedSubject?.id === subject.id ? colors.accent : colors.text,
+                        color: active ? colors.accent : colors.text,
                         fontSize: 14 * font,
                         fontWeight: '500',
                       }}
@@ -169,9 +217,9 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
                       {subject.name}
                     </Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+                );
+              })}
+            </View>
           </View>
         </TouchableOpacity>
       </Modal>

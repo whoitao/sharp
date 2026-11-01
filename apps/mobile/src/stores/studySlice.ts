@@ -41,6 +41,8 @@ export const fetchQuestions = createAsyncThunk(
   async (params: {
     /** 考纲练习按年级/科目/知识点/标签筛选；教材章节练习用 chapterId，二者至少有一个 */
     gradeId?: string;
+    /** 「我的教材」版本筛选，与知识点树同一过滤口径 */
+    publisherId?: string;
     tagIds?: string[];
     chapterId?: string;
     unitIndex: number;
@@ -53,6 +55,7 @@ export const fetchQuestions = createAsyncThunk(
           unitIndex: params.unitIndex,
           subjectId: params.subjectId ?? '',
           gradeId: params.gradeId ?? null,
+          publisherId: params.publisherId ?? null,
           knowledgePointId: params.knowledgePointId ?? null,
           tagIds: params.tagIds,
         });

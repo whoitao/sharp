@@ -7,7 +7,6 @@ import type {
   Language,
   LoginResponse,
   PaginatedResponse,
-  Publisher,
   Question,
   QuestionTag,
   StudyRecord,
@@ -157,6 +156,13 @@ const apiErrorMessage = (err: unknown, fallback: string): string => {
 
 // ─── API Methods ───────────────────────────────────────────────────────────────
 
+/** 教材版本选项：仅当前科目/年级下有题的版本，附题数（后端 /api/app/publishers 按题数降序） */
+export interface PublisherOption {
+  id: string;
+  name: string;
+  questionCount: number;
+}
+
 export const api = {
   // Auth
   async login(username: string, password: string): Promise<LoginResponse> {
@@ -213,8 +219,15 @@ export const api = {
   },
 
   // Knowledge Points
-  async getKnowledgePoints(subjectId?: string, stageId?: string): Promise<KnowledgePoint[]> {
-    const cacheSuffix = `${subjectId ?? 'all'}|${stageId ?? 'all'}`;
+  // gradeId / publisherId：全局学习范围（年级 + 「我的教材」版本），传入后题数按同一口径重算并裁剪空分支
+  async getKnowledgePoints(
+    subjectId?: string,
+    stageId?: string,
+    gradeId?: string | null,
+    publisherId?: string | null,
+  ): Promise<KnowledgePoint[]> {
+    // 缓存键必须包含年级与教材版本，切换版本后重新拉取而不是命中旧缓存
+    const cacheSuffix = `${subjectId ?? 'all'}|${stageId ?? 'all'}|${gradeId ?? 'all'}|${publisherId ?? 'all'}`;
     return dedupeInFlight(`knowledgePoints:${cacheSuffix}`, async () => {
       const cached = await getCached<KnowledgePoint[]>('knowledgePoints', cacheSuffix);
       if (cached) return cached;
@@ -223,6 +236,8 @@ export const api = {
         const params: Record<string, string> = {};
         if (subjectId) params.subjectId = subjectId;
         if (stageId) params.stageId = stageId;
+        if (gradeId) params.gradeId = gradeId;
+        if (publisherId) params.publisherId = publisherId;
         const response = await apiClient.get<KnowledgePoint[]>('/api/app/knowledge-points', { params });
         if (response.data.length > 0) {
           await setCached('knowledgePoints', response.data, cacheSuffix);
@@ -291,13 +306,15 @@ export const api = {
     subjectId: string;
     unitIndex: number;
     gradeId?: string | null;
+    publisherId?: string | null;
     knowledgePointId?: string | null;
     tagIds?: string[];
   }): Promise<Question[]> {
-    const { subjectId, unitIndex, gradeId, knowledgePointId, tagIds } = params;
+    const { subjectId, unitIndex, gradeId, publisherId, knowledgePointId, tagIds } = params;
     try {
       const query: Record<string, string> = { subjectId };
       if (gradeId) query.gradeId = gradeId;
+      if (publisherId) query.publisherId = publisherId;
       if (knowledgePointId) query.knowledgePointId = knowledgePointId;
       if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
       const response = await apiClient.get<Question[]>(
@@ -313,19 +330,33 @@ export const api = {
   },
 
   // 教材（Publisher / Grade / Chapter）
-  // 教材元数据变化很少，沿用 24 小时本地缓存
-  async getPublishers(): Promise<Publisher[]> {
-    return dedupeInFlight('publishers', async () => {
-      const cached = await getCached<Publisher[]>('publishers');
-      if (cached) return cached;
-
+  // 教材版本：返回当前科目/年级下「章节下已录题目」的版本，附题数（后端按题数降序）
+  async fetchPublishers(subjectId?: string, gradeId?: string): Promise<PublisherOption[]> {
+    return dedupeInFlight(`fetchPublishers:${subjectId ?? 'all'}:${gradeId ?? 'all'}`, async () => {
       try {
-        const response = await apiClient.get<Publisher[]>('/api/app/publishers');
-        if (response.data.length > 0) await setCached('publishers', response.data);
-        return response.data;
+        const params: Record<string, string> = {};
+        if (subjectId) params.subjectId = subjectId;
+        if (gradeId) params.gradeId = gradeId;
+        const response = await apiClient.get<{ items: PublisherOption[] }>(
+          '/api/app/publishers',
+          { params },
+        );
+        return response.data.items ?? [];
       } catch {
         return [];
       }
+    });
+  },
+
+  // 教材版本字典（只用于 id → name 展示）；沿用 24 小时本地缓存
+  async getPublishers(): Promise<PublisherOption[]> {
+    return dedupeInFlight('publishers', async () => {
+      const cached = await getCached<PublisherOption[]>('publishers');
+      if (cached) return cached;
+
+      const items = await api.fetchPublishers();
+      if (items.length > 0) await setCached('publishers', items);
+      return items;
     });
   },
 
@@ -507,14 +538,16 @@ export const api = {
     unitIndex: number;
     subjectId?: string | null;
     gradeId?: string | null;
+    publisherId?: string | null;
     knowledgePointId?: string | null;
     tagIds?: string[];
   }): Promise<{ previous: StudyRecordSummary | null }> {
     try {
-      const { unitIndex, subjectId, gradeId, knowledgePointId, tagIds } = params;
+      const { unitIndex, subjectId, gradeId, publisherId, knowledgePointId, tagIds } = params;
       const query: Record<string, string> = {};
       if (subjectId) query.subjectId = subjectId;
       if (gradeId) query.gradeId = gradeId;
+      if (publisherId) query.publisherId = publisherId;
       if (knowledgePointId) query.knowledgePointId = knowledgePointId;
       if (tagIds && tagIds.length > 0) query.tagIds = tagIds.join(',');
       const response = await apiClient.post<{ previous: StudyRecordSummary | null }>(

@@ -58,6 +58,8 @@ export type QuizParams = {
   subjectName?: string;
   /** 全局年级筛选（考纲练习）；教材练习由章节反推 */
   gradeId?: string;
+  /** 「我的教材」版本筛选（考纲练习），与知识点树同一过滤口径 */
+  publisherId?: string;
   /** 标签筛选 chips（多选） */
   tagIds?: string[];
   knowledgePointId?: string;
@@ -74,6 +76,8 @@ export type QuizResultParams = {
   textbookLabel?: string;
   subjectId?: string;
   gradeId?: string;
+  /** 「我的教材」版本筛选（考纲练习），重试时保持同一过滤口径 */
+  publisherId?: string;
   tagIds?: string[];
   knowledgePointId?: string;
   record?: StudyRecord;

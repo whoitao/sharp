@@ -49,9 +49,8 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
   const { spacing, font } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { gradeId: savedGradeId, subjectId: savedSubjectId } = useSelector(
-    (state: RootState) => state.settings,
-  );
+  const { gradeId: savedGradeId, subjectId: savedSubjectId, publisherId: savedPublisherId } =
+    useSelector((state: RootState) => state.settings);
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
@@ -248,6 +247,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       const scope = {
         subjectId: selectedSubject.id,
         gradeId: selectedGrade?.id ?? null,
+        publisherId: savedPublisherId,
         knowledgePointId: selectedKP?.id ?? null,
         tagIds: selectedTagIds,
       };
@@ -265,6 +265,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
             unitIndex: unit.unitIndex,
             subjectId: scope.subjectId,
             gradeId: scope.gradeId ?? undefined,
+            publisherId: scope.publisherId ?? undefined,
             knowledgePointId: scope.knowledgePointId ?? undefined,
             tagIds: scope.tagIds,
           })
@@ -274,6 +275,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
             unitIndex: unit.unitIndex,
             subjectId: scope.subjectId,
             gradeId: scope.gradeId ?? undefined,
+            publisherId: scope.publisherId ?? undefined,
             knowledgePointId: scope.knowledgePointId ?? undefined,
             tagIds: scope.tagIds,
             subjectName: selectedSubject.name,
@@ -285,7 +287,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         setPressingUnitIndex(null);
       }
     },
-    [pressingUnitIndex, selectedSubject, selectedGrade, selectedKP, selectedTagIds, dispatch, navigation]
+    [pressingUnitIndex, selectedSubject, selectedGrade, selectedKP, selectedTagIds, savedPublisherId, dispatch, navigation]
   );
 
   // 全局学习范围变更后持久化，首页/教材/记录页共用
