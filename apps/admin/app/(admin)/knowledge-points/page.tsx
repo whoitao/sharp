@@ -70,8 +70,9 @@ export default function KnowledgePointsPage() {
   const [tree, setTree] = useState<KPNode[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [stages, setStages] = useState<StageItem[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | undefined>();
   const [selectedStageId, setSelectedStageId] = useState<string | undefined>();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -117,15 +118,20 @@ export default function KnowledgePointsPage() {
   };
 
   const fetchTree = async () => {
+    // 未选择科目时不请求接口，直接展示空列表
+    if (!selectedSubjectId) {
+      setTree([]);
+      setExpandedKeys([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const token = localStorage.getItem("admin_token");
     try {
       const params = new URLSearchParams();
+      params.set("subjectId", selectedSubjectId);
       if (selectedStageId) params.set("stageId", selectedStageId);
-      const url = params.toString()
-        ? `/api/admin/knowledge-points?${params.toString()}`
-        : "/api/admin/knowledge-points";
-      const res = await fetch(url, {
+      const res = await fetch(`/api/admin/knowledge-points?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -155,7 +161,7 @@ export default function KnowledgePointsPage() {
   useEffect(() => {
     fetchTree();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStageId]);
+  }, [selectedSubjectId, selectedStageId]);
 
   const parentTreeData = useMemo(() => {
     const convert = (nodes: KPNode[]): TreeDataNode[] =>
@@ -343,7 +349,7 @@ export default function KnowledgePointsPage() {
           setPendingCreateValues({
             name: "",
             parentId: "0",
-            subjectId: undefined,
+            subjectId: selectedSubjectId,
             stageId: selectedStageId ?? "",
             sortOrder: 0,
           });
@@ -354,15 +360,24 @@ export default function KnowledgePointsPage() {
       </Button>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, selectedStageId]
+    [t, selectedSubjectId, selectedStageId]
   );
   usePageActions(headerActions);
 
   return (
     <div>
       <Card size="small" style={{ marginBottom: 10 }}>
-        <Space>
-          <span>{t("knowledgePoints.selectStage")}</span>
+        <Space wrap>
+          <Select
+            allowClear
+            style={{ width: 200 }}
+            placeholder={t("knowledgePoints.selectSubject")}
+            value={selectedSubjectId}
+            onChange={(v) => setSelectedSubjectId(v)}
+            options={subjectOptions}
+            optionRender={subjectOptionRender}
+            labelRender={subjectLabelRender}
+          />
           <Select
             allowClear
             style={{ width: 200 }}
