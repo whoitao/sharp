@@ -32,8 +32,21 @@ export async function GET(
 
   const allKpIds = await getAllDescendantIds(BigInt(id));
 
+  // 年级/教材版本过滤：与知识点树接口同一口径，保证「看到的树」和「刷到的题」一致
+  const gradeIdRaw = searchParams.get("gradeId");
+  const publisherIdRaw = searchParams.get("publisherId");
+  const questionFilter: Record<string, unknown> = {};
+  if (gradeIdRaw) {
+    const gradeId = BigInt(gradeIdRaw);
+    questionFilter.OR = [{ gradeId }, { gradeId: null }];
+  }
+  if (publisherIdRaw) questionFilter.chapter = { publisherId: BigInt(publisherIdRaw) };
+
   const relations = await prisma.questionKnowledgePoint.findMany({
-    where: { knowledgePointId: { in: allKpIds } },
+    where: {
+      knowledgePointId: { in: allKpIds },
+      ...(Object.keys(questionFilter).length > 0 ? { question: questionFilter } : {}),
+    },
     select: { questionId: true },
     distinct: ["questionId"],
   });

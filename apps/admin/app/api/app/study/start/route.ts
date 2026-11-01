@@ -17,9 +17,11 @@ export async function POST(request: NextRequest) {
   const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
   const knowledgePointIdRaw = request.nextUrl.searchParams.get("knowledgePointId");
   const gradeIdRaw = request.nextUrl.searchParams.get("gradeId");
+  const publisherIdRaw = request.nextUrl.searchParams.get("publisherId");
   const tagIdsRaw = request.nextUrl.searchParams.get("tagIds");
   const subjectId = subjectIdRaw ? BigInt(subjectIdRaw) : null;
   const gradeId = gradeIdRaw ? BigInt(gradeIdRaw) : null;
+  const publisherId = publisherIdRaw ? BigInt(publisherIdRaw) : null;
   // 标签筛选上下文统一成升序逗号串，保证同样的选择得到同样的记录键
   const tagIds = tagIdsRaw
     ? tagIdsRaw
@@ -85,6 +87,8 @@ export async function POST(request: NextRequest) {
     }
     // 年级：历史数据没有年级（null）视为不限年级
     if (gradeId) where.OR = [{ gradeId }, { gradeId: null }];
+    // 教材版本：按章节归属严格匹配，无章节的题目（真题/模拟/自建）不计入版本过滤
+    if (publisherId) where.chapter = { publisherId };
     // 标签多选：命中任意一个即可，与 units 接口口径一致
     if (tagIds.length > 0) where.tags = { some: { tagId: { in: tagIds } } };
     questionWhere = where;
