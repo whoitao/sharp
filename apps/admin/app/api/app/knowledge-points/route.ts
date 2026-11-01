@@ -1,5 +1,6 @@
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { applyScopeFilter } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -33,13 +34,11 @@ export async function GET(request: NextRequest) {
   });
 
   // 年级/教材版本过滤：按「知识点 → 题目 → 年级 / 章节版本」链路重算每个知识点的题数
-  // 年级沿用 study/start 口径（null 视为不限年级），版本按章节归属严格匹配（无章节不计入）
+  // 与 units、study/start、知识点取题接口共用同一口径（教材版本不误伤无章节的真题/词汇题）
   const filtering = gradeId !== null || publisherId !== null;
   let filteredCounts: Map<string, number> | null = null;
   if (filtering) {
-    const questionFilter: Record<string, unknown> = {};
-    if (gradeId) questionFilter.OR = [{ gradeId }, { gradeId: null }];
-    if (publisherId) questionFilter.chapter = { publisherId };
+    const questionFilter = applyScopeFilter({}, { gradeId, publisherId });
     const grouped = await prisma.questionKnowledgePoint.groupBy({
       by: ["knowledgePointId"],
       where: { question: questionFilter },

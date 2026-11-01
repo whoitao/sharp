@@ -1,6 +1,7 @@
 import { getKnowledgePointSubtreeIds } from "@/lib/knowledge-point";
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { applyScopeFilter } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -31,14 +32,11 @@ export async function GET(request: NextRequest) {
       some: { knowledgePointId: { in: kpIds } },
     };
   }
-  // 年级：历史数据没有年级（null）视为不限年级，避免存量题被过滤掉
-  if (gradeIdRaw) {
-    questionWhere.OR = [{ gradeId: BigInt(gradeIdRaw) }, { gradeId: null }];
-  }
-  // 教材版本：按章节归属严格匹配，无章节的题目（真题/模拟/自建）不计入版本过滤
-  if (publisherIdRaw) {
-    questionWhere.chapter = { publisherId: BigInt(publisherIdRaw) };
-  }
+  // 年级 / 教材版本：公共口径（年级 null 视为不限；教材版本不误伤无章节的真题/词汇题）
+  applyScopeFilter(questionWhere, {
+    gradeId: gradeIdRaw ? BigInt(gradeIdRaw) : null,
+    publisherId: publisherIdRaw ? BigInt(publisherIdRaw) : null,
+  });
   // 标签：多选 chips 命中任意一个即可
   const tagIds = tagIdsRaw
     ? tagIdsRaw.split(",").map((s) => s.trim()).filter(Boolean).map((s) => BigInt(s))

@@ -42,3 +42,31 @@ export function chapterQuestionWhere(
   if (subjectId) where.subjectId = subjectId;
   return where;
 }
+
+/**
+ * 年级 / 教材版本 的公共过滤口径（知识点树、单元列表、开始学习、知识点取题四处共用）。
+ * - 年级：历史数据没有年级（null）视为不限年级
+ * - 教材版本：只约束教材同步题（按章节归属匹配）；无章节的题目（真题/模拟/词汇）不受版本限制，
+ *   否则 CET-4 词汇、中考真题这类 chapterId 为空的题会被版本过滤全部误伤
+ * 两者都是 OR 语义，必须放进 AND 数组，避免第二个条件覆盖第一个。
+ */
+export function applyScopeFilter(
+  where: Record<string, unknown>,
+  scope: { gradeId?: bigint | null; publisherId?: bigint | null },
+): Record<string, unknown> {
+  const { gradeId, publisherId } = scope;
+  const scopeConditions: Record<string, unknown>[] = [];
+  if (gradeId) {
+    scopeConditions.push({ OR: [{ gradeId }, { gradeId: null }] });
+  }
+  if (publisherId) {
+    scopeConditions.push({
+      OR: [{ chapter: { publisherId } }, { chapterId: null }],
+    });
+  }
+  if (scopeConditions.length > 0) {
+    const existing = where.AND as Record<string, unknown>[] | undefined;
+    where.AND = existing ? [...existing, ...scopeConditions] : scopeConditions;
+  }
+  return where;
+}

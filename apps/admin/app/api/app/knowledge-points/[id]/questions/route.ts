@@ -1,5 +1,6 @@
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { applyScopeFilter } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
 
 async function getAllDescendantIds(kpId: bigint): Promise<bigint[]> {
@@ -35,12 +36,13 @@ export async function GET(
   // 年级/教材版本过滤：与知识点树接口同一口径，保证「看到的树」和「刷到的题」一致
   const gradeIdRaw = searchParams.get("gradeId");
   const publisherIdRaw = searchParams.get("publisherId");
-  const questionFilter: Record<string, unknown> = {};
-  if (gradeIdRaw) {
-    const gradeId = BigInt(gradeIdRaw);
-    questionFilter.OR = [{ gradeId }, { gradeId: null }];
-  }
-  if (publisherIdRaw) questionFilter.chapter = { publisherId: BigInt(publisherIdRaw) };
+  const questionFilter = applyScopeFilter(
+    {},
+    {
+      gradeId: gradeIdRaw ? BigInt(gradeIdRaw) : null,
+      publisherId: publisherIdRaw ? BigInt(publisherIdRaw) : null,
+    },
+  );
 
   const relations = await prisma.questionKnowledgePoint.findMany({
     where: {
