@@ -56,6 +56,11 @@ export const zh = {
   studyByKnowledge: '按知识点学',
   homeReport: '学习报告',
 
+  // Articles
+  articles: '文章',
+  articleEmpty: '暂无文章',
+  articleViews: (num: number) => `${formatCount(num)} 次阅读`,
+
   // Study
   studySelectScope: '选择年级和科目',
   studySelectSubject: '选择科目',

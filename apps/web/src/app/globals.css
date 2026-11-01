@@ -9,81 +9,76 @@
  */
 @layer base {
   :root {
+    /* ── 边线 ── */
+    --border: 144 17% 89%;           /* #DDE7E1 */
     /* ── 背景 / 表面 ── */
-    --background: 150 30% 96%;       /* #F2F8F5 薄荷绿底 */
-    --surface: 0 0% 100%;            /* #FFFFFF 卡片主表面 */
-    --surface-secondary: 150 33% 98%; /* #F7FBF9 次级表面 */
 
+    --background: 150 30% 96%;       /* #F2F8F5 薄荷绿底 */
+
+    --accent: var(--primary-light);
+    --accent-foreground: var(--primary-strong);
+    --border-light: 150 20% 94%;     /* #EDF3F0 */
+    /* ── shadcn 兼容映射 ── */
+    --card: var(--surface);
+    --card-foreground: var(--foreground);
+    --destructive: 0 72% 47%;
+    --destructive-foreground: 0 0% 100%;
     /* ── 文字 ── */
     --foreground: 152 4% 10%;         /* #10231A 主文字 */
     --foreground-secondary: 152 9% 36%; /* #4F6B5E 次级文字 */
     --foreground-tertiary: 153 7% 40%;  /* #5C7268 三级文字 */
-
-    /* ── 边线 ── */
-    --border: 144 17% 89%;           /* #DDE7E1 */
-    --border-light: 150 20% 94%;     /* #EDF3F0 */
-
-    /* ── 主色（移动端 accent） ── */
-    --primary: 160 84% 39%;          /* #10B981 emerald-500 */
-    --primary-strong: 160 84% 27%;   /* #0B7F58 承载文字时用 */
-    --primary-light: 151 58% 92%;    /* #DDF6EA 浅强调底 */
-    --primary-foreground: 0 0% 100%;
-
-    /* ── shadcn 兼容映射 ── */
-    --card: var(--surface);
-    --card-foreground: var(--foreground);
-    --popover: var(--surface);
-    --popover-foreground: var(--foreground);
-    --secondary: var(--surface-secondary);
-    --secondary-foreground: var(--foreground-secondary);
+    --input: var(--border);
     --muted: var(--surface-secondary);
     --muted-foreground: var(--foreground-secondary);
-    --accent: var(--primary-light);
-    --accent-foreground: var(--primary-strong);
-    --input: var(--border);
+    --popover: var(--surface);
+    --popover-foreground: var(--foreground);
+    /* ── 主色（移动端 accent） ── */
+    --primary: 160 84% 39%;          /* #10B981 emerald-500 */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 151 58% 92%;    /* #DDF6EA 浅强调底 */
+    --primary-strong: 160 84% 27%;   /* #0B7F58 承载文字时用 */
+    --radius: .75rem;
     --ring: var(--primary);
-    --destructive: 0 72% 47%;
-    --destructive-foreground: 0 0% 100%;
-
-    --radius: 0.75rem;
+    --secondary: var(--surface-secondary);
+    --secondary-foreground: var(--foreground-secondary);
+    --surface: 0 0% 100%;            /* #FFFFFF 卡片主表面 */
+    --surface-secondary: 150 33% 98%; /* #F7FBF9 次级表面 */
   }
 
   .dark {
+    /* ── 边线 ── */
+    --border: 152 16% 18%;           /* #27362F */
     /* ── 背景 / 表面 ── */
-    --background: 162 31% 6%;        /* #0B1512 */
-    --surface: 155 23% 10%;          /* #14201B */
-    --surface-secondary: 152 22% 14%; /* #1B2A23 */
 
+    --background: 162 31% 6%;        /* #0B1512 */
+
+    --accent: var(--primary-light);
+    --accent-foreground: var(--primary);
+    --border-light: 152 20% 15%;     /* #1F2E27 */
+    /* ── shadcn 兼容映射 ── */
+    --card: var(--surface);
+    --card-foreground: var(--foreground);
+    --destructive: 0 70% 81%;
+    --destructive-foreground: 155 23% 10%;
     /* ── 文字 ── */
     --foreground: 144 24% 96%;       /* #F2F7F4 */
     --foreground-secondary: 150 13% 69%; /* #A6BAB0 */
     --foreground-tertiary: 153 11% 62%; /* #93A99F */
-
-    /* ── 边线 ── */
-    --border: 152 16% 18%;           /* #27362F */
-    --border-light: 152 20% 15%;     /* #1F2E27 */
-
-    /* ── 主色 ── */
-    --primary: 158 64% 52%;          /* #34D399 emerald-400 */
-    --primary-strong: 158 64% 52%;
-    --primary-light: 158 53% 15%;    /* #123B2C */
-    --primary-foreground: 155 23% 10%;
-
-    /* ── shadcn 兼容映射 ── */
-    --card: var(--surface);
-    --card-foreground: var(--foreground);
-    --popover: var(--surface);
-    --popover-foreground: var(--foreground);
-    --secondary: var(--surface-secondary);
-    --secondary-foreground: var(--foreground-secondary);
+    --input: var(--border);
     --muted: var(--surface-secondary);
     --muted-foreground: var(--foreground-secondary);
-    --accent: var(--primary-light);
-    --accent-foreground: var(--primary);
-    --input: var(--border);
+    --popover: var(--surface);
+    --popover-foreground: var(--foreground);
+    /* ── 主色 ── */
+    --primary: 158 64% 52%;          /* #34D399 emerald-400 */
+    --primary-foreground: 155 23% 10%;
+    --primary-light: 158 53% 15%;    /* #123B2C */
+    --primary-strong: 158 64% 52%;
     --ring: var(--primary);
-    --destructive: 0 70% 81%;
-    --destructive-foreground: 155 23% 10%;
+    --secondary: var(--surface-secondary);
+    --secondary-foreground: var(--foreground-secondary);
+    --surface: 155 23% 10%;          /* #14201B */
+    --surface-secondary: 152 22% 14%; /* #1B2A23 */
   }
 
   * {
@@ -91,21 +86,150 @@
   }
 
   body {
-    background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   /* 卡片统一阴影：浅绿/深色两套 */
   .card-shadow {
-    box-shadow:
-      0 1px 2px rgba(16, 35, 26, 0.04),
-      0 4px 12px rgba(16, 35, 26, 0.04);
+    box-shadow: 0 1px 2px rgba(16, 35, 26, .04),
+    0 4px 12px rgba(16, 35, 26, .04);
   }
   .dark .card-shadow {
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.3),
-      0 4px 12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .3),
+    0 4px 12px rgba(0, 0, 0, .25);
   }
+}
+
+/* 文章正文：后台富文本（标题/段落/图片/表格/代码/列表）统一排版，跟随 light/dark 令牌 */
+.article-content {
+  font-size: 1rem;
+  line-height: 1.8;
+  word-break: break-word;
+
+  color: hsl(var(--foreground));
+}
+
+.article-content > :first-child {
+  margin-top: 0;
+}
+
+.article-content > :last-child {
+  margin-bottom: 0;
+}
+
+.article-content h1, .article-content h2, .article-content h3, .article-content h4 {
+  margin: 1.6em 0 .6em;
+
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.article-content h1 {
+  font-size: 1.6rem;
+}
+
+.article-content h2 {
+  font-size: 1.35rem;
+}
+
+.article-content h3 {
+  font-size: 1.15rem;
+}
+
+.article-content p {
+  margin: .85em 0;
+}
+
+.article-content ul, .article-content ol {
+  margin: .85em 0;
+  padding-left: 1.6rem;
+}
+
+.article-content ul {
+  list-style: disc;
+}
+
+.article-content ol {
+  list-style: decimal;
+}
+
+.article-content a {
+  text-decoration: underline;
+
+  color: hsl(var(--primary-strong));
+}
+
+.article-content img {
+  display: block;
+
+  margin: 1.25em auto;
+  border-radius: .5rem;
+  max-width: 100%;
+  height: auto;
+}
+
+.article-content blockquote {
+  margin: 1em 0;
+  border-left: 3px solid hsl(var(--primary));
+  padding: .25rem 0 .25rem 1rem;
+
+  color: hsl(var(--foreground-secondary));
+}
+
+.article-content table {
+  border-collapse: collapse;
+
+  margin: 1em 0;
+  width: 100%;
+
+  font-size: .95em;
+}
+
+.article-content th, .article-content td {
+  border: 1px solid hsl(var(--border));
+  padding: .5rem .75rem;
+
+  text-align: left;
+  vertical-align: top;
+}
+
+.article-content th {
+  font-weight: 600;
+
+  background-color: hsl(var(--surface-secondary));
+}
+
+.article-content code {
+  border-radius: .25rem;
+  padding: .1rem .3rem;
+
+  font-size: .9em;
+
+  background-color: hsl(var(--surface-secondary));
+}
+
+.article-content pre {
+  overflow-x: auto;
+
+  margin: 1em 0;
+  border-radius: .5rem;
+  padding: 1rem;
+
+  background-color: hsl(var(--surface-secondary));
+}
+
+.article-content pre code {
+  padding: 0;
+
+  background: transparent;
+}
+
+.article-content hr {
+  margin: 1.5em 0;
+  border: 0;
+  border-top: 1px solid hsl(var(--border));
 }

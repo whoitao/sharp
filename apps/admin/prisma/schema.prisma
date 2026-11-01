@@ -299,3 +299,39 @@ model Chapter {
   @@index([gradeId, subjectId, publisherId])
   @@index([parentId])
 }
+
+// ===== 文章模块 =====
+// 文章分类为必填维度，一篇文章只属于一个分类
+model ArticleCategory {
+  id        BigInt    @id @default(autoincrement())
+  name      String    @unique
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  articles Article[]
+
+  @@index([sortOrder])
+}
+
+model Article {
+  id          BigInt          @id @default(autoincrement())
+  title       String
+  summary     String?         @db.Text
+  content     String          @db.Text
+  categoryId  BigInt
+  category    ArticleCategory @relation(fields: [categoryId], references: [id])
+  // 发布频道：web / mobile，可单选或多选
+  channels    String[]
+  // 状态：draft 草稿 / published 已发布
+  status      String          @default("draft")
+  publishedAt DateTime?
+  viewCount   Int             @default(0)
+  sortOrder   Int             @default(0)
+  createdBy   String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+}

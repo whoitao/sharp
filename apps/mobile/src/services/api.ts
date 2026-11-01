@@ -1,5 +1,7 @@
 import type {
   AnswerItem,
+  ArticleDetail,
+  ArticleListItem,
   Chapter,
   Density,
   Grade,
@@ -796,6 +798,31 @@ export const api = {
   async updateProfile(patch: { nickname?: string; gender?: string; phone?: string }): Promise<{ nickname?: string; gender?: string | null; phone?: string | null }> {
     const response = await apiClient.patch<{ nickname?: string; gender?: string | null; phone?: string | null }>('/api/app/profile', patch);
     return response.data;
+  },
+
+  // Articles（只取发布到移动端的已发布文章）
+  async getArticles(page = 1, pageSize = 20): Promise<{ items: ArticleListItem[]; total: number }> {
+    try {
+      const response = await apiClient.get<{ items: ArticleListItem[]; total: number }>(
+        '/api/app/articles',
+        { params: { channel: 'mobile', page, pageSize } },
+      );
+      return { items: response.data.items ?? [], total: response.data.total ?? 0 };
+    } catch {
+      return { items: [], total: 0 };
+    }
+  },
+
+  async getArticleDetail(id: string): Promise<ArticleDetail | null> {
+    try {
+      // view=1 计入浏览次数
+      const response = await apiClient.get<ArticleDetail>(`/api/app/articles/${id}`, {
+        params: { channel: 'mobile', view: 1 },
+      });
+      return response.data;
+    } catch {
+      return null;
+    }
   },
 };
 

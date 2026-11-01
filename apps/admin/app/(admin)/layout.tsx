@@ -9,6 +9,7 @@ import {
   BookOutlined,
   DashboardOutlined,
   FileTextOutlined,
+  FolderOpenOutlined,
   GlobalOutlined,
   InfoCircleOutlined,
   LogoutOutlined,
@@ -17,6 +18,7 @@ import {
   MoonOutlined,
   OrderedListOutlined,
   QuestionCircleOutlined,
+  ReadOutlined,
   SettingOutlined,
   SunOutlined,
   TagsOutlined,
@@ -53,6 +55,8 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/stages", icon: <ApartmentOutlined />, labelKey: "nav.stages" },
   { key: "/chapters", icon: <AppstoreOutlined />, labelKey: "nav.chapters" },
   { key: "/tags", icon: <TagsOutlined />, labelKey: "nav.tags" },
+  { key: "/articles", icon: <ReadOutlined />, labelKey: "nav.articles" },
+  { key: "/article-categories", icon: <FolderOpenOutlined />, labelKey: "nav.articleCategories" },
 ];
 
 const THEME_OPTIONS: { value: ThemeMode; labelKey: MessageKey; icon: React.ReactNode }[] = [

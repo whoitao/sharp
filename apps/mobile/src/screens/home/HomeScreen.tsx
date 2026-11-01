@@ -206,6 +206,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   onPress={() => navigation.navigate('Textbook')}
                 />
               )}
+              <QuickEntry
+                icon="newspaper-outline"
+                label={t.articles}
+                onPress={() => navigation.navigate('Articles')}
+              />
             </View>
 
             <View

@@ -6,6 +6,7 @@ export const zh: Messages = {
     docs: "文档",
     about: "关于",
     github: "GitHub",
+    articles: "文章",
   },
   common: {
     backHome: "返回首页",
@@ -90,5 +91,11 @@ Web：
   notFound: {
     title: "404",
     description: "您访问的页面不存在或已被移动。",
+  },
+  articles: {
+    title: "文章",
+    subtitle: "产品动态、学习指南与备考技巧",
+    empty: "暂无已发布的文章。",
+    backToList: "返回文章列表",
   },
 };

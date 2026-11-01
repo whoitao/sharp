@@ -215,23 +215,43 @@ export default function QuestionsPage() {
     }
   };
 
-  // 题目表单的章节树：需要年级 + 科目，版本不限（树里会带出不同版本）
-  const fetchFormChapters = async (gradeId?: string, subjectId?: string) => {
-    if (!gradeId || !subjectId) {
+  // 判断章节是否存在于当前树中（用于检测跨年级/跨版本的历史数据）
+  const containsChapter = (nodes: ChapterNode[], id?: string): boolean => {
+    if (!id) return true;
+    return nodes.some(
+      (n) => n.id === id || containsChapter(n.children || [], id),
+    );
+  };
+
+  // 题目表单的章节树：需要科目，年级用于收窄范围（树里会带出不同版本）
+  // 编辑时若题目章节不在当前年级的树里（跨国版本/考题挂低年级章节），回退到该科目全量章节，避免下拉框显示原始 ID
+  const fetchFormChapters = async (gradeId?: string, subjectId?: string, ensureChapterId?: string) => {
+    if (!subjectId) {
       setChapterTree([]);
       return;
     }
     const token = localStorage.getItem("admin_token");
-    try {
-      const res = await fetch(
-        `/api/admin/chapters?gradeId=${gradeId}&subjectId=${subjectId}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      const data = await res.json();
-      setChapterTree(Array.isArray(data) ? data : []);
-    } catch {
-      setChapterTree([]);
+    const loadTree = async (url: string): Promise<ChapterNode[]> => {
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    };
+
+    let tree = await loadTree(
+      gradeId
+        ? `/api/admin/chapters?gradeId=${gradeId}&subjectId=${subjectId}`
+        : `/api/admin/chapters?subjectId=${subjectId}`,
+    );
+    if (gradeId && !containsChapter(tree, ensureChapterId)) {
+      tree = await loadTree(`/api/admin/chapters?subjectId=${subjectId}`);
     }
+    setChapterTree(tree);
   };
 
   const fetchKnowledgePoints = async (subjectId?: string) => {
@@ -322,8 +342,10 @@ export default function QuestionsPage() {
 
   // 表单里的教材章节树随「年级 + 科目」联动；切换时清空已选章节，避免跨版本错挂
   const lastFormChapterKeyRef = useRef<string>("");
+  // 编辑时需保证章节能在下拉中解析出名称（含跨年级挂载的考试题）
+  const editChapterIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    fetchFormChapters(formGradeId, formSubjectId);
+    fetchFormChapters(formGradeId, formSubjectId, editChapterIdRef.current);
     const key = `${formGradeId ?? ""}|${formSubjectId ?? ""}`;
     if (lastFormChapterKeyRef.current === key) return;
     lastFormChapterKeyRef.current = key;
@@ -358,6 +380,7 @@ export default function QuestionsPage() {
     setFormSubjectId(undefined);
     setFormGradeId(undefined);
     lastFormChapterKeyRef.current = "|";
+    editChapterIdRef.current = undefined;
     questionForm.setFieldsValue({
       gradeId: selectedGradeId,
       subjectId: undefined,
@@ -430,6 +453,7 @@ export default function QuestionsPage() {
     const nextSubjectId = q.subjectId || undefined;
     const nextGradeId = q.gradeId || undefined;
     lastFormChapterKeyRef.current = `${nextGradeId ?? ""}|${nextSubjectId ?? ""}`;
+    editChapterIdRef.current = q.chapterId || undefined;
     if (nextSubjectId !== formSubjectId) {
       skipSubjectClearRef.current = true;
       setFormSubjectId(nextSubjectId);
@@ -452,6 +476,8 @@ export default function QuestionsPage() {
           ? q.options.map((o) => ({ ...o }))
           : DEFAULT_OPTIONS.map((o) => ({ ...o })),
     });
+    // 年级/科目未变化时上面的 effect 不会重跑，这里显式保证当前章节能解析出名称
+    void fetchFormChapters(nextGradeId, nextSubjectId, q.chapterId || undefined);
   };
 
   const openEdit = (q: QuestionItem) => {
@@ -738,78 +764,90 @@ export default function QuestionsPage() {
       initialValues={{ type: "1", difficulty: 1, score: 1, sortOrder: 0 }}
       onFinish={isEdit ? handleUpdate : handleCreate}
     >
-      {/* 左右布局：左侧 3（基础属性） / 右侧 6（题目内容、选项、解析） */}
+      {/* 左右布局各占 50%：左侧基础属性 / 右侧题目内容、选项、解析 */}
       <Row gutter={[24, 0]}>
-        <Col xs={24} md={8}>
-          <Form.Item label={t("questions.subject")} name="subjectId">
-            <Select
-              showSearch
-              allowClear
-              options={subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }))}
-              placeholder={t("questions.subjectPlaceholder")}
-              onChange={(v) => setFormSubjectId(v)}
-              optionRender={(opt: any) => (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
-                  {opt.label}
-                </span>
-              )}
-              labelRender={(opt: any) => (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
-                  {opt.label}
-                </span>
-              )}
-            />
-          </Form.Item>
+        <Col xs={24} md={12}>
+          {/* 第一行：科目 + 类型 */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label={t("questions.subject")} name="subjectId">
+                <Select
+                  showSearch
+                  allowClear
+                  options={subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }))}
+                  placeholder={t("questions.subjectPlaceholder")}
+                  onChange={(v) => setFormSubjectId(v)}
+                  optionRender={(opt: any) => (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
+                      {opt.label}
+                    </span>
+                  )}
+                  labelRender={(opt: any) => (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
+                      {opt.label}
+                    </span>
+                  )}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label={t("questions.type")} name="type">
+                <Select
+                  options={[
+                    { value: "1", label: t("questions.typeSingle") },
+                    { value: "2", label: t("questions.typeMultiple") },
+                    { value: "3", label: t("questions.typeTrueFalse") },
+                    { value: "4", label: t("questions.typeFillBlank") },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Form.Item
-            label={t("questions.grade")}
-            name="gradeId"
-            rules={[{ required: true, message: t("questions.gradeRequired") }]}
-          >
-            {/* 年级按学段分组，选一次即可：分类由年级推导，不再单独选择 */}
-            <Select
-              showSearch={{ optionFilterProp: "label" }}
-              placeholder={t("questions.gradePlaceholder")}
-              options={stageGroups(grades)}
-              onChange={(v) => setFormGradeId(v)}
-            />
-          </Form.Item>
-
-          <Form.Item label={t("questions.type")} name="type">
-            <Select
-              options={[
-                { value: "1", label: t("questions.typeSingle") },
-                { value: "2", label: t("questions.typeMultiple") },
-                { value: "3", label: t("questions.typeTrueFalse") },
-                { value: "4", label: t("questions.typeFillBlank") },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item label={t("questions.chapter")} name="chapterId">
-            <TreeSelect
-              allowClear
-              treeData={chapterTree.map(function convert(node: ChapterNode): any {
-                return {
-                  value: node.id,
-                  title: `${node.name}${node.level === 1 ? "（册）" : ""}`,
-                  key: node.id,
-                  children: node.children?.map(convert) || [],
-                };
-              })}
-              showSearch={{ treeNodeFilterProp: "title" }}
-              placeholder={
-                formGradeId && formSubjectId
-                  ? t("questions.chapterPlaceholder")
-                  : t("questions.selectGradeFirst")
-              }
-              disabled={!formGradeId || !formSubjectId}
-              treeDefaultExpandAll
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
+          {/* 第二行：年级 + 教材章节 */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label={t("questions.grade")}
+                name="gradeId"
+                rules={[{ required: true, message: t("questions.gradeRequired") }]}
+              >
+                {/* 年级按学段分组，选一次即可：分类由年级推导，不再单独选择 */}
+                <Select
+                  showSearch={{ optionFilterProp: "label" }}
+                  placeholder={t("questions.gradePlaceholder")}
+                  options={stageGroups(grades)}
+                  onChange={(v) => setFormGradeId(v)}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label={t("questions.chapter")} name="chapterId">
+                <TreeSelect
+                  allowClear
+                  treeData={chapterTree.map(function convert(node: ChapterNode): any {
+                    return {
+                      value: node.id,
+                      title: `${node.name}${node.level === 1 ? "（册）" : ""}`,
+                      key: node.id,
+                      children: node.children?.map(convert) || [],
+                    };
+                  })}
+                  showSearch={{ treeNodeFilterProp: "title" }}
+                  placeholder={
+                    formGradeId && formSubjectId
+                      ? t("questions.chapterPlaceholder")
+                      : t("questions.selectGradeFirst")
+                  }
+                  disabled={!formGradeId || !formSubjectId}
+                  treeDefaultExpandAll
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item label={t("questions.tags")} name="tagIds">
             <Select
@@ -881,7 +919,7 @@ export default function QuestionsPage() {
           </Form.Item>
         </Col>
 
-        <Col xs={24} md={16}>
+        <Col xs={24} md={12}>
           <Form.Item
             label={t("questions.content")}
             name="content"
@@ -895,24 +933,34 @@ export default function QuestionsPage() {
               <Form.Item label={t("questions.options")}>
                 <Space orientation="vertical" style={{ width: "100%" }} size={8}>
                   {fields.map((field) => (
-                    <Space key={field.key} align="baseline" style={{ width: "100%" }}>
+                    <div
+                      key={field.key}
+                      style={{ display: "flex", alignItems: "flex-start", gap: 8, width: "100%" }}
+                    >
                       <Form.Item name={[field.name, "optionKey"]} noStyle>
-                        <Input style={{ width: 56 }} maxLength={1} />
+                        <Input style={{ width: 48, flexShrink: 0 }} maxLength={1} />
                       </Form.Item>
                       <Form.Item name={[field.name, "content"]} noStyle>
-                        <RichTextEditor
-                          compact
-                          minHeight={28}
-                          style={{ width: 380 }}
-                        />
+                        {/* 宽度自适应：随左右 50% 布局收缩，不再固定 380px 造成溢出 */}
+                        <RichTextEditor compact minHeight={28} style={{ flex: 1, minWidth: 0 }} />
                       </Form.Item>
-                      <Form.Item name={[field.name, "isCorrect"]} valuePropName="checked" noStyle>
-                        <Checkbox>{t("questions.correct")}</Checkbox>
-                      </Form.Item>
-                      <Button type="text" danger size="small" onClick={() => remove(field.name)}>
-                        {t("questions.remove")}
-                      </Button>
-                    </Space>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          flexShrink: 0,
+                          paddingTop: 6,
+                        }}
+                      >
+                        <Form.Item name={[field.name, "isCorrect"]} valuePropName="checked" noStyle>
+                          <Checkbox>{t("questions.correct")}</Checkbox>
+                        </Form.Item>
+                        <Button type="text" danger size="small" onClick={() => remove(field.name)}>
+                          {t("questions.remove")}
+                        </Button>
+                      </div>
+                    </div>
                   ))}
                   <Button
                     type="dashed"

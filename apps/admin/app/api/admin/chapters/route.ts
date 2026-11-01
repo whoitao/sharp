@@ -30,11 +30,13 @@ export async function GET(request: NextRequest) {
   const gradeId = url.searchParams.get("gradeId");
   const subjectId = url.searchParams.get("subjectId");
   const publisherId = url.searchParams.get("publisherId");
-  if (!gradeId) return NextResponse.json({ error: "gradeId required" }, { status: 400 });
+  // gradeId 可省略：省略时按科目返回全部年级的章节，供编辑弹窗解析跨年级章节的名称
+  if (!gradeId && !subjectId)
+    return NextResponse.json({ error: "gradeId or subjectId required" }, { status: 400 });
 
   const all = await prisma.chapter.findMany({
     where: {
-      gradeId: BigInt(gradeId),
+      gradeId: gradeId ? BigInt(gradeId) : undefined,
       subjectId: subjectId ? BigInt(subjectId) : undefined,
       publisherId: publisherId ? BigInt(publisherId) : undefined,
     },

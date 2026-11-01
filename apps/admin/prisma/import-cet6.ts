@@ -4,9 +4,10 @@ import * as path from "path";
 
 const prisma = new PrismaClient();
 
-const GRADE_ID = BigInt(13);
+const GRADE_ID = BigInt(17); // 本科（大学学段）
 const SUBJECT_ID = BigInt(3);
-const KNOWLEDGE_POINT_ID = BigInt(11); // CET-6
+const KNOWLEDGE_POINT_ID = BigInt(1767); // CET-6 词汇
+const SOURCE = "vocab";
 const OPTION_KEYS = ["A", "B", "C", "D"] as const;
 
 interface DictWord {
@@ -65,6 +66,7 @@ async function main() {
     difficulty: 1,
     score: 1,
     sortOrder: 0,
+    source: SOURCE,
   }));
 
   // 5. 批量插入题目

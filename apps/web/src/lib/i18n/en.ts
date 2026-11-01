@@ -4,6 +4,7 @@ export const en = {
     docs: "Docs",
     about: "About",
     github: "GitHub",
+    articles: "Articles",
   },
   common: {
     backHome: "Back to Home",
@@ -108,6 +109,12 @@ Web:
   notFound: {
     title: "404",
     description: "The page you are looking for does not exist or has been moved.",
+  },
+  articles: {
+    title: "Articles",
+    subtitle: "Product updates, learning guides and study tips",
+    empty: "No articles published yet.",
+    backToList: "Back to Articles",
   },
 };
 

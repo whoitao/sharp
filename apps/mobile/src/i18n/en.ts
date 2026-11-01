@@ -56,6 +56,11 @@ export const en: TranslationKeys = {
   studyByKnowledge: 'Study by Topic',
   homeReport: 'Study Report',
 
+  // Articles
+  articles: 'Articles',
+  articleEmpty: 'No articles yet',
+  articleViews: (num: number) => `${formatCount(num)} views`,
+
   // Study
   studySelectScope: 'Select Grade & Subject',
   studySelectSubject: 'Select Subject',

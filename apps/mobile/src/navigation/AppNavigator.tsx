@@ -22,6 +22,10 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 // Home screens
 import HomeScreen from '../screens/home/HomeScreen';
 
+// Article screens
+import ArticleDetailScreen from '../screens/articles/ArticleDetailScreen';
+import ArticlesScreen from '../screens/articles/ArticlesScreen';
+
 // Study screens
 import QuizResultScreen from '../screens/study/QuizResultScreen';
 import QuizScreen from '../screens/study/QuizScreen';
@@ -105,6 +109,9 @@ export type HomeStackParamList = {
   Textbook: undefined;
   TextbookUnits: TextbookUnitsParams;
   Quiz: QuizParams;
+  // 文章：从首页快捷入口进入，保持在 HomeTab 内
+  Articles: undefined;
+  ArticleDetail: { id: string; title?: string };
 };
 
 export type StudyStackParamList = {
@@ -233,6 +240,16 @@ const HomeStackNavigator: React.FC = () => {
         headerBackVisible: false,
         headerLeft: () => null,
       })}
+    />
+    <HomeStack.Screen
+      name="Articles"
+      component={withGradient(ArticlesScreen)}
+      options={{ title: t.articles }}
+    />
+    <HomeStack.Screen
+      name="ArticleDetail"
+      component={withGradient(ArticleDetailScreen)}
+      options={{ title: t.articles }}
     />
     </HomeStack.Navigator>
   );

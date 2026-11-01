@@ -376,6 +376,22 @@ export interface UpdateSettingsRequest {
   density?: Density;
 }
 
+/** 文章列表项（移动端 channel=mobile，已发布） */
+export interface ArticleListItem {
+  id: string;
+  title: string;
+  summary: string | null;
+  publishedAt: string | null;
+  viewCount: number;
+  categoryId: string;
+  categoryName: string;
+}
+
+/** 文章详情：在列表项基础上带富文本正文 */
+export interface ArticleDetail extends ArticleListItem {
+  content: string;
+}
+
 /**
  * Supabase Storage 公开桶的默认名字（apps/admin 里 env 覆盖）。
  * 和 apps/admin/lib/storage.ts 保持一致。
