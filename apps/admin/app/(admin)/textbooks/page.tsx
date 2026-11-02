@@ -2,7 +2,7 @@
 
 import { usePageActions } from "@/components/page-actions";
 import IonIcon from "@/components/IonIcon";
-import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import { CloudDownloadOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
 import {
   App,
   Button,
@@ -72,9 +72,14 @@ export default function TextbooksPage() {
   const [editing, setEditing] = useState<Textbook | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [fetchingCover, setFetchingCover] = useState(false);
+  // 抓取封面时跳过前 N 张候选，连续点击可换一张
+  const [coverFetchOffset, setCoverFetchOffset] = useState(0);
   // undefined=不变，null=移除，string=新上传的存储路径
   const [pendingCoverPath, setPendingCoverPath] = useState<string | null | undefined>(undefined);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  // 等客户端渲染完成后再让弹窗常驻，避免 forceRender 在 SSR 阶段渲染出服务端不存在的 DOM 导致 hydration 报错
+  const [formReady, setFormReady] = useState(false);
   const [form] = Form.useForm();
   const formStageId = Form.useWatch("stageId", form);
 
@@ -113,6 +118,10 @@ export default function TextbooksPage() {
   };
 
   useEffect(() => {
+    setFormReady(true);
+  }, []);
+
+  useEffect(() => {
     loadDictionaries();
   }, []);
 
@@ -127,11 +136,13 @@ export default function TextbooksPage() {
     form.setFieldsValue({ semester: 1, sortOrder: 0 });
     setPendingCoverPath(undefined);
     setCoverPreview(null);
+    setCoverFetchOffset(0);
     setModalOpen(true);
   };
 
   const openEdit = (row: Textbook) => {
     setEditing(row);
+    form.resetFields();
     form.setFieldsValue({
       name: row.name,
       stageId: row.stageId,
@@ -145,6 +156,7 @@ export default function TextbooksPage() {
     });
     setPendingCoverPath(undefined);
     setCoverPreview(row.coverUrl);
+    setCoverFetchOffset(0);
     setModalOpen(true);
   };
 
@@ -166,6 +178,42 @@ export default function TextbooksPage() {
       message.error(e.message);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleFetchCover = async () => {
+    const v = form.getFieldsValue();
+    if (!editing && (!v.stageId || !v.gradeId || !v.publisherId || !v.subjectId || v.semester === undefined)) {
+      message.warning("请先选择学段、年级、学期、科目和版本");
+      return;
+    }
+
+    setFetchingCover(true);
+    try {
+      const body: Record<string, unknown> = { offset: coverFetchOffset };
+      if (editing) {
+        body.textbookId = editing.id;
+      } else {
+        body.subjectName = subjects.find((s) => s.id === v.subjectId)?.name;
+        body.publisherName = publishers.find((p) => p.id === v.publisherId)?.name;
+        body.gradeName = grades.find((g) => g.id === v.gradeId)?.name;
+        body.semester = v.semester;
+      }
+      const r = await fetch("/api/admin/textbooks/fetch-cover", {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: authHeaders({ "Content-Type": "application/json" }),
+      });
+      const json = await r.json().catch(() => null);
+      if (!r.ok) throw new Error(json?.error ?? "抓取失败");
+      setPendingCoverPath(json.path);
+      setCoverPreview(json.url);
+      setCoverFetchOffset((n) => n + 1);
+      message.success("已抓取封面，不满意可再点击一次换一张");
+    } catch (e: any) {
+      message.error(e.message);
+    } finally {
+      setFetchingCover(false);
     }
   };
 
@@ -355,7 +403,7 @@ export default function TextbooksPage() {
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
         confirmLoading={saving}
-        destroyOnHidden
+        forceRender={formReady}
         width={720}
       >
         <Form form={form} layout="vertical" preserve={false}>
@@ -466,7 +514,10 @@ export default function TextbooksPage() {
                     input.click();
                   }}
                 >
-                  上传封面
+                  上传
+                </Button>
+                <Button icon={<CloudDownloadOutlined />} loading={fetchingCover} onClick={handleFetchCover}>
+                  抓取
                 </Button>
                 {(coverPreview || pendingCoverPath !== undefined) && (
                   <Button
