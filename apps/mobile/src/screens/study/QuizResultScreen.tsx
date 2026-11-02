@@ -1,3 +1,4 @@
+import { StackActions } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { StudyRecordSummary } from '@sharp/shared';
@@ -147,14 +148,32 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   };
 
   const handleContinue = () => {
-    dispatch(resetStudy());
     if (isRecordView) {
       // 从学习记录进入时，返回来时所在栈的记录列表（首页或「我的」）
+      dispatch(resetStudy());
       navigation.goBack();
-    } else {
-      // 教材章节练习返回到章节单元列表，考纲练习回到学习页
-      (navigation as any).popTo(continueTo ?? 'Study');
+      return;
     }
+
+    // 不同 Tab 的栈里注册的路由不一样（Home/Profile 都没有 Study），
+    // 用 popTo 时一旦路由名不在当前栈里就会变成未处理的 action 而报错。
+    // 这里直接按当前栈的路由表算出需要回退的层数，缺失目标时兜底回栈底。
+    const target = continueTo ?? 'Study';
+    const routes = navigation.getState().routes as { name: string }[];
+    let popCount = routes.length - 1;
+    for (let i = routes.length - 1; i >= 0; i -= 1) {
+      if (routes[i].name === target) {
+        popCount = routes.length - 1 - i;
+        break;
+      }
+    }
+
+    if (popCount > 0) {
+      navigation.dispatch(StackActions.pop(popCount));
+    } else {
+      navigation.goBack();
+    }
+    dispatch(resetStudy());
   };
 
   const toggleWrong = (questionId: string) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useThemeMode } from "@/components/antd-providers";
+import IonIcon from "@/components/IonIcon";
 import { useLocale } from "@/lib/i18n";
 import {
   AimOutlined,
@@ -71,6 +72,7 @@ interface StatsData {
 interface Option {
   id: string;
   name: string;
+  icon?: string | null;
 }
 
 interface GradeOption extends Option {
@@ -404,7 +406,23 @@ export default function DashboardPage() {
             placeholder={t("stats.allSubjects")}
             value={subjectId}
             onChange={(value) => setSubjectId(value ?? null)}
-            options={subjects.map((subject) => ({ value: subject.id, label: subject.name }))}
+            options={subjects.map((subject) => ({
+              value: subject.id,
+              label: subject.name,
+              icon: subject.icon,
+            }))}
+            optionRender={(opt: any) => (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <IonIcon name={opt.data?.icon} size={18} color={palette.accentStrong} />
+                {opt.label}
+              </span>
+            )}
+            labelRender={(opt: any) => (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <IonIcon name={opt.icon} size={16} color={palette.accentStrong} />
+                {opt.label}
+              </span>
+            )}
           />
         </div>
 

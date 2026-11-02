@@ -14,6 +14,7 @@ export const en = {
     users: "Users",
     admins: "Admins",
     userManagement: "User Management",
+    questionManagement: "Question Management",
     subjects: "Subjects",
     knowledgePoints: "Knowledge Points",
     questions: "Questions",

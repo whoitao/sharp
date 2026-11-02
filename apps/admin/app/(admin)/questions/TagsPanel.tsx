@@ -36,7 +36,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
   return { Authorization: `Bearer ${token}`, ...extra };
 }
 
-export default function TagsPage() {
+export default function TagsPanel() {
   const { message, modal } = App.useApp();
   const [data, setData] = useState<QuestionTag[]>([]);
   const [loading, setLoading] = useState(false);

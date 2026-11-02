@@ -37,7 +37,7 @@ interface SubjectFormValues {
   sortOrder: number;
 }
 
-export default function SubjectsPage() {
+export default function SubjectsPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);

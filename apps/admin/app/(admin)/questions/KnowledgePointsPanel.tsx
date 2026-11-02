@@ -64,7 +64,7 @@ interface EditFormValues {
   sortOrder: number;
 }
 
-export default function KnowledgePointsPage() {
+export default function KnowledgePointsPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
   const [tree, setTree] = useState<KPNode[]>([]);

@@ -17,7 +17,6 @@ import {
   ReadOutlined,
   SettingOutlined,
   SunOutlined,
-  TagsOutlined,
   TeamOutlined,
   UnorderedListOutlined
 } from "@ant-design/icons";
@@ -40,12 +39,9 @@ const { Sider, Content } = Layout;
 const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] = [
   { key: "/dashboard", icon: <DashboardOutlined />, labelKey: "nav.dashboard" },
   { key: "/users", icon: <TeamOutlined />, labelKey: "nav.userManagement" },
-  { key: "/subjects", icon: <BookOutlined />, labelKey: "nav.subjects" },
-  { key: "/knowledge-points", icon: <TagsOutlined />, labelKey: "nav.knowledgePoints" },
-  { key: "/questions", icon: <QuestionCircleOutlined />, labelKey: "nav.questions" },
+  { key: "/questions", icon: <QuestionCircleOutlined />, labelKey: "nav.questionManagement" },
   { key: "/textbooks", icon: <BookOutlined />, labelKey: "nav.textbookManagement" },
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.gradeManagement" },
-  { key: "/tags", icon: <TagsOutlined />, labelKey: "nav.tags" },
   { key: "/articles", icon: <ReadOutlined />, labelKey: "nav.articles" },
 ];
 

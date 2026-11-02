@@ -16,6 +16,7 @@ export const zh: Messages = {
     users: "用户",
     admins: "管理员",
     userManagement: "用户管理",
+    questionManagement: "问题管理",
     subjects: "科目",
     knowledgePoints: "知识点",
     questions: "题目",
@@ -141,7 +142,7 @@ export const zh: Messages = {
     updateFailed: "更新科目失败",
   },
   questions: {
-    title: "题目",
+    title: "问题",
     addQuestion: "新建题目",
     downloadTemplate: "下载导入模版",
     csvImport: "CSV 导入",
