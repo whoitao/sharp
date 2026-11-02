@@ -1,27 +1,24 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
-import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type {
+  Chapter,
   Grade,
   KnowledgePoint,
-  QuestionTag,
-  StudyRecordSummary,
   Subject,
-  UnitInfo
+  TextbookCatalog,
 } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
-  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ScopeSelector from '../../components/ScopeSelector';
-import StudyFilterBar from '../../components/StudyFilterBar';
-import UnitItem from '../../components/UnitItem';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -29,8 +26,6 @@ import type { StudyStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { updateSettings } from '../../stores/settingsSlice';
-import { fetchQuestions } from '../../stores/studySlice';
-import { hasStudyCache } from '../../utils/studyCache';
 
 type NavigationProp = NativeStackNavigationProp<StudyStackParamList, 'Study'>;
 
@@ -39,143 +34,107 @@ interface StudyScreenProps {
   route: RouteProp<StudyStackParamList, 'Study'>;
 }
 
-// 单元列表每页加载数量（触底翻页）
-const UNITS_PAGE_SIZE = 10;
+type StudyMode = 'chapter' | 'knowledge';
 
-const keyExtractor = (item: UnitInfo) => item.unitIndex.toString();
+interface TreeRow {
+  id: string;
+  name: string;
+  depth: number;
+  path: string;
+  questionCount: number;
+}
+
+interface TreeSource {
+  id: string;
+  name: string;
+  children?: TreeSource[];
+  questionCount?: number;
+}
+
+/** 章节树 / 知识点树拍平成带缩进的行，供列表直接渲染 */
+function flattenTree<T extends TreeSource>(
+  nodes: T[],
+  depth = 0,
+  parentPath = '',
+): TreeRow[] {
+  return nodes.flatMap((node) => {
+    const path = parentPath ? `${parentPath} / ${node.name}` : node.name;
+    return [
+      {
+        id: node.id,
+        name: node.name,
+        depth,
+        path,
+        questionCount: node.questionCount ?? 0,
+      },
+      ...flattenTree((node.children ?? []) as T[], depth + 1, path),
+    ];
+  });
+}
 
 const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
-  const { spacing, font } = useDensity();
+  const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { gradeId: savedGradeId, subjectId: savedSubjectId, publisherId: savedPublisherId } =
-    useSelector((state: RootState) => state.settings);
+  const {
+    gradeId: savedGradeId,
+    subjectId: savedSubjectId,
+    publisherId: savedPublisherId,
+    textbookId: savedTextbookId,
+  } = useSelector((state: RootState) => state.settings);
 
+  const [mode, setMode] = useState<StudyMode>('chapter');
+  const [loading, setLoading] = useState(true);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
-  const [tags, setTags] = useState<QuestionTag[]>([]);
+  const [catalog, setCatalog] = useState<TextbookCatalog | null>(null);
 
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null);
-  const [selectedKP, setSelectedKP] = useState<KnowledgePoint | null>(null);
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
-  const [units, setUnits] = useState<UnitInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [initialLoading, setInitialLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [pressingUnitIndex, setPressingUnitIndex] = useState<number | null>(null);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [chaptersLoading, setChaptersLoading] = useState(false);
+  const [kps, setKps] = useState<KnowledgePoint[]>([]);
+  const [kpsLoading, setKpsLoading] = useState(false);
 
   // 首次进入时用于恢复全局学习范围；后续用户修改不再触发重新拉取字典
   const initialScopeRef = useRef({ gradeId: savedGradeId, subjectId: savedSubjectId });
 
-  const fetchInitialData = useCallback(async () => {
-    // 仅在无有效缓存时显示 loading，缓存命中则静默刷新
-    const cached = await hasStudyCache();
-    if (!cached) setInitialLoading(true);
-    try {
-      const [subs, gradeList, tagList] = await Promise.all([
-        api.getSubjects(),
-        api.getGrades(),
-        api.getTags(),
-      ]);
-      setSubjects(subs);
-      setGrades(gradeList);
-      setTags(tagList);
-      // 恢复全局「年级 + 科目」学习范围
-      const { gradeId, subjectId } = initialScopeRef.current;
-      if (gradeId) {
-        const grade = gradeList.find((g) => g.id === gradeId);
-        if (grade) setSelectedGrade(grade);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [subs, gradeList, catalogData] = await Promise.all([
+          api.getSubjects(),
+          api.getGrades(),
+          api.getTextbookCatalog().catch(() => null),
+        ]);
+        if (cancelled) return;
+        setSubjects(subs);
+        setGrades(gradeList);
+        setCatalog(catalogData);
+        const { gradeId, subjectId } = initialScopeRef.current;
+        if (gradeId) {
+          const grade = gradeList.find((g) => g.id === gradeId);
+          if (grade) setSelectedGrade(grade);
+        }
+        if (subjectId) {
+          const subject = subs.find((s) => s.id === subjectId);
+          if (subject) setSelectedSubject(subject);
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      if (subjectId) {
-        const subject = subs.find((s) => s.id === subjectId);
-        if (subject) setSelectedSubject(subject);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setInitialLoading(false);
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // 单元列表的筛选键：科目 + 知识点必选，年级/教材版本/标签为可选横向筛选
-  const buildUnitsKey = useCallback(
-    (
-      sub: Subject | null,
-      kp: KnowledgePoint | null,
-      grade: Grade | null,
-      publisher: string | null,
-      tagIds: string[],
-    ): string | null =>
-      sub && kp
-        ? `${sub.id}|${kp.id}|${grade?.id ?? 'all'}|${publisher ?? 'all'}|${tagIds.slice().sort().join(',')}`
-        : null,
-    []
-  );
-
-  // 记录最近一次成功加载单元列表时的筛选组合，用于区分“筛选变化”和“回到页面”两种刷新
-  const lastUnitsKeyRef = useRef<string | null>(null);
-  // 分页进度（用 ref 避免触底回调/静默刷新把它们列为依赖而重复触发）
-  const totalUnitsRef = useRef(0);
-  const loadedPagesRef = useRef(0);
-  const loadingMoreRef = useRef(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  // 按页加载单元列表：page=1 覆盖列表，page>1 触底追加
-  // silent=true 时不显示 loading、失败时保留旧数据（用于回到页面时的静默刷新）
-  const fetchUnits = useCallback(async (pageToLoad: number, opts?: { silent?: boolean }) => {
-    // 科目与知识点必选
-    if (!selectedSubject || !selectedKP) {
-      setUnits([]);
-      totalUnitsRef.current = 0;
-      loadedPagesRef.current = 0;
-      setLoading(false);
-      return;
-    }
-    const silent = opts?.silent === true;
-    if (!silent) {
-      if (pageToLoad === 1) setLoading(true);
-      else setLoadingMore(true);
-    }
-    try {
-      const { units: pageUnits, totalUnits } = await api.getUnits({
-        subjectId: selectedSubject.id,
-        gradeId: selectedGrade?.id ?? null,
-        publisherId: savedPublisherId ?? null,
-        knowledgePointId: selectedKP.id,
-        tagIds: selectedTagIds,
-        page: pageToLoad,
-        pageSize: UNITS_PAGE_SIZE,
-      });
-      totalUnitsRef.current = totalUnits;
-      loadedPagesRef.current = pageToLoad;
-      setUnits((prev) => (pageToLoad === 1 ? pageUnits : [...prev, ...pageUnits]));
-      lastUnitsKeyRef.current = buildUnitsKey(
-        selectedSubject,
-        selectedKP,
-        selectedGrade,
-        savedPublisherId ?? null,
-        selectedTagIds,
-      );
-    } catch {
-      if (!silent && pageToLoad === 1) setUnits([]);
-    } finally {
-      if (!silent) {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-      setRefreshing(false);
-    }
-  }, [selectedSubject, selectedGrade, selectedKP, savedPublisherId, selectedTagIds, buildUnitsKey]);
-
-  useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
-
   // 首页点学科行进入：科目列表到位后自动选中该学科，然后立刻清掉参数
-  // （清掉后再次点同一学科还能触发；已选知识点的清空由 StudyFilterBar 负责）
   const requestedSubjectId = route.params?.subjectId;
   useEffect(() => {
     if (!requestedSubjectId || subjects.length === 0) return;
@@ -184,115 +143,109 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     if (target) setSelectedSubject(target);
   }, [requestedSubjectId, subjects, navigation]);
 
-  // 筛选变化时统一从这里加载第一页（带 loading）
-  useEffect(() => {
-    fetchUnits(1);
-  }, [fetchUnits]);
+  // 当前全局教材（用于「按章节学」），并要求与当前年级/科目一致
+  const scopeTextbook = useMemo(() => {
+    if (!catalog || !savedTextbookId) return null;
+    const textbook = catalog.stages
+      .flatMap((stage) => stage.subjects.flatMap((subject) => subject.textbooks))
+      .find((item) => item.id === savedTextbookId);
+    if (!textbook) return null;
+    if (selectedSubject && textbook.subjectId !== selectedSubject.id) return null;
+    if (selectedGrade && textbook.gradeId !== selectedGrade.id) return null;
+    return textbook;
+  }, [catalog, savedTextbookId, selectedSubject, selectedGrade]);
 
-  // 回到页面时静默刷新已加载页的单元进度（从 Quiz 完成返回时最关键）；
-  // 仅当筛选组合与上次成功加载一致时才刷新——筛选变化由上面的 useEffect 负责，
-  // 否则选中科目/知识点时同一接口会被连发两次
-  useFocusEffect(
-    useCallback(() => {
-      const key = buildUnitsKey(
-        selectedSubject,
-        selectedKP,
-        selectedGrade,
-        savedPublisherId ?? null,
-        selectedTagIds,
-      );
-      if (!key || key !== lastUnitsKeyRef.current) return;
-      const pages = loadedPagesRef.current;
-      if (pages < 1) return;
-      (async () => {
-        try {
-          const refreshed: UnitInfo[] = [];
-          for (let p = 1; p <= pages; p += 1) {
-            const { units: pageUnits, totalUnits } = await api.getUnits({
-              subjectId: selectedSubject!.id,
-              gradeId: selectedGrade?.id ?? null,
-              publisherId: savedPublisherId ?? null,
-              knowledgePointId: selectedKP!.id,
-              tagIds: selectedTagIds,
-              page: p,
-              pageSize: UNITS_PAGE_SIZE,
-            });
-            refreshed.push(...pageUnits);
-            totalUnitsRef.current = totalUnits;
-            if (pageUnits.length === 0) break;
-          }
-          setUnits(refreshed);
-        } catch {
-          // 静默刷新失败时保留旧数据
-        }
-      })();
-    }, [selectedSubject, selectedGrade, selectedKP, savedPublisherId, selectedTagIds, buildUnitsKey])
+  // 按章节学：加载当前教材的章节树
+  useEffect(() => {
+    if (mode !== 'chapter' || !scopeTextbook) {
+      setChapters([]);
+      return;
+    }
+    let cancelled = false;
+    setChaptersLoading(true);
+    api
+      .getChaptersByTextbook(scopeTextbook.id)
+      .then((tree) => {
+        if (!cancelled) setChapters(tree);
+      })
+      .catch(() => {
+        if (!cancelled) setChapters([]);
+      })
+      .finally(() => {
+        if (!cancelled) setChaptersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, scopeTextbook]);
+
+  // 按知识点学：按 科目 + 年级 + 教材版本 拉取知识点树
+  useEffect(() => {
+    if (mode !== 'knowledge' || !selectedSubject) {
+      setKps([]);
+      return;
+    }
+    let cancelled = false;
+    setKpsLoading(true);
+    api
+      .getKnowledgePoints(
+        selectedSubject.id,
+        selectedGrade?.stageId,
+        selectedGrade?.id ?? null,
+        savedPublisherId,
+      )
+      .then((tree) => {
+        if (!cancelled) setKps(tree);
+      })
+      .catch(() => {
+        if (!cancelled) setKps([]);
+      })
+      .finally(() => {
+        if (!cancelled) setKpsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, selectedSubject, selectedGrade?.stageId, selectedGrade?.id, savedPublisherId]);
+
+  const chapterRows = useMemo(() => flattenTree(chapters), [chapters]);
+  const kpRows = useMemo(() => flattenTree(kps), [kps]);
+
+  // 顶部 tab 切换
+  const handleSwitchMode = useCallback((next: StudyMode) => {
+    setMode(next);
+  }, []);
+
+  // 按章节学：点章节进入该章节的题单列表
+  const handleChapterPress = useCallback(
+    (row: TreeRow) => {
+      if (!scopeTextbook || row.questionCount === 0) return;
+      navigation.navigate('TextbookUnits', {
+        chapterId: row.id,
+        chapterName: row.name,
+        textbookLabel: `${scopeTextbook.publisherName} · ${scopeTextbook.gradeName}${scopeTextbook.semesterLabel}`,
+        breadcrumb: row.path,
+        subjectId: scopeTextbook.subjectId,
+      });
+    },
+    [navigation, scopeTextbook]
   );
 
-  // 触底加载下一页
-  const handleLoadMore = useCallback(() => {
-    if (loading || loadingMoreRef.current) return;
-    if (!lastUnitsKeyRef.current) return;
-    if (units.length >= totalUnitsRef.current) return;
-    loadingMoreRef.current = true;
-    fetchUnits(loadedPagesRef.current + 1).finally(() => {
-      loadingMoreRef.current = false;
-    });
-  }, [fetchUnits, loading, units.length]);
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchUnits(1);
-  }, [fetchUnits]);
-
-  const handleUnitPress = useCallback(
-    async (unit: UnitInfo) => {
-      if (pressingUnitIndex !== null || !selectedSubject) return;
-      setPressingUnitIndex(unit.unitIndex);
-      const scope = {
+  // 按知识点学：点知识点进入该知识点的题单列表
+  const handleKnowledgePress = useCallback(
+    (row: TreeRow) => {
+      if (!selectedSubject || row.questionCount === 0) return;
+      navigation.navigate('KnowledgeUnits', {
+        knowledgePointId: row.id,
+        knowledgePointName: row.name,
         subjectId: selectedSubject.id,
+        subjectName: selectedSubject.name,
         gradeId: selectedGrade?.id ?? null,
-        publisherId: savedPublisherId,
-        knowledgePointId: selectedKP?.id ?? null,
-        tagIds: selectedTagIds,
-      };
-      try {
-        let previousRecord: StudyRecordSummary | null = null;
-        try {
-          previousRecord = (
-            await api.startStudy({ ...scope, unitIndex: unit.unitIndex })
-          ).previous;
-        } catch {
-          // silently proceed
-        }
-        const result = await dispatch(
-          fetchQuestions({
-            unitIndex: unit.unitIndex,
-            subjectId: scope.subjectId,
-            gradeId: scope.gradeId ?? undefined,
-            publisherId: scope.publisherId ?? undefined,
-            knowledgePointId: scope.knowledgePointId ?? undefined,
-            tagIds: scope.tagIds,
-          })
-        );
-        if (fetchQuestions.fulfilled.match(result)) {
-          navigation.navigate('Quiz', {
-            unitIndex: unit.unitIndex,
-            subjectId: scope.subjectId,
-            gradeId: scope.gradeId ?? undefined,
-            publisherId: scope.publisherId ?? undefined,
-            knowledgePointId: scope.knowledgePointId ?? undefined,
-            tagIds: scope.tagIds,
-            subjectName: selectedSubject.name,
-            knowledgePointName: selectedKP?.name,
-            previousRecord,
-          });
-        }
-      } finally {
-        setPressingUnitIndex(null);
-      }
+        publisherId: savedPublisherId ?? null,
+        scopeLabel: `${selectedSubject.name}${selectedGrade ? ` · ${selectedGrade.name}` : ''}`,
+      });
     },
-    [pressingUnitIndex, selectedSubject, selectedGrade, selectedKP, selectedTagIds, savedPublisherId, dispatch, navigation]
+    [navigation, selectedSubject, selectedGrade, savedPublisherId]
   );
 
   // 全局学习范围变更后持久化，首页/教材/记录页共用
@@ -312,17 +265,11 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     [dispatch]
   );
 
-  const handleToggleTag = useCallback((tagId: string) => {
-    setSelectedTagIds((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    );
-  }, []);
-
-  // 全局「年级 + 科目」常驻原生 header 左上角，与首页一致
+  // 全局「年级 + 科目」常驻原生 header 右上角，与首页一致
   useEffect(() => {
     navigation.setOptions({
-      headerLeft: () => (
-        <View style={{ marginLeft: 16 }}>
+      headerRight: () => (
+        <View style={{ marginRight: 16 }}>
           <ScopeSelector
             grades={grades}
             subjects={subjects}
@@ -344,87 +291,200 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     handleSelectSubject,
   ]);
 
-  const renderItem = useCallback(
-    ({ item }: { item: UnitInfo }) => (
-      <UnitItem
-        unit={item}
-        onPress={handleUnitPress}
-        loading={pressingUnitIndex === item.unitIndex}
-        disabled={pressingUnitIndex !== null}
-      />
+  const renderTreeRows = useCallback(
+    (rows: TreeRow[], onPress: (row: TreeRow) => void) => (
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderRadius: 12 * radius,
+          overflow: 'hidden',
+        }}
+      >
+        {rows.map((row, index) => {
+          const enabled = row.questionCount > 0;
+          return (
+            <TouchableOpacity
+              key={row.id}
+              activeOpacity={0.7}
+              disabled={!enabled}
+              onPress={() => onPress(row)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 12 * spacing,
+                paddingLeft: (12 + row.depth * 12) * spacing,
+                paddingRight: 12 * spacing,
+                borderBottomWidth: index === rows.length - 1 ? 0 : StyleSheet.hairlineWidth,
+                borderBottomColor: colors.borderLight,
+                opacity: enabled ? 1 : 0.45,
+              }}
+            >
+              <Text
+                style={{
+                  flex: 1,
+                  color: colors.text,
+                  fontSize: (row.depth === 0 ? 14 : 13) * font,
+                  fontWeight: row.depth === 0 ? '600' : '400',
+                }}
+                numberOfLines={1}
+              >
+                {row.name}
+              </Text>
+              <Text
+                style={{
+                  color: enabled ? colors.textSecondary : colors.textTertiary,
+                  fontSize: 11 * font,
+                  marginLeft: 6 * spacing,
+                }}
+              >
+                {enabled ? t.textbookChapterQuestions(row.questionCount) : t.noData}
+              </Text>
+              {enabled && (
+                <Ionicons
+                  name="chevron-forward"
+                  size={14 * font}
+                  color={colors.textTertiary}
+                  style={{ marginLeft: 3 * spacing }}
+                />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     ),
-    [handleUnitPress, pressingUnitIndex]
+    [colors, spacing, font, radius, t],
   );
 
-  const contentContainerStyle = useMemo(
-    () => [styles.list, { padding: 16 * spacing, paddingTop: 8 * spacing, paddingBottom: 24 * spacing }],
-    [spacing]
-  );
-
-  const listEmptyComponent = useMemo(
-    () => (
+  const renderHint = useCallback(
+    (text: string) => (
       <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
-        <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📋</Text>
+        <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📚</Text>
         <Text style={[styles.emptyText, { color: colors.textTertiary, fontSize: 16 * font }]}>
-          {selectedSubject && selectedKP ? t.studyNoUnits : t.studySelectAllFilters}
+          {text}
         </Text>
       </View>
     ),
-    [spacing, font, colors.textTertiary, selectedSubject, selectedKP, t.studyNoUnits, t.studySelectAllFilters]
+    [spacing, font, colors.textTertiary],
   );
 
-  const refreshControl = useMemo(
-    () => <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />,
-    [refreshing, onRefresh, colors.accent]
-  );
+  const renderChapterTab = () => {
+    if (!scopeTextbook) return renderHint(t.studySelectTextbookFirst);
+    if (chaptersLoading) {
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      );
+    }
+    if (chapterRows.length === 0) return renderHint(t.textbookNoChapters);
+    return (
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 * spacing }}
+      >
+        <Text style={{ color: colors.textTertiary, fontSize: 12 * font, marginBottom: 8 * spacing }}>
+          {scopeTextbook.publisherName} · {scopeTextbook.gradeName}
+          {scopeTextbook.semesterLabel}
+        </Text>
+        {renderTreeRows(chapterRows, handleChapterPress)}
+      </ScrollView>
+    );
+  };
+
+  const renderKnowledgeTab = () => {
+    if (!selectedSubject) return renderHint(t.studySelectSubjectFirst);
+    if (kpsLoading) {
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      );
+    }
+    if (kpRows.length === 0) return renderHint(t.noData);
+    return (
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 * spacing }}
+      >
+        <Text style={{ color: colors.textTertiary, fontSize: 12 * font, marginBottom: 8 * spacing }}>
+          {selectedSubject.name}
+          {selectedGrade ? ` · ${selectedGrade.name}` : ''}
+        </Text>
+        {renderTreeRows(kpRows, handleKnowledgePress)}
+      </ScrollView>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.center, { backgroundColor: 'transparent' }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <StudyFilterBar
-        subjects={subjects}
-        selectedSubject={selectedSubject}
-        selectedKP={selectedKP}
-        onSelectSubject={handleSelectSubject}
-        onSelectKP={setSelectedKP}
-        grades={grades}
-        selectedGrade={selectedGrade}
-        onSelectGrade={handleSelectGrade}
-        tags={tags}
-        selectedTagIds={selectedTagIds}
-        onToggleTag={handleToggleTag}
-        loading={initialLoading}
-        allowClear
-        hideScope
-      />
+      {/* 顶部 tab：按章节学 / 按知识点学 */}
+      <View
+        style={{
+          flexDirection: 'row',
+          marginHorizontal: 16 * spacing,
+          marginTop: 8 * spacing,
+          padding: 3 * spacing,
+          borderRadius: 10 * radius,
+          backgroundColor: colors.surfaceSecondary,
+        }}
+      >
+        {([
+          { key: 'chapter' as const, label: t.studyByChapter },
+          { key: 'knowledge' as const, label: t.studyByKnowledgePoint },
+        ]).map((tab) => {
+          const active = mode === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              activeOpacity={0.8}
+              onPress={() => handleSwitchMode(tab.key)}
+              style={{
+                flex: 1,
+                paddingVertical: 8 * spacing,
+                borderRadius: 8 * radius,
+                backgroundColor: active ? colors.surface : 'transparent',
+                alignItems: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  color: active ? colors.accent : colors.textSecondary,
+                  fontSize: 14 * font,
+                  fontWeight: active ? '600' : '400',
+                }}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.accent} />
-        </View>
-      ) : (
-        <FlatList
-          data={units}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          contentContainerStyle={contentContainerStyle}
-          refreshControl={refreshControl}
-          ListEmptyComponent={listEmptyComponent}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.3}
-          ListFooterComponent={
-            loadingMore ? (
-              <ActivityIndicator style={{ paddingVertical: 12 * spacing }} color={colors.accent} />
-            ) : null
-          }
-        />
-      )}
+      <View
+        style={{
+          flex: 1,
+          paddingHorizontal: 16 * spacing,
+          paddingTop: 12 * spacing,
+        }}
+      >
+        {mode === 'chapter' ? renderChapterTab() : renderKnowledgeTab()}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { padding: 16, paddingTop: 8, paddingBottom: 24 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },

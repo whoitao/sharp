@@ -1,4 +1,5 @@
-import type { Question } from '@sharp/shared';
+import { useNavigation } from '@react-navigation/native';
+import type { Grade, Question, Subject } from '@sharp/shared';
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,11 +10,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import RichTextView from '../../components/RichTextView';
+import ScopeSelector from '../../components/ScopeSelector';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import { api } from '../../services/api';
+import type { AppDispatch, RootState } from '../../stores';
+import { updateSettings } from '../../stores/settingsSlice';
 import type { ThemeColors } from '../../theme/colors';
 import { htmlToText } from '../../utils/richText';
 
@@ -142,18 +147,88 @@ const WrongQuestionCard = memo(function WrongQuestionCard({
 });
 
 const WrongQuestionsScreen: React.FC = () => {
+  const navigation = useNavigation();
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
+  const { gradeId, subjectId } = useSelector((state: RootState) => state.settings);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
+  // 全局「年级 + 科目」选择器：与首页/学习页共用一个学习范围
+  const selectedGrade = useMemo(
+    () => grades.find((grade) => grade.id === gradeId) ?? null,
+    [grades, gradeId],
+  );
+  const selectedSubject = useMemo(
+    () => subjects.find((subject) => subject.id === subjectId) ?? null,
+    [subjects, subjectId],
+  );
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [gradeList, subjectList] = await Promise.all([api.getGrades(), api.getSubjects()]);
+        setGrades(gradeList);
+        setSubjects(subjectList);
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
+
+  const handleChangeGrade = useCallback(
+    (grade: Grade | null) => {
+      dispatch(updateSettings({ gradeId: grade?.id ?? null }));
+    },
+    [dispatch],
+  );
+
+  const handleChangeSubject = useCallback(
+    (subject: Subject | null) => {
+      dispatch(updateSettings({ subjectId: subject?.id ?? null }));
+    },
+    [dispatch],
+  );
+
+  // 选择器固定在原生 header 右侧
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ marginRight: 16 }}>
+          <ScopeSelector
+            grades={grades}
+            subjects={subjects}
+            selectedGrade={selectedGrade}
+            selectedSubject={selectedSubject}
+            onChangeGrade={handleChangeGrade}
+            onChangeSubject={handleChangeSubject}
+          />
+        </View>
+      ),
+    });
+  }, [
+    navigation,
+    grades,
+    subjects,
+    selectedGrade,
+    selectedSubject,
+    handleChangeGrade,
+    handleChangeSubject,
+  ]);
+
   const fetchWrongQuestions = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await api.getWrongQuestions();
+      const data = await api.getWrongQuestions({
+        gradeId: gradeId ?? undefined,
+        subjectId: subjectId ?? undefined,
+      });
       setQuestions(data);
     } catch {
       setQuestions([]);
@@ -161,7 +236,7 @@ const WrongQuestionsScreen: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [gradeId, subjectId]);
 
   useEffect(() => {
     fetchWrongQuestions();

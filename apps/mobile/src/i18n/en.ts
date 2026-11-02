@@ -69,6 +69,8 @@ export const en: TranslationKeys = {
   studySelectSubjectFirst: 'Please select a subject first',
   studyNoUnits: 'No units for this filter',
   studySelectAllFilters: 'Select subject and knowledge point',
+  studySelectTextbookFirst: 'Select a textbook in My Textbooks first',
+  studyBackToKnowledge: 'All Topics',
 
   // Dual entry
   studyByChapter: 'By Chapter',

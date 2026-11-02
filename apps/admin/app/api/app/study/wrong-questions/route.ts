@@ -10,9 +10,23 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
   const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "20")));
 
+  // 全局「年级 + 科目」筛选：题目自身带有 gradeId/subjectId
+  const gradeIdParam = searchParams.get("gradeId");
+  const subjectIdParam = searchParams.get("subjectId");
+  const gradeId = gradeIdParam && /^\d+$/.test(gradeIdParam) ? BigInt(gradeIdParam) : null;
+  const subjectId = subjectIdParam && /^\d+$/.test(subjectIdParam) ? BigInt(subjectIdParam) : null;
+
   const where = {
     userId: appUser.id,
     status: "wrong",
+    ...(gradeId || subjectId
+      ? {
+          question: {
+            ...(gradeId ? { gradeId } : {}),
+            ...(subjectId ? { subjectId } : {}),
+          },
+        }
+      : {}),
   };
 
   const [total, progressRecords] = await Promise.all([

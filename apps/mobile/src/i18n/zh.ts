@@ -69,6 +69,8 @@ export const zh = {
   studySelectSubjectFirst: '请先选择科目',
   studyNoUnits: '该条件下暂无单元',
   studySelectAllFilters: '请选择科目和知识点',
+  studySelectTextbookFirst: '请先在「我的教材」选择教材',
+  studyBackToKnowledge: '全部知识点',
 
   // 双入口
   studyByChapter: '按章节学',

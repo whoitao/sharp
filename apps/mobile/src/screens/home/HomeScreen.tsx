@@ -82,13 +82,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [navigateToTab]
   );
 
-  // 连续天数画在原生 header 右侧：与标题同一行，不挤占内容区
+  // 连续天数画在原生 header 左侧：右侧留给「年级 + 科目」选择器
   useEffect(() => {
     if (streak <= 0) {
-      navigation.setOptions({ headerRight: undefined });
+      navigation.setOptions({ headerLeft: undefined });
       return;
     }
-    navigation.setOptions({ headerRight: () => <StreakBadge days={streak} /> });
+    navigation.setOptions({
+      headerLeft: () => (
+        <View style={{ marginLeft: 16 }}>
+          <StreakBadge days={streak} />
+        </View>
+      ),
+    });
   }, [navigation, streak]);
 
   // 学习范围变更后写入用户设置，学习页/教材页/记录页共用
@@ -106,11 +112,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [dispatch],
   );
 
-  // 全局学习范围（年级 + 科目）画在原生 header 左侧：标题同一行，常驻可见
+  // 全局学习范围（年级 + 科目）画在原生 header 右侧：标题同一行，常驻可见
   useEffect(() => {
     navigation.setOptions({
-      headerLeft: () => (
-        <View style={{ marginLeft: 16 }}>
+      headerRight: () => (
+        <View style={{ marginRight: 16 }}>
           <ScopeSelector
             grades={grades}
             subjects={subjectOptions}

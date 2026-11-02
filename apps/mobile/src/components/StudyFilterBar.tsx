@@ -43,6 +43,8 @@ interface StudyFilterBarProps {
   allowClear?: boolean;
   /** 隐藏「年级 + 科目」行（学习页把它们放在原生 header，页面内不再重复展示） */
   hideScope?: boolean;
+  /** 隐藏知识点 chip（学习页改为知识点列表，选中后不再需要重复入口） */
+  hideKP?: boolean;
   /** 筛选数据加载中的遮罩（学习页初始化时用） */
   loading?: boolean;
 }
@@ -65,6 +67,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   onToggleTag,
   allowClear = false,
   hideScope = false,
+  hideKP = false,
   loading = false,
 }) => {
   const { colors } = useTheme();
@@ -170,16 +173,18 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
       </View>
       )}
 
-      {/* 交叉筛选：知识点 */}
-      <View style={[styles.row, { gap: 8 * spacing }]}>
-        {renderChip(
-          selectedKP?.name ?? null,
-          t.studySelectKnowledgePoint,
-          () => setKpModalVisible(true),
-          () => onSelectKP(null),
-          kpDisabled,
-        )}
-      </View>
+      {/* 交叉筛选：知识点（学习页已改为知识点列表，传 hideKP 隐藏） */}
+      {!hideKP && (
+        <View style={[styles.row, { gap: 8 * spacing }]}>
+          {renderChip(
+            selectedKP?.name ?? null,
+            t.studySelectKnowledgePoint,
+            () => setKpModalVisible(true),
+            () => onSelectKP(null),
+            kpDisabled,
+          )}
+        </View>
+      )}
 
       {/* 标签 chips：横向多选，与年级/科目/知识点正交 */}
       {!!tags && tags.length > 0 && !!onToggleTag && (

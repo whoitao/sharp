@@ -32,6 +32,7 @@ import QuizScreen from '../screens/study/QuizScreen';
 import StudyScreen from '../screens/study/StudyScreen';
 // Textbook screens
 import ChapterUnitsScreen from '../screens/textbook/ChapterUnitsScreen';
+import KnowledgeUnitsScreen from '../screens/study/KnowledgeUnitsScreen';
 import TextbookScreen from '../screens/textbook/TextbookScreen';
 
 // Profile screens
@@ -70,7 +71,7 @@ export type QuizParams = {
   knowledgePointName?: string;
   previousRecord?: StudyRecordSummary | null;
   /** 完成后「继续学习」返回到哪个页面，默认 Study */
-  continueTo?: 'Study' | 'TextbookUnits';
+  continueTo?: 'Study' | 'TextbookUnits' | 'KnowledgeUnits';
 };
 
 export type QuizResultParams = {
@@ -85,7 +86,7 @@ export type QuizResultParams = {
   tagIds?: string[];
   knowledgePointId?: string;
   record?: StudyRecord;
-  continueTo?: 'Study' | 'TextbookUnits';
+  continueTo?: 'Study' | 'TextbookUnits' | 'KnowledgeUnits';
 };
 
 /** 教材章节列表 → 单元列表 */
@@ -97,6 +98,19 @@ export type TextbookUnitsParams = {
   /** 从章到当前节的路径，展示在单元列表顶部 */
   breadcrumb?: string;
   subjectId?: string;
+};
+
+/** 知识点列表 → 单元列表 */
+export type KnowledgeUnitsParams = {
+  knowledgePointId: string;
+  knowledgePointName?: string;
+  subjectId: string;
+  subjectName?: string;
+  gradeId?: string | null;
+  /** 「我的教材」版本筛选，与知识点树的过滤口径一致 */
+  publisherId?: string | null;
+  /** 科目 · 年级，展示在单元列表顶部 */
+  scopeLabel?: string;
 };
 
 export type HomeStackParamList = {
@@ -122,6 +136,7 @@ export type StudyStackParamList = {
   QuizResult: QuizResultParams;
   Textbook: undefined;
   TextbookUnits: TextbookUnitsParams;
+  KnowledgeUnits: KnowledgeUnitsParams;
 };
 
 export type ProfileStackParamList = {
@@ -308,6 +323,13 @@ const StudyStackNavigator: React.FC = () => {
       name="TextbookUnits"
       component={withGradient(ChapterUnitsScreen)}
       options={({ route }) => ({ title: route.params.chapterName })}
+    />
+    <StudyStack.Screen
+      name="KnowledgeUnits"
+      component={withGradient(KnowledgeUnitsScreen)}
+      options={({ route }) => ({
+        title: route.params.knowledgePointName ?? t.studyByKnowledgePoint,
+      })}
     />
     </StudyStack.Navigator>
   );

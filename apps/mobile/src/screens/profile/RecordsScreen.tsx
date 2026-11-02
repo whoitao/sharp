@@ -1,6 +1,6 @@
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Grade, KnowledgePoint, StudyRecord, Subject } from '@sharp/shared';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,12 +10,16 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import ScopeSelector from '../../components/ScopeSelector';
 import StudyFilterBar from '../../components/StudyFilterBar';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
+import type { AppDispatch, RootState } from '../../stores';
+import { updateSettings } from '../../stores/settingsSlice';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Records'>;
 
@@ -27,21 +31,44 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
+  const { gradeId, subjectId } = useSelector((state: RootState) => state.settings);
   const [records, setRecords] = useState<StudyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // 顶部筛选：年级 / 科目 / 知识点（均可不选 = 全部）
+  // 年级 / 科目来自 header 的全局选择器，页面内只保留知识点筛选
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
-  const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null);
   const [selectedKP, setSelectedKP] = useState<KnowledgePoint | null>(null);
 
+  const selectedGrade = useMemo(
+    () => grades.find((grade) => grade.id === gradeId) ?? null,
+    [grades, gradeId],
+  );
+  const selectedSubject = useMemo(
+    () => subjects.find((subject) => subject.id === subjectId) ?? null,
+    [subjects, subjectId],
+  );
+
+  const handleChangeGrade = useCallback(
+    (grade: Grade | null) => {
+      dispatch(updateSettings({ gradeId: grade?.id ?? null }));
+    },
+    [dispatch],
+  );
+
+  const handleChangeSubject = useCallback(
+    (subject: Subject | null) => {
+      dispatch(updateSettings({ subjectId: subject?.id ?? null }));
+    },
+    [dispatch],
+  );
+
   const fetchRecords = useCallback(async (pageNum: number = 1) => {
-    // 三个筛选均可不选；不选时展示全部（含教材章节练习记录）
+    // 年级 / 科目可不选（不选 = 全部），知识点为页面内可选筛选
     try {
       setLoading(pageNum === 1);
       const response = await api.getStudyRecords({
@@ -83,6 +110,32 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   useEffect(() => {
     fetchRecords(1);
   }, [fetchRecords]);
+
+  // 全局「年级 + 科目」选择器固定在原生 header 右侧
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ marginRight: 16 }}>
+          <ScopeSelector
+            grades={grades}
+            subjects={subjects}
+            selectedGrade={selectedGrade}
+            selectedSubject={selectedSubject}
+            onChangeGrade={handleChangeGrade}
+            onChangeSubject={handleChangeSubject}
+          />
+        </View>
+      ),
+    });
+  }, [
+    navigation,
+    grades,
+    subjects,
+    selectedGrade,
+    selectedSubject,
+    handleChangeGrade,
+    handleChangeSubject,
+  ]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -205,17 +258,18 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-      {/* 顶部筛选：年级 / 科目 / 知识点 */}
+      {/* 页面内只保留知识点筛选：年级 / 科目已移到 header 的全局选择器 */}
       <StudyFilterBar
         subjects={subjects}
         selectedSubject={selectedSubject}
         selectedKP={selectedKP}
-        onSelectSubject={setSelectedSubject}
+        onSelectSubject={handleChangeSubject}
         onSelectKP={setSelectedKP}
         grades={grades}
         selectedGrade={selectedGrade}
-        onSelectGrade={setSelectedGrade}
+        onSelectGrade={handleChangeGrade}
         allowClear
+        hideScope
       />
 
       {loading && records.length === 0 ? (
