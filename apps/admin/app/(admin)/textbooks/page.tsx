@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageActions } from "@/components/page-actions";
+import IonIcon from "@/components/IonIcon";
 import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
 import {
   App,
@@ -41,7 +42,7 @@ type Textbook = {
 };
 
 type StageOption = { id: string; name: string };
-type SubjectOption = { id: string; name: string };
+type SubjectOption = { id: string; name: string; icon: string | null };
 type GradeOption = { id: string; name: string; stageId: string };
 type PublisherOption = { id: string; name: string };
 
@@ -387,9 +388,21 @@ export default function TextbooksPage() {
                   <Form.Item name="subjectId" label="科目" rules={[{ required: true, message: "请选择科目" }]}>
                     <Select
                       placeholder="科目"
-                      options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+                      options={subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }))}
                       showSearch
                       optionFilterProp="label"
+                      optionRender={(opt: any) => (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
+                          {opt.label}
+                        </span>
+                      )}
+                      labelRender={(opt: any) => (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
+                          {opt.label}
+                        </span>
+                      )}
                     />
                   </Form.Item>
                 </Col>

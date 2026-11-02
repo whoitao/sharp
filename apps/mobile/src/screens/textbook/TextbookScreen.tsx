@@ -204,59 +204,66 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
     );
   }
 
+  // 只有当前学科下选中的教材才展示章节，切到别的学科时先选教材再看章节
+  const showChapters = !!selectedTextbook && selectedTextbook.subjectId === activeSubject?.id;
+
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 24 * spacing }}
-        showsVerticalScrollIndicator={false}
+      {/* 学段 tab：四等分页签，底部指示器标记当前学段 */}
+      <View
+        style={{
+          flexDirection: 'row',
+          paddingHorizontal: 8 * spacing,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.borderLight,
+        }}
       >
-        {/* 学段 tab */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 16 * spacing,
-            paddingTop: 8 * spacing,
-            paddingBottom: 8 * spacing,
-          }}
-        >
-          {stages.map((stage) => {
-            const active = stage.id === activeStageId;
-            return (
-              <TouchableOpacity
-                key={stage.id}
-                onPress={() => handleStagePress(stage)}
-                activeOpacity={0.7}
+        {stages.map((stage) => {
+          const active = stage.id === activeStageId;
+          return (
+            <TouchableOpacity
+              key={stage.id}
+              onPress={() => handleStagePress(stage)}
+              activeOpacity={0.7}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                paddingTop: 10 * spacing,
+                paddingBottom: 10 * spacing,
+              }}
+            >
+              <Text
                 style={{
-                  paddingHorizontal: 14 * spacing,
-                  paddingVertical: 6 * spacing,
-                  borderRadius: 16 * radius,
-                  marginRight: 8 * spacing,
-                  backgroundColor: active ? colors.accentLight : colors.surfaceSecondary,
+                  color: active ? colors.accentStrong : colors.textSecondary,
+                  fontSize: 14 * font,
+                  fontWeight: active ? '700' : '400',
                 }}
               >
-                <Text
+                {stage.name}
+              </Text>
+              {active && (
+                <View
                   style={{
-                    color: active ? colors.accentStrong : colors.textSecondary,
-                    fontSize: 14 * font,
-                    fontWeight: active ? '600' : '400',
+                    position: 'absolute',
+                    bottom: 0,
+                    width: 28 * spacing,
+                    height: 3 * spacing,
+                    borderRadius: 2 * radius,
+                    backgroundColor: colors.accent,
                   }}
-                >
-                  {stage.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-        {/* 科目 tab */}
+      <View style={{ flex: 1, flexDirection: 'row', paddingHorizontal: 16 * spacing }}>
+        {/* 科目左侧 tab：竖向切换 */}
         <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 16 * spacing,
-            paddingBottom: 12 * spacing,
-          }}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 24 * spacing }}
+          showsVerticalScrollIndicator={false}
         >
           {(activeStage?.subjects ?? []).map((subject) => {
             const active = subject.id === activeSubjectId;
@@ -266,217 +273,250 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
                 onPress={() => setActiveSubjectId(subject.id)}
                 activeOpacity={0.7}
                 style={{
-                  paddingHorizontal: 14 * spacing,
-                  paddingVertical: 6 * spacing,
-                  borderRadius: 16 * radius,
-                  marginRight: 8 * spacing,
+                  paddingVertical: 10 * spacing,
+                  alignItems: 'center',
+                  marginBottom: 8 * spacing,
+                  borderRadius: 10 * radius,
                   backgroundColor: active ? colors.accentLight : colors.surfaceSecondary,
                 }}
               >
-                <Text
-                  style={{
-                    color: active ? colors.accentStrong : colors.textSecondary,
-                    fontSize: 14 * font,
-                    fontWeight: active ? '600' : '400',
-                  }}
-                >
-                  {subject.name}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {!!subject.icon && (
+                    <Ionicons
+                      name={subject.icon as React.ComponentProps<typeof Ionicons>['name']}
+                      size={14 * font}
+                      color={active ? colors.accentStrong : colors.textSecondary}
+                      style={{ marginRight: 4 * spacing }}
+                    />
+                  )}
+                  <Text
+                    style={{
+                      color: active ? colors.accentStrong : colors.textSecondary,
+                      fontSize: 14 * font,
+                      fontWeight: active ? '600' : '400',
+                    }}
+                    numberOfLines={1}
+                  >
+                    {subject.name}
+                  </Text>
+                </View>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {/* 教材卡片 */}
-        <View style={{ paddingHorizontal: 16 * spacing }}>
-          {(activeSubject?.textbooks ?? []).map((textbook, index) => {
-            const selected = textbook.id === selectedTextbookId;
-            return (
-              <TouchableOpacity
-                key={textbook.id}
-                onPress={() => handleTextbookPress(textbook)}
-                activeOpacity={0.75}
-                style={[
-                  styles.textbookRow,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: selected ? colors.accent : colors.border,
-                    borderWidth: selected ? 1.5 : StyleSheet.hairlineWidth,
-                    borderRadius: 12 * radius,
-                    padding: 12 * spacing,
-                    marginBottom: 12 * spacing,
-                    elevation: isDark ? 0 : 2,
-                    shadowOpacity: isDark ? 0 : 0.04,
-                  },
-                ]}
+        {/* 右侧：教材卡片 + 选中教材的章节，约占 2/3 宽度 */}
+        <ScrollView
+          style={{ flex: 2, marginLeft: 12 * spacing }}
+          contentContainerStyle={{ paddingBottom: 24 * spacing }}
+          showsVerticalScrollIndicator={false}
+        >
+          {!activeSubject ? (
+            <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
+              <Text
+                style={{
+                  color: colors.textTertiary,
+                  fontSize: 14 * font,
+                  textAlign: 'center',
+                  lineHeight: 21 * font,
+                }}
               >
-                {/* 封面：竖版 3:4 */}
-                {textbook.coverUrl ? (
-                  <Image
-                    source={textbook.coverUrl}
-                    style={{
-                      width: 72 * spacing,
-                      aspectRatio: 3 / 4,
-                      borderRadius: 8 * radius,
-                    }}
-                    contentFit="cover"
-                    transition={150}
-                  />
-                ) : (
-                  <View
-                    style={{
-                      width: 72 * spacing,
-                      aspectRatio: 3 / 4,
-                      borderRadius: 8 * radius,
-                      backgroundColor: colors.surfaceSecondary,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
+                {t.textbookEmpty}
+              </Text>
+            </View>
+          ) : (
+            <>
+              {activeSubject.textbooks.map((textbook) => {
+                const selected = textbook.id === selectedTextbookId;
+                return (
+                  <TouchableOpacity
+                    key={textbook.id}
+                    onPress={() => handleTextbookPress(textbook)}
+                    activeOpacity={0.75}
+                    style={[
+                      styles.textbookRow,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: selected ? colors.accent : colors.border,
+                        borderWidth: selected ? 1.5 : StyleSheet.hairlineWidth,
+                        borderRadius: 12 * radius,
+                        padding: 10 * spacing,
+                        marginBottom: 10 * spacing,
+                        elevation: isDark ? 0 : 2,
+                        shadowOpacity: isDark ? 0 : 0.04,
+                      },
+                    ]}
                   >
-                    <Ionicons name="book-outline" size={26 * font} color={colors.textTertiary} />
-                  </View>
-                )}
+                    {/* 封面：竖版 3:4 */}
+                    {textbook.coverUrl ? (
+                      <Image
+                        source={textbook.coverUrl}
+                        style={{
+                          width: 60 * spacing,
+                          aspectRatio: 3 / 4,
+                          borderRadius: 8 * radius,
+                        }}
+                        contentFit="cover"
+                        transition={150}
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 60 * spacing,
+                          aspectRatio: 3 / 4,
+                          borderRadius: 8 * radius,
+                          backgroundColor: colors.surfaceSecondary,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons name="book-outline" size={22 * font} color={colors.textTertiary} />
+                      </View>
+                    )}
 
-                <View style={[styles.textbookInfo, { marginLeft: 12 * spacing }]}>
-                  <Text
-                    style={{ color: colors.text, fontSize: 16 * font, fontWeight: '600' }}
-                    numberOfLines={1}
-                  >
-                    {textbook.publisherName}
-                  </Text>
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      fontSize: 13 * font,
-                      marginTop: 4 * spacing,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {textbook.gradeName}
-                    {textbook.semesterLabel}
-                  </Text>
+                    <View style={[styles.textbookInfo, { marginLeft: 10 * spacing }]}>
+                      <Text
+                        style={{ color: colors.text, fontSize: 15 * font, fontWeight: '600' }}
+                        numberOfLines={1}
+                      >
+                        {textbook.publisherName}
+                      </Text>
+                      <Text
+                        style={{
+                          color: colors.textSecondary,
+                          fontSize: 12 * font,
+                          marginTop: 3 * spacing,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {textbook.gradeName}
+                        {textbook.semesterLabel}
+                      </Text>
+                      <Text
+                        style={{
+                          color: colors.textTertiary,
+                          fontSize: 11 * font,
+                          marginTop: 5 * spacing,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {t.textbookChapterQuestions(textbook.questionCount)}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={{
+                        width: 22 * spacing,
+                        height: 22 * spacing,
+                        borderRadius: 11 * radius,
+                        borderWidth: selected ? 0 : StyleSheet.hairlineWidth,
+                        borderColor: colors.border,
+                        backgroundColor: selected ? colors.accent : 'transparent',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {selected && (
+                        <Ionicons name="checkmark" size={14 * font} color={colors.surface} />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+
+              {showChapters && selectedTextbook && (
+                <View style={{ marginTop: 4 * spacing }}>
                   <Text
                     style={{
                       color: colors.textTertiary,
                       fontSize: 12 * font,
-                      marginTop: 6 * spacing,
+                      marginBottom: 8 * spacing,
                     }}
                     numberOfLines={1}
                   >
-                    {t.textbookChapterQuestions(textbook.questionCount)}
+                    {selectedTextbook.name}
                   </Text>
-                </View>
-
-                <View
-                  style={{
-                    width: 24 * spacing,
-                    height: 24 * spacing,
-                    borderRadius: 12 * radius,
-                    borderWidth: selected ? 0 : StyleSheet.hairlineWidth,
-                    borderColor: colors.border,
-                    backgroundColor: selected ? colors.accent : 'transparent',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {selected && (
-                    <Ionicons name="checkmark" size={16 * font} color={colors.surface} />
+                  {chaptersLoading ? (
+                    <ActivityIndicator color={colors.accent} style={{ marginTop: 16 * spacing }} />
+                  ) : flatChapters.length === 0 ? (
+                    <Text style={{ color: colors.textSecondary, fontSize: 13 * font }}>
+                      {t.textbookNoChapters}
+                    </Text>
+                  ) : (
+                    <View
+                      style={{
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                        borderWidth: StyleSheet.hairlineWidth,
+                        borderRadius: 12 * radius,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {flatChapters.map((item, index) => {
+                        const enabled = item.node.questionCount > 0;
+                        return (
+                          <TouchableOpacity
+                            key={item.node.id}
+                            style={[
+                              styles.chapterRow,
+                              {
+                                paddingVertical: 12 * spacing,
+                                paddingLeft: (12 + item.depth * 12) * spacing,
+                                paddingRight: 12 * spacing,
+                                borderBottomColor: colors.borderLight,
+                                borderBottomWidth:
+                                  index === flatChapters.length - 1
+                                    ? 0
+                                    : StyleSheet.hairlineWidth,
+                                opacity: enabled ? 1 : 0.45,
+                              },
+                            ]}
+                            onPress={() => handleChapterPress(item)}
+                            disabled={!enabled}
+                            activeOpacity={0.7}
+                          >
+                            <View style={styles.chapterText}>
+                              <Text
+                                style={{
+                                  color: colors.text,
+                                  fontSize: (item.depth === 0 ? 14 : 13) * font,
+                                  fontWeight: item.depth === 0 ? '600' : '400',
+                                }}
+                                numberOfLines={1}
+                              >
+                                {item.node.name}
+                              </Text>
+                            </View>
+                            <Text
+                              style={{
+                                color: enabled ? colors.textSecondary : colors.textTertiary,
+                                fontSize: 11 * font,
+                                marginLeft: 6 * spacing,
+                              }}
+                            >
+                              {enabled
+                                ? t.textbookChapterQuestions(item.node.questionCount)
+                                : t.textbookNoQuestions}
+                            </Text>
+                            {enabled && (
+                              <Ionicons
+                                name="chevron-forward"
+                                size={14 * font}
+                                color={colors.textTertiary}
+                                style={{ marginLeft: 3 * spacing }}
+                              />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
                   )}
                 </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* 选中教材的章节列表 */}
-        {selectedTextbook && (
-          <View style={{ paddingHorizontal: 16 * spacing, marginTop: 4 * spacing }}>
-            <Text
-              style={{
-                color: colors.textTertiary,
-                fontSize: 12 * font,
-                marginBottom: 8 * spacing,
-              }}
-              numberOfLines={1}
-            >
-              {selectedTextbook.name}
-            </Text>
-            {chaptersLoading ? (
-              <ActivityIndicator color={colors.accent} style={{ marginTop: 16 * spacing }} />
-            ) : flatChapters.length === 0 ? (
-              <Text style={{ color: colors.textSecondary, fontSize: 14 * font }}>
-                {t.textbookNoChapters}
-              </Text>
-            ) : (
-              <View
-                style={{
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  borderWidth: StyleSheet.hairlineWidth,
-                  borderRadius: 12 * radius,
-                  overflow: 'hidden',
-                }}
-              >
-                {flatChapters.map((item, index) => {
-                  const enabled = item.node.questionCount > 0;
-                  return (
-                    <TouchableOpacity
-                      key={item.node.id}
-                      style={[
-                        styles.chapterRow,
-                        {
-                          paddingVertical: 14 * spacing,
-                          paddingLeft: (14 + item.depth * 14) * spacing,
-                          paddingRight: 14 * spacing,
-                          borderBottomColor: colors.borderLight,
-                          borderBottomWidth:
-                            index === flatChapters.length - 1 ? 0 : StyleSheet.hairlineWidth,
-                          opacity: enabled ? 1 : 0.45,
-                        },
-                      ]}
-                      onPress={() => handleChapterPress(item)}
-                      disabled={!enabled}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.chapterText}>
-                        <Text
-                          style={{
-                            color: colors.text,
-                            fontSize: (item.depth === 0 ? 15 : 14) * font,
-                            fontWeight: item.depth === 0 ? '600' : '400',
-                          }}
-                          numberOfLines={1}
-                        >
-                          {item.node.name}
-                        </Text>
-                      </View>
-                      <Text
-                        style={{
-                          color: enabled ? colors.textSecondary : colors.textTertiary,
-                          fontSize: 12 * font,
-                          marginLeft: 8 * spacing,
-                        }}
-                      >
-                        {enabled
-                          ? t.textbookChapterQuestions(item.node.questionCount)
-                          : t.textbookNoQuestions}
-                      </Text>
-                      {enabled && (
-                        <Ionicons
-                          name="chevron-forward"
-                          size={16 * font}
-                          color={colors.textTertiary}
-                          style={{ marginLeft: 4 * spacing }}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        )}
-      </ScrollView>
+              )}
+            </>
+          )}
+        </ScrollView>
+      </View>
     </View>
   );
 };

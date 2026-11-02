@@ -16,24 +16,28 @@ export async function GET(request: NextRequest) {
   const settings = await prisma.userSettings.findUnique({ where: { userId: appUser.id } });
   const selectedId = settings?.textbookId?.toString() ?? null;
 
-  const textbooks = await prisma.textbook.findMany({
-    where: { chapters: { some: { questions: { some: {} } } } },
-    include: {
-      subject: { select: { id: true, name: true, icon: true, sortOrder: true } },
-      stage: { select: { id: true, name: true, sortOrder: true } },
-      grade: { select: { id: true, name: true, sortOrder: true } },
-      publisher: { select: { id: true, name: true } },
-    },
-    orderBy: [
-      { stageId: "asc" },
-      { subjectId: "asc" },
-      { gradeId: "asc" },
-      { semester: "asc" },
-      { sortOrder: "asc" },
-    ],
-  });
+  // 学段 tab 固定展示全部学段（四个学段四等分），没有教材的学段返回空科目列表
+  const [stagesDict, textbooks] = await Promise.all([
+    prisma.stage.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] }),
+    prisma.textbook.findMany({
+      where: { chapters: { some: { questions: { some: {} } } } },
+      include: {
+        subject: { select: { id: true, name: true, icon: true, sortOrder: true } },
+        stage: { select: { id: true, name: true, sortOrder: true } },
+        grade: { select: { id: true, name: true, sortOrder: true } },
+        publisher: { select: { id: true, name: true } },
+      },
+      orderBy: [
+        { stageId: "asc" },
+        { subjectId: "asc" },
+        { gradeId: "asc" },
+        { semester: "asc" },
+        { sortOrder: "asc" },
+      ],
+    }),
+  ]);
 
-  if (textbooks.length === 0) return NextResponse.json({ stages: [] });
+  if (stagesDict.length === 0) return NextResponse.json({ stages: [] });
 
   const textbookIds = textbooks.map((t) => t.id);
   const [chapters, questionGroups] = await Promise.all([
@@ -74,6 +78,15 @@ export async function GET(request: NextRequest) {
       >;
     }
   >();
+
+  for (const stage of stagesDict) {
+    stageMap.set(stage.id.toString(), {
+      id: stage.id.toString(),
+      name: stage.name,
+      sortOrder: stage.sortOrder,
+      subjects: new Map(),
+    });
+  }
 
   for (const t of textbooks) {
     const stageKey = t.stage.id.toString();
