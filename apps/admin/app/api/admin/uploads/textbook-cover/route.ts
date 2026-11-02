@@ -10,8 +10,9 @@ import {
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 
-/** 教材封面：竖版 3:4，宽度上限 900px，统一转 WebP q85 */
+/** 教材封面：竖版 3:4，统一转 WebP，并保证输出不超过 100KB */
 const MAX_COVER_WIDTH = 900;
+const MAX_COVER_BYTES = 100 * 1024;
 
 async function normalizeCover(bytes: Uint8Array, contentType: ImageContentType) {
   try {
@@ -19,13 +20,35 @@ async function normalizeCover(bytes: Uint8Array, contentType: ImageContentType) 
     const { width, height } = await image.metadata();
     if (!width || !height) return { bytes, contentType };
 
-    const targetWidth = Math.min(width, MAX_COVER_WIDTH);
-    const targetHeight = Math.round((targetWidth * 4) / 3);
-    const output = await image
-      .resize({ width: targetWidth, height: targetHeight, fit: "cover", position: "attention" })
-      .webp({ quality: 85 })
-      .toBuffer();
-    return { bytes: new Uint8Array(output), contentType: "image/webp" as ImageContentType };
+    const baseWidth = Math.min(width, MAX_COVER_WIDTH);
+    let targetWidth = baseWidth;
+    let smallest: Buffer | null = null;
+
+    // 先降质量，仍超标再逐步缩小宽度，确保最终封面控制在 100KB 以内
+    while (true) {
+      for (const quality of [85, 75, 65, 55, 45]) {
+        const output = await sharp(bytes)
+          .resize({
+            width: targetWidth,
+            height: Math.round((targetWidth * 4) / 3),
+            fit: "cover",
+            position: "attention",
+          })
+          .webp({ quality })
+          .toBuffer();
+        smallest = output;
+        if (output.length <= MAX_COVER_BYTES) {
+          return { bytes: new Uint8Array(output), contentType: "image/webp" as ImageContentType };
+        }
+      }
+      if (targetWidth <= 320) break;
+      targetWidth = Math.round(targetWidth * 0.8);
+    }
+
+    return {
+      bytes: new Uint8Array(smallest!),
+      contentType: "image/webp" as ImageContentType,
+    };
   } catch (err) {
     // 处理失败不阻塞上传，退回原图
     console.warn("[textbook-cover] normalize failed, fallback to original", err);

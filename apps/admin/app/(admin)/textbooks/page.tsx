@@ -255,7 +255,7 @@ export default function TextbooksPage() {
     {
       title: "封面",
       dataIndex: "coverUrl",
-      width: 80,
+      width: 70,
       render: (url: string | null) =>
         url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -281,6 +281,7 @@ export default function TextbooksPage() {
     {
       title: "教材",
       dataIndex: "name",
+      width: 260,
       render: (value: string, row) => (
         <div>
           <div style={{ fontWeight: 500 }}>{value}</div>
@@ -291,19 +292,19 @@ export default function TextbooksPage() {
     {
       title: "学段",
       dataIndex: "stageName",
-      width: 100,
+      width: 80,
       render: (v: string) => <Tag>{v}</Tag>,
     },
-    { title: "科目", dataIndex: "subjectName", width: 100 },
-    { title: "年级", dataIndex: "gradeName", width: 100 },
-    { title: "学期", dataIndex: "semesterLabel", width: 90 },
-    { title: "版本", dataIndex: "publisherName", width: 120 },
-    { title: "章节数", dataIndex: "chapterCount", width: 90, align: "center" },
-    { title: "题数", dataIndex: "questionCount", width: 80, align: "center" },
-    { title: "排序", dataIndex: "sortOrder", width: 70, align: "center" },
+    { title: "科目", dataIndex: "subjectName", width: 80 },
+    { title: "年级", dataIndex: "gradeName", width: 80 },
+    { title: "学期", dataIndex: "semesterLabel", width: 80 },
+    { title: "版本", dataIndex: "publisherName", width: 110 },
+    { title: "章节数", dataIndex: "chapterCount", width: 80, align: "center" },
+    { title: "题数", dataIndex: "questionCount", width: 70, align: "center" },
+    { title: "排序", dataIndex: "sortOrder", width: 60, align: "center" },
     {
       title: "操作",
-      width: 140,
+      width: 110,
       render: (_, row) => (
         <Space>
           <Button type="link" size="small" onClick={() => openEdit(row)}>
@@ -344,6 +345,7 @@ export default function TextbooksPage() {
         loading={loading}
         dataSource={data}
         columns={columns}
+        scroll={{ x: 1080 }}
         pagination={{ pageSize: 20, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
       />
 
