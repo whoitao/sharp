@@ -277,6 +277,7 @@ const KnowledgeUnitsScreen: React.FC<KnowledgeUnitsScreenProps> = ({ navigation,
         tags={tags}
         selectedTagIds={selectedTagIds}
         onToggleTag={handleToggleTag}
+        onClearTags={() => setSelectedTagIds([])}
         hideScope
         hideKP
       />

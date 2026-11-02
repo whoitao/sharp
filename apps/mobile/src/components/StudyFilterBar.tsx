@@ -39,6 +39,8 @@ interface StudyFilterBarProps {
   tags?: QuestionTag[];
   selectedTagIds?: string[];
   onToggleTag?: (tagId: string) => void;
+  /** 清空标签选择（点“全部”） */
+  onClearTags?: () => void;
   /** 允许清除单个已选条件（学习记录页用）；学习页要求科目与知识点必选，不传 */
   allowClear?: boolean;
   /** 隐藏「年级 + 科目」行（学习页把它们放在原生 header，页面内不再重复展示） */
@@ -65,6 +67,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
   tags,
   selectedTagIds,
   onToggleTag,
+  onClearTags,
   allowClear = false,
   hideScope = false,
   hideKP = false,
@@ -186,43 +189,51 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
         </View>
       )}
 
-      {/* 标签 chips：横向多选，与年级/科目/知识点正交 */}
+      {/* 标签 chips：与首页一致，默认「全部」选中，可多选 */}
       {!!tags && tags.length > 0 && !!onToggleTag && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8 * spacing }}
+          contentContainerStyle={{ gap: 6 * spacing, paddingVertical: 4 * spacing }}
         >
-          {tags.map((tag) => {
-            const active = selectedTagIds?.includes(tag.id) ?? false;
-            return (
+          {(() => {
+            const hasSelection = (selectedTagIds?.length ?? 0) > 0;
+            const chipStyle = (active: boolean) => ({
+              backgroundColor: active ? colors.accentLight : colors.surface,
+              borderColor: active ? colors.accent : colors.border,
+              borderRadius: 6 * radius,
+              paddingHorizontal: 10 * spacing,
+              paddingVertical: 5 * spacing,
+            });
+            const chipTextStyle = (active: boolean) => ({
+              color: active ? colors.accent : colors.text,
+              fontSize: 12 * font,
+              fontWeight: '500' as const,
+            });
+            return [
               <TouchableOpacity
-                key={tag.id}
-                onPress={() => onToggleTag(tag.id)}
+                key="__all__"
+                onPress={() => onClearTags?.()}
                 activeOpacity={0.7}
-                style={[
-                  styles.tagChip,
-                  {
-                    backgroundColor: active ? colors.accent : colors.surface,
-                    borderColor: active ? colors.accent : colors.border,
-                    borderRadius: 6 * radius,
-                    paddingVertical: 6 * spacing,
-                    paddingHorizontal: 12 * spacing,
-                  },
-                ]}
+                style={[styles.tagChip, chipStyle(!hasSelection)]}
               >
-                <Text
-                  style={{
-                    color: active ? '#fff' : colors.textSecondary,
-                    fontSize: 12 * font,
-                    fontWeight: '500',
-                  }}
-                >
-                  {tag.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                <Text style={chipTextStyle(!hasSelection)}>全部</Text>
+              </TouchableOpacity>,
+              ...tags.map((tag) => {
+                const active = selectedTagIds?.includes(tag.id) ?? false;
+                return (
+                  <TouchableOpacity
+                    key={tag.id}
+                    onPress={() => onToggleTag(tag.id)}
+                    activeOpacity={0.7}
+                    style={[styles.tagChip, chipStyle(active)]}
+                  >
+                    <Text style={chipTextStyle(active)}>{tag.name}</Text>
+                  </TouchableOpacity>
+                );
+              }),
+            ];
+          })()}
         </ScrollView>
       )}
 
@@ -311,7 +322,7 @@ const StudyFilterBar: React.FC<StudyFilterBarProps> = ({
 const styles = StyleSheet.create({
   container: { padding: 12, paddingTop: 0, gap: 8, position: 'relative' },
   row: { flexDirection: 'row' },
-  tagChip: { borderWidth: 1 },
+  tagChip: { borderWidth: StyleSheet.hairlineWidth },
   chip: { flex: 1, flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   chipDisabled: { opacity: 0.45 },
   chipText: { fontSize: 13, fontWeight: '500' },
