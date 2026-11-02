@@ -1,81 +1,11 @@
 import { requireAppUser } from "@/lib/middleware";
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// 再学一次：清掉本单元（同一组筛选条件下）之前的学习记录，从零开始新的一次。
-// 题目进度（对错标记）和每日统计属于跨次学习的累计数据，这里不动。
-// 教材章节练习与考纲练习各自独立计单元，靠 chapterId 区分。
+// 历史不可变：学习事实只追加不删除，「再学一次」不再清除任何记录。
+// 保留接口以兼容旧版客户端，重复学习会在 finish 时产生新的一条记录。
 export async function POST(request: NextRequest) {
   const appUser = requireAppUser(request);
   if (appUser instanceof NextResponse) return appUser;
 
-  const body = await request.json();
-  const { unitIndex, chapterId } = body;
-
-  const isChapter = chapterId !== undefined && chapterId !== null;
-
-  const subjectIdRaw = request.nextUrl.searchParams.get("subjectId");
-  const knowledgePointIdRaw = request.nextUrl.searchParams.get("knowledgePointId");
-  const gradeIdRaw = request.nextUrl.searchParams.get("gradeId");
-  const tagIdsRaw = request.nextUrl.searchParams.get("tagIds");
-  const subjectId = subjectIdRaw ? BigInt(subjectIdRaw) : null;
-  const gradeId = gradeIdRaw ? BigInt(gradeIdRaw) : null;
-  const tagFilter = tagIdsRaw
-    ? tagIdsRaw
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((s) => BigInt(s))
-        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-        .map((t) => t.toString())
-        .join(",") || null
-    : null;
-
-  if (unitIndex === undefined || (!isChapter && !subjectId)) {
-    return NextResponse.json(
-      { error: "unitIndex and (chapterId or subjectId) are required" },
-      { status: 400 },
-    );
-  }
-
-  const where = {
-    userId: appUser.id,
-    chapterId: isChapter ? BigInt(chapterId) : null,
-    unitIndex,
-    subjectId,
-    // 章节练习不按知识点筛选，记录上的知识点固定为空
-    knowledgePointId: isChapter || !knowledgePointIdRaw ? null : BigInt(knowledgePointIdRaw),
-    // 教材练习不按标签筛选
-    gradeId: isChapter ? null : gradeId,
-    tagFilter: isChapter ? null : tagFilter,
-  };
-
-  // 一单元一条记录：保留最近的一条重置为本次作答，历史版本残留的多条直接删除
-  const records = await prisma.userStudyRecord.findMany({
-    where,
-    orderBy: { startedAt: "desc" },
-  });
-
-  if (records.length === 0) {
-    return NextResponse.json({ success: true, cleared: false });
-  }
-
-  if (records.length > 1) {
-    await prisma.userStudyRecord.deleteMany({
-      where: { id: { in: records.slice(1).map((r) => r.id) } },
-    });
-  }
-
-  await prisma.userStudyRecord.update({
-    where: { id: records[0].id },
-    data: {
-      startedAt: new Date(),
-      finishedAt: null,
-      correctCount: 0,
-      wrongCount: 0,
-      durationSeconds: 0,
-    },
-  });
-
-  return NextResponse.json({ success: true, cleared: true });
+  return NextResponse.json({ success: true, cleared: false });
 }

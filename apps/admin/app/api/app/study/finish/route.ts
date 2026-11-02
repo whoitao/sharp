@@ -33,61 +33,52 @@ export async function POST(request: NextRequest) {
           .join(",")
       : null;
 
-  // 客户端会带上本次的筛选条件：同一单元在不同筛选下各有一条记录，必须按完整键定位。
-  // 没带（旧版本客户端）或定位不到时退化为「该单元最新一条」。
-  const filterWhere =
-    subjectId !== undefined ||
-    knowledgePointId !== undefined ||
-    gradeId !== undefined ||
-    tagIds !== undefined
-      ? {
-          subjectId: subjectId ? BigInt(subjectId) : null,
-          knowledgePointId: knowledgePointId ? BigInt(knowledgePointId) : null,
-          gradeId: gradeId ? BigInt(gradeId) : null,
-          tagFilter,
-        }
-      : null;
+  const kpId = isChapter ? null : knowledgePointId ? BigInt(knowledgePointId) : null;
+  const scopeType = isChapter ? "chapter" : kpId ? "knowledge" : "bank";
 
-  const recordWhere = {
-    userId: appUser.id,
-    chapterId: isChapter ? BigInt(chapterId) : null,
-    unitIndex,
-  };
+  const finishedAt = new Date();
+  const startedAt = new Date(finishedAt.getTime() - durationSeconds * 1000);
 
-  const record =
-    (await prisma.userStudyRecord.findFirst({
-      where: filterWhere ? { ...recordWhere, ...filterWhere } : recordWhere,
-      orderBy: [{ finishedAt: { sort: "asc", nulls: "first" } }, { startedAt: "desc" }],
-    })) ??
-    (filterWhere
-      ? await prisma.userStudyRecord.findFirst({
-          where: recordWhere,
-          orderBy: [{ finishedAt: { sort: "asc", nulls: "first" } }, { startedAt: "desc" }],
-        })
-      : null);
-
-  if (record) {
-    // 同一单元只有一条记录，重复学习后要覆盖成最新一次的时间与成绩：
-    // startedAt 由本次用时反推，保证学习记录列表按最近一次学习时间排序、展示
-    const finishedAt = new Date();
-    await prisma.userStudyRecord.update({
-      where: { id: record.id },
-      data: {
-        correctCount,
-        wrongCount,
-        durationSeconds,
-        startedAt: new Date(finishedAt.getTime() - durationSeconds * 1000),
-        finishedAt,
-        // 旧记录没有年级时，借本次学习补上
-        ...(gradeId && !isChapter ? { gradeId: BigInt(gradeId) } : {}),
-      },
-    });
+  // 每次完成都追加一条不可变的学习事实；单元只是本次取题的分页窗口，不参与统计
+  const items = new Map<string, { questionId: bigint; isCorrect: boolean }>();
+  if (answers && Array.isArray(answers)) {
+    for (const answer of answers) {
+      const { questionId, isCorrect } = answer;
+      if (!questionId) continue;
+      items.set(String(questionId), { questionId: BigInt(questionId), isCorrect: !!isCorrect });
+    }
   }
 
-  // 本次练习的筛选条件：优先用记录上的值，记录缺失时用客户端传来的
-  const filter = record
-    ? { subjectId: record.subjectId, knowledgePointId: record.knowledgePointId }
-    : (filterWhere ?? {});
+  await prisma.studyAttempt.create({
+    data: {
+      userId: appUser.id,
+      scopeType,
+      gradeId: gradeId ? BigInt(gradeId) : null,
+      chapterId: isChapter ? BigInt(chapterId) : null,
+      unitIndex,
+      subjectId: subjectId ? BigInt(subjectId) : null,
+      knowledgePointId: kpId,
+      tagFilter,
+      totalQuestions: correctCount + wrongCount,
+      correctCount,
+      wrongCount,
+      durationSeconds,
+      startedAt,
+      finishedAt,
+      items: {
+        create: Array.from(items.values()).map((item) => ({
+          questionId: item.questionId,
+          isCorrect: item.isCorrect,
+        })),
+      },
+    },
+  });
+
+  // 每题的最新状态是跨次学习的累计数据，继续保留
+  const filter = {
+    subjectId: subjectId ? BigInt(subjectId) : null,
+    knowledgePointId: kpId,
+  };
 
   if (answers && Array.isArray(answers)) {
     for (const answer of answers) {
@@ -134,14 +125,14 @@ export async function POST(request: NextRequest) {
     },
     update: {
       questionsAnswered: { increment: correctCount + wrongCount },
-      unitsCompleted: { increment: 1 },
+      sessionsCompleted: { increment: 1 },
       studyDuration: { increment: durationSeconds },
     },
     create: {
       userId: appUser.id,
       date: today,
       questionsAnswered: correctCount + wrongCount,
-      unitsCompleted: 1,
+      sessionsCompleted: 1,
       studyDuration: durationSeconds,
     },
   });

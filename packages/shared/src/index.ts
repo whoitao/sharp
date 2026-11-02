@@ -253,6 +253,8 @@ export interface UnitInfo {
 export interface StudyRecord {
   id: string;
   userId: string;
+  /** 学习来源：chapter 教材章节 / knowledge 考纲知识点 / bank 题库 */
+  scopeType?: 'chapter' | 'knowledge' | 'bank';
   /** 考纲练习的年级（教材练习由章节反推） */
   gradeId?: string | null;
   /** 教材章节练习来源；考纲练习为 null */
@@ -282,6 +284,41 @@ export interface StudyRecordSummary {
   durationSeconds: number;
 }
 
+/** 按章节学习统计（顶级章，含子节题目） */
+export interface ChapterStudyStat {
+  id: string;
+  name: string;
+  totalQuestions: number;
+  answeredQuestions: number;
+  /** 最近一次作答正确的题数 */
+  correctQuestions: number;
+  lastPracticedAt: string | null;
+}
+
+/** 按知识点学习统计（父节点按题目去重聚合子树） */
+export interface KnowledgePointStudyStat {
+  id: string;
+  name: string;
+  parentId: string | null;
+  totalQuestions: number;
+  answeredQuestions: number;
+  correctQuestions: number;
+  lastPracticedAt: string | null;
+  children: KnowledgePointStudyStat[];
+}
+
+/** 学习统计总览 */
+export interface StudyStatsOverview {
+  totalDays: number;
+  totalQuestions: number;
+  streak: number;
+  totalCorrect: number;
+  totalSessions: number;
+  totalStudyDuration: number;
+  accuracy: number;
+  recentStats: DailyStat[];
+}
+
 export interface QuestionProgress {
   userId: string;
   questionId: string;
@@ -295,8 +332,8 @@ export interface DailyStat {
   userId: string;
   date: string;
   questionsAnswered: number;
-  unitsCompleted: number;
-  studyDurationSeconds: number;
+  sessionsCompleted: number;
+  studyDuration: number;
 }
 
 export interface DashboardStats {

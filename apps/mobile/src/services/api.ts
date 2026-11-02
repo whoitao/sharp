@@ -3,9 +3,11 @@ import type {
   ArticleDetail,
   ArticleListItem,
   Chapter,
+  ChapterStudyStat,
   Density,
   Grade,
   KnowledgePoint,
+  KnowledgePointStudyStat,
   Language,
   LoginResponse,
   PaginatedResponse,
@@ -13,6 +15,7 @@ import type {
   QuestionTag,
   StudyRecord,
   StudyRecordSummary,
+  StudyStatsOverview,
   Subject,
   SubjectOverview,
   TextbookCatalog,
@@ -597,7 +600,7 @@ export const api = {
     }
   },
 
-  // 再学一次：清空该单元之前的学习记录，本次从零开始
+  // 再学一次：不再清除历史（学习事实只追加），本次完成会记为一条新记录
   async restartStudy(params: {
     unitIndex: number;
     subjectId?: string | null;
@@ -694,20 +697,53 @@ export const api = {
   },
 
   // Stats
-  async getStats(): Promise<{
-    totalDays: number;
-    totalQuestions: number;
-    streak: number;
-  }> {
+  async getStats(): Promise<StudyStatsOverview> {
     try {
-      const response = await apiClient.get('/api/app/study/stats');
+      const response = await apiClient.get<StudyStatsOverview>('/api/app/study/stats');
       return response.data;
     } catch {
       return {
         totalDays: 15,
         totalQuestions: 320,
         streak: 7,
+        totalCorrect: 260,
+        totalSessions: 16,
+        totalStudyDuration: 4800,
+        accuracy: 81,
+        recentStats: [],
       };
+    }
+  },
+
+  // 按章节统计：某本教材的顶级章（含子节题目）
+  async getChapterStats(textbookId: string): Promise<ChapterStudyStat[]> {
+    try {
+      const response = await apiClient.get<ChapterStudyStat[]>(
+        '/api/app/study/stats/chapters',
+        { params: { textbookId } },
+      );
+      return response.data;
+    } catch {
+      return [];
+    }
+  },
+
+  // 按知识点统计：父节点按题目去重聚合子树
+  async getKnowledgePointStats(params: {
+    stageId?: string | null;
+    subjectId?: string | null;
+  } = {}): Promise<KnowledgePointStudyStat[]> {
+    const query: Record<string, string> = {};
+    if (params.stageId) query.stageId = params.stageId;
+    if (params.subjectId) query.subjectId = params.subjectId;
+    try {
+      const response = await apiClient.get<KnowledgePointStudyStat[]>(
+        '/api/app/study/stats/knowledge-points',
+        { params: query },
+      );
+      return response.data;
+    } catch {
+      return [];
     }
   },
 

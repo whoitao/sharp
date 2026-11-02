@@ -23,7 +23,7 @@ export async function GET(
       settings: true,
       _count: {
         select: {
-          studyRecords: true,
+          studyAttempts: true,
           questionProgress: true,
           dailyStats: true,
         },

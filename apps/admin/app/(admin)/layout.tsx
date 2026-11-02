@@ -6,6 +6,7 @@ import { useLocale, type Locale, type MessageKey } from "@/lib/i18n";
 import {
   ApartmentOutlined,
   AppstoreOutlined,
+  BarChartOutlined,
   BookOutlined,
   DashboardOutlined,
   FileTextOutlined,
@@ -49,7 +50,7 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/subjects", icon: <BookOutlined />, labelKey: "nav.subjects" },
   { key: "/knowledge-points", icon: <TagsOutlined />, labelKey: "nav.knowledgePoints" },
   { key: "/questions", icon: <QuestionCircleOutlined />, labelKey: "nav.questions" },
-  { key: "/study-records", icon: <OrderedListOutlined />, labelKey: "nav.studyRecords" },
+  { key: "/stats", icon: <BarChartOutlined />, labelKey: "nav.stats" },
   { key: "/publishers", icon: <FileTextOutlined />, labelKey: "nav.publishers" },
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.grades" },
   { key: "/stages", icon: <ApartmentOutlined />, labelKey: "nav.stages" },

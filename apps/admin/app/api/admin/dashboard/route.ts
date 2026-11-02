@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
         },
       },
     }),
-    prisma.userStudyRecord.count(),
-    prisma.userStudyRecord.count({
+    prisma.studyAttempt.count(),
+    prisma.studyAttempt.count({
       where: { startedAt: { gte: today } },
     }),
     prisma.grade.count(),

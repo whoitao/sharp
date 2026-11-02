@@ -40,6 +40,7 @@ export const en: TranslationKeys = {
 
   // Profile
   studyRecords: 'Study Records',
+  studyStats: 'Learning Stats',
   wrongQuestions: 'Wrong Questions',
 
   // Home
@@ -109,6 +110,26 @@ export const en: TranslationKeys = {
   statDuration: 'Time',
   statTotal: 'Total',
 
+  // Learning stats
+  statsToday: 'Today',
+  statsTodayQuestions: 'Answered today',
+  statsTodaySessions: 'Sessions',
+  statsTodayDuration: 'Time today',
+  statsStreakDays: (days: number) => `${days}-day streak`,
+  statsTotalDays: 'Study days',
+  statsTotalQuestions: 'Questions answered',
+  statsAccuracy: 'Overall accuracy',
+  statsTabTime: 'Timeline',
+  statsTabChapter: 'By chapter',
+  statsTabKnowledge: 'By knowledge point',
+  statsSelectTextbook: 'Select a textbook in My Textbooks to see chapter stats',
+  statsNoChapterData: 'No chapter study data yet',
+  statsNoKnowledgeData: 'No knowledge point study data yet',
+  statsProgress: (answered: number, total: number) => `${answered}/${total} studied`,
+  statsAccuracyLabel: 'Accuracy',
+  statsLastPracticed: (date: string) => `Last ${date}`,
+  statsSessionsUnit: (num: number) => `${num} sessions`,
+
   // Wrong questions
   wrongEmpty: 'No wrong questions',
   wrongEmptySub: 'Keep it up, mistakes will show here',
@@ -131,7 +152,7 @@ export const en: TranslationKeys = {
   swipeHint: '← Swipe left / right to switch →',
   studyAgain: 'Study again',
   studyAgainTitle: 'Study again',
-  studyAgainConfirm: 'This clears the previous record for this unit and restarts from the first question.',
+  studyAgainConfirm: 'This restarts from the first question and records this attempt as a new session.',
   studyAgainAction: 'Restart',
   previousStudy: 'Last attempt',
   previousStudyScore: (correct: number, total: number) => `${correct}/${total} correct`,

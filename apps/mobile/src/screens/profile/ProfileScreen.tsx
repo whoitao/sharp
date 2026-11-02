@@ -97,7 +97,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       onPress: () => navigation.navigate('Textbook'),
     },
     {
-      label: t.studyRecords,
+      label: t.studyStats,
       icon: 'time-outline',
       onPress: () => navigation.navigate('Records'),
     },

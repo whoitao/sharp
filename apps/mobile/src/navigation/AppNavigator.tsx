@@ -232,7 +232,7 @@ const HomeStackNavigator: React.FC = () => {
     <HomeStack.Screen
       name="Records"
       component={withGradient(RecordsScreen)}
-      options={{ title: t.studyRecords }}
+      options={{ title: t.studyStats }}
     />
     {/* 从首页的学习记录点进练习结果，保持在首页 Tab 内 */}
     <HomeStack.Screen
@@ -395,7 +395,7 @@ const ProfileStackNavigator: React.FC = () => {
     <ProfileStack.Screen
       name="Records"
       component={withGradient(RecordsScreen)}
-      options={{ title: t.studyRecords }}
+      options={{ title: t.studyStats }}
     />
     <ProfileStack.Screen
       name="WrongQuestions"

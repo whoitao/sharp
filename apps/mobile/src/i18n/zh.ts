@@ -40,6 +40,7 @@ export const zh = {
 
   // Profile
   studyRecords: '学习记录',
+  studyStats: '学习统计',
   wrongQuestions: '错题本',
 
   // Home
@@ -109,6 +110,26 @@ export const zh = {
   statDuration: '用时',
   statTotal: '总题数',
 
+  // 学习统计
+  statsToday: '今日',
+  statsTodayQuestions: '今日答题',
+  statsTodaySessions: '学习次数',
+  statsTodayDuration: '今日用时',
+  statsStreakDays: (days: number) => `连续 ${days} 天`,
+  statsTotalDays: '累计学习天数',
+  statsTotalQuestions: '累计答题',
+  statsAccuracy: '总正确率',
+  statsTabTime: '按时间',
+  statsTabChapter: '按章节',
+  statsTabKnowledge: '按知识点',
+  statsSelectTextbook: '请先在「我的教材」选择教材后查看章节统计',
+  statsNoChapterData: '暂无章节学习数据',
+  statsNoKnowledgeData: '暂无知识点学习数据',
+  statsProgress: (answered: number, total: number) => `已学 ${answered}/${total}`,
+  statsAccuracyLabel: '正确率',
+  statsLastPracticed: (date: string) => `最近 ${date}`,
+  statsSessionsUnit: (num: number) => `${num} 次`,
+
   // Wrong questions
   wrongEmpty: '暂无错题',
   wrongEmptySub: '继续保持，错题会显示在这里',
@@ -131,7 +152,7 @@ export const zh = {
   swipeHint: '← 左右滑动切换题目 →',
   studyAgain: '再学一次',
   studyAgainTitle: '再学一次',
-  studyAgainConfirm: '将清除本单元之前的学习记录，并从第一题重新开始。',
+  studyAgainConfirm: '将重新从第一题开始，本次学习会记为一条新的学习记录。',
   studyAgainAction: '重新开始',
   previousStudy: '上次学习',
   previousStudyScore: (correct: number, total: number) => `正确 ${correct}/${total}`,

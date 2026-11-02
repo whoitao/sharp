@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         updatedAt: true,
         _count: {
-          select: { studyRecords: true },
+          select: { studyAttempts: true },
         },
       },
       orderBy: { createdAt: "desc" },

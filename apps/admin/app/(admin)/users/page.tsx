@@ -12,7 +12,7 @@ interface User {
   status: string;
   createdAt: string;
   _count?: {
-    studyRecords: number;
+    studyAttempts: number;
   };
 }
 
@@ -118,8 +118,8 @@ export default function UsersPage() {
     },
     {
       title: t("users.colStudyRecords"),
-      key: "studyRecords",
-      render: (_, record) => record._count?.studyRecords ?? 0,
+      key: "studyAttempts",
+      render: (_, record) => record._count?.studyAttempts ?? 0,
     },
     {
       title: t("users.colCreatedAt"),

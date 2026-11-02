@@ -27,6 +27,61 @@ export async function getChapterSubtreeIds(chapterId: bigint): Promise<bigint[]>
 }
 
 /**
+ * 章节 id → 父章节 id 映射（供统计把题目的叶子章节归并到顶级「章」）。
+ */
+export function buildChapterParentMap(
+  chapters: { id: bigint; parentId: bigint | null }[],
+): Map<string, bigint | null> {
+  return new Map(chapters.map((c) => [c.id.toString(), c.parentId]));
+}
+
+/**
+ * 向上找到 level=1 的顶级章节；找不到（数据断链）时返回自身。
+ */
+export function resolveChapterRoot(
+  chapterId: bigint,
+  parentOf: Map<string, bigint | null>,
+): bigint {
+  let current = chapterId;
+  const visited = new Set<string>();
+  while (true) {
+    const key = current.toString();
+    if (visited.has(key)) return current;
+    visited.add(key);
+    const parent = parentOf.get(key);
+    if (parent === null || parent === undefined) return current;
+    current = parent;
+  }
+}
+
+/**
+ * 章节自身 + 所有后代章节 id（传入已加载的 parentId 映射，避免重复查库）。
+ */
+export function collectChapterSubtreeIds(
+  chapterId: bigint,
+  parentOf: Map<string, bigint | null>,
+): bigint[] {
+  const childrenOf = new Map<string, bigint[]>();
+  for (const [id, parent] of parentOf) {
+    if (parent === null) continue;
+    const key = parent.toString();
+    const list = childrenOf.get(key);
+    if (list) list.push(BigInt(id));
+    else childrenOf.set(key, [BigInt(id)]);
+  }
+
+  const ids: bigint[] = [chapterId];
+  const walk = (id: bigint) => {
+    for (const child of childrenOf.get(id.toString()) ?? []) {
+      ids.push(child);
+      walk(child);
+    }
+  };
+  walk(chapterId);
+  return ids;
+}
+
+/**
  * 章节练习的题目过滤条件：直接命中题目自身的 chapterId（含后代章节）。
  * 关键两点：
  * 1. 只看题目自身的 chapterId —— 章节归属与考纲归属是两条独立维度

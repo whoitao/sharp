@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   since.setDate(since.getDate() - days);
   since.setHours(0, 0, 0, 0);
 
-  const [totalAnswered, totalUnitsCompleted, totalStudyDuration, recentStats, allDailyStats] =
+  const [totalAnswered, totalSessions, totalStudyDuration, recentStats, allDailyStats] =
     await Promise.all([
       prisma.userQuestionProgress.count({
         where: {
@@ -21,10 +21,10 @@ export async function GET(request: NextRequest) {
           status: { in: ["correct", "wrong"] },
         },
       }),
-      prisma.userStudyRecord.count({
-        where: { userId: appUser.id, finishedAt: { not: null } },
+      prisma.studyAttempt.count({
+        where: { userId: appUser.id },
       }),
-      prisma.userStudyRecord.aggregate({
+      prisma.studyAttempt.aggregate({
         where: { userId: appUser.id },
         _sum: { durationSeconds: true },
       }),
@@ -88,13 +88,13 @@ export async function GET(request: NextRequest) {
     totalQuestions: totalAnswered,
     streak,
     totalCorrect,
-    totalUnitsCompleted,
+    totalSessions,
     totalStudyDuration: totalStudyDuration._sum.durationSeconds || 0,
     accuracy: totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0,
     recentStats: recentStats.map((s: any) => ({
       date: s.date,
       questionsAnswered: s.questionsAnswered,
-      unitsCompleted: s.unitsCompleted,
+      sessionsCompleted: s.sessionsCompleted,
       studyDuration: s.studyDuration,
     })),
   });

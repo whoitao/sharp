@@ -9,7 +9,8 @@ async function main() {
   // Clean up existing data (in order of dependencies)
   await prisma.userDailyStat.deleteMany();
   await prisma.userQuestionProgress.deleteMany();
-  await prisma.userStudyRecord.deleteMany();
+  await prisma.studyAttemptItem.deleteMany();
+  await prisma.studyAttempt.deleteMany();
   await prisma.questionOption.deleteMany();
   await prisma.question.deleteMany();
   await prisma.userSettings.deleteMany();
@@ -344,83 +345,6 @@ async function main() {
   });
 
   console.log(`Created test user: ${user.username}`);
-
-  // Create sample study records
-  const cet4Id = cet4Grade.id;
-  const gkMathId = gkMathGrade.id;
-
-  await prisma.userStudyRecord.createMany({
-    data: [
-      {
-        userId: user.id,
-        gradeId: cet4Id,
-        unitIndex: 0,
-        startedAt: new Date(Date.now() - 86400000 * 5),
-        finishedAt: new Date(Date.now() - 86400000 * 5 + 600000),
-        totalQuestions: 20,
-        correctCount: 18,
-        wrongCount: 2,
-        durationSeconds: 600,
-      },
-      {
-        userId: user.id,
-        gradeId: cet4Id,
-        unitIndex: 1,
-        startedAt: new Date(Date.now() - 86400000 * 4),
-        finishedAt: new Date(Date.now() - 86400000 * 4 + 720000),
-        totalQuestions: 20,
-        correctCount: 16,
-        wrongCount: 4,
-        durationSeconds: 720,
-      },
-      {
-        userId: user.id,
-        gradeId: cet4Id,
-        unitIndex: 2,
-        startedAt: new Date(Date.now() - 86400000 * 3),
-        finishedAt: new Date(Date.now() - 86400000 * 3 + 540000),
-        totalQuestions: 20,
-        correctCount: 15,
-        wrongCount: 5,
-        durationSeconds: 540,
-      },
-      {
-        userId: user.id,
-        gradeId: gkMathId,
-        unitIndex: 0,
-        startedAt: new Date(Date.now() - 86400000 * 2),
-        finishedAt: new Date(Date.now() - 86400000 * 2 + 900000),
-        totalQuestions: 20,
-        correctCount: 14,
-        wrongCount: 6,
-        durationSeconds: 900,
-      },
-      {
-        userId: user.id,
-        gradeId: gkMathId,
-        unitIndex: 1,
-        startedAt: new Date(Date.now() - 86400000),
-        finishedAt: new Date(Date.now() - 86400000 + 660000),
-        totalQuestions: 20,
-        correctCount: 17,
-        wrongCount: 3,
-        durationSeconds: 660,
-      },
-      {
-        userId: user.id,
-        gradeId: cet4Id,
-        unitIndex: 3,
-        startedAt: new Date(),
-        finishedAt: null,
-        totalQuestions: 20,
-        correctCount: 10,
-        wrongCount: 5,
-        durationSeconds: 300,
-      },
-    ],
-  });
-
-  console.log("Created 6 sample study records");
   console.log("Seeding complete!");
 }
 

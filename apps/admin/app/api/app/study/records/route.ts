@@ -23,10 +23,10 @@ export async function GET(request: NextRequest) {
   if (chapterId) where.chapterId = BigInt(chapterId);
 
   const [total, records] = await Promise.all([
-    prisma.userStudyRecord.count({ where }),
-    prisma.userStudyRecord.findMany({
+    prisma.studyAttempt.count({ where }),
+    prisma.studyAttempt.findMany({
       where,
-      orderBy: { startedAt: "desc" },
+      orderBy: { finishedAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
@@ -55,6 +55,8 @@ export async function GET(request: NextRequest) {
     gradeName: r.grade?.name ?? r.chapter?.textbook?.grade?.name ?? null,
     subjectId: r.subjectId?.toString() ?? null,
     knowledgePointId: r.knowledgePointId?.toString() ?? null,
+    // 学习来源：chapter 教材章节 / knowledge 考纲知识点 / bank 题库
+    scopeType: r.scopeType,
     // 教材章节练习来源；考纲练习为 null
     chapterId: r.chapterId?.toString() ?? null,
     chapterName: r.chapter?.name ?? null,
