@@ -134,6 +134,7 @@ export const zh: Messages = {
     iconOptional: "图标",
     sortOrder: "排序",
     questionCount: "{n} 题",
+    colQuestionCount: "题数",
     deleteConfirm: "确定要删除\"{name}\"吗？该操作无法撤销。",
     created: "科目已创建",
     updated: "科目已更新",

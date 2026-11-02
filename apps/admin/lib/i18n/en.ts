@@ -132,6 +132,7 @@ export const en = {
     iconOptional: "Icon",
     sortOrder: "Sort Order",
     questionCount: "{n} questions",
+    colQuestionCount: "Questions",
     deleteConfirm: 'Are you sure you want to delete "{name}"? This action cannot be undone.',
     created: "Subject created",
     updated: "Subject updated",

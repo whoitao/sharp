@@ -2,7 +2,7 @@
 
 import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
-import { App, Button, Cascader, Form, Input, InputNumber, Modal, Select, Space, Tag, Tree } from "antd";
+import { App, Button, Cascader, Form, Input, InputNumber, Modal, Select, Space, Tag, Tree, theme } from "antd";
 import type { DataNode } from "antd/es/tree";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -40,6 +40,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 
 export default function ChaptersPanel() {
   const { message, modal } = App.useApp();
+  const { token } = theme.useToken();
   const [textbooks, setTextbooks] = useState<TextbookOption[]>([]);
   const [selectedTextbookId, setSelectedTextbookId] = useState<string | undefined>();
   const [tree, setTree] = useState<ChapterNode[]>([]);
@@ -252,7 +253,7 @@ export default function ChaptersPanel() {
             display: "flex",
             gap: 16,
             alignItems: "center",
-            background: "#fafafa",
+            background: token.colorFillAlter,
             borderRadius: 8,
             padding: 12,
             marginBottom: 12,
@@ -271,11 +272,11 @@ export default function ChaptersPanel() {
                 width: 54,
                 height: 72,
                 borderRadius: 4,
-                background: "#eee",
+                background: token.colorFillSecondary,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#bbb",
+                color: token.colorTextQuaternary,
                 fontSize: 12,
               }}
             >
@@ -284,25 +285,22 @@ export default function ChaptersPanel() {
           )}
           <div>
             <div style={{ fontWeight: 600 }}>{selectedTextbook.name}</div>
-            <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>
+            <div style={{ color: token.colorTextSecondary, fontSize: 12, marginTop: 4 }}>
               {selectedTextbook.publisherName} · {selectedTextbook.chapterCount} 章 ·{" "}
               {selectedTextbook.questionCount} 题
             </div>
           </div>
-          <Link href="/textbooks" style={{ marginLeft: "auto" }}>
-            <Button size="small">编辑教材</Button>
-          </Link>
         </div>
       )}
 
       {!selectedTextbookId ? (
-        <div style={{ padding: 48, textAlign: "center", color: "#999" }}>请先选择教材</div>
+        <div style={{ padding: 48, textAlign: "center", color: token.colorTextSecondary }}>请先选择教材</div>
       ) : (
-        <div style={{ background: "#fafafa", borderRadius: 8, padding: 16, minHeight: 200 }}>
+        <div style={{ background: token.colorFillAlter, borderRadius: 8, padding: 16, minHeight: 200 }}>
           {loading ? (
-            <div style={{ color: "#999", textAlign: "center", padding: 24 }}>加载中...</div>
+            <div style={{ color: token.colorTextSecondary, textAlign: "center", padding: 24 }}>加载中...</div>
           ) : tree.length === 0 ? (
-            <div style={{ color: "#999", textAlign: "center", padding: 24 }}>
+            <div style={{ color: token.colorTextSecondary, textAlign: "center", padding: 24 }}>
               该教材暂无章节。先建「章」，再在章下建「节」。
             </div>
           ) : (

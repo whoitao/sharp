@@ -166,6 +166,8 @@ export default function SubjectsPanel() {
       title: t("subjects.name"),
       dataIndex: "name",
       key: "name",
+      width: 240,
+      ellipsis: true,
     },
     {
       title: t("subjects.sortOrder"),
@@ -174,9 +176,9 @@ export default function SubjectsPanel() {
       width: 100,
     },
     {
-      title: t("subjects.questionCount"),
+      title: t("subjects.colQuestionCount"),
       key: "questionCount",
-      width: 100,
+      width: 150,
       render: (_, record) => t("subjects.questionCount", { n: record.questionCount }),
     },
     {
