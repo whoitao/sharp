@@ -38,7 +38,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
   return { Authorization: `Bearer ${token}`, ...extra };
 }
 
-export default function ChaptersPage() {
+export default function ChaptersPanel() {
   const { message, modal } = App.useApp();
   const [textbooks, setTextbooks] = useState<TextbookOption[]>([]);
   const [selectedTextbookId, setSelectedTextbookId] = useState<string | undefined>();

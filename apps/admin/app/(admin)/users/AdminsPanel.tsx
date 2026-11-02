@@ -21,7 +21,7 @@ interface PaginatedData {
   totalPages: number;
 }
 
-export default function AdminsPage() {
+export default function AdminsPanel() {
   const { locale, t } = useLocale();
   const { pageSize } = usePageSize();
   const [admins, setAdmins] = useState<AdminItem[]>([]);

@@ -28,7 +28,7 @@ interface CategoryFormValues {
   sortOrder: number;
 }
 
-export default function ArticleCategoriesPage() {
+export default function CategoriesPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
   const [categories, setCategories] = useState<CategoryItem[]>([]);

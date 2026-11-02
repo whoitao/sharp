@@ -15,3 +15,17 @@ export function usePageActions(node: React.ReactNode) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node]);
 }
+
+// 页面标题注入：子页面可用自定义内容（如 Tab 栏）替换顶栏标题
+export const PageTitleContext = createContext<{
+  setTitle: (node: React.ReactNode) => void;
+}>({ setTitle: () => {} });
+
+export function usePageTitle(node: React.ReactNode) {
+  const { setTitle } = useContext(PageTitleContext);
+  useEffect(() => {
+    setTitle(node);
+    return () => setTitle(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node]);
+}

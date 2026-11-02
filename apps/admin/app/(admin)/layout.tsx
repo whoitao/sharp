@@ -1,16 +1,11 @@
 "use client";
 
 import { PAGE_SIZE_OPTIONS, usePageSize, useThemeMode, type ThemeMode } from "@/components/antd-providers";
-import { PageActionsContext } from "@/components/page-actions";
+import { PageActionsContext, PageTitleContext } from "@/components/page-actions";
 import { useLocale, type Locale, type MessageKey } from "@/lib/i18n";
 import {
-  ApartmentOutlined,
-  AppstoreOutlined,
-  BarChartOutlined,
   BookOutlined,
   DashboardOutlined,
-  FileTextOutlined,
-  FolderOpenOutlined,
   GlobalOutlined,
   InfoCircleOutlined,
   LogoutOutlined,
@@ -24,8 +19,7 @@ import {
   SunOutlined,
   TagsOutlined,
   TeamOutlined,
-  UnorderedListOutlined,
-  UserOutlined
+  UnorderedListOutlined
 } from "@ant-design/icons";
 import {
   App,
@@ -39,26 +33,20 @@ import {
   type MenuProps
 } from "antd";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 const { Sider, Content } = Layout;
 
 const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] = [
   { key: "/dashboard", icon: <DashboardOutlined />, labelKey: "nav.dashboard" },
-  { key: "/users", icon: <UserOutlined />, labelKey: "nav.users" },
-  { key: "/admins", icon: <TeamOutlined />, labelKey: "nav.admins" },
+  { key: "/users", icon: <TeamOutlined />, labelKey: "nav.userManagement" },
   { key: "/subjects", icon: <BookOutlined />, labelKey: "nav.subjects" },
   { key: "/knowledge-points", icon: <TagsOutlined />, labelKey: "nav.knowledgePoints" },
   { key: "/questions", icon: <QuestionCircleOutlined />, labelKey: "nav.questions" },
-  { key: "/stats", icon: <BarChartOutlined />, labelKey: "nav.stats" },
-  { key: "/publishers", icon: <FileTextOutlined />, labelKey: "nav.publishers" },
-  { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.grades" },
-  { key: "/stages", icon: <ApartmentOutlined />, labelKey: "nav.stages" },
-  { key: "/textbooks", icon: <BookOutlined />, labelKey: "nav.textbooks" },
-  { key: "/chapters", icon: <AppstoreOutlined />, labelKey: "nav.chapters" },
+  { key: "/textbooks", icon: <BookOutlined />, labelKey: "nav.textbookManagement" },
+  { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.gradeManagement" },
   { key: "/tags", icon: <TagsOutlined />, labelKey: "nav.tags" },
   { key: "/articles", icon: <ReadOutlined />, labelKey: "nav.articles" },
-  { key: "/article-categories", icon: <FolderOpenOutlined />, labelKey: "nav.articleCategories" },
 ];
 
 const THEME_OPTIONS: { value: ThemeMode; labelKey: MessageKey; icon: React.ReactNode }[] = [
@@ -91,11 +79,17 @@ export default function AdminLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [pageActions, setPageActions] = useState<React.ReactNode>(null);
+  const [pageTitle, setPageTitle] = useState<React.ReactNode>(null);
+
+  // Context 值必须稳定，否则子页面每次因 Context 变化重渲染又会注入新的节点，形成无限 setState 循环
+  const pageActionsContextValue = useMemo(() => ({ setActions: setPageActions }), []);
+  const pageTitleContextValue = useMemo(() => ({ setTitle: setPageTitle }), []);
 
   // 路由切换时同步清空顶栏按钮，避免上一个页面的按钮残留。
   // useLayoutEffect 早于子页面的 useEffect 执行，确保新页面 setup 前先清掉旧的。
   useLayoutEffect(() => {
     setPageActions(null);
+    setPageTitle(null);
   }, [pathname]);
 
   useEffect(() => {
@@ -196,7 +190,8 @@ export default function AdminLayout({
   ];
 
   return (
-    <PageActionsContext.Provider value={{ setActions: setPageActions }}>
+    <PageActionsContext.Provider value={pageActionsContextValue}>
+    <PageTitleContext.Provider value={pageTitleContextValue}>
     <Layout style={{ height: "100vh", overflow: "hidden" }}>
       <Sider
         collapsible
@@ -290,9 +285,11 @@ export default function AdminLayout({
             gap: 16,
           }}
         >
-          <span style={{ fontSize: 18, fontWeight: 600, flex: "0 0 auto" }}>
-            {t(NAV_ITEMS.find((item) => activeKey.startsWith(item.key))?.labelKey ?? "nav.dashboard")}
-          </span>
+          {pageTitle ?? (
+            <span style={{ fontSize: 18, fontWeight: 600, flex: "0 0 auto" }}>
+              {t(NAV_ITEMS.find((item) => activeKey.startsWith(item.key))?.labelKey ?? "nav.dashboard")}
+            </span>
+          )}
           <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", minWidth: 0 }}>
             {pageActions}
           </div>
@@ -309,6 +306,7 @@ export default function AdminLayout({
         </Content>
       </Layout>
     </Layout>
+    </PageTitleContext.Provider>
     </PageActionsContext.Provider>
   );
 }

@@ -9,6 +9,7 @@ import {
     Input,
     InputNumber,
     Modal,
+    Select,
     Space,
     Table,
     Tag,
@@ -16,38 +17,36 @@ import {
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
-type Stage = {
+type Grade = {
   id: string;
   name: string;
+  stage: string;
   sortOrder: number;
-  gradeCount: number;
-  knowledgePointCount: number;
+  chapterCount: number;
 };
+
+const STAGES = ["小学", "初中", "高中", "大学"];
 
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
   const token = localStorage.getItem("admin_token") ?? "";
   return { Authorization: `Bearer ${token}`, ...extra };
 }
 
-const STAGE_COLORS: Record<string, string> = {
-  小学: "green",
-  初中: "blue",
-  高中: "purple",
-  大学: "orange",
-};
-
-export default function StagesPage() {
+export default function GradesPanel() {
   const { message, modal } = App.useApp();
-  const [data, setData] = useState<Stage[]>([]);
+  const [data, setData] = useState<Grade[]>([]);
   const [loading, setLoading] = useState(false);
+  const [filterStage, setFilterStage] = useState<string | undefined>();
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Stage | null>(null);
+  const [editing, setEditing] = useState<Grade | null>(null);
   const [form] = Form.useForm();
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/admin/stages", { headers: authHeaders() });
+      const params = new URLSearchParams();
+      if (filterStage) params.set("stage", filterStage);
+      const r = await fetch(`/api/admin/grades?${params}`, { headers: authHeaders() });
       if (!r.ok) throw new Error(await r.text());
       setData(await r.json());
     } finally {
@@ -57,7 +56,8 @@ export default function StagesPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStage]);
 
   const openCreate = () => {
     setEditing(null);
@@ -65,31 +65,28 @@ export default function StagesPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (row: Stage) => {
+  const openEdit = (row: Grade) => {
     setEditing(row);
-    form.setFieldsValue({ name: row.name, sortOrder: row.sortOrder });
+    form.setFieldsValue({ name: row.name, stage: row.stage, sortOrder: row.sortOrder });
     setModalOpen(true);
   };
 
   const handleSubmit = async () => {
     const v = await form.validateFields();
-    const body = JSON.stringify({ name: v.name?.trim(), sortOrder: v.sortOrder ?? 0 });
+    const body = JSON.stringify({ name: v.name?.trim(), stage: v.stage, sortOrder: v.sortOrder ?? 0 });
     try {
       const r = editing
-        ? await fetch(`/api/admin/stages?id=${editing.id}`, {
+        ? await fetch(`/api/admin/grades?id=${editing.id}`, {
             method: "PATCH",
             body,
             headers: authHeaders({ "Content-Type": "application/json" }),
           })
-        : await fetch("/api/admin/stages", {
+        : await fetch("/api/admin/grades", {
             method: "POST",
             body,
             headers: authHeaders({ "Content-Type": "application/json" }),
           });
-      if (!r.ok) {
-        const err = await r.json().catch(() => null);
-        throw new Error(err?.error ?? "保存失败");
-      }
+      if (!r.ok) throw new Error(await r.text());
       setModalOpen(false);
       message.success(editing ? "更新成功" : "创建成功");
       loadData();
@@ -98,19 +95,13 @@ export default function StagesPage() {
     }
   };
 
-  const handleDelete = (row: Stage) => {
+  const handleDelete = (row: Grade) => {
     modal.confirm({
       title: `确认删除「${row.name}」？`,
-      content:
-        row.gradeCount > 0 || row.knowledgePointCount > 0
-          ? `该学段下有 ${row.gradeCount} 个年级、${row.knowledgePointCount} 个知识点，需先移除关联数据`
-          : null,
+      content: row.chapterCount > 0 ? `该年级下有 ${row.chapterCount} 个章节，需先移除章节` : null,
       okButtonProps: { danger: true },
       onOk: async () => {
-        const r = await fetch(`/api/admin/stages?id=${row.id}`, {
-          method: "DELETE",
-          headers: authHeaders(),
-        });
+        const r = await fetch(`/api/admin/grades?id=${row.id}`, { method: "DELETE", headers: authHeaders() });
         if (!r.ok) {
           const err = await r.json().catch(() => null);
           throw new Error(err?.error ?? "删除失败");
@@ -124,7 +115,7 @@ export default function StagesPage() {
   const headerActions = useMemo(
     () => (
       <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-        新建学段
+        新建年级
       </Button>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,16 +123,17 @@ export default function StagesPage() {
   );
   usePageActions(headerActions);
 
-  const columns: TableProps<Stage>["columns"] = [
+  const columns: TableProps<Grade>["columns"] = [
     { title: "ID", dataIndex: "id", width: 80 },
     {
-      title: "学段",
-      dataIndex: "name",
-      render: (v) => <Tag color={STAGE_COLORS[v] ?? "default"}>{v}</Tag>,
+      title: "阶段",
+      dataIndex: "stage",
+      width: 100,
+      render: (v) => <Tag color={v === "小学" ? "green" : v === "初中" ? "blue" : v === "高中" ? "purple" : "orange"}>{v}</Tag>,
     },
-    { title: "排序", dataIndex: "sortOrder", width: 90, align: "center" },
-    { title: "年级数", dataIndex: "gradeCount", width: 100, align: "center" },
-    { title: "知识点数", dataIndex: "knowledgePointCount", width: 110, align: "center" },
+    { title: "年级", dataIndex: "name" },
+    { title: "排序", dataIndex: "sortOrder", width: 80, align: "center" },
+    { title: "章节数", dataIndex: "chapterCount", width: 90, align: "center" },
     {
       title: "操作",
       width: 160,
@@ -156,6 +148,15 @@ export default function StagesPage() {
 
   return (
     <div>
+      <div style={{ marginBottom: 12, display: "flex", gap: 12, alignItems: "center" }}>
+        <Select
+          placeholder="全部阶段"
+          allowClear
+          style={{ width: 160 }}
+          options={STAGES.map((s) => ({ value: s, label: s }))}
+          onChange={setFilterStage}
+        />
+      </div>
       <Table
         rowKey="id"
         size="small"
@@ -165,7 +166,7 @@ export default function StagesPage() {
         pagination={{ pageSize: 20, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
       />
       <Modal
-        title={editing ? "编辑学段" : "新建学段"}
+        title={editing ? "编辑年级" : "新建年级"}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
@@ -173,8 +174,11 @@ export default function StagesPage() {
         width={420}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="学段名称" rules={[{ required: true }]}>
-            <Input placeholder="如：小学 / 初中 / 高中 / 大学" />
+          <Form.Item name="stage" label="所属阶段" rules={[{ required: true }]}>
+            <Select options={STAGES.map((s) => ({ value: s, label: s }))} placeholder="选择阶段" />
+          </Form.Item>
+          <Form.Item name="name" label="年级名称" rules={[{ required: true }]}>
+            <Input placeholder="如：初一 / 高一 / 大一" />
           </Form.Item>
           <Form.Item name="sortOrder" label="排序">
             <InputNumber min={0} style={{ width: "100%" }} />

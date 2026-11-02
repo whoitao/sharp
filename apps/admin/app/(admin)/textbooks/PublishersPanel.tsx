@@ -25,7 +25,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
   return { Authorization: `Bearer ${token}`, ...extra };
 }
 
-export default function PublishersPage() {
+export default function PublishersPanel() {
   const { message, modal } = App.useApp();
   const [data, setData] = useState<Publisher[]>([]);
   const [loading, setLoading] = useState(false);
