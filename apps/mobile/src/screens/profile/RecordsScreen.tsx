@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type {
   ChapterStudyStat,
@@ -27,6 +28,7 @@ import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { updateSettings } from '../../stores/settingsSlice';
+import { cardShadow } from '../../theme/shadows';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Records'>;
 type TabKey = 'time' | 'chapter' | 'knowledge';
@@ -36,7 +38,7 @@ interface RecordsScreenProps {
 }
 
 const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -86,8 +88,8 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
         const response = await api.getStudyRecords({
           page: pageNum,
           pageSize: 20,
-          subjectId: selectedSubject?.id,
-          gradeId: selectedGrade?.id,
+          subjectId: subjectId ?? undefined,
+          gradeId: gradeId ?? undefined,
         });
         if (pageNum === 1) setRecords(response.data);
         else setRecords((prev) => [...prev, ...response.data]);
@@ -97,7 +99,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
         // keep existing data
       }
     },
-    [selectedSubject, selectedGrade],
+    [subjectId, gradeId],
   );
 
   const fetchOverview = useCallback(async () => {
@@ -109,10 +111,9 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
     }
   }, []);
 
-  // 首屏：总览 + 时间线
+  // 年级 / 科目字典只拉一次，避免与数据加载 effect 形成相互触发
   useEffect(() => {
     (async () => {
-      setLoading(true);
       try {
         const [subs, gradeList] = await Promise.all([api.getSubjects(), api.getGrades()]);
         setSubjects(subs);
@@ -120,9 +121,20 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       } catch {
         // ignore
       }
-      await Promise.all([fetchOverview(), fetchRecords(1)]);
-      setLoading(false);
     })();
+  }, []);
+
+  // 首屏 / 范围变化：总览 + 时间线
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      await Promise.all([fetchOverview(), fetchRecords(1)]);
+      if (!cancelled) setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [fetchOverview, fetchRecords]);
 
   // 按章节：依赖「我的教材」
@@ -251,23 +263,23 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
         <View
           style={[
             styles.progressTrack,
-            { backgroundColor: colors.border, height: 6, borderRadius: 3, marginBottom: 6 * spacing },
+            { backgroundColor: colors.borderLight, height: 4, borderRadius: 2, marginBottom: 8 * spacing },
           ]}
         >
           <View
             style={{
               width: `${ratio * 100}%`,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: colors.primary,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: colors.accent,
             }}
           />
         </View>
         <View style={styles.statRow}>
-          <Text style={[styles.statHint, { color: colors.textSecondary, fontSize: 12 * font }]}>
+          <Text style={[styles.statHint, { color: colors.textTertiary, fontSize: 11.5 * font }]}>
             {t.statsProgress(answered, total)}
           </Text>
-          <Text style={[styles.statHint, { color: colors.textSecondary, fontSize: 12 * font }]}>
+          <Text style={[styles.statHint, { color: colors.textTertiary, fontSize: 11.5 * font }]}>
             {t.statsAccuracyLabel} {accuracy}%
           </Text>
         </View>
@@ -280,11 +292,13 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       key={item.id}
       style={[
         styles.statCard,
+        cardShadow(isDark),
         {
           backgroundColor: colors.surface,
-          padding: 16 * spacing,
+          borderColor: colors.border,
+          padding: 12 * spacing,
           borderRadius: 12 * radius,
-          marginBottom: 10 * spacing,
+          marginBottom: 9 * spacing,
         },
       ]}
     >
@@ -296,7 +310,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
           {item.name}
         </Text>
         {!!item.lastPracticedAt && (
-          <Text style={[styles.statHint, { color: colors.textTertiary, fontSize: 12 * font }]}>
+          <Text style={[styles.statHint, { color: colors.textTertiary, fontSize: 11.5 * font }]}>
             {t.statsLastPracticed(formatShortDate(item.lastPracticedAt))}
           </Text>
         )}
@@ -314,45 +328,74 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       ...flattenKnowledgePoints(node.children ?? [], depth + 1),
     ]);
 
-  const renderKnowledgeItem = ({
-    node,
-    depth,
-  }: {
-    node: KnowledgePointStudyStat;
-    depth: number;
-  }) => (
-    <View
-      key={node.id}
-      style={[
-        styles.statCard,
-        {
-          backgroundColor: colors.surface,
-          padding: 14 * spacing,
-          borderRadius: 12 * radius,
-          marginBottom: 8 * spacing,
-          marginLeft: depth > 0 ? 14 * depth * spacing : 0,
-        },
-      ]}
-    >
-      <View style={[styles.statHeader, { marginBottom: 8 * spacing }]}>
-        <Text
-          style={[
-            styles.statName,
-            { color: colors.text, fontSize: (depth === 0 ? 15 : 14) * font },
-          ]}
-          numberOfLines={1}
-        >
-          {node.name}
-        </Text>
-        {!!node.lastPracticedAt && (
-          <Text style={[styles.statHint, { color: colors.textTertiary, fontSize: 12 * font }]}>
-            {t.statsLastPracticed(formatShortDate(node.lastPracticedAt))}
-          </Text>
-        )}
+  const renderKnowledgeTree = () => {
+    const rows = flattenKnowledgePoints(kpStats);
+    return (
+      <View
+        style={[
+          styles.kpTable,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderRadius: 12 * radius,
+          },
+        ]}
+      >
+        {rows.map(({ node, depth }, index) => {
+          const accuracy =
+            node.answeredQuestions > 0
+              ? Math.round((node.correctQuestions / node.answeredQuestions) * 100)
+              : 0;
+          return (
+            <View
+              key={node.id}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 12 * spacing,
+                paddingLeft: (12 + depth * 12) * spacing,
+                paddingRight: 12 * spacing,
+                borderBottomWidth: index === rows.length - 1 ? 0 : StyleSheet.hairlineWidth,
+                borderBottomColor: colors.border,
+              }}
+            >
+              <Text
+                style={{
+                  flex: 1,
+                  color: colors.text,
+                  fontSize: (depth === 0 ? 14 : 13) * font,
+                  fontWeight: depth === 0 ? '600' : '400',
+                }}
+                numberOfLines={1}
+              >
+                {node.name}
+              </Text>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: 11 * font,
+                  marginLeft: 6 * spacing,
+                }}
+              >
+                {node.answeredQuestions}/{node.totalQuestions}
+              </Text>
+              <Text
+                style={{
+                  color: colors.textTertiary,
+                  fontSize: 11 * font,
+                  marginLeft: 6 * spacing,
+                  minWidth: 34,
+                  textAlign: 'right',
+                }}
+              >
+                {accuracy}%
+              </Text>
+            </View>
+          );
+        })}
       </View>
-      {renderProgress(node.answeredQuestions, node.correctQuestions, node.totalQuestions)}
-    </View>
-  );
+    );
+  };
 
   const renderItem = ({ item }: { item: StudyRecord }) => {
     const percentage =
@@ -362,7 +405,17 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
 
     return (
       <TouchableOpacity
-        style={[styles.recordCard, { backgroundColor: colors.surface, padding: 16 * spacing, borderRadius: 12 * radius, marginBottom: 10 * spacing }]}
+        style={[
+          styles.recordCard,
+          cardShadow(isDark),
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            padding: 12 * spacing,
+            borderRadius: 12 * radius,
+            marginBottom: 9 * spacing,
+          },
+        ]}
         onPress={() => handleRecordPress(item)}
         activeOpacity={0.7}
       >
@@ -377,17 +430,21 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
             {[item.textbookLabel, item.chapterName].filter(Boolean).join(' · ')}
           </Text>
         )}
-        <View style={[styles.recordHeader, { marginBottom: 14 * spacing }]}>
-          <Text style={[styles.recordDate, { color: colors.textSecondary, fontSize: 14 * font }]}>{formatDate(item.startedAt)}</Text>
+        <View style={[styles.recordHeader, { marginBottom: 10 * spacing }]}>
+          <Text style={[styles.recordDate, { color: colors.textSecondary, fontSize: 13 * font }]}>{formatDate(item.startedAt)}</Text>
           <View
             style={[
               styles.scoreBadge,
               {
                 backgroundColor:
-                  percentage >= 80 ? colors.accentLight : percentage >= 60 ? '#FEF3C7' : colors.errorLight,
-                paddingHorizontal: 10 * spacing,
-                paddingVertical: 4 * spacing,
-                borderRadius: 12 * radius,
+                  percentage >= 80
+                    ? colors.accentLight
+                    : percentage >= 60
+                      ? colors.warningLight
+                      : colors.errorLight,
+                paddingHorizontal: 8 * spacing,
+                paddingVertical: 3 * spacing,
+                borderRadius: 10 * radius,
               },
             ]}
           >
@@ -395,9 +452,13 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
               style={[
                 styles.scoreBadgeText,
                 {
-                  fontSize: 13 * font,
+                  fontSize: 12 * font,
                   color:
-                    percentage >= 80 ? colors.accent : percentage >= 60 ? '#D97706' : colors.error,
+                    percentage >= 80
+                      ? colors.accent
+                      : percentage >= 60
+                        ? colors.warning
+                        : colors.error,
                 },
               ]}
             >
@@ -407,24 +468,24 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
         </View>
         <View style={styles.recordBody}>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.statQuestions}</Text>
-            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 16 * font }]}>{item.totalQuestions}</Text>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 11.5 * font, marginBottom: 3 * spacing }]}>{t.statQuestions}</Text>
+            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 15 * font }]}>{item.totalQuestions}</Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.statCorrect}</Text>
-            <Text style={[styles.recordStatValue, { color: colors.accent, fontSize: 16 * font }]}>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 11.5 * font, marginBottom: 3 * spacing }]}>{t.statCorrect}</Text>
+            <Text style={[styles.recordStatValue, { color: colors.accent, fontSize: 15 * font }]}>
               {item.correctCount}
             </Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.statWrong}</Text>
-            <Text style={[styles.recordStatValue, { color: colors.error, fontSize: 16 * font }]}>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 11.5 * font, marginBottom: 3 * spacing }]}>{t.statWrong}</Text>
+            <Text style={[styles.recordStatValue, { color: colors.error, fontSize: 15 * font }]}>
               {item.wrongCount}
             </Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font, marginBottom: 4 * spacing }]}>{t.statDuration}</Text>
-            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 16 * font }]}>{formatDuration(item.durationSeconds)}</Text>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 11.5 * font, marginBottom: 3 * spacing }]}>{t.statDuration}</Text>
+            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 15 * font }]}>{formatDuration(item.durationSeconds)}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -435,8 +496,13 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
     if (tab === 'chapter') {
       if (!textbookId) {
         return (
-          <View style={[styles.empty, { paddingTop: 40 * spacing }]}>
-            <Text style={[styles.emptyIcon, { fontSize: 40 * font, marginBottom: 12 * spacing }]}>📚</Text>
+          <View style={[styles.empty, { paddingTop: 48 * spacing }]}>
+            <Ionicons
+              name="library-outline"
+              size={40 * font}
+              color={colors.textTertiary}
+              style={{ marginBottom: 12 * spacing }}
+            />
             <Text style={[styles.emptySub, { color: colors.textSecondary, fontSize: 14 * font, textAlign: 'center' }]}>
               {t.statsSelectTextbook}
             </Text>
@@ -445,19 +511,31 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       }
       if (chapterStats.length === 0) {
         return (
-          <View style={[styles.empty, { paddingTop: 40 * spacing }]}>
+          <View style={[styles.empty, { paddingTop: 48 * spacing }]}>
+            <Ionicons
+              name="bar-chart-outline"
+              size={40 * font}
+              color={colors.textTertiary}
+              style={{ marginBottom: 12 * spacing }}
+            />
             <Text style={[styles.emptySub, { color: colors.textSecondary, fontSize: 14 * font }]}>
               {t.statsNoChapterData}
             </Text>
           </View>
         );
       }
-      return <View style={{ padding: 16 * spacing, paddingTop: 10 * spacing }}>{chapterStats.map(renderChapterItem)}</View>;
+      return <View style={{ padding: 16 * spacing, paddingTop: 12 * spacing }}>{chapterStats.map(renderChapterItem)}</View>;
     }
 
     if (kpStats.length === 0) {
       return (
-        <View style={[styles.empty, { paddingTop: 40 * spacing }]}>
+        <View style={[styles.empty, { paddingTop: 48 * spacing }]}>
+          <Ionicons
+            name="bar-chart-outline"
+            size={40 * font}
+            color={colors.textTertiary}
+            style={{ marginBottom: 12 * spacing }}
+          />
           <Text style={[styles.emptySub, { color: colors.textSecondary, fontSize: 14 * font }]}>
             {t.statsNoKnowledgeData}
           </Text>
@@ -465,8 +543,8 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       );
     }
     return (
-      <View style={{ padding: 16 * spacing, paddingTop: 10 * spacing }}>
-        {flattenKnowledgePoints(kpStats).map(renderKnowledgeItem)}
+      <View style={{ padding: 16 * spacing, paddingTop: 12 * spacing }}>
+        {renderKnowledgeTree()}
       </View>
     );
   };
@@ -477,52 +555,59 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       <View
         style={[
           styles.overviewCard,
+          cardShadow(isDark),
           {
             backgroundColor: colors.surface,
+            borderColor: colors.border,
             marginHorizontal: 16 * spacing,
-            marginTop: 12 * spacing,
-            padding: 16 * spacing,
+            marginTop: 0,
+            padding: 12 * spacing,
             borderRadius: 12 * radius,
           },
         ]}
       >
-        <View style={[styles.statHeader, { marginBottom: 12 * spacing }]}>
-          <Text style={[styles.overviewTitle, { color: colors.text, fontSize: 16 * font }]}>
-            {t.statsToday}
-          </Text>
-          {!!stats && stats.streak > 0 && (
-            <Text style={[styles.streak, { color: colors.accent, fontSize: 13 * font }]}>
+        {!!stats && stats.streak > 0 && (
+          <View
+            style={[
+              styles.streakRow,
+              { marginBottom: 8 * spacing, marginRight: 4 * spacing },
+            ]}
+          >
+            <Ionicons name="flame" size={12 * font} color={colors.accent} />
+            <Text
+              style={[styles.streak, { color: colors.accent, fontSize: 11.5 * font, marginLeft: 3 * spacing }]}
+            >
               {t.statsStreakDays(stats.streak)}
             </Text>
-          )}
-        </View>
+          </View>
+        )}
         <View style={styles.overviewRow}>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 20 * font }]}>
+            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 18 * font }]}>
               {today?.questionsAnswered ?? 0}
             </Text>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font }]}>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 11.5 * font }]}>
               {t.statsTodayQuestions}
             </Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 20 * font }]}>
+            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 18 * font }]}>
               {today?.sessionsCompleted ?? 0}
             </Text>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font }]}>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 11.5 * font }]}>
               {t.statsTodaySessions}
             </Text>
           </View>
           <View style={styles.recordStat}>
-            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 20 * font }]}>
+            <Text style={[styles.recordStatValue, { color: colors.text, fontSize: 18 * font }]}>
               {formatDuration(today?.studyDuration ?? 0)}
             </Text>
-            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 12 * font }]}>
+            <Text style={[styles.recordStatLabel, { color: colors.textTertiary, fontSize: 11.5 * font }]}>
               {t.statsTodayDuration}
             </Text>
           </View>
         </View>
-        <View style={[styles.overviewDivider, { backgroundColor: colors.border, marginVertical: 12 * spacing }]} />
+        <View style={[styles.overviewDivider, { backgroundColor: colors.borderLight, marginVertical: 12 * spacing }]} />
         <View style={styles.overviewRow}>
           <View style={styles.recordStat}>
             <Text style={[styles.overviewTotal, { color: colors.textSecondary, fontSize: 13 * font }]}>
@@ -552,7 +637,16 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       </View>
 
       {/* 三视角切换 */}
-      <View style={[styles.tabBar, { marginHorizontal: 16 * spacing, marginTop: 12 * spacing, marginBottom: 4 * spacing }]}>
+      <View
+        style={{
+          flexDirection: 'row',
+          marginHorizontal: 16 * spacing,
+          marginTop: 8 * spacing,
+          padding: 3 * spacing,
+          borderRadius: 10 * radius,
+          backgroundColor: colors.surfaceSecondary,
+        }}
+      >
         {tabs.map((item) => {
           const active = tab === item.key;
           return (
@@ -563,7 +657,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
                 {
                   paddingVertical: 8 * spacing,
                   borderRadius: 8 * radius,
-                  backgroundColor: active ? colors.accentLight : 'transparent',
+                  backgroundColor: active ? colors.surface : 'transparent',
                 },
               ]}
               onPress={() => setTab(item.key)}
@@ -574,7 +668,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
                   styles.tabLabel,
                   {
                     color: active ? colors.accent : colors.textSecondary,
-                    fontSize: 13 * font,
+                    fontSize: 14 * font,
                     fontWeight: active ? '600' : '400',
                   },
                 ]}
@@ -589,30 +683,35 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
       {tab === 'time' ? (
         loading && records.length === 0 ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.accent} />
           </View>
         ) : (
           <FlatList
             data={records}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
-            contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingTop: 10 * spacing, paddingBottom: 24 * spacing }]}
+            contentContainerStyle={[styles.list, { padding: 16 * spacing, paddingTop: 12 * spacing, paddingBottom: 24 * spacing }]}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
             }
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             ListEmptyComponent={
               <View style={[styles.empty, { paddingTop: 60 * spacing }]}>
-                <Text style={[styles.emptyIcon, { fontSize: 48 * font, marginBottom: 12 * spacing }]}>📊</Text>
-                <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 16 * font, marginBottom: 4 * spacing }]}>{t.recordsEmpty}</Text>
-                <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 14 * font }]}>{t.recordsEmptySub}</Text>
+                <Ionicons
+                  name="bar-chart-outline"
+                  size={44 * font}
+                  color={colors.textTertiary}
+                  style={{ marginBottom: 12 * spacing }}
+                />
+                <Text style={[styles.emptyText, { color: colors.textSecondary, fontSize: 15 * font, marginBottom: 4 * spacing }]}>{t.recordsEmpty}</Text>
+                <Text style={[styles.emptySub, { color: colors.textTertiary, fontSize: 13 * font }]}>{t.recordsEmptySub}</Text>
               </View>
             }
             ListFooterComponent={
               loading && records.length > 0 ? (
                 <View style={styles.loadingMore}>
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={colors.accent} />
                 </View>
               ) : null
             }
@@ -623,7 +722,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
           style={styles.scroll}
           contentContainerStyle={{ paddingBottom: 24 * spacing }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
           }
         >
           {renderStatsBody()}
@@ -650,14 +749,12 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   overviewCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  overviewTitle: {
-    fontWeight: '600',
+  streakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   streak: {
     fontWeight: '600',
@@ -673,9 +770,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 2,
   },
-  tabBar: {
-    flexDirection: 'row',
-    gap: 8,
+  kpTable: {
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
   tabItem: {
     flex: 1,
@@ -685,11 +782,7 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   statCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   statHeader: {
     flexDirection: 'row',
@@ -712,14 +805,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   recordCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   recordHeader: {
     flexDirection: 'row',
@@ -762,10 +848,6 @@ const styles = StyleSheet.create({
   empty: {
     alignItems: 'center',
     paddingTop: 60,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
   },
   emptyText: {
     fontSize: 16,
