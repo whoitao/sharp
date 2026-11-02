@@ -99,6 +99,7 @@ export const en = {
     kpiAccuracy: "Accuracy",
     kpiActiveUsers: "Active users",
     kpiDuration: "Study time",
+    kpiTodaySessions: "Today's sessions",
     trendTitle: "Daily trend",
     trendQuestions: "Questions",
     trendSessions: "Sessions",

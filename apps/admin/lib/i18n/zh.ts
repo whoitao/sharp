@@ -101,6 +101,7 @@ export const zh: Messages = {
     kpiAccuracy: "正确率",
     kpiActiveUsers: "活跃用户",
     kpiDuration: "学习时长",
+    kpiTodaySessions: "今日学习次数",
     trendTitle: "每日趋势",
     trendQuestions: "答题量",
     trendSessions: "学习次数",
