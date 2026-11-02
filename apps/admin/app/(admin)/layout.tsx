@@ -53,6 +53,7 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/publishers", icon: <FileTextOutlined />, labelKey: "nav.publishers" },
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.grades" },
   { key: "/stages", icon: <ApartmentOutlined />, labelKey: "nav.stages" },
+  { key: "/textbooks", icon: <BookOutlined />, labelKey: "nav.textbooks" },
   { key: "/chapters", icon: <AppstoreOutlined />, labelKey: "nav.chapters" },
   { key: "/tags", icon: <TagsOutlined />, labelKey: "nav.tags" },
   { key: "/articles", icon: <ReadOutlined />, labelKey: "nav.articles" },

@@ -11,8 +11,10 @@ interface SettingsState {
   gradeId: string | null;
   /** 全局学习范围：科目 */
   subjectId: string | null;
-  /** 「我的教材」：教材版本（人教版/北师大版…） */
+  /** 由「我的教材」反推的教材版本（人教版/北师大版…） */
   publisherId: string | null;
+  /** 「我的教材」：全局单选的教材 */
+  textbookId: string | null;
   isLoading: boolean;
   /** 是否已完成首次加载，用于区分冷启动门控与后续刷新 */
   initialized: boolean;
@@ -26,6 +28,7 @@ const initialState: SettingsState = {
   gradeId: null,
   subjectId: null,
   publisherId: null,
+  textbookId: null,
   isLoading: false,
   initialized: false,
 };
@@ -44,6 +47,7 @@ export const updateSettings = createAsyncThunk(
     gradeId?: string | null;
     subjectId?: string | null;
     publisherId?: string | null;
+    textbookId?: string | null;
   }) => {
     return await api.updateSettings(settings);
   }
@@ -74,6 +78,9 @@ const settingsSlice = createSlice({
     setPublisherId(state, action: PayloadAction<string | null>) {
       state.publisherId = action.payload;
     },
+    setTextbookId(state, action: PayloadAction<string | null>) {
+      state.textbookId = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -90,6 +97,7 @@ const settingsSlice = createSlice({
         state.gradeId = action.payload.gradeId ?? null;
         state.subjectId = action.payload.subjectId ?? null;
         state.publisherId = action.payload.publisherId ?? null;
+        state.textbookId = action.payload.textbookId ?? null;
       })
       .addCase(loadSettings.rejected, (state) => {
         state.isLoading = false;
@@ -104,6 +112,7 @@ const settingsSlice = createSlice({
         state.gradeId = action.payload.gradeId ?? null;
         state.subjectId = action.payload.subjectId ?? null;
         state.publisherId = action.payload.publisherId ?? null;
+        state.textbookId = action.payload.textbookId ?? null;
       });
   },
 });
@@ -116,5 +125,6 @@ export const {
   setGradeId,
   setSubjectId,
   setPublisherId,
+  setTextbookId,
 } = settingsSlice.actions;
 export default settingsSlice.reducer;

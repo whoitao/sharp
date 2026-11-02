@@ -15,6 +15,7 @@ import type {
   StudyRecordSummary,
   Subject,
   SubjectOverview,
+  TextbookCatalog,
   TextbookSubjectAvailability,
   Theme,
   UnitInfo,
@@ -434,6 +435,35 @@ export const api = {
     });
   },
 
+  // 「我的教材」目录：学段 → 科目 → 教材（含封面与选中态）
+  async getTextbookCatalog(): Promise<TextbookCatalog> {
+    return dedupeInFlight('textbookCatalog', async () => {
+      try {
+        const response = await apiClient.get<TextbookCatalog>('/api/app/textbooks');
+        return {
+          stages: response.data.stages ?? [],
+          selectedTextbookId: response.data.selectedTextbookId ?? null,
+        };
+      } catch {
+        return { stages: [], selectedTextbookId: null };
+      }
+    });
+  },
+
+  // 某本教材的章节树
+  async getChaptersByTextbook(textbookId: string): Promise<Chapter[]> {
+    return dedupeInFlight(`textbookChapters:${textbookId}`, async () => {
+      try {
+        const response = await apiClient.get<Chapter[]>(
+          `/api/app/textbooks/${textbookId}/chapters`,
+        );
+        return response.data;
+      } catch {
+        return [];
+      }
+    });
+  },
+
   async getChapterUnits(
     chapterId: string,
     subjectId?: string,
@@ -724,6 +754,7 @@ export const api = {
         gradeId: null,
         subjectId: null,
         publisherId: null,
+        textbookId: null,
       };
     }
   },
@@ -742,6 +773,7 @@ export const api = {
         gradeId: settings.gradeId ?? null,
         subjectId: settings.subjectId ?? null,
         publisherId: settings.publisherId ?? null,
+        textbookId: settings.textbookId ?? null,
       };
     }
   },

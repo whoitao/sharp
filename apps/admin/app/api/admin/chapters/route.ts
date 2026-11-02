@@ -5,12 +5,9 @@ import { NextRequest, NextResponse } from "next/server";
 function serializeNode(n: any): any {
   return {
     id: n.id.toString(),
-    gradeId: n.gradeId.toString(),
-    subjectId: n.subjectId.toString(),
-    publisherId: n.publisherId.toString(),
+    textbookId: n.textbookId.toString(),
     parentId: n.parentId?.toString() ?? null,
     level: n.level,
-    semester: n.semester ?? null,
     name: n.name,
     sortOrder: n.sortOrder,
     questionCount: n.questionCount ?? 0,
@@ -19,26 +16,49 @@ function serializeNode(n: any): any {
 }
 
 /**
- * 章节树：按 年级 + 科目 + 教材版本 过滤。
- * level 1=册（七年级上册）2=章 3=节，树根是册。
+ * 章节树：按教材过滤（textbookId），也兼容按 学段/科目/年级/版本 过滤（题目选择器用）。
+ * level 1=章 2=节，树根是章。
  */
 export async function GET(request: NextRequest) {
   const admin = requireAdmin(request);
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
-  const gradeId = url.searchParams.get("gradeId");
+  const textbookId = url.searchParams.get("textbookId");
+  const stageId = url.searchParams.get("stageId");
   const subjectId = url.searchParams.get("subjectId");
+  const gradeId = url.searchParams.get("gradeId");
   const publisherId = url.searchParams.get("publisherId");
-  // gradeId 可省略：省略时按科目返回全部年级的章节，供编辑弹窗解析跨年级章节的名称
-  if (!gradeId && !subjectId)
-    return NextResponse.json({ error: "gradeId or subjectId required" }, { status: 400 });
+
+  if (!textbookId && !subjectId && !stageId && !gradeId && !publisherId) {
+    return NextResponse.json(
+      { error: "textbookId or one of stageId/subjectId/gradeId/publisherId required" },
+      { status: 400 },
+    );
+  }
+
+  const textbookWhere = {
+    stageId: stageId ? BigInt(stageId) : undefined,
+    subjectId: subjectId ? BigInt(subjectId) : undefined,
+    gradeId: gradeId ? BigInt(gradeId) : undefined,
+    publisherId: publisherId ? BigInt(publisherId) : undefined,
+  };
 
   const all = await prisma.chapter.findMany({
     where: {
-      gradeId: gradeId ? BigInt(gradeId) : undefined,
-      subjectId: subjectId ? BigInt(subjectId) : undefined,
-      publisherId: publisherId ? BigInt(publisherId) : undefined,
+      ...(textbookId ? { textbookId: BigInt(textbookId) } : { textbook: textbookWhere }),
+    },
+    include: {
+      textbook: {
+        select: {
+          stageId: true,
+          subjectId: true,
+          gradeId: true,
+          publisherId: true,
+          semester: true,
+          sortOrder: true,
+        },
+      },
     },
     orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
   });
@@ -75,37 +95,30 @@ export async function GET(request: NextRequest) {
     if (n.parentId == null || !byId.has(n.parentId.toString())) rootIds.push(n.id.toString());
   }
 
-  // 根节点（册）排序：年级 → 科目 → 教材版本 → 上册/下册
-  // 年级、科目用各自的 sortOrder（未配置时按 id），教材版本按 publisher 创建顺序（id）
-  const [gradeRows, subjectRows] = await Promise.all([
-    prisma.grade.findMany({ select: { id: true, sortOrder: true } }),
-    prisma.subject.findMany({ select: { id: true, sortOrder: true } }),
-  ]);
-  const gradeOrder = new Map(gradeRows.map((g) => [g.id.toString(), g.sortOrder]));
-  const subjectOrder = new Map(subjectRows.map((s) => [s.id.toString(), s.sortOrder]));
-  const idCompare = (a: any, b: any) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-  const bigCompare = (a: bigint, b: bigint) => (a < b ? -1 : a > b ? 1 : 0);
-  // 1=上册 2=下册 0=全一册，其余（未设置）排最后
-  const semesterRank = (semester: number | null) =>
+  // 根节点排序：学段 → 科目 → 年级 → 版本 → 学期 → 教材排序
+  const semesterRank = (semester: number) =>
     semester === 1 ? 0 : semester === 2 ? 1 : semester === 0 ? 2 : 3;
-  const rootCompare = (a: any, b: any) =>
-    (gradeOrder.get(a.gradeId.toString()) ?? 0) - (gradeOrder.get(b.gradeId.toString()) ?? 0) ||
-    (subjectOrder.get(a.subjectId.toString()) ?? 0) - (subjectOrder.get(b.subjectId.toString()) ?? 0) ||
-    bigCompare(a.subjectId, b.subjectId) ||
-    bigCompare(a.publisherId, b.publisherId) ||
-    semesterRank(a.semester) - semesterRank(b.semester) ||
-    a.sortOrder - b.sortOrder ||
-    idCompare(a, b);
+  const bigCompare = (a: bigint, b: bigint) => (a < b ? -1 : a > b ? 1 : 0);
+  const rootCompare = (a: any, b: any) => {
+    const ta = a.textbook;
+    const tb = b.textbook;
+    return (
+      bigCompare(ta.stageId, tb.stageId) ||
+      bigCompare(ta.subjectId, tb.subjectId) ||
+      bigCompare(ta.gradeId, tb.gradeId) ||
+      bigCompare(ta.publisherId, tb.publisherId) ||
+      semesterRank(ta.semester) - semesterRank(tb.semester) ||
+      ta.sortOrder - tb.sortOrder ||
+      a.sortOrder - b.sortOrder ||
+      Number(a.id - b.id)
+    );
+  };
 
   const buildTree = (ids: string[], isRoot = false): any[] => {
     const nodes = ids
       .map((id) => byId.get(id))
       .filter((n): n is NonNullable<typeof n> => n != null);
-    nodes.sort(
-      isRoot
-        ? rootCompare
-        : (a, b) => a.sortOrder - b.sortOrder || idCompare(a, b),
-    );
+    nodes.sort(isRoot ? rootCompare : (a, b) => a.sortOrder - b.sortOrder || Number(a.id - b.id));
     return nodes.map((n) => {
       const childIds: string[] = [];
       for (const c of all) {
@@ -123,41 +136,34 @@ export async function POST(request: NextRequest) {
   if (admin instanceof NextResponse) return admin;
 
   const body = await request.json();
-  const { gradeId, subjectId, publisherId, parentId, semester, name, sortOrder } = body;
-  if (!gradeId || !subjectId || !publisherId || !name?.trim()) {
-    return NextResponse.json(
-      { error: "gradeId/subjectId/publisherId/name 必填" },
-      { status: 400 },
-    );
+  const { textbookId, parentId, name, sortOrder } = body;
+  if (!textbookId || !name?.trim()) {
+    return NextResponse.json({ error: "textbookId/name 必填" }, { status: 400 });
   }
 
-  const [grade, subject, publisher] = await Promise.all([
-    prisma.grade.findUnique({ where: { id: BigInt(gradeId) } }),
-    prisma.subject.findUnique({ where: { id: BigInt(subjectId) } }),
-    prisma.publisher.findUnique({ where: { id: BigInt(publisherId) } }),
-  ]);
-  if (!grade || !subject || !publisher) {
-    return NextResponse.json({ error: "年级/科目/版本不存在" }, { status: 400 });
-  }
+  const textbook = await prisma.textbook.findUnique({ where: { id: BigInt(textbookId) } });
+  if (!textbook) return NextResponse.json({ error: "教材不存在" }, { status: 400 });
 
-  // 层级由父节点推导：无父节点是「册」，其余逐级为「章」「节」
   let level = 1;
   let parentBigInt: bigint | null = null;
   if (parentId) {
     const parent = await prisma.chapter.findUnique({ where: { id: BigInt(parentId) } });
     if (!parent) return NextResponse.json({ error: "parent not found" }, { status: 400 });
+    if (parent.textbookId !== textbook.id) {
+      return NextResponse.json({ error: "父章节不属于该教材" }, { status: 400 });
+    }
+    if (parent.level >= 2) {
+      return NextResponse.json({ error: "章节最多两级（章 → 节）" }, { status: 400 });
+    }
     parentBigInt = parent.id;
     level = parent.level + 1;
   }
 
   const ch = await prisma.chapter.create({
     data: {
-      gradeId: BigInt(gradeId),
-      subjectId: BigInt(subjectId),
-      publisherId: BigInt(publisherId),
+      textbookId: textbook.id,
       parentId: parentBigInt,
       level,
-      semester: level === 1 ? (semester ?? null) : null,
       name: name.trim(),
       sortOrder: sortOrder ?? 0,
     },
@@ -180,7 +186,6 @@ export async function PATCH(request: NextRequest) {
     data.name = body.name.trim();
   }
   if (body.sortOrder != null) data.sortOrder = body.sortOrder;
-  if (body.semester !== undefined) data.semester = body.semester;
 
   const ch = await prisma.chapter.update({ where: { id: BigInt(id) }, data });
   return NextResponse.json(serializeNode(ch));
@@ -216,9 +221,9 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  // 从叶子到根排序（倒序），确保删除顺序不违反 FK
-  const sorted = toDelete.sort((a, b) => Number(b - a));
-  for (const cid of sorted) await prisma.chapter.delete({ where: { id: cid } });
+  for (const cid of toDelete.sort((a, b) => Number(b - a))) {
+    await prisma.chapter.delete({ where: { id: cid } });
+  }
   await prisma.chapter.delete({ where: { id: bigId } });
   return NextResponse.json({ ok: true });
 }

@@ -7,13 +7,14 @@ export async function GET(request: NextRequest) {
   if (admin instanceof NextResponse) return admin;
   const pubs = await prisma.publisher.findMany({
     orderBy: { id: "asc" },
-    include: { _count: { select: { chapters: true } } },
+    // 章节已归属教材，版本的章节数由教材下的章节聚合
+    include: { textbooks: { select: { _count: { select: { chapters: true } } } } },
   });
   return NextResponse.json(
     pubs.map((p) => ({
       id: p.id.toString(),
       name: p.name,
-      chapterCount: p._count.chapters,
+      chapterCount: p.textbooks.reduce((sum, t) => sum + t._count.chapters, 0),
     }))
   );
 }

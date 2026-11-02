@@ -85,8 +85,10 @@ export interface UserSettings {
   gradeId?: string | null;
   /** 全局学习范围：科目 */
   subjectId?: string | null;
-  /** 「我的教材」：教材版本（publisher） */
+  /** 由「我的教材」反推的教材版本（publisher） */
   publisherId?: string | null;
+  /** 「我的教材」：全局单选的教材 */
+  textbookId?: string | null;
 }
 
 export interface Admin {
@@ -151,21 +153,60 @@ export interface Grade {
   chapterCount?: number;
 }
 
+/** 教材章节：维度（科目/年级/版本/学期）一律通过 textbookId 反查教材 */
 export interface Chapter {
   id: string;
-  gradeId: string;
-  subjectId: string;
-  publisherId: string;
+  textbookId: string;
   parentId: string | null;
-  /** 1=册 2=章 3=节 */
+  /** 1=章 2=节 */
   level: number;
-  /** 仅 level=1 有意义：1=上 2=下 0=全一册 */
-  semester: number | null;
   name: string;
   sortOrder: number;
   /** 含后代章节的题目数 */
   questionCount: number;
   children: Chapter[];
+}
+
+/** 「我的教材」：科目 × 版本 × 年级 × 学期，含封面 */
+export interface Textbook {
+  id: string;
+  name: string;
+  subjectId: string;
+  subjectName: string;
+  stageId: string;
+  stageName: string;
+  gradeId: string;
+  gradeName: string;
+  gradeSortOrder?: number;
+  publisherId: string;
+  publisherName: string;
+  /** 0=全一册 1=上册 2=下册 */
+  semester: number;
+  semesterLabel: string;
+  coverUrl: string | null;
+  chapterCount: number;
+  questionCount: number;
+  /** 是否为用户当前全局选中的教材 */
+  selected: boolean;
+}
+
+export interface TextbookSubjectGroup {
+  id: string;
+  name: string;
+  icon: string | null;
+  textbooks: Textbook[];
+}
+
+export interface TextbookStageGroup {
+  id: string;
+  name: string;
+  subjects: TextbookSubjectGroup[];
+}
+
+/** 「我的教材」页面数据：学段 → 科目 → 教材 */
+export interface TextbookCatalog {
+  stages: TextbookStageGroup[];
+  selectedTextbookId: string | null;
 }
 
 /** 题目标签：type 区分用途 exam 考试类型 / source 题目来源 / difficulty 难度 */
@@ -374,6 +415,8 @@ export interface UpdateSettingsRequest {
   theme?: Theme;
   language?: Language;
   density?: Density;
+  /** 「我的教材」全局单选；传入后服务端同步科目/年级/版本 */
+  textbookId?: string | null;
 }
 
 /** 文章列表项（移动端 channel=mobile，已发布） */

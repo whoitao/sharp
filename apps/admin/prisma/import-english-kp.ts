@@ -10,8 +10,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const STAGE_ID = 2n;
-const SUBJECT_ID = 3n;
+const STAGE_ID = BigInt(2);
+const SUBJECT_ID = BigInt(3);
 
 /** 三级节点 */
 type L3 = string;

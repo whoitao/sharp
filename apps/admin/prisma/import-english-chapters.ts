@@ -1,8 +1,7 @@
 /**
  * 导入人教版初中英语六册章节（2024 新教材）。
  *
- * 结构：册（level 1，记录学期）→ 单元（level 2）。
- * 英语单元下不再细分章/节，题目直接挂载到单元节点。
+ * 结构：教材（我的教材）→ 章（单元），题目直接挂载到章节点。
  *
  * 运行：npx tsx prisma/import-english-chapters.ts
  */
@@ -10,8 +9,10 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const SUBJECT_ID = 3n; // 英语
-const PUBLISHER_ID = 1n; // 人教版
+const SUBJECT_ID = BigInt(3); // 英语
+const SUBJECT_NAME = "英语";
+const PUBLISHER_ID = BigInt(1); // 人教版
+const PUBLISHER_NAME = "人教版";
 
 interface UnitDef {
   name: string;
@@ -25,7 +26,7 @@ interface BookDef {
 
 const BOOKS: BookDef[] = [
   {
-    gradeId: 7n,
+    gradeId: BigInt(7),
     gradeName: "七年级",
     semester: 1,
     units: [
@@ -42,7 +43,7 @@ const BOOKS: BookDef[] = [
     ],
   },
   {
-    gradeId: 7n,
+    gradeId: BigInt(7),
     gradeName: "七年级",
     semester: 2,
     units: [
@@ -57,7 +58,7 @@ const BOOKS: BookDef[] = [
     ],
   },
   {
-    gradeId: 8n,
+    gradeId: BigInt(8),
     gradeName: "八年级",
     semester: 1,
     units: [
@@ -72,7 +73,7 @@ const BOOKS: BookDef[] = [
     ],
   },
   {
-    gradeId: 8n,
+    gradeId: BigInt(8),
     gradeName: "八年级",
     semester: 2,
     units: [
@@ -87,7 +88,7 @@ const BOOKS: BookDef[] = [
     ],
   },
   {
-    gradeId: 9n,
+    gradeId: BigInt(9),
     gradeName: "九年级",
     semester: 1,
     units: [
@@ -102,7 +103,7 @@ const BOOKS: BookDef[] = [
     ],
   },
   {
-    gradeId: 9n,
+    gradeId: BigInt(9),
     gradeName: "九年级",
     semester: 2,
     units: [
@@ -117,7 +118,7 @@ const BOOKS: BookDef[] = [
 
 async function main() {
   const existing = await prisma.chapter.count({
-    where: { subjectId: SUBJECT_ID, publisherId: PUBLISHER_ID },
+    where: { textbook: { subjectId: SUBJECT_ID, publisherId: PUBLISHER_ID } },
   });
   if (existing > 0) {
     console.error(`已存在 ${existing} 条英语人教版章节，终止导入以避免重复。`);
@@ -128,15 +129,34 @@ async function main() {
 
   // 不使用全局事务：Supabase pgbouncer 对长事务有限制，顺序创建即可。
   for (const book of BOOKS) {
-    const bookName = `人教版-${book.gradeName}${semesterLabel(book.semester)}`;
-    const bookNode = await prisma.chapter.create({
-      data: {
-        gradeId: book.gradeId,
+    const grade = await prisma.grade.findUnique({
+      where: { id: book.gradeId },
+      select: { id: true, stageId: true, name: true },
+    });
+    if (!grade) {
+      console.error(`年级 ${book.gradeId} 不存在，跳过`);
+      continue;
+    }
+
+    const bookName = `${SUBJECT_NAME} · ${PUBLISHER_NAME} · ${book.gradeName}${semesterLabel(book.semester)}`;
+    // 教材唯一键：科目 + 年级 + 版本 + 学期
+    const textbook = await prisma.textbook.upsert({
+      where: {
+        subjectId_gradeId_publisherId_semester: {
+          subjectId: SUBJECT_ID,
+          gradeId: book.gradeId,
+          publisherId: PUBLISHER_ID,
+          semester: book.semester,
+        },
+      },
+      update: {},
+      create: {
+        name: bookName,
         subjectId: SUBJECT_ID,
         publisherId: PUBLISHER_ID,
-        level: 1,
+        stageId: grade.stageId,
+        gradeId: book.gradeId,
         semester: book.semester,
-        name: bookName,
         sortOrder: book.semester,
       },
     });
@@ -144,11 +164,8 @@ async function main() {
     for (let i = 0; i < book.units.length; i += 1) {
       await prisma.chapter.create({
         data: {
-          gradeId: book.gradeId,
-          subjectId: SUBJECT_ID,
-          publisherId: PUBLISHER_ID,
-          parentId: bookNode.id,
-          level: 2,
+          textbookId: textbook.id,
+          level: 1,
           name: book.units[i].name,
           sortOrder: i + 1,
         },
@@ -158,9 +175,9 @@ async function main() {
   }
 
   const total = await prisma.chapter.count({
-    where: { subjectId: SUBJECT_ID, publisherId: PUBLISHER_ID },
+    where: { textbook: { subjectId: SUBJECT_ID, publisherId: PUBLISHER_ID } },
   });
-  console.log(`\n导入完成：共 ${total} 个章节节点（6 册 + 单元）`);
+  console.log(`\n导入完成：共 ${total} 个章节节点（单元）`);
 }
 
 main()

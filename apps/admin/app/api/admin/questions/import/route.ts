@@ -89,17 +89,25 @@ export async function POST(request: NextRequest) {
           subjectId = sid;
         }
 
-        // chapter_id（可选）：教材章节归属，传了必须存在
+        // chapter_id（可选）：教材章节归属，传了必须存在；年级与科目由教材反推
         let chapterId: bigint | null = null;
         const chapRaw = String(row.chapter_id ?? "").trim();
         if (chapRaw) {
           const cid = BigInt(chapRaw);
-          const chapter = await prisma.chapter.findUnique({ where: { id: cid } });
+          const chapter = await prisma.chapter.findUnique({
+            where: { id: cid },
+            select: {
+              id: true,
+              textbook: { select: { gradeId: true, subjectId: true } },
+            },
+          });
           if (!chapter) {
             errors.push(`Row ${rowNo}: chapter_id "${chapRaw}" not found`);
             continue;
           }
           chapterId = cid;
+          targetGradeId = chapter.textbook.gradeId;
+          subjectId = chapter.textbook.subjectId;
         }
 
         // source（可选）：exam 真题 / textbook 教材同步 / mock 模拟 / custom 自建

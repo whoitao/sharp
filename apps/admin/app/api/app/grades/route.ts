@@ -31,24 +31,26 @@ export async function GET(request: NextRequest) {
   }
 
   const subjectId = BigInt(subjectIdRaw);
-  const [questionGroups, chapterGroups] = await Promise.all([
+  const [questionGroups, textbooks] = await Promise.all([
     prisma.question.groupBy({
       by: ["gradeId"],
       where: { subjectId },
       _count: { _all: true },
     }),
-    prisma.chapter.groupBy({
-      by: ["gradeId"],
+    // 章节已归属教材，年级的章节数按教材聚合
+    prisma.textbook.findMany({
       where: { subjectId },
-      _count: { _all: true },
+      select: { gradeId: true, _count: { select: { chapters: true } } },
     }),
   ]);
   const questionCount = new Map(
     questionGroups.map((g) => [g.gradeId?.toString() ?? "null", g._count._all]),
   );
-  const chapterCount = new Map(
-    chapterGroups.map((g) => [g.gradeId.toString(), g._count._all]),
-  );
+  const chapterCount = new Map<string, number>();
+  for (const t of textbooks) {
+    const key = t.gradeId.toString();
+    chapterCount.set(key, (chapterCount.get(key) ?? 0) + t._count.chapters);
+  }
 
   return NextResponse.json(
     grades.map((g) => ({

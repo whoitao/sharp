@@ -93,7 +93,6 @@ interface ChapterNode {
   name: string;
   parentId: string | null;
   level: number;
-  semester: number | null;
   children?: ChapterNode[];
 }
 
@@ -830,7 +829,7 @@ export default function QuestionsPage() {
                   treeData={chapterTree.map(function convert(node: ChapterNode): any {
                     return {
                       value: node.id,
-                      title: `${node.name}${node.level === 1 ? "（册）" : ""}`,
+                      title: `${node.name}${node.level === 1 ? "（章）" : ""}`,
                       key: node.id,
                       children: node.children?.map(convert) || [],
                     };

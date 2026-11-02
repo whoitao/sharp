@@ -37,30 +37,34 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { publisherId, gradeId, subjectId } = useSelector((state: RootState) => state.settings);
-  // 「我的教材」当前值文案需要的名称映射
-  const [publisherName, setPublisherName] = useState<string | null>(null);
-  const [gradeName, setGradeName] = useState<string | null>(null);
-  const [subjectName, setSubjectName] = useState<string | null>(null);
+  const { textbookId } = useSelector((state: RootState) => state.settings);
+  // 「我的教材」当前值文案：版本 · 年级+学期
+  const [textbookLabel, setTextbookLabel] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      api.getPublishers().then((list) => {
-        setPublisherName(list.find((publisher) => publisher.id === publisherId)?.name ?? null);
+      let cancelled = false;
+      api.getTextbookCatalog().then((catalog) => {
+        if (cancelled) return;
+        const all = catalog.stages.flatMap((stage) =>
+          stage.subjects.flatMap((subject) => subject.textbooks)
+        );
+        const current = all.find(
+          (textbook) => textbook.id === (catalog.selectedTextbookId ?? textbookId)
+        );
+        setTextbookLabel(
+          current
+            ? `${current.publisherName} · ${current.gradeName}${current.semesterLabel}`
+            : null
+        );
       });
-      api.getGrades().then((list) => {
-        setGradeName(list.find((grade) => grade.id === gradeId)?.name ?? null);
-      });
-      api.getSubjects().then((list) => {
-        setSubjectName(list.find((subject) => subject.id === subjectId)?.name ?? null);
-      });
-    }, [publisherId, gradeId, subjectId])
+      return () => {
+        cancelled = true;
+      };
+    }, [textbookId])
   );
 
-  const textbookLabel =
-    (publisherId && gradeId
-      ? [subjectName, publisherName, gradeName].filter(Boolean).join(' · ')
-      : '') || t.textbookNotSet;
+  const textbookValue = textbookLabel ?? t.textbookNotSet;
 
   // DB 里只存相对路径 {userId}/avatars/avatar.{ext}，展示层拼完整 URL
   // 兼容历史：如果 user.avatar 已是完整 https:// URL，buildAvatarUrl 原样返回
@@ -88,9 +92,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const menuItems: { label: string; value?: string; icon: MenuIcon; onPress: () => void }[] = [
     {
       label: t.textbookMy,
-      value: textbookLabel,
+      value: textbookValue,
       icon: 'book-outline',
-      onPress: () => navigation.navigate('SettingOption', { key: 'textbook' }),
+      onPress: () => navigation.navigate('Textbook'),
     },
     {
       label: t.studyRecords,

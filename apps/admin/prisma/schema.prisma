@@ -41,6 +41,9 @@ model UserSettings {
   subject     Subject?   @relation(fields: [subjectId], references: [id])
   publisherId BigInt?
   publisher   Publisher? @relation(fields: [publisherId], references: [id])
+  // 「我的教材」：全局单选的教材；选中后年级/科目/版本都由教材反推
+  textbookId  BigInt?
+  textbook    Textbook?  @relation(fields: [textbookId], references: [id])
 }
 
 model Admin {
@@ -63,8 +66,8 @@ model Subject {
   knowledgePoints  KnowledgePoint[]
   studyRecords     UserStudyRecord[]
   questionProgress UserQuestionProgress[]
-  chapters         Chapter[]
   settings         UserSettings[]
+  textbooks        Textbook[]
 
   @@index([sortOrder])
 }
@@ -78,6 +81,7 @@ model Stage {
 
   grades          Grade[]
   knowledgePoints KnowledgePoint[]
+  textbooks       Textbook[]
 
   @@index([sortOrder])
 }
@@ -92,9 +96,9 @@ model Grade {
   createdAt DateTime @default(now())
 
   questions    Question[]
-  chapters     Chapter[]
   studyRecords UserStudyRecord[]
   settings     UserSettings[]
+  textbooks    Textbook[]
 
   @@index([stageId, sortOrder])
 }
@@ -271,32 +275,55 @@ model Publisher {
   name      String   @unique          // 人教版 / 苏教版 / 北师大版 / 鲁教版 / 通用
   createdAt DateTime @default(now())
 
-  chapters Chapter[]
   settings UserSettings[]
+  textbooks Textbook[]
 }
 
-// 教材章节树：gradeId(年级) + subjectId(科目) + publisherId(版本) + parentId(树)
-// level 1=册（七年级上册）2=章 3=节；semester 仅 level=1 有意义：1=上 2=下 0=全一册
-model Chapter {
-  id          BigInt    @id @default(autoincrement())
-  gradeId     BigInt
-  grade       Grade     @relation(fields: [gradeId], references: [id])
-  subjectId   BigInt
-  subject     Subject   @relation(fields: [subjectId], references: [id])
+// 「我的教材」：一本具体的教材（科目 × 版本 × 年级 × 学期）
+// 由原来 Chapter.level=1 的册节点升级而来，章节通过 textbookId 归属教材
+model Textbook {
+  id          BigInt   @id @default(autoincrement())
+  name        String   // 展示名，如「数学 · 北师大版 · 七年级上」
   publisherId BigInt
   publisher   Publisher @relation(fields: [publisherId], references: [id])
-  parentId    BigInt?
-  parent      Chapter?  @relation("ChapterTree", fields: [parentId], references: [id])
-  children    Chapter[] @relation("ChapterTree")
-  level       Int       @default(2)
-  semester    Int?
-  name        String
-  sortOrder   Int       @default(0)
+  subjectId   BigInt
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  stageId     BigInt
+  stage       Stage    @relation(fields: [stageId], references: [id])
+  gradeId     BigInt
+  grade       Grade    @relation(fields: [gradeId], references: [id])
+  semester    Int      @default(1) // 1=上册 2=下册 0=全一册
+  coverUrl    String?  // 封面图（Supabase Storage 相对路径）
+  isbn        String?
+  description String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chapters Chapter[]
+  settings UserSettings[]
+
+  @@unique([subjectId, gradeId, publisherId, semester])
+  @@index([stageId, subjectId, sortOrder])
+}
+
+// 教材章节树：归属 Textbook，parentId 表示章 → 节
+// level 1=章 2=节（原「册」层级由 Textbook 取代）
+model Chapter {
+  id         BigInt   @id @default(autoincrement())
+  textbookId BigInt
+  textbook   Textbook @relation(fields: [textbookId], references: [id])
+  parentId   BigInt?
+  parent     Chapter? @relation("ChapterTree", fields: [parentId], references: [id])
+  children   Chapter[] @relation("ChapterTree")
+  level      Int      @default(1) // 1=章 2=节
+  name       String
+  sortOrder  Int      @default(0)
 
   studyRecords UserStudyRecord[]
   questions    Question[]
 
-  @@index([gradeId, subjectId, publisherId])
+  @@index([textbookId, parentId, sortOrder])
   @@index([parentId])
 }
 

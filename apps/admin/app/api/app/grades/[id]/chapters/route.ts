@@ -13,8 +13,8 @@ function buildTree(nodes: any[], parentId: string | null): any[] {
 }
 
 /**
- * 某年级下的教材章节树，按科目与版本过滤。
- * 树根 level=1 是「册」（七年级上册），下面依次是章、节。
+ * 某年级下的教材章节树，按科目/版本/教材过滤。
+ * 树根 level=1 是「章」，下面依次是「节」。
  */
 export async function GET(
   request: NextRequest,
@@ -27,12 +27,16 @@ export async function GET(
   const url = new URL(request.url);
   const subjectIdRaw = url.searchParams.get("subjectId");
   const publisherIdRaw = url.searchParams.get("publisherId");
+  const textbookIdRaw = url.searchParams.get("textbookId");
 
   const chapters = await prisma.chapter.findMany({
     where: {
-      gradeId: BigInt(id),
-      subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : undefined,
-      publisherId: publisherIdRaw ? BigInt(publisherIdRaw) : undefined,
+      textbook: {
+        gradeId: BigInt(id),
+        subjectId: subjectIdRaw ? BigInt(subjectIdRaw) : undefined,
+        publisherId: publisherIdRaw ? BigInt(publisherIdRaw) : undefined,
+        ...(textbookIdRaw ? { id: BigInt(textbookIdRaw) } : {}),
+      },
     },
     orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }, { id: "asc" }],
   });
@@ -65,12 +69,9 @@ export async function GET(
 
   const serialized = chapters.map((c) => ({
     id: c.id.toString(),
-    gradeId: c.gradeId.toString(),
-    subjectId: c.subjectId.toString(),
-    publisherId: c.publisherId.toString(),
+    textbookId: c.textbookId.toString(),
     parentId: c.parentId?.toString() ?? null,
     level: c.level,
-    semester: c.semester ?? null,
     name: c.name,
     sortOrder: c.sortOrder,
     questionCount: aggregate(c.id.toString()),

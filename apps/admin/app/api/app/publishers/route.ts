@@ -17,17 +17,19 @@ export async function GET(request: NextRequest) {
   const chapters = await prisma.chapter.findMany({
     where: {
       questions: { some: {} },
-      ...(subjectId ? { subjectId: BigInt(subjectId) } : {}),
-      ...(gradeId ? { gradeId: BigInt(gradeId) } : {}),
+      textbook: {
+        ...(subjectId ? { subjectId: BigInt(subjectId) } : {}),
+        ...(gradeId ? { gradeId: BigInt(gradeId) } : {}),
+      },
     },
-    select: { id: true, publisherId: true },
+    select: { id: true, textbook: { select: { publisherId: true } } },
   });
 
   if (chapters.length === 0) return NextResponse.json({ items: [] });
 
   const chapterIdsByPublisher = new Map<string, bigint[]>();
   for (const c of chapters) {
-    const key = c.publisherId.toString();
+    const key = c.textbook.publisherId.toString();
     const list = chapterIdsByPublisher.get(key);
     if (list) list.push(c.id);
     else chapterIdsByPublisher.set(key, [c.id]);

@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
     theme: settings?.theme ?? "system",
     language: settings?.language ?? "zh",
     density: settings?.density ?? "comfortable",
-    // 全局学习范围：年级 + 科目 + 教材版本
+    // 「我的教材」全局单选 + 由教材反推的学习范围
+    textbookId: settings?.textbookId?.toString() ?? null,
     gradeId: settings?.gradeId?.toString() ?? null,
     subjectId: settings?.subjectId?.toString() ?? null,
     publisherId: settings?.publisherId?.toString() ?? null,
@@ -28,9 +29,26 @@ export async function PUT(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { unitSize, theme, language, density, gradeId, subjectId, publisherId } = body;
+  const { unitSize, theme, language, density, textbookId, gradeId, subjectId, publisherId } = body;
 
   const data: Record<string, any> = {};
+
+  // 「我的教材」：选中教材时，年级/科目/版本一律由教材反推并同步写入
+  if (textbookId !== undefined) {
+    if (textbookId === null) {
+      data.textbookId = null;
+    } else {
+      const textbook = await prisma.textbook.findUnique({
+        where: { id: BigInt(textbookId) },
+        select: { id: true, gradeId: true, subjectId: true, publisherId: true },
+      });
+      if (!textbook) return NextResponse.json({ error: "textbook not found" }, { status: 400 });
+      data.textbookId = textbook.id;
+      data.gradeId = textbook.gradeId;
+      data.subjectId = textbook.subjectId;
+      data.publisherId = textbook.publisherId;
+    }
+  }
 
   if (gradeId !== undefined) {
     if (gradeId === null) {
@@ -113,6 +131,7 @@ export async function PUT(request: NextRequest) {
     theme: settings.theme,
     language: settings.language,
     density: settings.density,
+    textbookId: settings.textbookId?.toString() ?? null,
     gradeId: settings.gradeId?.toString() ?? null,
     subjectId: settings.subjectId?.toString() ?? null,
     publisherId: settings.publisherId?.toString() ?? null,

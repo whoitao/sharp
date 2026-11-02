@@ -10,16 +10,24 @@ export async function GET(request: NextRequest) {
   const appUser = requireAppUser(request);
   if (appUser instanceof NextResponse) return appUser;
 
+  // 章节已归属教材，按教材维度聚合（科目 / 版本 / 年级均从教材反推）
   const chaptersWithQuestions = await prisma.chapter.findMany({
     where: { questions: { some: {} } },
-    select: { id: true, subjectId: true, gradeId: true, publisherId: true },
+    select: {
+      id: true,
+      textbook: { select: { subjectId: true, gradeId: true, publisherId: true } },
+    },
   });
 
   if (chaptersWithQuestions.length === 0) return NextResponse.json({ subjects: [] });
 
   const subjects = await prisma.subject.findMany({
     where: {
-      id: { in: [...new Set(chaptersWithQuestions.map((c) => c.subjectId.toString()))].map((s) => BigInt(s)) },
+      id: {
+        in: [...new Set(chaptersWithQuestions.map((c) => c.textbook.subjectId.toString()))].map(
+          (s) => BigInt(s),
+        ),
+      },
     },
     select: { id: true, name: true },
   });
@@ -30,12 +38,12 @@ export async function GET(request: NextRequest) {
     { publisherIds: Set<string>; gradeIds: Set<string>; chapterCount: number }
   >();
   for (const c of chaptersWithQuestions) {
-    const subjectId = c.subjectId.toString();
+    const subjectId = c.textbook.subjectId.toString();
     const entry =
       bySubject.get(subjectId) ??
       { publisherIds: new Set<string>(), gradeIds: new Set<string>(), chapterCount: 0 };
-    entry.publisherIds.add(c.publisherId.toString());
-    entry.gradeIds.add(c.gradeId.toString());
+    entry.publisherIds.add(c.textbook.publisherId.toString());
+    entry.gradeIds.add(c.textbook.gradeId.toString());
     entry.chapterCount += 1;
     bySubject.set(subjectId, entry);
   }

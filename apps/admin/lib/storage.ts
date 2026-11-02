@@ -11,6 +11,9 @@ export const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 /** 题目图片单次上传上限 5MB */
 export const MAX_QUESTION_IMAGE_BYTES = 5 * 1024 * 1024;
 
+/** 教材封面单次上传上限 10MB */
+export const MAX_TEXTBOOK_COVER_BYTES = 10 * 1024 * 1024;
+
 export type ImageContentType = "image/jpeg" | "image/png" | "image/webp";
 
 /** 存储配置缺失（环境变量未填） */
@@ -159,4 +162,25 @@ export async function uploadQuestionImage(
   const path = questionImagePath(contentType);
   await putObject(path, bytes, contentType);
   return { objectPath: path, url: questionImagePublicUrl(path) };
+}
+
+/** 教材封面：textbooks/covers/{随机UUID}.{ext} */
+export function textbookCoverPath(contentType: ImageContentType): string {
+  return `textbooks/covers/${randomId()}.${CONTENT_TYPE_TO_EXT[contentType]}`;
+}
+
+/** DB 存相对路径，展示/接口层拼完整 URL */
+export function textbookCoverPublicUrl(path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+}
+
+/** 上传教材封面，返回相对路径与完整 URL */
+export async function uploadTextbookCover(
+  bytes: Uint8Array,
+  contentType: ImageContentType,
+): Promise<{ objectPath: string; url: string }> {
+  const path = textbookCoverPath(contentType);
+  await putObject(path, bytes, contentType);
+  return { objectPath: path, url: textbookCoverPublicUrl(path) };
 }

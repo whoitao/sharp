@@ -34,8 +34,13 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            grade: { select: { name: true } },
-            publisher: { select: { name: true } },
+            // 章节维度（年级/版本）统一由教材反推
+            textbook: {
+              select: {
+                grade: { select: { name: true } },
+                publisher: { select: { name: true } },
+              },
+            },
           },
         },
         grade: { select: { name: true } },
@@ -47,14 +52,14 @@ export async function GET(request: NextRequest) {
     id: r.id,
     userId: r.userId,
     gradeId: r.gradeId?.toString() ?? null,
-    gradeName: r.grade?.name ?? r.chapter?.grade?.name ?? null,
+    gradeName: r.grade?.name ?? r.chapter?.textbook?.grade?.name ?? null,
     subjectId: r.subjectId?.toString() ?? null,
     knowledgePointId: r.knowledgePointId?.toString() ?? null,
     // 教材章节练习来源；考纲练习为 null
     chapterId: r.chapterId?.toString() ?? null,
     chapterName: r.chapter?.name ?? null,
-    textbookLabel: r.chapter?.publisher
-      ? `${r.chapter.publisher.name} · ${r.chapter.grade?.name ?? ""}`.replace(/ · $/, "")
+    textbookLabel: r.chapter?.textbook?.publisher
+      ? `${r.chapter.textbook.publisher.name} · ${r.chapter.textbook.grade?.name ?? ""}`.replace(/ · $/, "")
       : null,
     unitIndex: r.unitIndex,
     startedAt: r.startedAt,

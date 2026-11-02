@@ -40,7 +40,11 @@ export async function GET(request: NextRequest) {
         ? { stage: { name: stageName } }
         : undefined,
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-    include: { _count: { select: { chapters: true } }, stage: { select: { name: true } } },
+    include: {
+      // 章节已归属教材，年级的章节数由教材下的章节聚合
+      textbooks: { select: { _count: { select: { chapters: true } } } },
+      stage: { select: { name: true } },
+    },
   });
 
   return NextResponse.json(
@@ -50,7 +54,7 @@ export async function GET(request: NextRequest) {
       stageId: g.stageId.toString(),
       stage: g.stage.name,
       sortOrder: g.sortOrder,
-      chapterCount: g._count.chapters,
+      chapterCount: g.textbooks.reduce((sum, t) => sum + t._count.chapters, 0),
     })),
   );
 }
@@ -131,7 +135,7 @@ export async function DELETE(request: NextRequest) {
 
   const bigId = BigInt(id);
   const [chapterCount, questionCount] = await Promise.all([
-    prisma.chapter.count({ where: { gradeId: bigId } }),
+    prisma.chapter.count({ where: { textbook: { gradeId: bigId } } }),
     prisma.question.count({ where: { gradeId: bigId } }),
   ]);
   if (chapterCount > 0 || questionCount > 0) {

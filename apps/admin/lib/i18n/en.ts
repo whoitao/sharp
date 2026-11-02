@@ -20,6 +20,7 @@ export const en = {
     publishers: "Publishers",
     grades: "Grades",
     stages: "Stages",
+    textbooks: "Textbooks",
     chapters: "Chapters",
     tags: "Tags",
     articles: "Articles",

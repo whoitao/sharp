@@ -57,8 +57,13 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            grade: { select: { name: true } },
-            publisher: { select: { name: true } },
+            // 章节维度（年级/版本）统一由教材反推
+            textbook: {
+              select: {
+                grade: { select: { name: true } },
+                publisher: { select: { name: true } },
+              },
+            },
           },
         },
         knowledgePoints: {
@@ -89,7 +94,7 @@ export async function GET(request: NextRequest) {
     chapterId: q.chapterId?.toString() ?? null,
     chapterName: q.chapter?.name ?? null,
     textbookLabel: q.chapter
-      ? `${q.chapter.publisher?.name ?? ""} · ${q.chapter.grade?.name ?? ""}`.replace(/^ · /, "")
+      ? `${q.chapter.textbook?.publisher?.name ?? ""} · ${q.chapter.textbook?.grade?.name ?? ""}`.replace(/^ · /, "")
       : null,
     source: q.source,
     createdAt: q.createdAt,
@@ -156,12 +161,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 教材归属：传了 chapterId 必须存在，年级与科目直接由章节反推
-  let chapter: { id: bigint; gradeId: bigint; subjectId: bigint } | null = null;
+  // 教材归属：传了 chapterId 必须存在，年级与科目由「章节 → 教材」反推
+  let chapter:
+    | { id: bigint; textbook: { gradeId: bigint; subjectId: bigint } }
+    | null = null;
   if (chapterId) {
     chapter = await prisma.chapter.findUnique({
       where: { id: BigInt(chapterId) },
-      select: { id: true, gradeId: true, subjectId: true },
+      select: {
+        id: true,
+        textbook: { select: { gradeId: true, subjectId: true } },
+      },
     });
     if (!chapter) {
       return NextResponse.json({ error: "chapter not found" }, { status: 400 });
@@ -169,11 +179,11 @@ export async function POST(request: NextRequest) {
   }
 
   // 年级必填（教材题由章节反推）
-  const finalGradeId = chapter ? chapter.gradeId : gradeId ? BigInt(gradeId) : null;
+  const finalGradeId = chapter ? chapter.textbook.gradeId : gradeId ? BigInt(gradeId) : null;
   if (!finalGradeId) {
     return NextResponse.json({ error: "gradeId 或 chapterId 必填" }, { status: 400 });
   }
-  const finalSubjectId = chapter ? chapter.subjectId : subjectId ? BigInt(subjectId) : null;
+  const finalSubjectId = chapter ? chapter.textbook.subjectId : subjectId ? BigInt(subjectId) : null;
 
   if (!["exam", "textbook", "mock", "custom"].includes(source)) {
     return NextResponse.json(

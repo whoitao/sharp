@@ -129,6 +129,10 @@ export type ProfileStackParamList = {
   ProfileInfo: undefined;
   Settings: undefined;
   SettingOption: { key: SettingKey };
+  // 「我的教材」独立页：学段/科目/教材选择 + 章节列表
+  Textbook: undefined;
+  TextbookUnits: TextbookUnitsParams;
+  Quiz: QuizParams;
   Records: undefined;
   WrongQuestions: undefined;
   CrashLog: undefined;
@@ -346,6 +350,25 @@ const ProfileStackNavigator: React.FC = () => {
       name="SettingOption"
       component={withGradient(SettingOptionScreen)}
       options={{ title: '' }}
+    />
+    <ProfileStack.Screen
+      name="Textbook"
+      component={withGradient(TextbookScreen)}
+      options={{ title: t.textbookMy }}
+    />
+    <ProfileStack.Screen
+      name="TextbookUnits"
+      component={withGradient(ChapterUnitsScreen)}
+      options={({ route }) => ({ title: route.params.chapterName })}
+    />
+    <ProfileStack.Screen
+      name="Quiz"
+      component={withGradient(QuizScreen)}
+      options={({ route }) => ({
+        title: quizTitle(route.params),
+        headerBackVisible: false,
+        headerLeft: () => null,
+      })}
     />
     <ProfileStack.Screen
       name="Records"

@@ -30,14 +30,17 @@ export async function PUT(
     } else {
       const chapter = await prisma.chapter.findUnique({
         where: { id: BigInt(chapterId) },
-        select: { id: true, gradeId: true, subjectId: true },
+        select: {
+          id: true,
+          textbook: { select: { gradeId: true, subjectId: true } },
+        },
       });
       if (!chapter) {
         return NextResponse.json({ error: "chapter not found" }, { status: 400 });
       }
       data.chapterId = chapter.id;
-      data.gradeId = chapter.gradeId;
-      data.subjectId = chapter.subjectId;
+      data.gradeId = chapter.textbook.gradeId;
+      data.subjectId = chapter.textbook.subjectId;
     }
   }
 

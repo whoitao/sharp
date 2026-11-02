@@ -22,6 +22,7 @@ export const zh: Messages = {
     publishers: "教材版本",
     grades: "年级",
     stages: "学段",
+    textbooks: "我的教材",
     chapters: "教材章节",
     tags: "标签",
     articles: "文章",

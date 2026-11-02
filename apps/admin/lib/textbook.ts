@@ -52,16 +52,21 @@ export function chapterQuestionWhere(
  */
 export function applyScopeFilter(
   where: Record<string, unknown>,
-  scope: { gradeId?: bigint | null; publisherId?: bigint | null },
+  scope: { gradeId?: bigint | null; publisherId?: bigint | null; textbookId?: bigint | null },
 ): Record<string, unknown> {
-  const { gradeId, publisherId } = scope;
+  const { gradeId, publisherId, textbookId } = scope;
   const scopeConditions: Record<string, unknown>[] = [];
   if (gradeId) {
     scopeConditions.push({ OR: [{ gradeId }, { gradeId: null }] });
   }
   if (publisherId) {
     scopeConditions.push({
-      OR: [{ chapter: { publisherId } }, { chapterId: null }],
+      OR: [{ chapter: { textbook: { publisherId } } }, { chapterId: null }],
+    });
+  }
+  if (textbookId) {
+    scopeConditions.push({
+      OR: [{ chapter: { textbookId } }, { chapterId: null }],
     });
   }
   if (scopeConditions.length > 0) {
