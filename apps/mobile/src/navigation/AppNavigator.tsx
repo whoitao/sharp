@@ -195,8 +195,8 @@ const AuthNavigator: React.FC = () => (
 );
 
 // 答题页标题：章节/科目/知识点（未选的项自动省略）
-const quizTitle = (params: QuizParams): string =>
-  [params.chapterName, params.subjectName, params.knowledgePointName]
+const quizTitle = (params?: QuizParams): string =>
+  [params?.chapterName, params?.subjectName, params?.knowledgePointName]
     .filter(Boolean)
     .join(' - ');
 
@@ -249,7 +249,7 @@ const HomeStackNavigator: React.FC = () => {
     <HomeStack.Screen
       name="TextbookUnits"
       component={withGradient(ChapterUnitsScreen)}
-      options={({ route }) => ({ title: route.params.chapterName })}
+      options={({ route }) => ({ title: route.params?.chapterName ?? t.textbookTitle })}
     />
     <HomeStack.Screen
       name="Quiz"
@@ -322,13 +322,13 @@ const StudyStackNavigator: React.FC = () => {
     <StudyStack.Screen
       name="TextbookUnits"
       component={withGradient(ChapterUnitsScreen)}
-      options={({ route }) => ({ title: route.params.chapterName })}
+      options={({ route }) => ({ title: route.params?.chapterName ?? t.textbookTitle })}
     />
     <StudyStack.Screen
       name="KnowledgeUnits"
       component={withGradient(KnowledgeUnitsScreen)}
       options={({ route }) => ({
-        title: route.params.knowledgePointName ?? t.studyByKnowledgePoint,
+        title: route.params?.knowledgePointName ?? t.studyByKnowledgePoint,
       })}
     />
     </StudyStack.Navigator>
@@ -381,7 +381,7 @@ const ProfileStackNavigator: React.FC = () => {
     <ProfileStack.Screen
       name="TextbookUnits"
       component={withGradient(ChapterUnitsScreen)}
-      options={({ route }) => ({ title: route.params.chapterName })}
+      options={({ route }) => ({ title: route.params?.chapterName ?? t.textbookTitle })}
     />
     <ProfileStack.Screen
       name="Quiz"

@@ -1,7 +1,7 @@
 export const en = {
   nav: {
     home: "Home",
-    docs: "Docs",
+    docs: "Guide",
     about: "About",
     github: "GitHub",
     articles: "Articles",
@@ -10,41 +10,59 @@ export const en = {
     backHome: "Back to Home",
   },
   home: {
-    heroPrefix: "Master Your Learning with",
-    heroHighlight: "Sharp",
-    heroSuffix: "",
+    heroPrefix: "Learn by unit or knowledge point,",
+    heroHighlight: "master",
+    heroSuffix: "every lesson",
     heroSubtitle:
-      "A modern quiz and vocabulary learning platform. Track your progress, build streaks, and achieve your learning goals.",
+      "Primary to high school, across textbook editions, with instant grading.",
     getStarted: "Get Started",
-    learnMore: "Learn More",
-    featuresTitle: "Features",
-    featuresSubtitle: "Everything you need for effective learning",
-    features: [
+    learnMore: "See How It Works",
+    pathsTitle: "Choose Your Way to Learn",
+    pathsSubtitle:
+      "Study along textbook units, drill into a single knowledge point, or freely choose your practice range.",
+    paths: [
       {
-        title: "Structured Learning",
+        title: "Learn by Unit",
         description:
-          "Organized categories and units for systematic progress through your learning journey.",
+          "Follow your textbook chapter by chapter. Pick a textbook, choose a unit, practice lesson by lesson, and test right after each one.",
       },
       {
-        title: "Smart Practice",
+        title: "Learn by Knowledge Point",
         description:
-          "Adaptive quizzes that focus on your weak areas and track your improvement over time.",
+          "Break content down to the smallest unit. Focus on one knowledge point at a time and fix weak spots instead of grinding through random questions.",
       },
       {
-        title: "Progress Tracking",
+        title: "Free Practice",
         description:
-          "Detailed statistics and streak tracking to keep you motivated and consistent.",
-      },
-      {
-        title: "Cross-Platform",
-        description:
-          "Seamless experience across web and mobile with synchronized progress.",
+          "Pick any stage, grade, and subject. Single choice, multiple choice, true/false, and fill-in-the-blank — start a targeted session anytime.",
       },
     ],
-    ctaTitle: "Ready to Start Learning?",
+    advantagesTitle: "More Than Practice — Precise Control",
+    advantagesSubtitle:
+      "Every session is recorded. Accuracy and time are summarized by chapter and knowledge point, so you always know what to practice next.",
+    advantages: [
+      {
+        title: "Precision Tracking",
+        description:
+          "Accuracy and time summarized by chapter and knowledge point.",
+      },
+      {
+        title: "All Stages Covered",
+        description: "Primary, middle, and high school, end to end.",
+      },
+      {
+        title: "Multiple Textbooks",
+        description: "Follows the edition you actually use.",
+      },
+      {
+        title: "Learn Anywhere",
+        description: "Practice on mobile, manage on web, synced in real time.",
+      },
+    ],
+    ctaTitle: "Start with Your First Question Today",
     ctaSubtitle:
-      "Join thousands of learners who are already using Sharp to achieve their goals.",
-    ctaButton: "View Documentation",
+      "Pick a textbook and unit, or lock onto one knowledge point, and begin your first focused practice.",
+    ctaButton: "Read the Guide",
   },
   about: {
     title: "About Sharp",
@@ -82,27 +100,45 @@ export const en = {
     footerB: "by the Sharp team",
   },
   docs: {
-    title: "Documentation",
-    subtitle: "Learn how to use and contribute to Sharp",
+    title: "Guide",
+    subtitle:
+      "From sign-up to reading your stats — four steps to get started with Sharp",
     sections: [
       {
-        title: "Tech Stack",
-        description: "Modern technologies for full-stack development",
-        content: `Backend:
-• Next.js 15 with App Router
-• Prisma ORM with PostgreSQL
-• JWT authentication
-
-Mobile:
-• React Native 0.83 (Expo SDK 55)
-• React Navigation v7
-• Redux Toolkit v2
-
-Web:
-• Next.js 15
-• React 19.3
-• Tailwind CSS + shadcn/ui
-• Redux Toolkit`,
+        title: "Quick Start",
+        description: "Create an account and choose your textbook.",
+        steps: [
+          "Create an account and sign in",
+          "Choose my textbook",
+          "Learn by unit or by knowledge point",
+        ],
+      },
+      {
+        title: "Learn by Unit",
+        description: "Follow the textbook you actually use, chapter by chapter.",
+        steps: [
+          "Select your textbook edition",
+          "Choose a chapter and its unit",
+          "Practice unit by unit and get instant grading",
+        ],
+      },
+      {
+        title: "Learn by Knowledge Point",
+        description: "Focus on one knowledge point at a time.",
+        steps: [
+          "Locate a knowledge point under the subject",
+          "Start a focused session on that single point",
+          "Review the analysis and your accuracy afterwards",
+        ],
+      },
+      {
+        title: "Read Your Stats",
+        description: "Use accuracy, time, and breakdowns to plan the next step.",
+        steps: [
+          "Check daily practice volume in the trend view",
+          "Review mastery by chapter and knowledge point",
+          "Schedule your next practice around low-accuracy areas",
+        ],
       },
     ],
   },

@@ -1,14 +1,9 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { StoreProvider } from "@/store/provider";
 
-// StoreProvider 内部在 configureStore 时会调用 Math.random() 生成中间件实例 id，
-// Next 16 预渲染会拦截该不稳定值导致 prerender 失败，因此将其标记为仅客户端渲染。
-const StoreProvider = dynamic(
-  () => import("@/store/provider").then((m) => m.StoreProvider),
-  { ssr: false }
-);
-
+// Next 16 的 Instant UI 校验不支持 dynamic(ssr: false)（会报 "Browser-only rendering"），
+// 且 configureStore 已关闭 devTools，不会再触发 Math.random() 预渲染问题，直接渲染即可。
 export function ClientStoreProvider({ children }: { children: React.ReactNode }) {
   return <StoreProvider>{children}</StoreProvider>;
 }

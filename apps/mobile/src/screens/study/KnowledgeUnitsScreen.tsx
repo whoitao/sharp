@@ -48,6 +48,7 @@ const keyExtractor = (item: UnitInfo) => item.unitIndex.toString();
 
 /** 「按知识点学」下一级：该知识点（含子知识点）下的单元列表 */
 const KnowledgeUnitsScreen: React.FC<KnowledgeUnitsScreenProps> = ({ navigation, route }) => {
+  // 导航状态恢复等场景下 params 可能缺失，兜底避免整页崩溃
   const {
     knowledgePointId,
     knowledgePointName,
@@ -56,7 +57,7 @@ const KnowledgeUnitsScreen: React.FC<KnowledgeUnitsScreenProps> = ({ navigation,
     publisherId,
     subjectName,
     scopeLabel,
-  } = route.params;
+  } = (route.params ?? {}) as KnowledgeUnitsParams;
   const { colors } = useTheme();
   const { spacing, font } = useDensity();
   const { t } = useTranslation();

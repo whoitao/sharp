@@ -43,7 +43,9 @@ const UNITS_PAGE_SIZE = 10;
 const keyExtractor = (item: UnitInfo) => item.unitIndex.toString();
 
 const ChapterUnitsScreen: React.FC<ChapterUnitsScreenProps> = ({ navigation, route }) => {
-  const { chapterId, chapterName, textbookLabel, breadcrumb, subjectId } = route.params;
+  // 导航状态恢复等场景下 params 可能缺失，兜底避免整页崩溃
+  const { chapterId, chapterName, textbookLabel, breadcrumb, subjectId } =
+    (route.params ?? {}) as TextbookUnitsParams;
   const { colors } = useTheme();
   const { spacing, font } = useDensity();
   const { t } = useTranslation();

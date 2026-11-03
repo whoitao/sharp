@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
-import { BookOpen, Code, Database, Layers } from "lucide-react";
+import { BarChart3, BookOpen, Rocket, Target } from "lucide-react";
 import Link from "next/link";
 
-const sectionIcons = [Layers, Code, Database, BookOpen];
+const sectionIcons = [Rocket, BookOpen, Target, BarChart3];
 
 export default function Docs() {
   const { t, dict } = useLocale();
@@ -36,9 +36,11 @@ export default function Docs() {
                   <p className="mb-4 text-sm text-foreground-secondary">
                     {section.description}
                   </p>
-                  <pre className="overflow-x-auto rounded-md bg-surface-secondary p-4 text-sm">
-                    <code>{section.content}</code>
-                  </pre>
+                  <ol className="list-decimal space-y-1.5 pl-5 text-sm text-foreground-secondary">
+                    {section.steps.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
                 </div>
               </div>
             </div>

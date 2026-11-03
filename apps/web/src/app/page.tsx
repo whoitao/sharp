@@ -2,10 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
-import { BookOpen, Target, TrendingUp, Zap } from "lucide-react";
+import { BookMarked, BookOpen, GraduationCap, Layers, Smartphone, Target } from "lucide-react";
 import Link from "next/link";
 
-const featureIcons = [BookOpen, Target, TrendingUp, Zap];
+const pathIcons = [BookOpen, Target, Layers];
+const advantageIcons = [Target, GraduationCap, BookMarked, Smartphone];
 
 export default function Home() {
   const { t, dict } = useLocale();
@@ -28,7 +29,7 @@ export default function Home() {
           <Link href="/docs">
             <Button size="lg">{t("home.getStarted")}</Button>
           </Link>
-          <Link href="/about">
+          <Link href="#paths">
             <Button variant="outline" size="lg">
               {t("home.learnMore")}
             </Button>
@@ -36,30 +37,61 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="space-y-6 bg-surface-secondary py-8 md:py-12 lg:py-24">
+      {/* Learning Paths Section */}
+      <section id="paths" className="space-y-6 bg-surface-secondary py-8 md:py-12 lg:py-24">
         <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
           <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
-            {t("home.featuresTitle")}
+            {t("home.pathsTitle")}
           </h2>
           <p className="max-w-[85%] leading-normal text-foreground-secondary sm:text-lg sm:leading-7">
-            {t("home.featuresSubtitle")}
+            {t("home.pathsSubtitle")}
           </p>
         </div>
-        <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-2 lg:grid-cols-4">
-          {dict.home.features.map((feature, index) => {
-            const Icon = featureIcons[index];
+        <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] lg:grid-cols-3">
+          {dict.home.paths.map((path, index) => {
+            const Icon = pathIcons[index];
             return (
               <div
-                key={feature.title}
-                className="relative overflow-hidden rounded-lg border border-border bg-surface p-6 card-shadow transition-transform hover:-translate-y-0.5"
+                key={path.title}
+                className="relative overflow-hidden rounded-lg border border-border bg-surface p-6 text-center card-shadow transition-transform hover:-translate-y-0.5"
               >
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-light">
                   <Icon className="h-6 w-6 text-primary-strong" />
                 </div>
-                <h3 className="mb-2 font-bold">{feature.title}</h3>
+                <h3 className="mb-2 font-bold">{path.title}</h3>
                 <p className="text-sm text-foreground-secondary">
-                  {feature.description}
+                  {path.description}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Advantages Section */}
+      <section className="space-y-6 py-8 md:py-12 lg:py-24">
+        <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
+          <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
+            {t("home.advantagesTitle")}
+          </h2>
+          <p className="max-w-[85%] leading-normal text-foreground-secondary sm:text-lg sm:leading-7">
+            {t("home.advantagesSubtitle")}
+          </p>
+        </div>
+        <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] lg:grid-cols-4">
+          {dict.home.advantages.map((advantage, index) => {
+            const Icon = advantageIcons[index];
+            return (
+              <div
+                key={advantage.title}
+                className="relative overflow-hidden rounded-lg border border-border bg-surface p-6 text-center card-shadow transition-transform hover:-translate-y-0.5"
+              >
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-light">
+                  <Icon className="h-6 w-6 text-primary-strong" />
+                </div>
+                <h3 className="mb-2 font-bold">{advantage.title}</h3>
+                <p className="text-sm text-foreground-secondary">
+                  {advantage.description}
                 </p>
               </div>
             );
