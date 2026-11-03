@@ -47,6 +47,10 @@ export const zh: Messages = {
         description: "正确率、用时按章节与知识点汇总。",
       },
       {
+        title: "复杂图形与公式",
+        description: "数轴、统计图与数学公式完整呈现，题目和解析都清晰可读。",
+      },
+      {
         title: "全学段覆盖",
         description: "小学、初中、高中全贯通。",
       },

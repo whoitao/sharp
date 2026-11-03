@@ -47,6 +47,11 @@ export const en = {
           "Accuracy and time summarized by chapter and knowledge point.",
       },
       {
+        title: "Rich Figures & Formulas",
+        description:
+          "Number lines, charts, and math formulas render clearly in questions and explanations.",
+      },
+      {
         title: "All Stages Covered",
         description: "Primary, middle, and high school, end to end.",
       },

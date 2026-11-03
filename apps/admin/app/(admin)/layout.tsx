@@ -7,6 +7,7 @@ import {
   BookOutlined,
   DashboardOutlined,
   GlobalOutlined,
+  HeartOutlined,
   InfoCircleOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
@@ -43,6 +44,7 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/textbooks", icon: <BookOutlined />, labelKey: "nav.textbookManagement" },
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.gradeManagement" },
   { key: "/articles", icon: <ReadOutlined />, labelKey: "nav.articles" },
+  { key: "/pets", icon: <HeartOutlined />, labelKey: "nav.petManagement" },
 ];
 
 const THEME_OPTIONS: { value: ThemeMode; labelKey: MessageKey; icon: React.ReactNode }[] = [

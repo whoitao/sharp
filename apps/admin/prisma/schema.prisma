@@ -24,16 +24,23 @@ model User {
   questionProgress UserQuestionProgress[]
   dailyStats       UserDailyStat[]
   settings         UserSettings?
+
+  // 电子宠物
+  userPets      UserPet[]
+  petFoodItems  PetFoodItem[]
+  petFoodGrants PetFoodGrant[]
+  petFeeds      PetFeedLog[]
+  petDailyStats PetDailyStat[]
 }
 
 model UserSettings {
-  id       String @id @default(uuid())
-  userId   String @unique
-  user     User   @relation(fields: [userId], references: [id])
-  unitSize Int    @default(20)
-  theme    String @default("system")
-  language String @default("zh")
-  density  String @default("comfortable")
+  id          String     @id @default(uuid())
+  userId      String     @unique
+  user        User       @relation(fields: [userId], references: [id])
+  unitSize    Int        @default(20)
+  theme       String     @default("system")
+  language    String     @default("zh")
+  density     String     @default("comfortable")
   // 全局学习范围：年级 + 科目 + 教材版本（「我的教材」）
   gradeId     BigInt?
   grade       Grade?     @relation(fields: [gradeId], references: [id])
@@ -95,10 +102,10 @@ model Grade {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 
-  questions    Question[]
+  questions     Question[]
   studyAttempts StudyAttempt[]
-  settings     UserSettings[]
-  textbooks    Textbook[]
+  settings      UserSettings[]
+  textbooks     Textbook[]
 
   @@index([stageId, sortOrder])
 }
@@ -122,11 +129,11 @@ model Question {
   source     String   @default("custom")
   createdAt  DateTime @default(now())
 
-  options           QuestionOption[]
-  progress          UserQuestionProgress[]
-  knowledgePoints   QuestionKnowledgePoint[]
-  tags              QuestionTagLink[]
-  attemptItems      StudyAttemptItem[]
+  options         QuestionOption[]
+  progress        UserQuestionProgress[]
+  knowledgePoints QuestionKnowledgePoint[]
+  tags            QuestionTagLink[]
+  attemptItems    StudyAttemptItem[]
 
   @@index([gradeId])
   @@index([subjectId])
@@ -174,31 +181,31 @@ model QuestionTagLink {
 // 学习事实：每次「开始 → 完成」追加一条，不可变。
 // 所有统计都从这张表 + StudyAttemptItem 派生，单元（unitIndex）只是本次取题的分页窗口，不承载统计语义。
 model StudyAttempt {
-  id              String   @id @default(uuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id])
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id])
   // 学习来源：chapter 教材章节 / knowledge 考纲知识点 / bank 题库（按科目/年级/标签）
-  scopeType       String   @default("bank")
+  scopeType        String          @default("bank")
   // 考纲练习的年级；教材练习由章节反推
-  gradeId         BigInt?
-  grade           Grade?   @relation(fields: [gradeId], references: [id])
-  chapterId       BigInt?
-  chapter         Chapter? @relation(fields: [chapterId], references: [id])
+  gradeId          BigInt?
+  grade            Grade?          @relation(fields: [gradeId], references: [id])
+  chapterId        BigInt?
+  chapter          Chapter?        @relation(fields: [chapterId], references: [id])
   // 学习时选择的筛选条件（null = 未筛选）；只是行为上下文，统计口径以题目自身归属为准
   subjectId        BigInt?
   subject          Subject?        @relation(fields: [subjectId], references: [id])
   knowledgePointId BigInt?
   knowledgePoint   KnowledgePoint? @relation(fields: [knowledgePointId], references: [id])
   // 标签筛选上下文：升序逗号拼接的 tagId（如 "1,3"），空表示未筛选
-  tagFilter       String?
+  tagFilter        String?
   // 本次取题的分页窗口序号（仅用于「上次学习」定位，不参与统计）
-  unitIndex       Int        @default(0)
-  totalQuestions  Int
-  correctCount    Int        @default(0)
-  wrongCount      Int        @default(0)
-  durationSeconds Int        @default(0)
-  startedAt       DateTime   @default(now())
-  finishedAt      DateTime   @default(now())
+  unitIndex        Int             @default(0)
+  totalQuestions   Int
+  correctCount     Int             @default(0)
+  wrongCount       Int             @default(0)
+  durationSeconds  Int             @default(0)
+  startedAt        DateTime        @default(now())
+  finishedAt       DateTime        @default(now())
 
   items StudyAttemptItem[]
 
@@ -222,19 +229,19 @@ model StudyAttemptItem {
 }
 
 model UserQuestionProgress {
-  userId          String
-  user            User     @relation(fields: [userId], references: [id])
-  questionId      BigInt
-  question        Question @relation(fields: [questionId], references: [id])
+  userId           String
+  user             User            @relation(fields: [userId], references: [id])
+  questionId       BigInt
+  question         Question        @relation(fields: [questionId], references: [id])
   // 练习时选择的筛选条件（null = 未筛选）
   subjectId        BigInt?
   subject          Subject?        @relation(fields: [subjectId], references: [id])
   knowledgePointId BigInt?
   knowledgePoint   KnowledgePoint? @relation(fields: [knowledgePointId], references: [id])
-  status          String   @default("unseen")
-  lastPracticedAt DateTime?
-  correctCount    Int      @default(0)
-  wrongCount      Int      @default(0)
+  status           String          @default("unseen")
+  lastPracticedAt  DateTime?
+  correctCount     Int             @default(0)
+  wrongCount       Int             @default(0)
 
   @@id([userId, questionId])
   @@index([subjectId])
@@ -243,12 +250,12 @@ model UserQuestionProgress {
 
 model UserDailyStat {
   userId            String
-  user              User   @relation(fields: [userId], references: [id])
+  user              User     @relation(fields: [userId], references: [id])
   date              DateTime @db.Date
-  questionsAnswered Int     @default(0)
+  questionsAnswered Int      @default(0)
   // 当日完成的学习次数（一次「开始 → 完成」= 1）
-  sessionsCompleted Int     @default(0)
-  studyDuration     Int     @default(0)
+  sessionsCompleted Int      @default(0)
+  studyDuration     Int      @default(0)
 
   @@id([userId, date])
 }
@@ -263,26 +270,26 @@ model KnowledgePoint {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  parent    KnowledgePoint?  @relation("KnowledgePointTree", fields: [parentId], references: [id])
-  children  KnowledgePoint[] @relation("KnowledgePointTree")
-  subject   Subject?         @relation(fields: [subjectId], references: [id])
-  stage     Stage            @relation(fields: [stageId], references: [id])
-  questions QuestionKnowledgePoint[]
-  studyAttempts StudyAttempt[]
+  parent           KnowledgePoint?          @relation("KnowledgePointTree", fields: [parentId], references: [id])
+  children         KnowledgePoint[]         @relation("KnowledgePointTree")
+  subject          Subject?                 @relation(fields: [subjectId], references: [id])
+  stage            Stage                    @relation(fields: [stageId], references: [id])
+  questions        QuestionKnowledgePoint[]
+  studyAttempts    StudyAttempt[]
   questionProgress UserQuestionProgress[]
 
+  @@unique([stageId, subjectId, parentId, name])
   @@index([parentId])
   @@index([subjectId])
   @@index([stageId, subjectId, parentId, sortOrder])
-  @@unique([stageId, subjectId, parentId, name])
 }
 
 model QuestionKnowledgePoint {
   questionId       BigInt
   knowledgePointId BigInt
 
-  question         Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  knowledgePoint   KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+  question       Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  knowledgePoint KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
 
   @@id([questionId, knowledgePointId])
   @@index([knowledgePointId])
@@ -294,33 +301,33 @@ model QuestionKnowledgePoint {
 
 model Publisher {
   id        BigInt   @id @default(autoincrement())
-  name      String   @unique          // 人教版 / 苏教版 / 北师大版 / 鲁教版 / 通用
+  name      String   @unique // 人教版 / 苏教版 / 北师大版 / 鲁教版 / 通用
   createdAt DateTime @default(now())
 
-  settings UserSettings[]
+  settings  UserSettings[]
   textbooks Textbook[]
 }
 
 // 「我的教材」：一本具体的教材（科目 × 版本 × 年级 × 学期）
 // 由原来 Chapter.level=1 的册节点升级而来，章节通过 textbookId 归属教材
 model Textbook {
-  id          BigInt   @id @default(autoincrement())
-  name        String   // 展示名，如「数学 · 北师大版 · 七年级上」
+  id          BigInt    @id @default(autoincrement())
+  name        String // 展示名，如「数学 · 北师大版 · 七年级上」
   publisherId BigInt
   publisher   Publisher @relation(fields: [publisherId], references: [id])
   subjectId   BigInt
-  subject     Subject  @relation(fields: [subjectId], references: [id])
+  subject     Subject   @relation(fields: [subjectId], references: [id])
   stageId     BigInt
-  stage       Stage    @relation(fields: [stageId], references: [id])
+  stage       Stage     @relation(fields: [stageId], references: [id])
   gradeId     BigInt
-  grade       Grade    @relation(fields: [gradeId], references: [id])
-  semester    Int      @default(1) // 1=上册 2=下册 0=全一册
-  coverUrl    String?  // 封面图（Supabase Storage 相对路径）
+  grade       Grade     @relation(fields: [gradeId], references: [id])
+  semester    Int       @default(1) // 1=上册 2=下册 0=全一册
+  coverUrl    String? // 封面图（Supabase Storage 相对路径）
   isbn        String?
   description String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   chapters Chapter[]
   settings UserSettings[]
@@ -332,18 +339,18 @@ model Textbook {
 // 教材章节树：归属 Textbook，parentId 表示章 → 节
 // level 1=章 2=节（原「册」层级由 Textbook 取代）
 model Chapter {
-  id         BigInt   @id @default(autoincrement())
+  id         BigInt    @id @default(autoincrement())
   textbookId BigInt
-  textbook   Textbook @relation(fields: [textbookId], references: [id])
+  textbook   Textbook  @relation(fields: [textbookId], references: [id])
   parentId   BigInt?
-  parent     Chapter? @relation("ChapterTree", fields: [parentId], references: [id])
+  parent     Chapter?  @relation("ChapterTree", fields: [parentId], references: [id])
   children   Chapter[] @relation("ChapterTree")
-  level      Int      @default(1) // 1=章 2=节
+  level      Int       @default(1) // 1=章 2=节
   name       String
-  sortOrder  Int      @default(0)
+  sortOrder  Int       @default(0)
 
   studyAttempts StudyAttempt[]
-  questions    Question[]
+  questions     Question[]
 
   @@index([textbookId, parentId, sortOrder])
   @@index([parentId])
@@ -352,11 +359,11 @@ model Chapter {
 // ===== 文章模块 =====
 // 文章分类为必填维度，一篇文章只属于一个分类
 model ArticleCategory {
-  id        BigInt    @id @default(autoincrement())
-  name      String    @unique
-  sortOrder Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        BigInt   @id @default(autoincrement())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   articles Article[]
 
@@ -383,4 +390,206 @@ model Article {
 
   @@index([status, publishedAt])
   @@index([categoryId])
+}
+
+// ===== 电子宠物模块 =====
+// 宠物是学习闭环的反馈层：练习结算发放经验与食物，学生手动喂养后成长、进化。
+// 本模块只做后台配置与数据查看，移动端接口另实现。
+
+// 宠物种类（模板）：一组共享形象与文案的宠物，决定三个成长阶段的外观
+model PetSpecies {
+  id        BigInt   @id @default(autoincrement())
+  code      String   @unique // cat / dog / rabbit / fox / bird
+  name      String // 小猫 / 小狗 ...
+  theme     String? // 可爱系 / 忠诚系 ...
+  icon      String? // emoji 或图标名
+  tagline   String? // 领养页性格文案
+  sortOrder Int      @default(0)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stages PetSpeciesStage[]
+  pets   Pet[]
+
+  @@index([sortOrder])
+}
+
+// 宠物阶段：每个种类 3 个阶段（幼年 / 成长 / 成熟），负责形象与动画资源
+model PetSpeciesStage {
+  id              String     @id @default(uuid())
+  speciesId       BigInt
+  species         PetSpecies @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  stageKey        String // juvenile / growing / mature
+  name            String // 幼猫 / 成猫 / 魔法猫
+  minLevel        Int        @default(1) // 该阶段起始等级（含）
+  maxLevel        Int        @default(9) // 该阶段结束等级（含）
+  imageUrl        String? // 静态形象
+  idleLottieUrl   String? // 待机动画
+  feedLottieUrl   String? // 进食动画
+  evolveLottieUrl String? // 进入该阶段的进化动画
+  sortOrder       Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([speciesId, stageKey])
+  @@index([speciesId, sortOrder])
+}
+
+// 宠物个体：用户领养后形成，绑定种类、昵称、等级、经验与饱腹度
+model Pet {
+  id                  String     @id @default(uuid())
+  speciesId           BigInt
+  species             PetSpecies @relation(fields: [speciesId], references: [id])
+  nickname            String
+  schoolStageName     String? // 领养时的学段名称快照
+  level               Int        @default(1) // 由 experience 推导后落库，便于列表展示
+  experience          Int        @default(0) // 累计经验，只增不减
+  satiety             Int        @default(60) // 饱腹度 0-100
+  lastDecayDate       DateTime   @default(now()) @db.Date
+  lastLoginRewardDate DateTime?  @db.Date // 每日首次登录奖励
+  adoptedAt           DateTime   @default(now())
+  lastFedAt           DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  userPets   UserPet[]
+  foodGrants PetFoodGrant[]
+  feeds      PetFeedLog[]
+
+  @@index([speciesId])
+}
+
+// 用户与宠物的关系：P0 每人一只（isPrimary = true），未来可扩展多只
+model UserPet {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petId     String   @unique
+  pet       Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  isPrimary Boolean  @default(true)
+  adoptedAt DateTime @default(now())
+
+  @@index([userId, isPrimary])
+}
+
+// 宠物食品定义：后台维护种类、效果与每日上限；背包按 foodType 聚合
+model PetFoodDef {
+  id           BigInt   @id @default(autoincrement())
+  foodType     String   @unique // normal / premium / rare
+  name         String // 普通食物 / 高级食物 / 稀有食物
+  icon         String? // 🍎 / 🍰 / ⭐
+  satietyGain  Int      @default(10)
+  expGain      Int      @default(0)
+  dailyCap     Int      @default(30)
+  bankDailyCap Int? // 题库来源的普通食物单独上限，null 表示不限制
+  obtainRule   String? // 获得方式说明
+  sortOrder    Int      @default(0)
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([sortOrder])
+}
+
+// 背包库存：按用户 + 食物类型聚合，跨天保留
+model PetFoodItem {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodType  String
+  quantity  Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, foodType])
+}
+
+// 发放流水：一次练习结算最多一条，clientSessionId 保证幂等
+model PetFoodGrant {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petId            String
+  pet              Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  attemptId        String? // 关联 StudyAttempt，仅记录不建外键
+  clientSessionId  String
+  scopeType        String // chapter / knowledge / bank
+  subjectId        BigInt?
+  subjectName      String?
+  chapterId        BigInt?
+  knowledgePointId BigInt?
+  scopeName        String?
+  correctCount     Int
+  totalQuestions   Int
+  maxStreak        Int      @default(0)
+  normalCount      Int      @default(0)
+  premiumCount     Int      @default(0)
+  rareCount        Int      @default(0)
+  expGained        Int      @default(0)
+  riskFlag         Boolean  @default(false)
+  dateKey          DateTime @db.Date
+  createdAt        DateTime @default(now())
+
+  @@unique([userId, clientSessionId])
+  @@index([petId, createdAt])
+  @@index([userId, dateKey])
+}
+
+// 喂养记录：一次喂食一条
+model PetFeedLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petId       String
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  foodType    String
+  quantity    Int
+  satietyGain Int
+  expGain     Int
+  levelBefore Int
+  levelAfter  Int
+  stageBefore String
+  stageAfter  String
+  dateKey     DateTime @db.Date
+  createdAt   DateTime @default(now())
+
+  @@index([petId, createdAt])
+  @@index([userId, dateKey])
+}
+
+// 按日聚合：用于经验上限、食物上限与免衰减判定
+model PetDailyStat {
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateKey        DateTime @db.Date
+  expGained      Int      @default(0)
+  foodNormal     Int      @default(0)
+  bankFoodNormal Int      @default(0)
+  foodPremium    Int      @default(0)
+  foodRare       Int      @default(0)
+  feedCount      Int      @default(0)
+  satietyGained  Int      @default(0)
+  updatedAt      DateTime @updatedAt
+
+  @@id([userId, dateKey])
+}
+
+// 单行宠物全局配置：id 固定为 default，后台读写
+model PetConfig {
+  id                     String   @id @default("default")
+  expPerCorrect          Int      @default(1)
+  streakBonusMax         Int      @default(10)
+  dailyExpCap            Int      @default(300)
+  dailyLoginExp          Int      @default(5)
+  satietyMax             Int      @default(100)
+  satietyDecay           Int      @default(30)
+  expPerLevel            Int      @default(100)
+  maxLevel               Int      @default(30)
+  growingLevel           Int      @default(10)
+  matureLevel            Int      @default(20)
+  premiumStreak          Int      @default(5)
+  rareMinQuestions       Int      @default(10)
+  minSecondsPerQuestion  Int      @default(3)
+  maxQuestionsPerAttempt Int      @default(60)
+  updatedAt              DateTime @updatedAt
+  updatedBy              String?
 }

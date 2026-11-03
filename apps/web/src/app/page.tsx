@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
-import { BookMarked, BookOpen, GraduationCap, Layers, Smartphone, Target } from "lucide-react";
+import { BookMarked, BookOpen, GraduationCap, Layers, Sigma, Smartphone, Target } from "lucide-react";
 import Link from "next/link";
 
 const pathIcons = [BookOpen, Target, Layers];
-const advantageIcons = [Target, GraduationCap, BookMarked, Smartphone];
+const advantageIcons = [Target, Sigma, GraduationCap, BookMarked, Smartphone];
 
 export default function Home() {
   const { t, dict } = useLocale();
@@ -78,7 +78,7 @@ export default function Home() {
             {t("home.advantagesSubtitle")}
           </p>
         </div>
-        <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] lg:grid-cols-4">
+        <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[72rem] lg:grid-cols-5">
           {dict.home.advantages.map((advantage, index) => {
             const Icon = advantageIcons[index];
             return (

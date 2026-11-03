@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>电子宠物产品文档 v0.4｜Sharp</title>
+<style>
+  :root{
+    --bg:#f7f8f7; --surface:#ffffff; --text:#1c1f1d; --muted:#5f6b64;
+    --line:#e2e6e3; --accent:#2f7d52; --accent-soft:#e7f2eb; --warn:#8a5a12;
+    --warn-soft:#fbf3e4; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  .page{max-width:980px;margin:0 auto;padding:56px 28px 96px}
+  header.doc{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:40px}
+  .kicker{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:600;text-transform:uppercase}
+  h1{font-size:34px;line-height:1.25;margin:12px 0 12px;letter-spacing:-.01em}
+  .lede{color:var(--muted);max-width:720px;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:20px;font-size:13px;color:var(--muted)}
+  .meta b{color:var(--text);font-weight:600}
+  h2{font-size:22px;margin:52px 0 14px;padding-top:8px}
+  h3{font-size:16px;margin:26px 0 10px}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;margin:18px 0}
+  table{width:100%;border-collapse:collapse;margin:14px 0;background:var(--surface);font-size:14px}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+  th{background:var(--accent-soft);font-weight:600;white-space:nowrap}
+  caption{caption-side:top;text-align:left;color:var(--muted);font-size:13px;padding-bottom:6px}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .tag.tbd{background:var(--warn-soft);color:var(--warn)}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0}
+  .flow .step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px}
+  .flow .arrow{color:var(--muted);font-size:14px}
+  .req{border-left:3px solid var(--accent);padding-left:16px;margin:30px 0}
+  .req h3{margin:0 0 6px;font-size:17px}
+  .req .id{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.06em}
+  .note{font-size:13px;color:var(--muted)}
+  .code{margin:14px 0;padding:16px 18px;background:#f0f3f1;border:1px solid var(--line);border-radius:10px;overflow:auto;font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+  .code .cm{color:#7b8a82}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:44px 0}
+  @media (max-width:640px){h1{font-size:27px}.page{padding:36px 18px 72px}table{font-size:13px}th,td{padding:8px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <div class="kicker">Product Document · v0.4</div>
+    <h1>电子宠物：让每一次练习都有回应</h1>
+    <p class="lede">宠物功能不是独立小游戏，而是挂在现有学习闭环上的反馈层：学生完成单元、知识点或题库练习后，答题结果转化为<strong>经验</strong>与<strong>食物</strong>；食物进入背包，由学生<strong>手动喂养</strong>，转化为饱腹度与成长，并在关键等级触发进化。本文档基于当前产品结构（学段 / 年级 / 教材版本 / 科目 / 章节 / 单元 / 知识点 / 题库 / 错题本 / 学习统计）定义 5 种宠物、食物系统、等级进化、领养登记、喂养记录，并给出对应的数据库表结构与接口草案。</p>
+    <div class="meta">
+      <span><b>版本</b> v0.4（食物背包与手动喂养；用户-宠物关系独立建表，方案待评审）</span>
+      <span><b>端</b> 移动端（学生）、管理后台（配置）</span>
+      <span><b>目标用户</b> 小学至高中学生</span>
+      <span><b>依赖</b> 现有练习结算、学习统计、用户学段资料</span>
+    </div>
+  </header>
+
+  <h2>1. 结合现有产品逻辑</h2>
+  <p>当前 App 的学习闭环是：选择教材与科目 → 按章节/单元练习，或按知识点练习，或进入题库练习 → 提交结算 → 查看正确率、用时与错题回顾 → 在「学习统计」查看进度。宠物功能只在<strong>结算成功</strong>之后插入一层反馈，不新增学习路径、不改变练习规则；喂养是结算之后的独立动作，不影响练习流程。</p>
+  <table>
+    <caption>与现有模块的衔接点</caption>
+    <thead><tr><th>现有模块</th><th>当前行为</th><th>宠物接入方式</th></tr></thead>
+    <tbody>
+      <tr><td>首页</td><td>学科轮播、快捷入口、当前科目</td><td>顶部轮播下方新增宠物卡片，展示形象、等级与「可喂养」红点</td></tr>
+      <tr><td>我的教材 / 章节 / 单元</td><td>选择教材版本后按单元学习，完成单元练习并结算</td><td>以「单元练习」结算发放经验与食物，标注章节与科目</td></tr>
+      <tr><td>按知识点学</td><td>选择科目与知识点，进入知识点练习</td><td>以「知识点练习」结算发放经验与食物，标注知识点与科目</td></tr>
+      <tr><td>题库练习</td><td>不限章节与知识点的自由练习</td><td>同样可发放，但普通食物单日上限更低</td></tr>
+      <tr><td>练习结果页</td><td>正确率、题量、用时、错题回顾</td><td>在结果信息下方新增一行宠物反馈：获得经验、获得食物</td></tr>
+      <tr><td>错题本</td><td>查看错题、重做</td><td>重做按题库来源计算，同题同日只计一次</td></tr>
+      <tr><td>学习统计</td><td>今日答题、学习次数、用时，按章节/知识点聚合</td><td>宠物档案复用同一口径，展示本周学习与累计答对</td></tr>
+      <tr><td>用户资料（学段/年级）</td><td>注册与资料中已有学段、年级</td><td>领养登记时记录学段，用于形象文案与档案展示</td></tr>
+      <tr><td>科目配置</td><td>科目含图标与排序</td><td>喂养记录与宠物档案中的科目标签直接复用科目名称与图标</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. 目标与范围</h2>
+  <div class="card">
+    <h3>目标</h3>
+    <ul>
+      <li>学生完成练习后，能立即看到两件事：获得多少经验、获得哪些食物。</li>
+      <li>学生打开宠物页能看懂三件事：当前状态、背包里有什么、下一次进化还差多少。</li>
+      <li>喂养是一个低压力动作：宠物不会饿死、不会离开，饱腹度只影响视觉反馈。</li>
+      <li>宠物成为「学习统计」之外的情感化呈现，但不替代原有数据与错题功能。</li>
+    </ul>
+  </div>
+  <table>
+    <caption>P0 采用「答题得经验 + 答题得食物 + 手动喂食」的完整闭环；P1 做分享与筛选增强</caption>
+    <thead><tr><th>层级</th><th>内容</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag">P0</span></td><td>5 种宠物领养、首页宠物卡片、宠物详情页、食物背包、答题发放经验与食物、手动喂养、等级与进化、喂养记录、每日上限与防刷、结算页反馈、后台配置</td><td>构成完整闭环</td></tr>
+      <tr><td><span class="tag">P1</span></td><td>进化动画分享、按学段推荐种类、喂养记录筛选、饥饿提醒、互动动作、改名、外观道具</td><td>增强陪伴感与可运营性</td></tr>
+      <tr><td><span class="tag tbd">不做</span></td><td>宠物死亡与惩罚、抽卡与付费、多宠物同时养成、宠物对战、社交排行</td><td>与目标用户年龄及「不制造焦虑」定位冲突</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. 产品模型</h2>
+  <h3>3.1 对象定义</h3>
+  <table>
+    <thead><tr><th>对象</th><th>定义</th><th>约束</th></tr></thead>
+    <tbody>
+      <tr><td>宠物种类</td><td>一组共享形象与文案的宠物模板，决定三个成长阶段的外观</td><td>全局配置，P0 提供 5 种</td></tr>
+      <tr><td>宠物</td><td>用户领养后形成的宠物个体，绑定种类、昵称、等级、经验与饱腹度</td><td>通过 UserPet 关联用户；P0 每人 1 只，后续可扩展多只</td></tr>
+      <tr><td>领养登记</td><td>领养时写入的宠物档案：种类、昵称、领养时间、所属学段</td><td>种类与领养时间不可改，昵称 P1 可改</td></tr>
+      <tr><td>食物</td><td>答题获得的可喂养道具，分普通 / 高级 / 稀有，携带饱腹度与经验效果</td><td>种类与效果由后台配置</td></tr>
+      <tr><td>食物背包</td><td>用户当前持有的食物数量，按食物类型聚合</td><td>按用户与食物类型唯一</td></tr>
+      <tr><td>食物发放流水</td><td>一次练习结算发放的食物与经验明细</td><td>按练习结算唯一，幂等</td></tr>
+      <tr><td>喂养记录</td><td>一次喂食动作产生的饱腹度与经验变化</td><td>一次喂食一条，可追溯</td></tr>
+      <tr><td>每日汇总</td><td>按用户与日期聚合的经验、食物与喂养数据</td><td>按日期键唯一</td></tr>
+      <tr><td>宠物配置</td><td>种类形象、等级阈值、经验与食物参数、衰减参数、风控参数</td><td>全局一份，后台维护</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 宠物种类</h3>
+  <table>
+    <caption>P0 五种，数值规则完全一致，仅形象与文案不同，避免「选错种类吃亏」</caption>
+    <thead><tr><th>种类</th><th>主题</th><th>进化路线</th><th>获取方式</th></tr></thead>
+    <tbody>
+      <tr><td>🐱 小猫</td><td>可爱系</td><td>幼猫 → 成猫 → 魔法猫</td><td>领养时可选</td></tr>
+      <tr><td>🐶 小狗</td><td>忠诚系</td><td>幼犬 → 成犬 → 守护犬</td><td>领养时可选</td></tr>
+      <tr><td>🐰 小兔</td><td>灵动系</td><td>幼兔 → 成兔 → 月兔</td><td>领养时可选</td></tr>
+      <tr><td>🦊 小狐</td><td>智慧系</td><td>幼狐 → 成狐 → 九尾狐</td><td>领养时可选</td></tr>
+      <tr><td>🐦 小鸟</td><td>自由系</td><td>幼鸟 → 成鸟 → 凤凰</td><td>领养时可选</td></tr>
+    </tbody>
+  </table>
+  <p class="note">种类不绑定学段或科目；P1 再按学段做默认推荐（如小学默认小兔），但仍允许自选。形象资源按「种类 + 阶段」配置，缺失时回退默认形象。</p>
+
+  <h3>3.3 等级、经验与进化</h3>
+  <table>
+    <thead><tr><th>项</th><th>规则</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>经验来源</td><td>答题经验、连对奖励、食物经验、每日首次登录奖励</td><td>四类来源统一计入累计经验</td></tr>
+      <tr><td>累计经验</td><td>只增不减，饥饿与多日未学习都不扣除</td><td>经验不因饱腹度变化而回退</td></tr>
+      <tr><td>等级</td><td>等级 = floor(累计经验 / 100) + 1，上限 30 级</td><td>P0 采用每级固定 100 经验（线性）；曲线升级为 P1 可配置项</td></tr>
+      <tr><td>阶段</td><td>Lv1–9 幼年，Lv10–19 成长，Lv20–30 成熟</td><td>阶段由等级推导，不单独存储</td></tr>
+      <tr><td>阶段门槛</td><td>Lv10 需 900 经验，Lv20 需 1900，Lv30 需 2900</td><td>后台可调整，已达成不回退</td></tr>
+      <tr><td>进化节点</td><td>Lv10 第一次进化，Lv20 第二次进化</td><td>升级后触发全屏进化动画（P0 可先用静态图 + 轻动画）</td></tr>
+      <tr><td>满级</td><td>Lv30 后继续累计经验，展示「已长大」</td><td>不再升级，也不再触发进化</td></tr>
+    </tbody>
+  </table>
+  <table>
+    <caption>经验数值为建议值 <span class="tag tbd">待评审</span></caption>
+    <thead><tr><th>来源</th><th>规则</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>答题经验</td><td>答对 1 题 +1 经验</td><td>答错不加经验</td></tr>
+      <tr><td>连对奖励</td><td>取本次练习最长连对 N，额外 +N 经验，单次最多 +10</td><td>N 只取最大值，不按每段连对重复计算</td></tr>
+      <tr><td>食物经验</td><td>高级食物 +5 / 个，稀有食物 +15 / 个；普通食物不加经验</td><td>在喂食时结算，不占用答题结算</td></tr>
+      <tr><td>每日首次登录</td><td>每日首次进入宠物页 +5 经验，每日一次</td><td>用于鼓励日活，不重复发放</td></tr>
+      <tr><td>每日经验上限</td><td>300 / 日，四类来源合计</td><td>达到上限后仍可学习与喂食，但经验不再增加</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.4 食物系统</h3>
+  <table>
+    <caption>食物数值为建议值 <span class="tag tbd">待评审</span></caption>
+    <thead><tr><th>食物</th><th>获得方式</th><th>效果</th><th>每日上限</th></tr></thead>
+    <tbody>
+      <tr><td>🍎 普通食物</td><td>每答对 1 题获得 1 个</td><td>饱腹度 +10</td><td>30 个 / 日；题库来源最多 15 个 / 日</td></tr>
+      <tr><td>🍰 高级食物</td><td>单次练习最长连对 ≥ 5 题获得 1 个</td><td>饱腹度 +30，经验 +5</td><td>5 个 / 日</td></tr>
+      <tr><td>⭐ 稀有食物</td><td>完成一个单元获得 1 个</td><td>饱腹度 +50，经验 +15，随机外观道具（P1）</td><td>2 个 / 日</td></tr>
+    </tbody>
+  </table>
+  <p><b>获得规则：</b></p>
+  <ul>
+    <li>所有食物在练习结算成功后发放，进入背包，不直接增加饱腹度。</li>
+    <li>「完成一个单元」指本次为章节练习、题量 ≥ 10 且提交了该单元全部题目；题库与知识点练习不发放稀有食物。</li>
+    <li>食物只增不减地进入背包，可跨天保留；未喂食不会过期。</li>
+    <li>风控拦截、未领养、重复结算均不发放食物。</li>
+    <li>食物发放数量受「每日经验上限」与「每日食物数量上限」双重约束，超出部分不补发。</li>
+  </ul>
+  <p><b>喂食规则：</b></p>
+  <ul>
+    <li>喂食由用户手动触发，一次可选择 1–10 个同类型食物。</li>
+    <li>饱腹度上限 100；超出部分不增加饱腹度，但经验照常发放（未达每日经验上限时）。</li>
+    <li>饱腹度已满时禁止喂食，提示「宠物吃饱了，明天再来喂吧」，食物保留在背包。</li>
+    <li>每日经验已达上限时仍可喂食获得饱腹度，经验为 0，提示「今日经验已满，明天继续」。</li>
+  </ul>
+
+  <h3>3.5 饱腹度、状态与衰减</h3>
+  <table>
+    <caption>状态实时计算，只影响展示，不影响经验与等级</caption>
+    <thead><tr><th>状态</th><th>判定</th><th>文案方向</th><th>可执行操作</th></tr></thead>
+    <tbody>
+      <tr><td>精神</td><td>饱腹度 ≥ 70</td><td>活跃，鼓励保持节奏</td><td>查看、去练习、喂食（未满时）</td></tr>
+      <tr><td>正常</td><td>30 ≤ 饱腹度 &lt; 70</td><td>平静，提示背包里还有食物</td><td>查看、去练习、喂食</td></tr>
+      <tr><td>饥饿</td><td>饱腹度 &lt; 30 且今日未喂食</td><td>低落，提示「做几道题就能换到食物」</td><td>查看、去练习、喂食</td></tr>
+      <tr><td>沉睡</td><td>连续 72 小时无喂食</td><td>睡眠，不指责用户</td><td>查看、去练习、喂食</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li>每日 00:00 后，若当日喂食次数为 0，则次日饱腹度 -30；当日有任意一次喂食则当日不衰减。</li>
+    <li>衰减在读取宠物数据时按日期间隔一次性补齐，最低 0；离线超过 30 天只补算 30 天并直接置 0。</li>
+    <li>日期键以服务端时间与用户时区确定；修改设备时间不影响已记录数据。</li>
+    <li>饱腹度不参与等级、阶段、错题与学习统计的任何计算。</li>
+  </ul>
+
+  <h3>3.6 核心流程</h3>
+  <div class="flow">
+    <div class="step">练习结算成功</div><div class="arrow">→</div>
+    <div class="step">获得经验 + 食物入背包</div><div class="arrow">→</div>
+    <div class="step">首页宠物卡片出现可喂养红点</div><div class="arrow">→</div>
+    <div class="step">进入宠物页选食物喂食</div><div class="arrow">→</div>
+    <div class="step">饱腹度 / 经验增加</div><div class="arrow">→</div>
+    <div class="step">升级或进化</div>
+  </div>
+
+  <h2>4. 功能需求</h2>
+
+  <div class="req" id="fr-01">
+    <div class="id">FR-01 领养与登记</div>
+    <h3>建立宠物档案</h3>
+    <p><b>入口：</b>首页宠物卡片、宠物页引导、练习结算页领养提示（未领养时）。</p>
+    <p><b>流程：</b>领养引导 → 查看 5 种宠物（形象 + 主题 + 进化路线）→ 选择 1 种 → 输入昵称 → 确认领养。</p>
+    <p><b>登记字段：</b></p>
+    <table>
+      <thead><tr><th>字段</th><th>来源</th><th>规则</th></tr></thead>
+      <tbody>
+        <tr><td>宠物种类</td><td>用户选择</td><td>必选，领养后不可更换</td></tr>
+        <tr><td>昵称</td><td>用户输入</td><td>1–8 字符，允许中英文与数字，敏感词拦截</td></tr>
+        <tr><td>所属学段</td><td>读取用户资料</td><td>只读展示；资料缺失时显示「未设置」</td></tr>
+        <tr><td>领养时间</td><td>系统记录</td><td>作为宠物「生日」与陪伴天数起点</td></tr>
+        <tr><td>初始状态</td><td>系统设置</td><td>Lv1、幼年、累计经验 0、饱腹度 60、背包为空</td></tr>
+      </tbody>
+    </table>
+    <p><b>规则：</b>昵称为空、超长或命中敏感词时禁止提交并说明原因；领养在事务内创建宠物与 <code>UserPet</code> 关系（<code>isPrimary = true</code>），同一用户重复提交只生成一只宠物；宠物页展示「陪伴第 N 天」。</p>
+  </div>
+
+  <div class="req" id="fr-02">
+    <div class="id">FR-02 首页宠物卡片</div>
+    <h3>让宠物在首页被看见</h3>
+    <p><b>位置：</b>移动端首页顶部轮播下方、快捷入口卡片上方；Web 首页 Hero 区域下方。</p>
+    <p><b>展示内容：</b></p>
+    <ul>
+      <li>宠物当前阶段形象或待机动画，居中展示。</li>
+      <li>昵称 + 等级，例如「小喵 Lv.12」；跨阶段时附加阶段名。</li>
+      <li>饱腹度进度条与数值（0–100），仅作视觉反馈。</li>
+      <li>背包中有食物且饱腹度未满时，卡片右上角显示「可喂养」红点。</li>
+      <li>点击整卡进入宠物详情页；未领养时展示领养引导卡片。</li>
+    </ul>
+    <p><b>异常：</b>宠物数据加载失败时卡片降级为「去看看宠物」入口，不阻塞首页其他内容；未领养不显示饱腹度与红点。</p>
+  </div>
+
+  <div class="req" id="fr-03">
+    <div class="id">FR-03 宠物详情页</div>
+    <h3>状态、成长、背包与喂养入口</h3>
+    <p><b>区域划分：</b></p>
+    <ul>
+      <li><b>形象区：</b>当前阶段形象、昵称、种类名、状态标签。</li>
+      <li><b>成长区：</b>等级、阶段、累计经验进度条、距下一级所需经验；接近 Lv10 / Lv20 时展示「即将进化」。</li>
+      <li><b>状态区：</b>饱腹度条、状态文案、今日已获经验 / 300。</li>
+      <li><b>背包区：</b>三种食物及数量；数量为 0 时置灰并提示「完成练习可获得」。</li>
+      <li><b>档案区：</b>陪伴天数、累计答对题数、累计喂养次数、最常学科目（按喂养次数取最多，展示科目图标与名称）。</li>
+      <li><b>记录区：</b>最近 3 条喂养记录，底部「查看全部」进入喂养记录页。</li>
+      <li><b>主操作：</b>「喂食」打开食物选择；「去练习」打开现有练习入口；「查看进化路线」展示三阶段形态。</li>
+    </ul>
+    <p><b>异常：</b>加载失败提供重试，不阻塞其他页面；未领养直接展示领养引导；配置形象缺失时回退默认形象。</p>
+  </div>
+
+  <div class="req" id="fr-04">
+    <div class="id">FR-04 答题获得经验与食物</div>
+    <h3>结算时完成一次发放</h3>
+    <p><b>触发：</b>用户完成一次练习并成功结算（以现有结算接口返回成功为准，客户端动画不参与计算）。</p>
+    <table>
+      <caption>不同练习来源的发放差异，数值为建议值 <span class="tag tbd">待评审</span></caption>
+      <thead><tr><th>来源</th><th>对应现有入口</th><th>答题经验</th><th>普通食物</th><th>高级 / 稀有</th></tr></thead>
+      <tbody>
+        <tr><td>单元练习</td><td>我的教材 → 章节 → 单元</td><td>+1 / 答对题</td><td>+1 / 答对题</td><td>连对 ≥5 得高级；完成单元得稀有</td></tr>
+        <tr><td>知识点练习</td><td>按知识点学</td><td>+1 / 答对题</td><td>+1 / 答对题</td><td>连对 ≥5 得高级；不发稀有</td></tr>
+        <tr><td>题库练习</td><td>题库 / 错题重做</td><td>+1 / 答对题</td><td>+1 / 答对题（每日最多 15 个）</td><td>连对 ≥5 得高级；不发稀有</td></tr>
+      </tbody>
+    </table>
+    <p><b>计算规则：</b></p>
+    <ul>
+      <li>答题经验 = 答对题数 × 1 + min(本次最长连对, 10)，再与「每日经验剩余额度」取最小值。</li>
+      <li>普通食物数量 = 答对题数，受每日 30 个与题库 15 个的上限约束。</li>
+      <li>高级食物：单次最长连对 ≥5 发放 1 个，每日最多 5 个。</li>
+      <li>稀有食物：章节练习且题量 ≥10 视为完成一个单元，发放 1 个，每日最多 2 个。</li>
+      <li>同一结算标识只生成一条发放记录；重复提交、网络重试不重复发放。</li>
+      <li>同一题目在同一自然日只计一次经验与食物；错题重做同样受限。</li>
+      <li>中途退出、未提交、结算失败、未作答均不发放。</li>
+    </ul>
+    <p><b>结果：</b>结算页展示本次获得经验、获得食物、今日累计、是否触发上限、是否升级或进化；点击进入宠物页完成喂养。</p>
+  </div>
+
+  <div class="req" id="fr-05">
+    <div class="id">FR-05 喂养</div>
+    <h3>把食物转化为饱腹度与经验</h3>
+    <p><b>入口：</b>宠物详情页「喂食」；首页宠物卡片红点提示。</p>
+    <p><b>流程：</b>打开食物选择 → 选择食物类型与数量（1–10）→ 确认喂食 → 播放进食动画 → 饱腹度与经验数字滚动 → 若升级或进化则继续播放对应动画。</p>
+    <p><b>规则：</b></p>
+    <ul>
+      <li>只能喂背包中已有且数量足够的食物；数量不足时不可提交。</li>
+      <li>饱腹度已满时禁止喂食，提示「宠物吃饱了，明天再来喂吧」，食物保留。</li>
+      <li>饱腹度未满但溢出时不浪费经验；溢出部分不加饱腹度。</li>
+      <li>每日经验已达上限时仍可喂食，经验为 0 并明确提示。</li>
+      <li>一次喂食对应一条喂养记录；并发或重复提交以服务端第一次结果为准。</li>
+      <li>喂养不改变练习记录、错题与学习统计。</li>
+    </ul>
+  </div>
+
+  <div class="req" id="fr-06">
+    <div class="id">FR-06 升级与进化</div>
+    <h3>等级、阶段与形象切换</h3>
+    <ul>
+      <li>经验增加后即时重算等级；跨过 Lv10 或 Lv20 时触发进化。</li>
+      <li>进化时播放该阶段的全屏动画，展示新形态与新名称（如「成猫」「魔法猫」）。</li>
+      <li>等级、阶段与已解锁形象只升不降；饥饿、沉睡、多日未学习均不影响。</li>
+      <li>阶段变化后首页卡片、宠物页与档案区形象同步切换；已解锁的旧阶段形象可在「进化路线」中查看。</li>
+      <li>满级后继续累计经验，进度条展示为满格与「已长大」。</li>
+      <li>等级换算与阶段阈值由后台配置；调整后已达成阶段不回退，下一级按新阈值计算。</li>
+      <li>进化动画播放失败或用户跳过时，数值与形态已经生效，不重复播放。</li>
+    </ul>
+  </div>
+
+  <div class="req" id="fr-07">
+    <div class="id">FR-07 饱腹度与衰减</div>
+    <h3>状态维持</h3>
+    <ul>
+      <li>饱腹度 0–100；喂食时按食物效果增加，超过 100 按 100 计。</li>
+      <li>每日 00:00 按用户日期键衰减 30；若当日有任意一次喂食，则当日不衰减。</li>
+      <li>衰减在读取宠物数据时按日期间隔一次性补齐，最低 0，不做逐日定时任务。</li>
+      <li>日期键以服务端结算时间与用户时区确定；修改设备时间不影响已记录数据。</li>
+      <li>饱腹度不参与等级、阶段、错题与学习统计的任何计算。</li>
+      <li>饱腹度与状态不导致宠物死亡、离开或经验扣除。</li>
+    </ul>
+  </div>
+
+  <div class="req" id="fr-08">
+    <div class="id">FR-08 喂养记录</div>
+    <h3>可追溯的喂养明细</h3>
+    <p><b>入口：</b>宠物页「查看全部」；结算页「查看本次记录」。</p>
+    <p><b>页面结构：</b></p>
+    <ul>
+      <li><b>顶部汇总：</b>今日经验 / 300、今日喂食次数、累计喂养次数。</li>
+      <li><b>记录列表：</b>按时间倒序，每行展示：日期时间、食物类型与数量、饱腹度增加、经验增加、是否升级或进化。</li>
+      <li><b>补充来源：</b>由练习发放的食物可在记录中回溯到来源（单元 / 知识点 / 题库）、科目、章节或知识点名称。</li>
+      <li><b>分页：</b>每页 20 条，下拉加载更多。</li>
+      <li><b>范围：</b>保留 90 天，页面仅展示最近 30 天；更早数据在后台可查。</li>
+      <li><b>P1：</b>按食物类型与科目筛选。</li>
+    </ul>
+    <p><b>异常：</b>无记录时展示空状态与「去练习」；加载失败可重试且不清空已加载数据。</p>
+  </div>
+
+  <div class="req" id="fr-09">
+    <div class="id">FR-09 每日上限与防刷</div>
+    <h3>激励边界</h3>
+    <ul>
+      <li>每日经验上限 300，答题经验、连对奖励、食物经验与登录奖励合计。</li>
+      <li>食物数量上限：普通 30（题库来源 15）、高级 5、稀有 2；超出不发放、不结转到次日。</li>
+      <li>经验与食物只来源于正常练习结算、喂食与每日首次登录；不提供购买经验、分享得经验或直接补发的入口。</li>
+      <li>同一练习结算幂等；同一题目同日只计一次；同一喂食请求幂等。</li>
+      <li>异常答题（如每题耗时异常短、题量异常大）按 0 经验、0 食物结算；用户侧只提示「本次练习未获得奖励」，不暴露风控细节。</li>
+      <li>达到上限后仍可正常学习、喂养与查看错题，仅经验不再增加；文案保持正向。</li>
+    </ul>
+  </div>
+
+  <div class="req" id="fr-10">
+    <div class="id">FR-10 结算页反馈</div>
+    <h3>在现有结果页增加一层</h3>
+    <ul>
+      <li>位置：正确率、题量、用时与错题回顾之后，不遮挡原有信息。</li>
+      <li>内容：本次获得经验、获得食物（普通 / 高级 / 稀有）、今日累计 / 上限、升级或进化提示、宠物一句话回应。</li>
+      <li>已领养：展示宠物当前阶段小图 +「去喂养它」；未领养：展示领养引导。</li>
+      <li>经验或食物为 0（上限、风控、未答对）时展示对应原因文案，不显示为错误或失败。</li>
+      <li>不新增独立结算步骤，不打断原有「再练一次 / 继续学习」流程；喂养入口为可选跳转。</li>
+    </ul>
+  </div>
+
+  <div class="req" id="fr-11">
+    <div class="id">FR-11 后台配置</div>
+    <h3>种类、数值与查询</h3>
+    <table>
+      <thead><tr><th>配置</th><th>字段</th><th>生效方式</th></tr></thead>
+      <tbody>
+        <tr><td>宠物种类</td><td>种类名、主题、性格文案、各阶段形象与动画、排序、启用状态</td><td>保存后新领养可选；已领养按阶段读取最新形象</td></tr>
+        <tr><td>等级与进化</td><td>每级经验、阶段门槛、满级上限、进化节点</td><td>保存后实时生效，已达成不回退</td></tr>
+        <tr><td>经验参数</td><td>每题经验、连对奖励上限、每日经验上限、登录奖励</td><td>次日 00:00 起对结算生效</td></tr>
+        <tr><td>食物参数</td><td>三种食物的饱腹度、经验、获得条件、每日数量上限</td><td>次日生效；名称与图标可即时更新</td></tr>
+        <tr><td>衰减参数</td><td>每日衰减值、免衰减条件</td><td>次日生效</td></tr>
+        <tr><td>风控参数</td><td>单题最短耗时、单次最大题量、异常判定开关</td><td>保存后实时生效</td></tr>
+        <tr><td>用户查询（P1）</td><td>按用户 ID 查看宠物、经验、背包与最近喂养记录</td><td>只读，用于客服排查</td></tr>
+      </tbody>
+    </table>
+    <p><b>权限：</b>仅管理员可见；修改需二次确认，记录操作人与时间。</p>
+  </div>
+
+  <div class="req" id="fr-12">
+    <div class="id">FR-12 与学习统计的一致性</div>
+    <h3>同一口径，不做第二套数据</h3>
+    <ul>
+      <li>宠物档案中的「累计答对」与「本周学习次数」复用现有学习统计口径（学习次数 = 完成的学习会话数）。</li>
+      <li>发放记录与喂养记录中的答对题数来自该次练习结算明细，与结果页展示一致。</li>
+      <li>宠物页不新增「学习时长」等重复指标，避免与学习统计页冲突。</li>
+      <li>学习统计页不展示宠物数据；两个页面通过「去练习」互相导流即可。</li>
+    </ul>
+  </div>
+
+  <h2>5. 共享规则与异常</h2>
+  <h3>5.1 发放与幂等</h3>
+  <ul>
+    <li>经验与食物的唯一发放来源为练习结算；一次结算最多对应一条发放记录。</li>
+    <li>结算标识重复上报不产生第二条记录，经验、背包与宠物数值不变。</li>
+    <li>结算与喂食的具体数值以服务端返回为准，客户端不自行累加。</li>
+    <li>喂食在事务内完成扣减背包、增加经验/饱腹度、写入记录；任一步失败则整体回滚。</li>
+  </ul>
+  <h3>5.2 边界与异常</h3>
+  <table>
+    <thead><tr><th>场景</th><th>产品行为</th></tr></thead>
+    <tbody>
+      <tr><td>未领养用户完成练习</td><td>结算页展示领养引导，不发放经验与食物；领养后不追溯本次练习</td></tr>
+      <tr><td>未设置学段</td><td>仍可领养，档案学段显示「未设置」，不影响喂养</td></tr>
+      <tr><td>练习不足 3 题</td><td>仍按答对题数发放普通食物与经验；连对奖励按实际最长连对计算，不发高级 / 稀有食物</td></tr>
+      <tr><td>触发每日经验上限</td><td>经验 +0，展示「今天经验满啦」；食物按独立数量上限继续发放</td></tr>
+      <tr><td>触发每日食物上限</td><td>该类型食物 +0，经验照常计算；不补发到次日</td></tr>
+      <tr><td>饱腹度已满时喂食</td><td>阻止喂食，提示「宠物吃饱了，明天再来喂吧」，食物保留</td></tr>
+      <tr><td>背包中没有食物</td><td>喂食按钮置灰，引导「完成练习可获得食物」</td></tr>
+      <tr><td>同一题目同日重复答对</td><td>该题不重复计入经验与食物，其余题目正常</td></tr>
+      <tr><td>同一练习重复提交</td><td>不生成新记录，数值不变</td></tr>
+      <tr><td>宠物数据加载失败</td><td>展示重试，不影响练习、统计与错题</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. 数据对象（产品级字段）</h2>
+  <p class="note">本节只定义业务对象与字段含义；具体表结构见第 9 节，接口见第 10 节。</p>
+  <table>
+    <thead><tr><th>对象</th><th>关键字段</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>宠物种类（配置）</td>
+        <td>种类标识、名称、主题、性格文案、三阶段形象与动画、排序、启用状态</td>
+        <td>全局配置；数值规则统一，形象按阶段切换</td>
+      </tr>
+      <tr>
+        <td>宠物（个体）</td>
+        <td>种类标识、昵称、学段、等级、累计经验、饱腹度、领养时间、最近喂食时间、上次衰减日期、上次登录奖励日期</td>
+        <td>经 UserPet 关联用户；等级由累计经验推导</td>
+      </tr>
+      <tr>
+        <td>用户与宠物关系</td>
+        <td>用户标识、宠物标识、是否当前宠物、领养时间</td>
+        <td>独立维护，P0 每人一条；为后续多宠物预留</td>
+      </tr>
+      <tr>
+        <td>食物背包</td>
+        <td>用户标识、食物类型、数量、更新时间</td>
+        <td>按用户与食物类型唯一；跨天保留</td>
+      </tr>
+      <tr>
+        <td>食物发放流水</td>
+        <td>用户标识、宠物标识、结算标识、来源、科目、章节或知识点、答对题数、题数、最长连对、三类食物数量、发放经验、日期键、创建时间</td>
+        <td>结算标识唯一，用于幂等与追溯</td>
+      </tr>
+      <tr>
+        <td>喂养记录</td>
+        <td>用户标识、宠物标识、食物类型、数量、饱腹度增加、经验增加、喂食前后等级与阶段、日期键、创建时间</td>
+        <td>一次喂食一条，用于展示与审计</td>
+      </tr>
+      <tr>
+        <td>每日汇总</td>
+        <td>用户标识、日期键、获得经验、三类食物数量、喂食次数、饱腹度增加</td>
+        <td>用于经验上限、食物上限与免衰减判定</td>
+      </tr>
+      <tr>
+        <td>领养登记记录</td>
+        <td>用户标识、种类、昵称、学段快照、领养时间</td>
+        <td>随宠物档案保存，用于展示与审计</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>7. 埋点与指标</h2>
+  <table>
+    <thead><tr><th>事件</th><th>触发时机</th><th>关键属性</th></tr></thead>
+    <tbody>
+      <tr><td>pet_adopt_expose</td><td>进入领养引导</td><td>入口来源、学段</td></tr>
+      <tr><td>pet_adopt_success</td><td>领养成功</td><td>种类、昵称长度、学段</td></tr>
+      <tr><td>pet_card_view</td><td>首页宠物卡片曝光</td><td>等级、阶段、是否有食物可喂</td></tr>
+      <tr><td>pet_page_view</td><td>进入宠物页</td><td>等级、阶段、状态、今日经验、背包数量</td></tr>
+      <tr><td>pet_food_granted</td><td>结算返回发放结果</td><td>来源、经验、三类食物数量、是否上限、是否风控</td></tr>
+      <tr><td>pet_feed_result</td><td>喂食成功</td><td>食物类型、数量、饱腹度增加、经验增加、是否升级、是否进化</td></tr>
+      <tr><td>pet_evolution_play</td><td>播放进化动画</td><td>等级、旧阶段、新阶段、是否跳过</td></tr>
+      <tr><td>pet_backpack_empty</td><td>背包为空时打开喂食</td><td>等级、今日经验</td></tr>
+      <tr><td>pet_cta_click</td><td>宠物页点击「去练习」</td><td>跳转入口</td></tr>
+      <tr><td>pet_record_view</td><td>进入喂养记录页</td><td>记录数量、筛选条件（P1）</td></tr>
+      <tr><td>pet_hungry_view</td><td>展示饥饿/沉睡状态</td><td>距上次喂食天数</td></tr>
+    </tbody>
+  </table>
+  <div class="card">
+    <h3>观察指标</h3>
+    <ul>
+      <li>领养转化率：从入口曝光到完成领养的比例。</li>
+      <li>喂养覆盖率：日活学生中当日完成至少一次喂食的比例。</li>
+      <li>背包积压：有食物但连续 3 天未喂食的用户比例。</li>
+      <li>来源结构：单元 / 知识点 / 题库 三类食物来源占比，判断奖励参数是否失衡。</li>
+      <li>练习增量：领养用户的练习完成次数与未领养用户的对比。</li>
+      <li>上限触达率：触发每日经验或食物上限的用户比例，用于校准数值。</li>
+      <li>负向信号：经验为 0 的比例、饥饿/沉睡状态占比、进化动画跳过率。</li>
+    </ul>
+    <p class="note">指标基线 <span class="tag tbd">待定</span>，以现有学习统计数据为准，不在此处编造目标值。</p>
+  </div>
+
+  <h2>8. 验收标准</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Given</th><th>When</th><th>Then</th></tr></thead>
+    <tbody>
+      <tr><td>AC-01</td><td>未领养用户进入宠物入口</td><td>从 5 种宠物中选 1 种并完成命名</td><td>事务内创建宠物与 UserPet 关系（isPrimary = true），登记种类/昵称/学段/领养时间，背包为空，进入宠物页</td></tr>
+      <tr><td>AC-02</td><td>昵称为空或命中敏感词</td><td>点击确认领养</td><td>阻止提交并说明原因，不创建宠物</td></tr>
+      <tr><td>AC-03</td><td>已领养用户完成 10 题单元练习，答对 8 题，最长连对 6</td><td>结算成功</td><td>获得经验 8 + 6 = 14；普通食物 8 个、高级食物 1 个、稀有食物 1 个；结算页展示明细</td></tr>
+      <tr><td>AC-04</td><td>同一次结算重复提交</td><td>第二次提交</td><td>不新增发放记录，经验与背包数量不变</td></tr>
+      <tr><td>AC-05</td><td>当日经验已达 300</td><td>完成新练习</td><td>经验 +0，提示已达上限；食物按独立数量上限继续发放</td></tr>
+      <tr><td>AC-06</td><td>题库来源当日已获 15 个普通食物</td><td>完成题库练习</td><td>普通食物不再发放，经验与其他类型食物照常计算</td></tr>
+      <tr><td>AC-07</td><td>同一题目当日第二次答对</td><td>再次结算</td><td>该题不计经验与食物，其余题目正常</td></tr>
+      <tr><td>AC-08</td><td>累计经验跨过 900</td><td>喂食成功</td><td>等级进入 Lv10，阶段切为成长，触发第一次进化动画，形象更新</td></tr>
+      <tr><td>AC-09</td><td>连续 3 天未喂食</td><td>进入宠物页</td><td>饱腹度按每日 -30 补齐且不低于 0，展示饥饿或沉睡，累计经验不变</td></tr>
+      <tr><td>AC-10</td><td>当日有任意一次喂食</td><td>次日进入宠物页</td><td>当日不衰减，状态按饱腹度判定</td></tr>
+      <tr><td>AC-11</td><td>练习 3 题答对 2 题，最长连对 2</td><td>结算成功</td><td>获得经验 2 + 2 = 4，普通食物 2 个，无高级 / 稀有</td></tr>
+      <tr><td>AC-12</td><td>喂养记录超过 30 天</td><td>进入喂养记录页</td><td>仅展示最近 30 天，按时间倒序分页，不出现 90 天前数据</td></tr>
+      <tr><td>AC-13</td><td>旧版客户端调用结算接口</td><td>提交后返回成功</td><td>原有字段含义不变，新增的 attemptId 与 pet 字段可选读取；未领养时 pet.granted 为空</td></tr>
+      <tr><td>AC-14</td><td>同一 clientSessionId 重复提交</td><td>第二次提交</td><td>返回首次发放结果，不重复增加经验与食物</td></tr>
+      <tr><td>AC-15</td><td>饱腹度 100 且背包有食物</td><td>点击喂食</td><td>阻止喂食并提示「宠物吃饱了，明天再来喂吧」，食物数量不变</td></tr>
+      <tr><td>AC-16</td><td>饱腹度 95，背包有高级食物，今日经验未满</td><td>喂食 1 个高级食物</td><td>饱腹度 +5 至 100，经验 +5；溢出部分不增加饱腹度</td></tr>
+      <tr><td>AC-17</td><td>每日经验已达 300，饱腹度 40</td><td>喂食 1 个普通食物</td><td>饱腹度 +10，经验 +0，提示「今日经验已满」</td></tr>
+    </tbody>
+  </table>
+
+  <h2>9. 表结构（Prisma 草案）</h2>
+  <p class="note">沿用现有 <code>schema.prisma</code> 约定：业务主键用 <code>String @default(uuid())</code>，字典类用 <code>BigInt @default(autoincrement())</code>，状态用字符串常量。本方案新增 9 张表（含独立的 <code>UserPet</code> 关系表），并在 <code>User</code> 上补 5 个反向关系；不修改既有 <code>StudyAttempt</code>、<code>Question</code> 等表结构。与参考文档的差异：用户与宠物关系独立建表，种类主键保持 BigInt，食物背包按类型聚合而非一行一个，经验与饱腹度分字段存储。</p>
+  <pre class="code">model PetSpecies {
+  id        BigInt   @id @default(autoincrement())
+  code      String   @unique            // cat / dog / rabbit / fox / bird
+  name      String                      // 小猫 / 小狗 / 小兔 / 小狐 / 小鸟
+  theme     String?                     // 可爱系 / 忠诚系 / 灵动系 / 智慧系 / 自由系
+  tagline   String?                     // 领养页的一句性格文案
+  sortOrder Int      @default(0)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  stages PetSpeciesStage[]
+  pets   Pet[]
+
+  @@index([sortOrder])
+}
+
+// 每个种类 3 个阶段；缺失动画时回退静态图
+model PetSpeciesStage {
+  speciesId       BigInt
+  species         PetSpecies @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  stageKey        String                       // juvenile / growing / mature
+  name            String                       // 幼猫 / 成猫 / 魔法猫
+  imageUrl        String
+  idleLottieUrl   String?                      // 待机动画
+  feedLottieUrl   String?                      // 进食动画
+  evolveLottieUrl String?                      // 进入该阶段的进化动画（幼年为空）
+
+  @@id([speciesId, stageKey])
+}
+
+model Pet {
+  id                  String   @id @default(uuid())
+  speciesId           BigInt
+  species             PetSpecies @relation(fields: [speciesId], references: [id])
+  nickname            String                   // 1-8 字符，敏感词在接口层拦截
+  stageId             BigInt?                  // 领养时的学段快照（小学 / 初中 / 高中）
+  stageName           String?                  // 学段名称快照，接口中输出为 schoolStageName
+  level               Int      @default(1)     // 由 experience 推导后落库，便于列表展示
+  experience          Int      @default(0)     // 累计经验，只增不减
+  satiety             Int      @default(60)    // 0-100
+  lastDecayDate       DateTime @db.Date
+  lastLoginRewardDate DateTime? @db.Date       // 每日首次登录奖励
+  adoptedAt           DateTime @default(now())
+  lastFedAt           DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  userPets    UserPet[]
+  foodGrants  PetFoodGrant[]
+  feeds       PetFeedLog[]
+
+  @@index([speciesId])
+}
+
+// 用户与宠物的关系单独维护：P0 每人一只，未来可扩展为多只
+model UserPet {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petId     String   @unique            // 一只宠物只属于一个用户
+  pet       Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  isPrimary Boolean  @default(true)     // 当前展示与喂养的宠物
+  adoptedAt DateTime @default(now())
+
+  @@index([userId, isPrimary])
+}
+
+// 背包库存：按用户 + 食物类型聚合，跨天保留
+model PetFoodItem {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodType  String                       // normal / premium / rare
+  quantity  Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, foodType])
+}
+
+// 发放流水：一次练习结算最多一条，clientSessionId 保证幂等
+model PetFoodGrant {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petId           String
+  pet             Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  attemptId       String?              // 关联 StudyAttempt，仅记录不建外键
+  clientSessionId String               // 客户端每次练习生成的 UUID
+  scopeType       String               // chapter / knowledge / bank
+  subjectId       BigInt?
+  subjectName     String?              // 科目名称快照
+  chapterId       BigInt?
+  knowledgePointId BigInt?
+  scopeName       String?              // 章节名或知识点名称快照
+  correctCount    Int
+  totalQuestions  Int
+  maxStreak       Int      @default(0) // 本次最长连对
+  normalCount     Int      @default(0)
+  premiumCount    Int      @default(0)
+  rareCount       Int      @default(0)
+  expGained       Int      @default(0)
+  riskFlag        Boolean  @default(false)
+  dateKey         DateTime @db.Date
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, clientSessionId])
+  @@index([petId, createdAt])
+  @@index([userId, dateKey])
+}
+
+// 喂养记录：一次喂食一条
+model PetFeedLog {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petId        String
+  pet          Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  foodType     String
+  quantity     Int
+  satietyGain  Int
+  expGain      Int
+  levelBefore  Int
+  levelAfter   Int
+  stageBefore  String
+  stageAfter   String
+  dateKey      DateTime @db.Date
+  createdAt    DateTime @default(now())
+
+  @@index([petId, createdAt])
+  @@index([userId, dateKey])
+}
+
+// 按日聚合：用于经验上限、食物上限与免衰减判定
+model PetDailyStat {
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateKey            DateTime @db.Date
+  expGained          Int      @default(0)
+  foodNormal         Int      @default(0)
+  bankFoodNormal     Int      @default(0)  // 题库来源的普通食物，单独计上限
+  foodPremium        Int      @default(0)
+  foodRare           Int      @default(0)
+  feedCount          Int      @default(0)
+  satietyGained      Int      @default(0)
+  updatedAt          DateTime @updatedAt
+
+  @@id([userId, dateKey])
+}
+
+// 单行配置：id 固定为 default，后台读写
+model PetConfig {
+  id                     String   @id @default("default")
+  expPerCorrect          Int      @default(1)
+  streakBonusMax         Int      @default(10)
+  dailyExpCap            Int      @default(300)
+  dailyLoginExp          Int      @default(5)
+  normalSatiety          Int      @default(10)
+  premiumSatiety         Int      @default(30)
+  rareSatiety            Int      @default(50)
+  premiumExp             Int      @default(5)
+  rareExp                Int      @default(15)
+  normalFoodDailyCap     Int      @default(30)
+  bankNormalFoodDailyCap Int      @default(15)
+  premiumFoodDailyCap    Int      @default(5)
+  rareFoodDailyCap       Int      @default(2)
+  premiumStreak          Int      @default(5)
+  rareMinQuestions       Int      @default(10)
+  satietyMax             Int      @default(100)
+  satietyDecay           Int      @default(30)
+  expPerLevel            Int      @default(100)
+  maxLevel               Int      @default(30)
+  growingLevel           Int      @default(10)
+  matureLevel            Int      @default(20)
+  minSecondsPerQuestion  Int      @default(3)
+  maxQuestionsPerAttempt Int      @default(60)
+  updatedAt              DateTime @updatedAt
+  updatedBy              String?
+}</pre>
+  <p><b>对 <code>User</code> 的补充（仅反向关系）：</b></p>
+  <pre class="code">model User {
+  // ...existing fields
+  userPets       UserPet[]        // 用户与宠物的关系，P0 一条
+  petFoodItems   PetFoodItem[]
+  petFoodGrants  PetFoodGrant[]
+  petFeeds       PetFeedLog[]
+  petDailyStats  PetDailyStat[]
+}</pre>
+  <table>
+    <caption>约束与索引的目的</caption>
+    <thead><tr><th>约束</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>UserPet.petId @unique</code></td><td>一只宠物只能属于一个用户，同时避免同一关系重复写入</td></tr>
+      <tr><td><code>UserPet @@index([userId, isPrimary])</code></td><td>按用户快速取当前宠物；P0 由接口层保证每人只有一个 <code>isPrimary = true</code></td></tr>
+      <tr><td><code>PetFoodGrant @@unique([userId, clientSessionId])</code></td><td>同一练习重复提交不重复发放经验与食物</td></tr>
+      <tr><td><code>PetFoodItem @@id([userId, foodType])</code></td><td>背包按类型聚合，读写简单且可跨天保留</td></tr>
+      <tr><td><code>PetFeedLog @@index([petId, createdAt])</code></td><td>喂养记录页按时间倒序分页</td></tr>
+      <tr><td><code>PetDailyStat @@id([userId, dateKey])</code></td><td>按日聚合，天然幂等，用于上限判定</td></tr>
+      <tr><td><code>PetSpeciesStage @@id([speciesId, stageKey])</code></td><td>种类与阶段唯一，便于后台按阶段替换形象</td></tr>
+    </tbody>
+  </table>
+
+  <h2>10. 接口设计</h2>
+  <p class="note">鉴权沿用现有约定：移动端接口使用 <code>requireAppUser</code> 校验 Bearer Token；后台接口使用现有管理员会话。所有时间与日期键沿用现有 <code>UserDailyStat</code> 的服务器本地日期（Asia/Shanghai），避免两套口径。</p>
+
+  <h3>10.1 移动端接口</h3>
+  <table>
+    <thead><tr><th>方法</th><th>路径</th><th>用途</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/api/app/pet/species</code></td><td>领养页种类列表</td><td>仅返回启用种类，含三个阶段形象与进化路线</td></tr>
+      <tr><td>POST</td><td><code>/api/app/pet/adopt</code></td><td>领养登记</td><td>body: <code>{ speciesId, nickname }</code>；事务内创建宠物与 UserPet 关系；已领养返回 409</td></tr>
+      <tr><td>GET</td><td><code>/api/app/pet</code></td><td>宠物详情 / 首页卡片</td><td>按当前用户取 UserPet 中 <code>isPrimary = true</code> 的宠物；未领养返回 <code>{ pet: null }</code>；含今日经验、背包、状态、最近 3 条记录</td></tr>
+      <tr><td>GET</td><td><code>/api/app/pet/foods</code></td><td>食物背包</td><td>返回三类食物与数量、每种食物的效果说明</td></tr>
+      <tr><td>POST</td><td><code>/api/app/pet/feed</code></td><td>喂养</td><td>body: <code>{ foodType, quantity }</code>；饱腹度已满返回 409</td></tr>
+      <tr><td>GET</td><td><code>/api/app/pet/feeds</code></td><td>喂养记录</td><td>query: <code>page</code>（默认 1，每页 20）；仅最近 30 天</td></tr>
+      <tr><td>POST</td><td><code>/api/app/pet/rename</code></td><td>改名（P1）</td><td>body: <code>{ nickname }</code>；校验规则同领养</td></tr>
+      <tr><td>POST</td><td><code>/api/app/study/finish</code></td><td>练习结算（改造）</td><td>新增 <code>clientSessionId</code> 入参与 <code>pet</code> 出参，其余字段不变</td></tr>
+    </tbody>
+  </table>
+  <p class="note">P0 单宠物约束在接口层执行：领养前查询该用户是否已有 <code>isPrimary = true</code> 的 UserPet，有则返回 409。未来开放多宠物时，只需插入新的 UserPet 行并切换 <code>isPrimary</code>，宠物详情、喂养与记录接口无需改路径；背包与每日经验当前按用户聚合，多宠物下是否改为按宠物独立需另行评审。</p>
+
+  <p><b>GET /api/app/pet 返回结构：</b></p>
+  <pre class="code">{
+  "pet": {
+    "id": "uuid",
+    "nickname": "小喵",
+    "species": { "code": "cat", "name": "小猫", "theme": "可爱系" },
+    "growthStage": { "key": "growing", "name": "成猫", "imageUrl": "/pet/cat/growing.png" },
+    "schoolStageName": "小学",
+    "level": 12,
+    "experience": 1120,
+    "expToNext": 1200,
+    "satiety": 80,
+    "satietyMax": 100,
+    "state": "active",              // active / normal / hungry / asleep
+    "canFeed": true,
+    "adoptedAt": "2026-11-01T08:00:00.000Z",
+    "companionDays": 3
+  },
+  "today": { "expGained": 84, "expCap": 300, "remainingExp": 216, "feedCount": 2 },
+  "backpack": [
+    { "foodType": "normal",  "name": "普通食物", "quantity": 5, "satiety": 10, "exp": 0 },
+    { "foodType": "premium", "name": "高级食物", "quantity": 2, "satiety": 30, "exp": 5 },
+    { "foodType": "rare",    "name": "稀有食物", "quantity": 1, "satiety": 50, "exp": 15 }
+  ],
+  "stats": { "totalCorrect": 210, "feedCount": 26, "favoriteSubject": "数学" },
+  "recentFeeds": [
+    {
+      "id": "uuid",
+      "dateLabel": "11-03 18:42",
+      "foodType": "premium",
+      "quantity": 1,
+      "satietyGain": 30,
+      "expGain": 5,
+      "levelUp": false,
+      "stageUp": false
+    }
+  ]
+}</pre>
+
+  <p><b>POST /api/app/pet/adopt 请求与响应：</b></p>
+  <pre class="code">// request
+{ "speciesId": 1, "nickname": "小喵" }
+
+// 201
+{ "pet": { "id": "uuid", "nickname": "小喵", "speciesId": 1, "level": 1, "experience": 0, "satiety": 60 } }
+
+// 409（已领养）
+{ "error": "PET_ALREADY_ADOPTED" }
+// 400（昵称为空 / 超长 / 敏感词 / 种类不存在）
+{ "error": "INVALID_NICKNAME" | "SPECIES_NOT_FOUND" }</pre>
+
+  <p><b>GET /api/app/pet/foods 返回结构：</b></p>
+  <pre class="code">{
+  "foods": [
+    { "foodType": "normal",  "name": "普通食物", "quantity": 5, "satiety": 10, "exp": 0,  "obtainHint": "每答对 1 题获得" },
+    { "foodType": "premium", "name": "高级食物", "quantity": 2, "satiety": 30, "exp": 5,  "obtainHint": "单次连对 5 题获得" },
+    { "foodType": "rare",    "name": "稀有食物", "quantity": 1, "satiety": 50, "exp": 15, "obtainHint": "完成一个单元获得" }
+  ],
+  "satiety": 80,
+  "satietyMax": 100
+}</pre>
+
+  <p><b>POST /api/app/pet/feed 请求与响应：</b></p>
+  <pre class="code">// request
+{ "foodType": "premium", "quantity": 2 }
+
+// 200
+{
+  "satietyGain": 60,
+  "expGain": 10,
+  "satiety": 100,
+  "experience": 1130,
+  "level": 12,
+  "levelUp": false,
+  "stageUp": false,
+  "evolution": null,
+  "backpack": { "normal": 5, "premium": 0, "rare": 1 },
+  "today": { "expGained": 94, "expCap": 300 },
+  "capped": { "satiety": true, "exp": false }
+}
+
+// 409（饱腹度已满）
+{ "error": "PET_FULL", "message": "宠物吃饱了，明天再来喂吧" }
+// 400（食物不足 / 类型非法 / 数量非法）
+{ "error": "FOOD_NOT_ENOUGH" | "INVALID_FOOD_TYPE" | "INVALID_QUANTITY" }</pre>
+
+  <p><b>POST /api/app/study/finish 改造后的请求：</b></p>
+  <pre class="code">{
+  "chapterId": 12,              // 原有字段保持不变
+  "unitIndex": 0,
+  "correctCount": 8,
+  "wrongCount": 2,
+  "durationSeconds": 620,
+  "answers": [{ "questionId": "1", "isCorrect": true }],
+  "clientSessionId": "2b9f...c1" // 新增：进入练习时生成，一次练习内不变
+}</pre>
+  <p><b>响应（在原 <code>{ success: true }</code> 上追加，旧客户端不受影响）：</b></p>
+  <pre class="code">{
+  "success": true,
+  "attemptId": "uuid",
+  "pet": {
+    "granted": {
+      "normal": 8,
+      "premium": 1,
+      "rare": 1
+    },
+    "expGained": 14,
+    "todayExp": 14,
+    "expCap": 300,
+    "riskBlocked": false,
+    "level": 1,
+    "levelUp": false,
+    "stageUp": false,
+    "evolution": null,
+    "backpack": { "normal": 8, "premium": 1, "rare": 1 }
+  }
+}</pre>
+  <p class="note">未领养用户仍返回 <code>success</code> 与 <code>attemptId</code>，<code>pet.granted</code> 三类数量均为 0。风控拦截时经验与食物均为 0、<code>riskBlocked = true</code>，用户侧只展示「本次练习未获得奖励」。</p>
+
+  <h3>10.2 后台接口</h3>
+  <table>
+    <thead><tr><th>方法</th><th>路径</th><th>用途</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET / PUT</td><td><code>/api/admin/pet-config</code></td><td>读取 / 更新全局参数</td><td>PUT 需二次确认；记录 <code>updatedBy</code></td></tr>
+      <tr><td>GET / POST</td><td><code>/api/admin/pet-species</code></td><td>种类列表 / 新建</td><td>含三个阶段形象、动画与启用状态</td></tr>
+      <tr><td>PUT / DELETE</td><td><code>/api/admin/pet-species/[id]</code></td><td>编辑 / 停用种类</td><td>停用不影响已领养用户的形象读取</td></tr>
+      <tr><td>POST</td><td><code>/api/admin/uploads/pet-asset</code></td><td>上传形象 / Lottie</td><td>复用现有图片上传能力，返回 URL</td></tr>
+      <tr><td>GET</td><td><code>/api/admin/pets?userId=</code></td><td>用户宠物查询（P1）</td><td>只读，含等级、经验、饱腹度与背包</td></tr>
+      <tr><td>GET</td><td><code>/api/admin/pet-feeds?userId=&amp;page=</code></td><td>用户喂养记录（P1）</td><td>可查 90 天内全部记录</td></tr>
+      <tr><td>GET</td><td><code>/api/admin/pet-grants?userId=&amp;page=</code></td><td>用户食物发放记录（P1）</td><td>用于排查经验 / 食物异常</td></tr>
+    </tbody>
+  </table>
+
+  <h2>11. 关键算法</h2>
+  <h3>11.1 日期键</h3>
+  <p>与现有 <code>UserDailyStat</code> 保持一致：<code>const today = new Date(); today.setHours(0, 0, 0, 0);</code> 作为 <code>dateKey</code>。每日经验上限、食物上限、登录奖励、免衰减与记录分页均以该日期键为准，不使用客户端时间。</p>
+
+  <h3>11.2 结算（在 finish 内完成）</h3>
+  <ul>
+    <li>校验参数与 <code>clientSessionId</code>；按 <code>UserPet.isPrimary</code> 读取用户当前宠物、配置与当日汇总；未领养则跳过发放，仅写学习事实。</li>
+    <li>风控判定：<code>durationSeconds / totalQuestions &lt; minSecondsPerQuestion</code> 或 <code>totalQuestions &gt; maxQuestionsPerAttempt</code> 时，经验与食物均计 0。</li>
+    <li>在单个事务内依次完成：创建 <code>StudyAttempt</code> 与 <code>StudyAttemptItem</code>（沿用现有逻辑）→ 创建 <code>PetFoodGrant</code> → 累加背包 → 更新 <code>Pet</code>（经验、等级）→ 更新 <code>PetDailyStat</code>。</li>
+    <li>唯一约束冲突（<code>userId + clientSessionId</code>）时不重复发放，读取已有记录并返回首次结果。</li>
+  </ul>
+  <pre class="code">// 结算计算（伪代码）
+const baseExp = riskBlocked ? 0 : correctCount * config.expPerCorrect;
+const streakExp = riskBlocked ? 0 : Math.min(maxStreak, config.streakBonusMax);
+const expGain = Math.max(0, Math.min(
+  baseExp + streakExp,
+  config.dailyExpCap - daily.expGained
+));
+
+const normal = riskBlocked ? 0 : Math.max(0, Math.min(
+  correctCount,
+  config.normalFoodDailyCap - daily.foodNormal,
+  scopeType === "bank"
+    ? config.bankNormalFoodDailyCap - daily.bankFoodNormal
+    : Infinity
+));
+const premium = riskBlocked || maxStreak &lt; config.premiumStreak ? 0 : Math.max(0, Math.min(
+  1, config.premiumFoodDailyCap - daily.foodPremium
+));
+const rare = riskBlocked || !isUnitCompleted ? 0 : Math.max(0, Math.min(
+  1, config.rareFoodDailyCap - daily.foodRare
+));
+
+// 落库后
+pet.experience += expGain;
+pet.level = Math.min(config.maxLevel, Math.floor(pet.experience / config.expPerLevel) + 1);
+// 背包：对应类型 quantity += normal / premium / rare
+// 每日汇总：foodNormal += normal；bank 来源同时累加 bankFoodNormal；
+//           foodPremium / foodRare / expGained 同步累加</pre>
+
+  <h3>11.3 喂食</h3>
+  <pre class="code">// 校验：食物存在、数量 1-10、库存足够、饱腹度未满
+if (pet.satiety &gt;= config.satietyMax) return 409 PET_FULL;
+if (inventory[foodType] &lt; quantity) return 400 FOOD_NOT_ENOUGH;
+
+const satietyGain = Math.min(
+  quantity * satietyPerFood[foodType],
+  config.satietyMax - pet.satiety
+);
+const expGain = Math.min(
+  quantity * expPerFood[foodType],
+  Math.max(0, config.dailyExpCap - daily.expGained)
+);
+
+const levelBefore = pet.level;
+const stageBefore = deriveStage(levelBefore);
+pet.satiety += satietyGain;
+pet.experience += expGain;
+pet.level = Math.min(config.maxLevel, Math.floor(pet.experience / config.expPerLevel) + 1);
+const stageAfter = deriveStage(pet.level);
+
+// 事务内：扣减背包 → 写 PetFeedLog → 更新 Pet → 更新 PetDailyStat（feedCount、satietyGained）</pre>
+  <p class="note">饱腹度溢出部分不增加；经验已达上限时为 0，但仍写喂养记录，便于学生看到「吃饱了但今天经验满了」的反馈。</p>
+
+  <h3>11.4 每日首次登录奖励</h3>
+  <pre class="code">// GET /api/app/pet 内执行，只对已领养用户
+if (pet.lastLoginRewardDate !== today) {
+  const gain = Math.max(0, Math.min(
+    config.dailyLoginExp,
+    config.dailyExpCap - daily.expGained
+  ));
+  pet.experience += gain;
+  pet.level = ...recalc...;
+  pet.lastLoginRewardDate = today;
+  daily.expGained += gain;
+}</pre>
+  <p class="note">登录奖励只增加经验，不进入喂养记录；若当日经验已达上限则发放 0，但仍更新日期，避免次日重复领取。</p>
+
+  <h3>11.5 饱腹衰减（读取时补齐）</h3>
+  <p>不做定时任务。每次读取宠物（首页、详情、结算）时，从 <code>lastDecayDate</code> 的次日逐日计算到今日：若该日 <code>PetDailyStat.feedCount &gt; 0</code> 则跳过，否则扣 <code>satietyDecay</code>；饱腹度最低 0。离线超过 30 天只循环 30 次，随后直接置 0 并把 <code>lastDecayDate</code> 更新为今日，避免长循环。</p>
+  <pre class="code">// 伪代码
+for (let d = addDays(pet.lastDecayDate, 1); d &lt;= today; d = addDays(d, 1)) {
+  const stat = await getPetDailyStat(userId, d);
+  if (!stat || stat.feedCount === 0) {
+    pet.satiety = Math.max(0, pet.satiety - config.satietyDecay);
+  }
+}
+pet.lastDecayDate = today;</pre>
+
+  <h3>11.6 状态派生</h3>
+  <table>
+    <thead><tr><th>状态</th><th>派生条件</th></tr></thead>
+    <tbody>
+      <tr><td><code>active</code></td><td>satiety ≥ 70</td></tr>
+      <tr><td><code>normal</code></td><td>30 ≤ satiety &lt; 70</td></tr>
+      <tr><td><code>hungry</code></td><td>satiety &lt; 30 且当日 feedCount = 0</td></tr>
+      <tr><td><code>asleep</code></td><td>距 <code>lastFedAt</code> 超过 72 小时（无记录时按 <code>adoptedAt</code> 计算）</td></tr>
+    </tbody>
+  </table>
+  <p class="note">状态不落库，只作为接口出参；优先级 asleep &gt; hungry &gt; normal &gt; active，避免同一时刻出现两种状态。</p>
+
+  <h2>12. 对现有代码的改动清单（仅方案）</h2>
+  <table>
+    <thead><tr><th>位置</th><th>改动</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>apps/admin/prisma/schema.prisma</code></td><td>新增 9 个 model（含 <code>UserPet</code>），<code>User</code> 补 5 个反向关系</td><td>执行一次迁移，不改既有表字段</td></tr>
+      <tr><td><code>apps/admin/lib/pet.ts</code>（新增）</td><td>日期键、配置读取、发放、喂食、衰减、状态派生</td><td>纯函数 + Prisma 事务，供路由复用</td></tr>
+      <tr><td><code>apps/admin/app/api/app/study/finish/route.ts</code></td><td>接入发放事务，追加 <code>attemptId</code> 与 <code>pet</code> 出参</td><td>旧字段保持不变，向后兼容</td></tr>
+      <tr><td><code>apps/admin/app/api/app/pet/**</code></td><td>新增 species / adopt / pet / foods / feed / feeds 路由</td><td>鉴权沿用 <code>requireAppUser</code></td></tr>
+      <tr><td><code>apps/admin/app/api/admin/pet-*</code></td><td>配置、种类管理、宠物与记录查询接口</td><td>仅管理员可访问</td></tr>
+      <tr><td>移动端 <code>HomeScreen</code>（新增 <code>PetCard</code>）</td><td>学科轮播下方、快捷入口上方插入宠物卡片</td><td>未领养展示领养引导；可喂养显示红点</td></tr>
+      <tr><td>移动端 <code>QuizScreen</code> / <code>QuizResultScreen</code></td><td>练习生成 <code>clientSessionId</code>；结果页展示经验与食物</td><td>不改变原有结算与「继续学习」流程</td></tr>
+      <tr><td>移动端新增 <code>PetScreen</code>、<code>PetAdoptScreen</code>、<code>PetFeedsScreen</code></td><td>宠物详情、领养、喂养记录</td><td>详情页内含背包与喂食入口</td></tr>
+      <tr><td>移动端新增 <code>FeedModal</code>、<code>EvolutionOverlay</code></td><td>食物选择、数量与进食动画；Lv10 / Lv20 全屏进化</td><td>动画依赖 <code>lottie-react-native</code> 与 <code>react-native-svg</code></td></tr>
+      <tr><td><code>apps/admin</code> 新增宠物配置页</td><td>参数、种类、阶段形象与动画管理</td><td>P0 至少覆盖数值参数、形象 URL 与食物配置</td></tr>
+    </tbody>
+  </table>
+  <p class="note">资源量估算：5 种 × 3 阶段 = 15 个静态形象；待机与进食动画各 15 个；进化动画 5 种 × 2 次 = 10 个，合计约 40 个动画文件。P0 可先只上线静态形象与轻量过渡，Lottie 分批补齐。</p>
+
+  <h2>13. 待定问题</h2>
+  <table>
+    <thead><tr><th>问题</th><th>影响</th><th>默认处理</th></tr></thead>
+    <tbody>
+      <tr><td>5 种宠物形象的资产来源与制作排期</td><td>影响阶段数量与上线时间</td><td><span class="tag tbd">TBD</span>；P0 每种类先做 3 个静态阶段，动画分批</td></tr>
+      <tr><td>「完成一个单元」的判定是否按题量 ≥10</td><td>影响稀有食物发放频率</td><td>先按章节练习且题量 ≥10 判定，后续按单元实际题量校准</td></tr>
+      <tr><td>每日经验 300 与食物数量上限是否匹配</td><td>影响成长速度与上限触达</td><td>按建议值试运行，上线后按经验来源占比调整</td></tr>
+      <tr><td>饱腹度溢出是否保留经验</td><td>影响「满腹」时的喂养体验</td><td>默认保留经验、不增加饱腹度，避免食物白费</td></tr>
+      <tr><td>每日首次登录 +5 经验是否必要</td><td>影响日活引导与经验口径</td><td>P0 保留；若与「经验只来自练习」冲突则去掉</td></tr>
+      <tr><td>是否增加种类解锁条件（如累计答对题数）</td><td>影响领养决策与运营空间</td><td>P0 全部可选，P1 再评估</td></tr>
+      <tr><td>饥饿提醒是否推送</td><td>影响留存与打扰</td><td>P1，默认仅宠物页展示</td></tr>
+      <tr><td>改名频次与审计</td><td>影响昵称管理</td><td>P1，每日最多 1 次 <span class="tag tbd">待确认</span></td></tr>
+      <tr><td>进化动画是否支持分享</td><td>影响传播与合规</td><td>P1，默认不分享</td></tr>
+      <tr><td>跨学段升级后宠物是否变化</td><td>影响形象与档案</td><td>不变化，宠物与学段解耦</td></tr>
+      <tr><td>多宠物开放后背包与经验归属</td><td>影响 UserPet 与食物表的粒度</td><td><span class="tag tbd">TBD</span>；P0 背包与每日经验按用户聚合，P1 再评估是否按宠物独立</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="soft" />
+  <p class="note">本文档含产品方案与表结构、接口草案，仅更新文档，尚不执行代码改动。数值与字段为建议值，标记为「待定」的部分需在评审时确认；确认后再拆分移动端与后台的开发任务。</p>
+</div>
+</body>
+</html>
