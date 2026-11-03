@@ -375,6 +375,8 @@ export const zh: Messages = {
     idleLottieUrl: "待机动画地址",
     feedLottieUrl: "进食动画地址",
     evolveLottieUrl: "进化动画地址",
+    sideImageUrl: "侧身形象地址",
+    motionManifestUrl: "分层动作包地址",
     stageCreated: "阶段已创建",
     stageUpdated: "阶段已更新",
     stageDeleted: "阶段已删除",

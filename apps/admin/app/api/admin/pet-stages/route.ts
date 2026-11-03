@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
         idleLottieUrl: body?.idleLottieUrl ? String(body.idleLottieUrl).trim() : null,
         feedLottieUrl: body?.feedLottieUrl ? String(body.feedLottieUrl).trim() : null,
         evolveLottieUrl: body?.evolveLottieUrl ? String(body.evolveLottieUrl).trim() : null,
+        sideImageUrl: body?.sideImageUrl ? String(body.sideImageUrl).trim() : null,
+        motionManifestUrl: body?.motionManifestUrl ? String(body.motionManifestUrl).trim() : null,
         sortOrder: Number(body?.sortOrder ?? 0) || 0,
       },
     });

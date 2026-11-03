@@ -428,6 +428,8 @@ model PetSpeciesStage {
   idleLottieUrl   String? // 待机动画
   feedLottieUrl   String? // 进食动画
   evolveLottieUrl String? // 进入该阶段的进化动画
+  sideImageUrl      String? // 侧身形象（走动用）
+  motionManifestUrl String? // 分层动作包清单（null 时回落旧动画）
   sortOrder       Int        @default(0)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt

@@ -29,7 +29,7 @@ const blobToDataUrl = (blob: Blob) =>
  * 拿到远程图片路径时会抛 "You must set an images folder before loading an image" 直接闪退。
  * 这里在 JS 侧把图片资源下载并转成 base64 data URI，交给 lottie 解析，规避该限制。
  */
-const inlineImageAssets = async (json: AnimationObject) => {
+export const inlineImageAssets = async (json: AnimationObject) => {
   await Promise.all(
     (json.assets ?? []).map(async (asset) => {
       if (!asset.p || asset.p.startsWith('data:')) return;

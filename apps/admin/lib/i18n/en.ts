@@ -374,6 +374,8 @@ export const en = {
     idleLottieUrl: "Idle Lottie URL",
     feedLottieUrl: "Feeding Lottie URL",
     evolveLottieUrl: "Evolution Lottie URL",
+    sideImageUrl: "Side Image URL",
+    motionManifestUrl: "Motion Manifest URL",
     stageCreated: "Stage created",
     stageUpdated: "Stage updated",
     stageDeleted: "Stage deleted",

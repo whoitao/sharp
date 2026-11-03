@@ -36,6 +36,8 @@ interface StageItem {
   idleLottieUrl: string | null;
   feedLottieUrl: string | null;
   evolveLottieUrl: string | null;
+  sideImageUrl: string | null;
+  motionManifestUrl: string | null;
   sortOrder: number;
 }
 
@@ -54,6 +56,8 @@ interface StageFormValues {
   idleLottieUrl?: string;
   feedLottieUrl?: string;
   evolveLottieUrl?: string;
+  sideImageUrl?: string;
+  motionManifestUrl?: string;
   sortOrder: number;
 }
 
@@ -345,6 +349,12 @@ export default function PetStagesPanel() {
         <Form.Item label={t("pets.evolveLottieUrl")} name="evolveLottieUrl">
           <Input placeholder="https://..." />
         </Form.Item>
+        <Form.Item label={t("pets.sideImageUrl")} name="sideImageUrl">
+          <Input placeholder="https://..." />
+        </Form.Item>
+        <Form.Item label={t("pets.motionManifestUrl")} name="motionManifestUrl">
+          <Input placeholder="https://..." />
+        </Form.Item>
       </div>
     </div>
   );
@@ -421,6 +431,8 @@ export default function PetStagesPanel() {
               idleLottieUrl: selected.idleLottieUrl ?? undefined,
               feedLottieUrl: selected.feedLottieUrl ?? undefined,
               evolveLottieUrl: selected.evolveLottieUrl ?? undefined,
+              sideImageUrl: selected.sideImageUrl ?? undefined,
+              motionManifestUrl: selected.motionManifestUrl ?? undefined,
               sortOrder: selected.sortOrder,
             });
           }

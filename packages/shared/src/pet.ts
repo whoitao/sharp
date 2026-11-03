@@ -34,6 +34,10 @@ export interface PetGrowthStage {
   idleLottieUrl: string | null;
   feedLottieUrl: string | null;
   evolveLottieUrl: string | null;
+  /** 侧身形象（走动用），无分层动作包时为空 */
+  sideImageUrl: string | null;
+  /** 分层动作包清单，空时回落为单动画 */
+  motionManifestUrl: string | null;
 }
 
 /** 宠物详情（首页卡片与宠物页共用） */

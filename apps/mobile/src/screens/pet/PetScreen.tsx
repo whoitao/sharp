@@ -14,7 +14,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import PetLottie, { type PetAnimationKind } from '../../components/PetLottie';
+import PetMotion from '../../components/PetMotion';
+import { type PetAnimationKind } from '../../components/PetLottie';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -258,12 +259,14 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
 
         <View style={styles.imageWrap}>
           {pet.growthStage.idleLottieUrl || pet.growthStage.imageUrl ? (
-            <PetLottie
+            <PetMotion
+              manifestUrl={pet.growthStage.motionManifestUrl}
               kind={animation}
               idleUrl={pet.growthStage.idleLottieUrl}
               feedUrl={pet.growthStage.feedLottieUrl}
               evolveUrl={pet.growthStage.evolveLottieUrl}
               imageUrl={pet.growthStage.imageUrl}
+              sideImageUrl={pet.growthStage.sideImageUrl}
               size={180}
               onFinish={handleAnimationFinish}
             />

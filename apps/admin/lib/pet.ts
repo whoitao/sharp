@@ -131,6 +131,8 @@ export function buildPetDetail(
       idleLottieUrl: stage?.idleLottieUrl ?? null,
       feedLottieUrl: stage?.feedLottieUrl ?? null,
       evolveLottieUrl: stage?.evolveLottieUrl ?? null,
+      sideImageUrl: stage?.sideImageUrl ?? null,
+      motionManifestUrl: stage?.motionManifestUrl ?? null,
     },
     schoolStageName: pet.schoolStageName,
     level,

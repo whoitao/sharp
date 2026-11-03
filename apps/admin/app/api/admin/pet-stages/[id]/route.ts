@@ -30,6 +30,8 @@ export async function PUT(
   if (body?.idleLottieUrl !== undefined) data.idleLottieUrl = body.idleLottieUrl ? String(body.idleLottieUrl).trim() : null;
   if (body?.feedLottieUrl !== undefined) data.feedLottieUrl = body.feedLottieUrl ? String(body.feedLottieUrl).trim() : null;
   if (body?.evolveLottieUrl !== undefined) data.evolveLottieUrl = body.evolveLottieUrl ? String(body.evolveLottieUrl).trim() : null;
+  if (body?.sideImageUrl !== undefined) data.sideImageUrl = body.sideImageUrl ? String(body.sideImageUrl).trim() : null;
+  if (body?.motionManifestUrl !== undefined) data.motionManifestUrl = body.motionManifestUrl ? String(body.motionManifestUrl).trim() : null;
   if (body?.sortOrder !== undefined) data.sortOrder = Number(body.sortOrder) || 0;
 
   try {
