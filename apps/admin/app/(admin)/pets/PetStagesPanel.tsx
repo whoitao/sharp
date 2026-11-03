@@ -11,6 +11,7 @@ import {
   App,
   Button,
   Form,
+  Image,
   Input,
   InputNumber,
   Modal,
@@ -216,8 +217,19 @@ export default function PetStagesPanel() {
       title: t("pets.imageUrl"),
       dataIndex: "imageUrl",
       key: "imageUrl",
-      ellipsis: true,
-      render: (value: string | null) => value || "-",
+      width: 96,
+      render: (value: string | null) =>
+        value ? (
+          <Image
+            src={value}
+            alt=""
+            width={56}
+            height={56}
+            style={{ objectFit: "contain", borderRadius: 6, background: "#f5f5f5" }}
+          />
+        ) : (
+          "-"
+        ),
     },
     {
       title: t("pets.lottie"),

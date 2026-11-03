@@ -88,7 +88,7 @@ const PetAdoptScreen: React.FC<PetAdoptScreenProps> = ({ navigation }) => {
 
   return (
     <ScrollView
-      contentContainerStyle={{ padding: 16 * spacing, paddingBottom: 32 * spacing }}
+      contentContainerStyle={{ paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 32 * spacing }}
       showsVerticalScrollIndicator={false}
     >
       <Text style={{ color: colors.textSecondary, fontSize: 13 * font }}>{t.petAdoptHint}</Text>

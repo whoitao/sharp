@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { PetBackpackItem, PetFeedResult, PetHomeData } from '@sharp/shared';
 import { Image } from 'expo-image';
@@ -12,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PetLottie, { type PetAnimationKind } from '../../components/PetLottie';
 import { useDensity } from '../../hooks/useDensity';
@@ -227,7 +227,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             borderColor: colors.border,
             borderRadius: 16 * radius,
             padding: 16 * spacing,
-            marginTop: 12 * spacing,
+            marginTop: 0,
           },
           cardShadow(isDark),
         ]}
