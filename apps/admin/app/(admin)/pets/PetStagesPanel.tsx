@@ -280,69 +280,73 @@ export default function PetStagesPanel() {
   const speciesOptions = species.map((s) => ({ value: s.id, label: s.name }));
 
   const formFields = (
-    <>
-      <Form.Item
-        label={t("pets.species")}
-        name="speciesId"
-        rules={[{ required: true, message: t("pets.speciesRequired") }]}
-      >
-        <Select
-          showSearch
-          optionFilterProp="label"
-          options={speciesOptions}
-          placeholder={t("pets.speciesPlaceholder")}
-        />
-      </Form.Item>
-      <Form.Item
-        label={t("pets.stageKey")}
-        name="stageKey"
-        rules={[{ required: true, message: t("pets.stageKeyRequired") }]}
-      >
-        <Input maxLength={30} placeholder="juvenile / growing / mature" />
-      </Form.Item>
-      <Form.Item
-        label={t("pets.stageName")}
-        name="name"
-        rules={[{ required: true, message: t("pets.stageNameRequired") }]}
-      >
-        <Input maxLength={30} />
-      </Form.Item>
-      <Space size={16} style={{ display: "flex" }}>
+    <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <Form.Item
-          label={t("pets.minLevel")}
-          name="minLevel"
-          initialValue={1}
-          rules={[{ required: true, message: "" }]}
-          style={{ flex: 1 }}
+          label={t("pets.species")}
+          name="speciesId"
+          rules={[{ required: true, message: t("pets.speciesRequired") }]}
         >
-          <InputNumber min={1} max={99} style={{ width: "100%" }} />
+          <Select
+            showSearch
+            optionFilterProp="label"
+            options={speciesOptions}
+            placeholder={t("pets.speciesPlaceholder")}
+          />
         </Form.Item>
         <Form.Item
-          label={t("pets.maxLevel")}
-          name="maxLevel"
-          initialValue={9}
-          rules={[{ required: true, message: "" }]}
-          style={{ flex: 1 }}
+          label={t("pets.stageKey")}
+          name="stageKey"
+          rules={[{ required: true, message: t("pets.stageKeyRequired") }]}
         >
-          <InputNumber min={1} max={99} style={{ width: "100%" }} />
+          <Input maxLength={30} placeholder="juvenile / growing / mature" />
         </Form.Item>
-      </Space>
-      <Form.Item label={t("pets.imageUrl")} name="imageUrl">
-        <Input placeholder="https://..." />
-      </Form.Item>
-      <Form.Item label={t("pets.idleLottieUrl")} name="idleLottieUrl">
-        <Input placeholder="https://..." />
-      </Form.Item>
-      <Form.Item label={t("pets.feedLottieUrl")} name="feedLottieUrl">
-        <Input placeholder="https://..." />
-      </Form.Item>
-      <Form.Item label={t("pets.evolveLottieUrl")} name="evolveLottieUrl">
-        <Input placeholder="https://..." />
-      </Form.Item>
-      <Form.Item label={t("pets.sortOrder")} name="sortOrder" initialValue={0}>
-        <InputNumber style={{ width: "100%" }} />
-      </Form.Item>
-    </>
+        <Form.Item
+          label={t("pets.stageName")}
+          name="name"
+          rules={[{ required: true, message: t("pets.stageNameRequired") }]}
+        >
+          <Input maxLength={30} />
+        </Form.Item>
+        <div style={{ display: "flex", gap: 16 }}>
+          <Form.Item
+            label={t("pets.minLevel")}
+            name="minLevel"
+            initialValue={1}
+            rules={[{ required: true, message: "" }]}
+            style={{ flex: 1, minWidth: 0 }}
+          >
+            <InputNumber min={1} max={99} style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item
+            label={t("pets.maxLevel")}
+            name="maxLevel"
+            initialValue={9}
+            rules={[{ required: true, message: "" }]}
+            style={{ flex: 1, minWidth: 0 }}
+          >
+            <InputNumber min={1} max={99} style={{ width: "100%" }} />
+          </Form.Item>
+        </div>
+        <Form.Item label={t("pets.sortOrder")} name="sortOrder" initialValue={0}>
+          <InputNumber style={{ width: "100%" }} />
+        </Form.Item>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <Form.Item label={t("pets.imageUrl")} name="imageUrl">
+          <Input placeholder="https://..." />
+        </Form.Item>
+        <Form.Item label={t("pets.idleLottieUrl")} name="idleLottieUrl">
+          <Input placeholder="https://..." />
+        </Form.Item>
+        <Form.Item label={t("pets.feedLottieUrl")} name="feedLottieUrl">
+          <Input placeholder="https://..." />
+        </Form.Item>
+        <Form.Item label={t("pets.evolveLottieUrl")} name="evolveLottieUrl">
+          <Input placeholder="https://..." />
+        </Form.Item>
+      </div>
+    </div>
   );
 
   const headerActions = useMemo(
@@ -381,6 +385,7 @@ export default function PetStagesPanel() {
       <Modal
         title={t("pets.stageCreateTitle")}
         open={createOpen}
+        width={760}
         onCancel={() => setCreateOpen(false)}
         confirmLoading={saving}
         okText={t("common.create")}
@@ -395,6 +400,7 @@ export default function PetStagesPanel() {
       <Modal
         title={t("pets.stageEditTitle")}
         open={editOpen}
+        width={760}
         onCancel={() => {
           setEditOpen(false);
           setSelected(null);

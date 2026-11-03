@@ -606,6 +606,11 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                   backgroundColor: selectedFood && !feeding ? colors.accent : colors.border,
                   borderRadius: 12 * radius,
                   marginTop: 12 * spacing,
+                  // 覆盖 primaryButton 的 flex:1，避免被弹层高度压缩导致文字被裁切
+                  flexGrow: 0,
+                  flexShrink: 0,
+                  minHeight: 44,
+                  height: 44,
                   // Modal 内读不到 safe-area inset，用最小间距兜底，避免底部按钮被系统导航栏遮挡
                   marginBottom: Math.max(insets.bottom, 36 * spacing),
                 },
