@@ -26,6 +26,11 @@ import HomeScreen from '../screens/home/HomeScreen';
 import ArticleDetailScreen from '../screens/articles/ArticleDetailScreen';
 import ArticlesScreen from '../screens/articles/ArticlesScreen';
 
+// Pet screens
+import PetAdoptScreen from '../screens/pet/PetAdoptScreen';
+import PetFeedsScreen from '../screens/pet/PetFeedsScreen';
+import PetScreen from '../screens/pet/PetScreen';
+
 // Study screens
 import QuizResultScreen from '../screens/study/QuizResultScreen';
 import QuizScreen from '../screens/study/QuizScreen';
@@ -126,6 +131,10 @@ export type HomeStackParamList = {
   // 文章：从首页快捷入口进入，保持在 HomeTab 内
   Articles: undefined;
   ArticleDetail: { id: string; title?: string };
+  // 电子宠物：首页卡片进入，保持在 HomeTab 内
+  Pet: undefined;
+  PetAdopt: undefined;
+  PetFeeds: undefined;
 };
 
 export type StudyStackParamList = {
@@ -269,6 +278,22 @@ const HomeStackNavigator: React.FC = () => {
       name="ArticleDetail"
       component={withGradient(ArticleDetailScreen)}
       options={{ title: t.articles }}
+    />
+    {/* 电子宠物 */}
+    <HomeStack.Screen
+      name="Pet"
+      component={withGradient(PetScreen)}
+      options={{ title: t.petTitle }}
+    />
+    <HomeStack.Screen
+      name="PetAdopt"
+      component={withGradient(PetAdoptScreen)}
+      options={{ title: t.petAdoptTitle }}
+    />
+    <HomeStack.Screen
+      name="PetFeeds"
+      component={withGradient(PetFeedsScreen)}
+      options={{ title: t.petFeedsTitle }}
     />
     </HomeStack.Navigator>
   );

@@ -1,13 +1,30 @@
+import { grantPetRewards } from "@/lib/pet";
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+
+/** 本次练习最长连对：只取最大值，不按每段连对重复计算 */
+function longestStreak(answers: unknown): number {
+  if (!Array.isArray(answers)) return 0;
+  let best = 0;
+  let current = 0;
+  for (const answer of answers) {
+    if ((answer as { isCorrect?: boolean })?.isCorrect) {
+      current += 1;
+      best = Math.max(best, current);
+    } else {
+      current = 0;
+    }
+  }
+  return best;
+}
 
 export async function POST(request: NextRequest) {
   const appUser = requireAppUser(request);
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { gradeId, unitIndex, chapterId, correctCount, wrongCount, durationSeconds, answers, subjectId, knowledgePointId, tagIds } = body;
+  const { gradeId, unitIndex, chapterId, correctCount, wrongCount, durationSeconds, answers, subjectId, knowledgePointId, tagIds, clientSessionId } = body;
 
   const isChapter = chapterId !== undefined && chapterId !== null;
 
@@ -49,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  await prisma.studyAttempt.create({
+  const attempt = await prisma.studyAttempt.create({
     data: {
       userId: appUser.id,
       scopeType,
@@ -137,5 +154,29 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json({ success: true });
+  // 宠物反馈：结算成功后发放经验与食物；未领养返回 null，不影响原流程
+  const [subject, chapter, knowledgePoint] = await Promise.all([
+    subjectId ? prisma.subject.findUnique({ where: { id: BigInt(subjectId) }, select: { name: true } }) : null,
+    isChapter ? prisma.chapter.findUnique({ where: { id: BigInt(chapterId) }, select: { name: true } }) : null,
+    kpId ? prisma.knowledgePoint.findUnique({ where: { id: kpId }, select: { name: true } }) : null,
+  ]);
+
+  const pet = await grantPetRewards({
+    userId: appUser.id,
+    attemptId: attempt.id,
+    // 旧客户端未传 clientSessionId 时用 attemptId 兜底：每次结算唯一，天然幂等
+    clientSessionId: typeof clientSessionId === "string" && clientSessionId ? clientSessionId : attempt.id,
+    scopeType,
+    subjectId: subjectId ? BigInt(subjectId) : null,
+    subjectName: subject?.name ?? null,
+    chapterId: isChapter ? BigInt(chapterId) : null,
+    knowledgePointId: kpId,
+    scopeName: chapter?.name ?? knowledgePoint?.name ?? null,
+    correctCount,
+    totalQuestions: correctCount + wrongCount,
+    durationSeconds,
+    maxStreak: longestStreak(answers),
+  });
+
+  return NextResponse.json({ success: true, attemptId: attempt.id, pet });
 }

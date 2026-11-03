@@ -134,6 +134,9 @@ importers:
       '@expo/vector-icons':
         specifier: ^15.1.1
         version: 15.1.1(expo-font@55.0.8(expo@55.0.32)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+      '@lottiefiles/dotlottie-react':
+        specifier: ^0.6.5
+        version: 0.6.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
@@ -161,6 +164,9 @@ importers:
       expo:
         specifier: ~55.0.32
         version: 55.0.32(@babel/core@7.29.7)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@55.0.12)(react-dom@19.3.0(react@19.3.0))(react-native-webview@13.16.0(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.7.3)
+      expo-constants:
+        specifier: ~55.0.0
+        version: 55.0.17(expo@55.0.32)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
       expo-dev-client:
         specifier: ~55.0.41
         version: 55.0.41(expo@55.0.32)
@@ -185,6 +191,9 @@ importers:
       expo-system-ui:
         specifier: ~55.0.22
         version: 55.0.22(expo@55.0.32)(react-native-web@0.21.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
+      lottie-react-native:
+        specifier: 7.3.0
+        version: 7.3.0(@lottiefiles/dotlottie-react@0.6.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -1417,6 +1426,15 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lottiefiles/dotlottie-react@0.6.5':
+    resolution: {integrity: sha512-4jbye+HKHaiKwai4+bcAwJfMwW0L55cAGIN0ZKCz+EqXs1R3YhB08VYeRu2LwDUybThgFQnl/XkB4loCfA7t2A==}
+    peerDependencies:
+      react: 19.3.0
+      react-dom: 19.3.0
+
+  '@lottiefiles/dotlottie-web@0.25.0':
+    resolution: {integrity: sha512-k+4tTckmy7y319qY4AlZiLm4dP95KLXfZd1l1jbss0qX/eyV4KKT+4iLuBfhoFSljfXmM15Oma+e8d663CHPyA==}
 
   '@next/env@16.4.3':
     resolution: {integrity: sha512-a7tz1QCcWWkwC/rPJcPMJk/UNRu9CFhDd3OHYE5hddbJrs8BqRTalxI6GlKCWEGzRLHN+S/B7a4PAHCtm25aBQ==}
@@ -2942,6 +2960,10 @@ packages:
   dayjs@1.11.23:
     resolution: {integrity: sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==}
 
+  debounce@2.2.0:
+    resolution: {integrity: sha512-Xks6RUDLZFdz8LIdR6q0MTH44k7FikOmnh5xkSjMig6ch45afc8sjTjRQf3P6ax8dMgcQrYO/AR2RGWURrruqw==}
+    engines: {node: '>=18'}
+
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
     peerDependencies:
@@ -3803,6 +3825,19 @@ packages:
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
+
+  lottie-react-native@7.3.0:
+    resolution: {integrity: sha512-OHGr6MG3QysRWruMkA1FwF+8VJP60m1zOsLTJqsPZcV10qI0pujQ7wjOZgijNaIj1Ss6sWvOV1K0jBtV+oGUIQ==}
+    peerDependencies:
+      '@lottiefiles/dotlottie-react': ^0.6.5
+      react: 19.3.0
+      react-native: '>=0.46'
+      react-native-windows: '>=0.63.x'
+    peerDependenciesMeta:
+      '@lottiefiles/dotlottie-react':
+        optional: true
+      react-native-windows:
+        optional: true
 
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
@@ -6313,6 +6348,15 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
+  '@lottiefiles/dotlottie-react@0.6.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@lottiefiles/dotlottie-web': 0.25.0
+      debounce: 2.2.0
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+
+  '@lottiefiles/dotlottie-web@0.25.0': {}
+
   '@next/env@16.4.3': {}
 
   '@next/swc-darwin-arm64@16.4.3':
@@ -8078,6 +8122,8 @@ snapshots:
 
   dayjs@1.11.23: {}
 
+  debounce@2.2.0: {}
+
   debug@2.6.9:
     dependencies:
       ms: 2.0.0
@@ -8967,6 +9013,13 @@ snapshots:
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
+
+  lottie-react-native@7.3.0(@lottiefiles/dotlottie-react@0.6.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      react-native: 0.83.10(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
+    optionalDependencies:
+      '@lottiefiles/dotlottie-react': 0.6.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
 
   lru-cache@10.4.3: {}
 

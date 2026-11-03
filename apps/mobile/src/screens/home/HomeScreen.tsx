@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Grade, Subject, SubjectOverview } from '@sharp/shared';
+import type { Grade, PetDetail, Subject, SubjectOverview } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -14,6 +14,7 @@ import type { HomeStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { updateSettings } from '../../stores/settingsSlice';
+import PetCard from './PetCard';
 import QuickEntry from './QuickEntry';
 import SubjectCarousel from './SubjectCarousel';
 import SubjectRow from './SubjectRow';
@@ -34,6 +35,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [subjectOptions, setSubjectOptions] = useState<Subject[]>([]);
   const [streak, setStreak] = useState(0);
+  // 首页宠物卡片：未领养时为 null
+  const [pet, setPet] = useState<PetDetail | null>(null);
   const [loading, setLoading] = useState(true);
   // 有教材内容时才露出「教材同步」入口
   const [textbookAvailable, setTextbookAvailable] = useState(false);
@@ -139,18 +142,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   ]);
 
   const loadHome = useCallback(async () => {
-    const [overview, stats, availability, gradeList, subjectList] = await Promise.all([
+    const [overview, stats, availability, gradeList, subjectList, petHome] = await Promise.all([
       api.getSubjectOverview(),
       api.getStats(),
       api.getTextbookAvailability(),
       api.getGrades(),
       api.getSubjects(),
+      api.getPet().catch(() => null),
     ]);
     setSubjects(overview);
     setStreak(stats.streak);
     setTextbookAvailable(availability.length > 0);
     setGrades(gradeList);
     setSubjectOptions(subjectList);
+    setPet(petHome?.pet ?? null);
     setLoading(false);
   }, []);
 
@@ -193,6 +198,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               onSelect={goToStudy}
               onFallbackPress={() => goToStudy(selectedSubject?.id)}
             />
+
+            <View style={{ marginTop: 12 * spacing }}>
+              <PetCard
+                pet={pet}
+                onPress={() => navigation.navigate(pet ? 'Pet' : 'PetAdopt')}
+              />
+            </View>
 
             <View style={[styles.quickRow, { gap: 8 * spacing, marginTop: 12 * spacing }]}>
               <QuickEntry

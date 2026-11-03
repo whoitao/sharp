@@ -11,6 +11,11 @@ import type {
   Language,
   LoginResponse,
   PaginatedResponse,
+  PetFeedRecord,
+  PetFeedResult,
+  PetFoodsData,
+  PetHomeData,
+  PetSpeciesInfo,
   Question,
   QuestionTag,
   StudyRecord,
@@ -158,6 +163,12 @@ const apiClient = createApiClient();
 const apiErrorMessage = (err: unknown, fallback: string): string => {
   const data = (err as AxiosError<{ error?: string }>).response?.data;
   return data?.error ?? fallback;
+};
+
+/** 宠物接口：优先透出后端 message（如「宠物吃饱了」），否则回退错误码 */
+const petErrorMessage = (err: unknown, fallback: string): string => {
+  const data = (err as AxiosError<{ error?: string; message?: string }>).response?.data;
+  return data?.message ?? data?.error ?? fallback;
 };
 
 // ─── API Methods ───────────────────────────────────────────────────────────────
@@ -891,6 +902,52 @@ export const api = {
     } catch {
       return null;
     }
+  },
+
+  // ─── 电子宠物 ───────────────────────────────────────────────────────────────
+  /** 领养页：5 种宠物及其三阶段进化路线（失败返回空列表，不阻塞页面） */
+  async getPetSpecies(): Promise<PetSpeciesInfo[]> {
+    try {
+      const response = await apiClient.get<PetSpeciesInfo[]>('/api/app/pet/species');
+      return response.data;
+    } catch {
+      return [];
+    }
+  },
+
+  /** 宠物详情 / 首页卡片；未领养时 pet 为 null */
+  async getPet(): Promise<PetHomeData> {
+    const response = await apiClient.get<PetHomeData>('/api/app/pet');
+    return response.data;
+  },
+
+  async adoptPet(speciesId: string, nickname: string): Promise<void> {
+    try {
+      await apiClient.post('/api/app/pet/adopt', { speciesId, nickname });
+    } catch (err) {
+      throw new Error(petErrorMessage(err, 'Adopt failed'));
+    }
+  },
+
+  async getPetFoods(): Promise<PetFoodsData> {
+    const response = await apiClient.get<PetFoodsData>('/api/app/pet/foods');
+    return response.data;
+  },
+
+  async feedPet(foodType: string, quantity: number): Promise<PetFeedResult> {
+    try {
+      const response = await apiClient.post<PetFeedResult>('/api/app/pet/feed', { foodType, quantity });
+      return response.data;
+    } catch (err) {
+      throw new Error(petErrorMessage(err, 'Feed failed'));
+    }
+  },
+
+  async getPetFeeds(page = 1): Promise<PaginatedResponse<PetFeedRecord>> {
+    const response = await apiClient.get<PaginatedResponse<PetFeedRecord>>('/api/app/pet/feeds', {
+      params: { page },
+    });
+    return response.data;
   },
 };
 
