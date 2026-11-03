@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PetLottie, { type PetAnimationKind } from '../../components/PetLottie';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
@@ -46,6 +47,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
   const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const [data, setData] = useState<PetHomeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -474,12 +476,13 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                 backgroundColor: colors.surface,
                 borderTopLeftRadius: 20 * radius,
                 borderTopRightRadius: 20 * radius,
-                padding: 16 * spacing,
-                paddingBottom: 28 * spacing,
+                paddingHorizontal: 16 * spacing,
+                paddingTop: 16 * spacing,
+                // 预留系统导航栏安全区，避免底部按钮被手势条/导航栏遮挡
+                paddingBottom: 16 * spacing + insets.bottom,
               },
             ]}
           >
-            <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.rowBetween}>
               <Text style={{ color: colors.text, fontSize: 16 * font, fontWeight: '700' }}>
                 {t.petBackpackTitle}
@@ -489,12 +492,18 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
+            <ScrollView
+              style={{ flexShrink: 1 }}
+              contentContainerStyle={{ paddingTop: 12 * spacing, paddingBottom: 4 * spacing }}
+              showsVerticalScrollIndicator={false}
+            >
+
             {(data?.backpack ?? []).length === 0 ? (
               <Text style={{ color: colors.textSecondary, fontSize: 13 * font, marginTop: 16 * spacing }}>
                 {t.petBackpackEmpty}
               </Text>
             ) : (
-              <View style={{ marginTop: 12 * spacing, gap: 8 * spacing }}>
+              <View style={{ gap: 8 * spacing }}>
                 {(data?.backpack ?? []).map((food: PetBackpackItem) => {
                   const active = food.foodType === selectedFood;
                   const disabled = food.quantity <= 0;
@@ -587,6 +596,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             {feedError && (
               <Text style={{ color: colors.error, fontSize: 12 * font, marginTop: 10 * spacing }}>{feedError}</Text>
             )}
+            </ScrollView>
 
             <TouchableOpacity
               disabled={!selectedFood || feeding}
@@ -596,7 +606,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                 {
                   backgroundColor: selectedFood && !feeding ? colors.accent : colors.border,
                   borderRadius: 12 * radius,
-                  marginTop: 16 * spacing,
+                  marginTop: 12 * spacing,
                 },
               ]}
             >
@@ -608,7 +618,6 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                 </Text>
               )}
             </TouchableOpacity>
-            </ScrollView>
           </View>
         </View>
       </Modal>
