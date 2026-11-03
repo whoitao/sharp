@@ -1,5 +1,5 @@
-import { BackToArticlesLink } from "@/components/article-views";
-import { fetchArticleDetail } from "@/lib/api";
+import { CategoryNav } from "@/components/article-views";
+import { fetchArticleDetail, fetchArticles } from "@/lib/api";
 import { formatArticleDate } from "@/lib/article-format";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { notFound } from "next/navigation";
@@ -25,35 +25,45 @@ export default function ArticleDetailPage({ params }: PageProps) {
 
 async function ArticleDetail({ params }: PageProps) {
   const { id } = await params;
-  const article = await fetchArticleDetail(id);
+  const [article, articles] = await Promise.all([fetchArticleDetail(id), fetchArticles()]);
   if (!article) notFound();
 
+  const categories = Array.from(
+    new Set(articles.map((item) => item.categoryName).filter(Boolean)),
+  );
+
   return (
-    <div className="flex flex-col gap-6 py-8 md:py-12">
+    <div className="py-8 md:py-12">
       <title>{`${article.title} | Sharp`}</title>
       {article.summary ? <meta name="description" content={article.summary} /> : null}
 
-      <BackToArticlesLink />
+      <div className="grid gap-8 lg:grid-cols-[180px_1fr] lg:items-start lg:gap-12">
+        <aside className="lg:sticky lg:top-24">
+          <CategoryNav categories={categories} activeCategory={article.categoryName} />
+        </aside>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3 text-xs text-foreground-tertiary">
-          <span className="rounded bg-primary-light px-2 py-0.5 font-medium text-primary-strong">
-            {article.categoryName}
-          </span>
-          <span>{formatArticleDate(article.publishedAt)}</span>
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3 text-xs text-foreground-tertiary">
+              <span className="rounded bg-primary-light px-2 py-0.5 font-medium text-primary-strong">
+                {article.categoryName}
+              </span>
+              <span>{formatArticleDate(article.publishedAt)}</span>
+            </div>
+            <h1 className="text-3xl font-bold leading-tight tracking-tight md:text-4xl">
+              {article.title}
+            </h1>
+            {article.summary ? (
+              <p className="text-foreground-secondary">{article.summary}</p>
+            ) : null}
+          </div>
+
+          <article
+            className="article-content rounded-lg border border-border bg-surface p-6 card-shadow md:p-10"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content) }}
+          />
         </div>
-        <h1 className="text-3xl font-bold leading-tight tracking-tight md:text-4xl">
-          {article.title}
-        </h1>
-        {article.summary ? (
-          <p className="text-foreground-secondary">{article.summary}</p>
-        ) : null}
       </div>
-
-      <article
-        className="article-content rounded-lg border border-border bg-surface p-6 card-shadow md:p-10"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content) }}
-      />
     </div>
   );
 }

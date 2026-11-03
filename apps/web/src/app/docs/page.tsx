@@ -2,10 +2,18 @@
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
-import { BarChart3, BookOpen, Rocket, Target } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
-const sectionIcons = [Rocket, BookOpen, Target, BarChart3];
+// 每个章节对应的操作截图（手机端），与 sections 顺序一一对应
+const sectionImages = [
+  "/guide/textbook.jpg",
+  "/guide/chapter.jpg",
+  "/guide/knowledge.jpg",
+  "/guide/result.jpg",
+  "/guide/analysis.jpg",
+  "/guide/stats.jpg",
+];
 
 export default function Docs() {
   const { t, dict } = useLocale();
@@ -19,36 +27,57 @@ export default function Docs() {
         <p className="text-lg text-foreground-secondary">{t("docs.subtitle")}</p>
       </div>
 
-      <div className="mx-auto mt-12 max-w-[58rem] space-y-8">
+      <div className="mx-auto mt-14 max-w-[60rem]">
         {dict.docs.sections.map((section, index) => {
-          const Icon = sectionIcons[index];
+          const image = sectionImages[index];
           return (
-            <div
+            <section
               key={section.title}
-              className="rounded-lg border border-border bg-surface p-6 card-shadow"
+              className={`grid gap-8 md:grid-cols-[260px_1fr] md:items-start md:gap-12 ${
+                index > 0 ? "mt-12 border-t border-border pt-12" : ""
+              }`}
             >
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-light">
-                  <Icon className="h-6 w-6 text-primary-strong" />
+              {image && (
+                <div className="w-[min(70vw,260px)] md:sticky md:top-24 md:w-full">
+                  <Image
+                    src={image}
+                    alt={section.title}
+                    width={520}
+                    height={1150}
+                    className="h-auto w-full rounded-xl border border-border bg-surface shadow-sm"
+                  />
                 </div>
-                <div className="flex-1">
-                  <h2 className="mb-2 text-xl font-bold">{section.title}</h2>
-                  <p className="mb-4 text-sm text-foreground-secondary">
-                    {section.description}
-                  </p>
-                  <ol className="list-decimal space-y-1.5 pl-5 text-sm text-foreground-secondary">
-                    {section.steps.map((step) => (
-                      <li key={step}>{step}</li>
-                    ))}
-                  </ol>
+              )}
+
+              <div>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-xs font-semibold tabular-nums tracking-wider text-primary-strong">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h2 className="text-xl font-bold">{section.title}</h2>
                 </div>
+
+                <p className="mt-2 max-w-[34rem] text-sm leading-relaxed text-foreground-secondary">
+                  {section.description}
+                </p>
+
+                <ol className="mt-5 max-w-[34rem] space-y-2.5 text-sm leading-relaxed text-foreground-secondary">
+                  {section.steps.map((step, stepIndex) => (
+                    <li key={step} className="flex gap-3">
+                      <span className="shrink-0 text-xs font-medium tabular-nums text-primary-strong">
+                        {stepIndex + 1}.
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
-            </div>
+            </section>
           );
         })}
       </div>
 
-      <div className="mx-auto mt-12 max-w-[58rem] flex justify-center">
+      <div className="mx-auto mt-16 flex max-w-[58rem] justify-center">
         <Link href="/">
           <Button variant="outline">{t("common.backHome")}</Button>
         </Link>

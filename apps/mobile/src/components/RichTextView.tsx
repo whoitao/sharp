@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { API_BASE_URL } from '../services/api';
-import { htmlToText, needsRichView } from '../utils/richText';
+import { htmlToText, htmlToTextWithBreaks, needsRichView } from '../utils/richText';
 
 interface RichTextViewProps {
   /** 后台存的富文本 HTML（公式已由接口渲染成 KaTeX 结构） */
@@ -49,7 +49,7 @@ function buildDocument(html: string, fontSize: number, color: string, lineHeight
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", Arial, sans-serif;
     word-break: break-word;
   }
-  p { margin: 0 0 4px; }
+  p { margin: 0 0 10px; }
   p:last-child { margin-bottom: 0; }
   img { display: block; max-width: 100%; height: auto; margin: 4px 0; border-radius: 4px; }
   .katex { font-size: 1.05em; }
@@ -154,7 +154,11 @@ const RichTextView: React.FC<RichTextViewProps> = ({
 }) => {
   const rich = needsRichView(html);
   const resolvedLineHeight = lineHeight ?? Math.round(fontSize * 1.5);
-  const text = useMemo(() => htmlToText(html), [html]);
+  // 不限行数时保留段落换行，避免多段正文被压成一整块
+  const text = useMemo(
+    () => (numberOfLines ? htmlToText(html) : htmlToTextWithBreaks(html)),
+    [html, numberOfLines]
+  );
   const documentHtml = useMemo(
     () => (rich ? buildDocument(html || '', fontSize, color, resolvedLineHeight) : ''),
     [rich, html, fontSize, color, resolvedLineHeight]

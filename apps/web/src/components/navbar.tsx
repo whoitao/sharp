@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { Check, Globe } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 
 const navItems = [
   { href: "/", labelKey: "nav.home" },
@@ -26,8 +27,37 @@ const languageOptions: { value: Locale; label: string }[] = [
   { value: "en", label: "English" },
 ];
 
-export function Navbar() {
+/** 静态导航链接；pathname 由外层在运行时补齐，预渲染时先渲染无高亮版本 */
+function NavLinks({ pathname }: { pathname?: string | null }) {
+  const { t } = useLocale();
+
+  return (
+    <nav className="flex items-center space-x-6 text-sm font-medium">
+      {navItems.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={cn(
+            "transition-colors hover:text-foreground",
+            pathname === item.href
+              ? "text-foreground"
+              : "text-foreground-secondary"
+          )}
+        >
+          {t(item.labelKey)}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/** usePathname 属于运行时数据，cacheComponents 下需包在 Suspense 内 */
+function ActiveNavLinks() {
   const pathname = usePathname();
+  return <NavLinks pathname={pathname} />;
+}
+
+export function Navbar() {
   const { locale, setLocale, t } = useLocale();
 
   return (
@@ -37,22 +67,9 @@ export function Navbar() {
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <span className="text-xl font-bold text-primary">Sharp</span>
           </Link>
-          <nav className="flex items-center space-x-6 text-sm font-medium">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "transition-colors hover:text-foreground",
-                  pathname === item.href
-                    ? "text-foreground"
-                    : "text-foreground-secondary"
-                )}
-              >
-                {t(item.labelKey)}
-              </Link>
-            ))}
-          </nav>
+          <Suspense fallback={<NavLinks />}>
+            <ActiveNavLinks />
+          </Suspense>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-1">
           <ThemeToggle />

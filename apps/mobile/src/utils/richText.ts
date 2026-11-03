@@ -119,6 +119,27 @@ export function needsRichView(html?: string | null): boolean {
   return STRUCTURED_TAG_RE.test(html) || DOLLAR_MATH_RE.test(html);
 }
 
+/** 富文本转纯文本（保留段落间距），用于正文等不限行数的展示场景 */
+export function htmlToTextWithBreaks(html?: string | null): string {
+  if (!html) return '';
+  const text = html
+    .replace(MATH_NODE_RE, (_match, _tag: string, latex: string) => ` ${decodeEntities(latex)} `)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, '\n\n')
+    .replace(TAG_RE, '');
+  const plain = decodeEntities(text).replace(
+    /\$\$([^$]+)\$\$|\$([^$\n]+)\$/g,
+    (_match, block: string, inline: string) => block ?? inline
+  );
+  return plain
+    .split('\n')
+    .map((line) => latexToPlainText(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+}
+
 /** 富文本转纯文本，用于列表标题、单行摘要等必须截断的场景 */
 export function htmlToText(html?: string | null): string {
   if (!html) return '';

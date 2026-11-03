@@ -4,7 +4,7 @@ export const en = {
     docs: "Guide",
     about: "About",
     github: "GitHub",
-    articles: "Articles",
+    articles: "News Center",
   },
   common: {
     backHome: "Back to Home",
@@ -102,42 +102,60 @@ export const en = {
   docs: {
     title: "Guide",
     subtitle:
-      "From sign-up to reading your stats — four steps to get started with Sharp",
+      "From choosing a textbook to reading explanations — follow the screenshots step by step.",
     sections: [
       {
         title: "Quick Start",
-        description: "Create an account and choose your textbook.",
+        description: "Create an account and pick the textbook you actually use.",
         steps: [
           "Create an account and sign in",
-          "Choose my textbook",
-          "Learn by unit or by knowledge point",
+          "Choose stage, grade, and subject in My Textbooks",
+          "Tick the edition you are using",
         ],
       },
       {
         title: "Learn by Unit",
-        description: "Follow the textbook you actually use, chapter by chapter.",
+        description: "Move through chapters, unit by unit.",
         steps: [
-          "Select your textbook edition",
-          "Choose a chapter and its unit",
-          "Practice unit by unit and get instant grading",
+          "Switch to “By Chapter” on the Study page",
+          "Pick the chapter and section to open the unit list",
+          "Practice a unit — progress and question count at a glance",
         ],
       },
       {
         title: "Learn by Knowledge Point",
-        description: "Focus on one knowledge point at a time.",
+        description: "Follow the knowledge tree and focus on one point at a time.",
         steps: [
-          "Locate a knowledge point under the subject",
-          "Start a focused session on that single point",
-          "Review the analysis and your accuracy afterwards",
+          "Switch to “By Knowledge Point”",
+          "Expand the tree level by level (e.g. Number → Real Numbers)",
+          "Open the unit list for that point and start",
+        ],
+      },
+      {
+        title: "Check Your Results",
+        description: "See how you did right after submitting.",
+        steps: [
+          "Review accuracy, correct/incorrect counts, and total time",
+          "Wrong answers are grouped by number under Review (collapsed by default)",
+          "Tap any wrong question to expand it",
+        ],
+      },
+      {
+        title: "Read Explanations",
+        description: "Compare answers and go through each step.",
+        steps: [
+          "Expand a wrong question to compare your answer with the correct one",
+          "Read the Analysis and Solution sections",
+          "Choose “Practice Again” or “Continue Learning”",
         ],
       },
       {
         title: "Read Your Stats",
         description: "Use accuracy, time, and breakdowns to plan the next step.",
         steps: [
-          "Check daily practice volume in the trend view",
-          "Review mastery by chapter and knowledge point",
-          "Schedule your next practice around low-accuracy areas",
+          "Review today's questions, sessions, and study time",
+          "Switch views by time, chapter, or knowledge point",
+          "Plan the next session by progress and accuracy",
         ],
       },
     ],
@@ -147,10 +165,10 @@ export const en = {
     description: "The page you are looking for does not exist or has been moved.",
   },
   articles: {
-    title: "Articles",
+    title: "News Center",
     subtitle: "Product updates, learning guides and study tips",
-    empty: "No articles published yet.",
-    backToList: "Back to Articles",
+    all: "All",
+    empty: "No news published yet.",
   },
 };
 
