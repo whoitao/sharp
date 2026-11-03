@@ -478,8 +478,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                 borderTopRightRadius: 20 * radius,
                 paddingHorizontal: 16 * spacing,
                 paddingTop: 16 * spacing,
-                // 预留系统导航栏安全区，避免底部按钮被手势条/导航栏遮挡
-                paddingBottom: 16 * spacing + insets.bottom,
+                paddingBottom: 16 * spacing,
               },
             ]}
           >
@@ -607,6 +606,8 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                   backgroundColor: selectedFood && !feeding ? colors.accent : colors.border,
                   borderRadius: 12 * radius,
                   marginTop: 12 * spacing,
+                  // Modal 内读不到 safe-area inset，用最小间距兜底，避免底部按钮被系统导航栏遮挡
+                  marginBottom: Math.max(insets.bottom, 36 * spacing),
                 },
               ]}
             >
