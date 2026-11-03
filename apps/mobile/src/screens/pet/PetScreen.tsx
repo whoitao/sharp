@@ -34,6 +34,14 @@ const STATE_COLOR_KEYS = {
   asleep: 'borderLight',
 } as const;
 
+// 状态标签文字色跟随底色，避免浅色底上出现低对比文字
+const STATE_TEXT_COLOR_KEYS = {
+  active: 'successText',
+  normal: 'accentStrong',
+  hungry: 'warning',
+  asleep: 'textSecondary',
+} as const;
+
 const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
   const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
@@ -94,6 +102,11 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
     return map;
   }, [data?.backpack]);
 
+  const hasFood = useMemo(
+    () => (data?.backpack ?? []).some((item) => item.quantity > 0),
+    [data?.backpack],
+  );
+
   const openFeed = useCallback(() => {
     setFeedError(null);
     setFeedResult(null);
@@ -141,12 +154,14 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
   }, []);
 
   const renderProgress = (progress: number, color: string) => (
-    <View style={[styles.barTrack, { backgroundColor: colors.border, height: 8 * spacing, borderRadius: 4 * radius }]}>
+    <View
+      style={[
+        styles.barTrack,
+        { backgroundColor: colors.borderLight, height: 4, borderRadius: 2 },
+      ]}
+    >
       <View
-        style={[
-          styles.barFill,
-          { width: `${progress * 100}%`, backgroundColor: color, borderRadius: 4 * radius },
-        ]}
+        style={[styles.barFill, { width: `${progress * 100}%`, backgroundColor: color, borderRadius: 2 }]}
       />
     </View>
   );
@@ -208,9 +223,9 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
-            borderRadius: 18 * radius,
+            borderRadius: 16 * radius,
             padding: 16 * spacing,
-            marginTop: 8 * spacing,
+            marginTop: 12 * spacing,
           },
           cardShadow(isDark),
         ]}
@@ -230,10 +245,12 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
               },
             ]}
           >
-            <Text style={{ color: colors.successText, fontSize: 11 * font }}>{stateLabel}</Text>
+            <Text style={{ color: colors[STATE_TEXT_COLOR_KEYS[pet.state]], fontSize: 11 * font }}>
+              {stateLabel}
+            </Text>
           </View>
         </View>
-        <Text style={{ color: colors.textTertiary, fontSize: 12 * font, marginTop: 2 * spacing }}>
+        <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font, marginTop: 2 * spacing }}>
           {pet.species.name} · {pet.growthStage.name} · {t.petCompanionDays(pet.companionDays)}
         </Text>
 
@@ -254,25 +271,25 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
         </View>
 
         {/* 成长区 */}
-        <View style={{ marginTop: 12 * spacing }}>
+        <View style={{ marginTop: 14 * spacing }}>
           <View style={styles.rowBetween}>
-            <Text style={{ color: colors.textSecondary, fontSize: 12 * font }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 11.5 * font }}>
               {pet.level >= pet.route[pet.route.length - 1]?.level && pet.expToNext === pet.experience
                 ? t.petMaxLevel
                 : t.petExpToNext(Math.max(0, pet.expToNext - pet.experience))}
             </Text>
-            <Text style={{ color: colors.textTertiary, fontSize: 12 * font }}>
+            <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font }}>
               {pet.experience} / {pet.expToNext}
             </Text>
           </View>
-          {renderProgress(expProgress, colors.accentStrong)}
+          {renderProgress(expProgress, colors.accent)}
         </View>
 
         {/* 饱腹度 */}
-        <View style={{ marginTop: 10 * spacing }}>
+        <View style={{ marginTop: 12 * spacing }}>
           <View style={styles.rowBetween}>
-            <Text style={{ color: colors.textSecondary, fontSize: 12 * font }}>{t.petSatiety}</Text>
-            <Text style={{ color: colors.textTertiary, fontSize: 12 * font }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 11.5 * font }}>{t.petSatiety}</Text>
+            <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font }}>
               {pet.satiety} / {pet.satietyMax}
             </Text>
           </View>
@@ -308,11 +325,23 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
         </View>
+        {!hasFood && (
+          <Text
+            style={{
+              color: colors.textTertiary,
+              fontSize: 11.5 * font,
+              marginTop: 8 * spacing,
+              textAlign: 'center',
+            }}
+          >
+            {t.petBackpackEmpty}
+          </Text>
+        )}
       </View>
 
       {/* 进化路线 */}
       <View style={{ marginTop: 18 * spacing }}>
-        <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '700', marginBottom: 8 * spacing }}>
+        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 15 * font, marginBottom: 9 * spacing }]}>
           {t.petRouteTitle}
         </Text>
         <View style={[styles.rowGap, { gap: 8 * spacing }]}>
@@ -323,11 +352,12 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                 key={stage.stageKey}
                 style={[
                   styles.routeCard,
+                  active ? cardShadow(isDark) : null,
                   {
                     backgroundColor: active ? colors.accentLight : colors.surface,
                     borderColor: active ? colors.accent : colors.border,
-                    borderRadius: 14 * radius,
-                    padding: 8 * spacing,
+                    borderRadius: 12 * radius,
+                    padding: 10 * spacing,
                   },
                 ]}
               >
@@ -336,10 +366,19 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                 ) : (
                   <Text style={{ fontSize: 28 }}>{pet.species.icon ?? '🐾'}</Text>
                 )}
-                <Text style={{ color: colors.text, fontSize: 12 * font, fontWeight: active ? '700' : '400' }}>
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontSize: 13 * font,
+                    fontWeight: active ? '700' : '500',
+                    marginTop: 4 * spacing,
+                  }}
+                >
                   {stage.name}
                 </Text>
-                <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font }}>{t.petLevel(stage.level)}</Text>
+                <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font, marginTop: 2 * spacing }}>
+                  {t.petLevel(stage.level)}
+                </Text>
               </View>
             );
           })}
@@ -357,18 +396,19 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             key={item.label}
             style={[
               styles.statCard,
+              cardShadow(isDark),
               {
                 backgroundColor: colors.surface,
                 borderColor: colors.border,
-                borderRadius: 14 * radius,
-                padding: 10 * spacing,
+                borderRadius: 12 * radius,
+                padding: 12 * spacing,
               },
             ]}
           >
-            <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font }}>{item.label}</Text>
+            <Text style={{ color: colors.textTertiary, fontSize: 11 * font }}>{item.label}</Text>
             <Text
               numberOfLines={1}
-              style={{ color: colors.text, fontSize: 14 * font, fontWeight: '700', marginTop: 4 * spacing }}
+              style={{ color: colors.text, fontSize: 16 * font, fontWeight: '700', marginTop: 4 * spacing }}
             >
               {item.value}
             </Text>
@@ -378,45 +418,49 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
 
       {/* 最近喂养 */}
       <View style={{ marginTop: 18 * spacing }}>
-        <View style={styles.rowBetween}>
+        <View style={[styles.rowBetween, { marginBottom: 9 * spacing }]}>
           <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '700' }}>{t.petRecentFeeds}</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('PetFeeds')}>
-            <Text style={{ color: colors.accentStrong, fontSize: 12 * font }}>{t.petViewAll}</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('PetFeeds')} hitSlop={8}>
+            <Text style={{ color: colors.accentStrong, fontSize: 11.5 * font }}>{t.petViewAll}</Text>
           </TouchableOpacity>
         </View>
 
         {(data?.recentFeeds ?? []).length === 0 ? (
-          <Text style={{ color: colors.textSecondary, fontSize: 13 * font, marginTop: 8 * spacing }}>
-            {t.petNoFeeds}
-          </Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 13 * font }}>{t.petNoFeeds}</Text>
         ) : (
-          (data?.recentFeeds ?? []).map((record) => (
-            <View
-              key={record.id}
-              style={[
-                styles.feedRow,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  borderRadius: 12 * radius,
-                  padding: 10 * spacing,
-                  marginTop: 8 * spacing,
-                },
-              ]}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, fontSize: 13 * font }}>
+          <View style={{ gap: 8 * spacing }}>
+            {(data?.recentFeeds ?? []).map((record) => (
+              <View
+                key={record.id}
+                style={[
+                  styles.feedRow,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    borderRadius: 12 * radius,
+                    paddingHorizontal: 12 * spacing,
+                    paddingVertical: 11 * spacing,
+                  },
+                ]}
+              >
+                <Text
+                  numberOfLines={1}
+                  style={{ flex: 1, color: colors.text, fontSize: 13.5 * font, marginRight: 8 * spacing }}
+                >
                   {t.petGain(record.satietyGain, record.expGain)}
                 </Text>
-                <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font, marginTop: 2 * spacing }}>
-                  {record.dateLabel}
-                </Text>
+                {(record.levelUp || record.stageUp) && (
+                  <Ionicons
+                    name="arrow-up-circle"
+                    size={15 * font}
+                    color={colors.accent}
+                    style={{ marginRight: 4 * spacing }}
+                  />
+                )}
+                <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font }}>{record.dateLabel}</Text>
               </View>
-              {(record.levelUp || record.stageUp) && (
-                <Ionicons name="arrow-up-circle" size={18 * font} color={colors.accent} />
-              )}
-            </View>
-          ))
+            ))}
+          </View>
         )}
       </View>
 
@@ -435,6 +479,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
               },
             ]}
           >
+            <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.rowBetween}>
               <Text style={{ color: colors.text, fontSize: 16 * font, fontWeight: '700' }}>
                 {t.petBackpackTitle}
@@ -563,6 +608,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                 </Text>
               )}
             </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -579,6 +625,9 @@ const styles = StyleSheet.create({
   },
   hero: {
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  sectionTitle: {
+    fontWeight: '700',
   },
   heroHeader: {
     flexDirection: 'row',

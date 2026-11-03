@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "expo start --go",
-    "android": "expo run:android",
+    "android": "expo run:android --device Pixel_API_34_x64",
     "android:x64": "expo run:android --device Pixel_API_34_x64",
     "buildAndroidLocal": "eas build --platform android --local --profile preview",
     "ios": "expo run:ios",
@@ -14,7 +14,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~55.0.12",
     "@expo/vector-icons": "^15.1.1",
-    "@lottiefiles/dotlottie-react": "^0.6.5",
+    "@lottiefiles/dotlottie-react": "^0.13.5",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.0.0",
     "@react-navigation/native": "^7.0.0",
@@ -33,7 +33,7 @@
     "expo-splash-screen": "~55.0.25",
     "expo-status-bar": "~55.0.6",
     "expo-system-ui": "~55.0.22",
-    "lottie-react-native": "7.3.0",
+    "lottie-react-native": "7.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.83.10",

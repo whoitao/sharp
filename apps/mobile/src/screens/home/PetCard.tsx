@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { PetDetail } from '@sharp/shared';
 import { Image } from 'expo-image';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
@@ -18,10 +18,16 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onPress }) => {
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
 
+  // 头像右边缘与下方快捷入口列（四等分 + 8 间距）对齐，同时保留卡片内边距
+  const [cardWidth, setCardWidth] = useState(0);
+  const avatarSize =
+    cardWidth > 0 ? (cardWidth - 3 * 8 * spacing) / 4 - 12 * spacing : 56 * spacing;
+
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
+      onLayout={(event) => setCardWidth(event.nativeEvent.layout.width)}
       style={[
         styles.card,
         {
@@ -37,22 +43,23 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onPress }) => {
         <>
           <View
             style={{
-              width: 56 * spacing,
-              height: 56 * spacing,
-              borderRadius: 14 * radius,
+              width: avatarSize,
+              height: avatarSize,
+              borderRadius: 12 * radius,
               backgroundColor: colors.surfaceSecondary,
               alignItems: 'center',
               justifyContent: 'center',
+              overflow: 'hidden',
             }}
           >
             {pet.growthStage.imageUrl ? (
               <Image source={{ uri: pet.growthStage.imageUrl }} contentFit="contain" style={styles.image} />
             ) : (
-              <Text style={{ fontSize: 26 }}>{pet.species.icon ?? '🐾'}</Text>
+              <Text style={{ fontSize: avatarSize * 0.45 }}>{pet.species.icon ?? '🐾'}</Text>
             )}
           </View>
 
-          <View style={{ flex: 1, marginLeft: 10 * spacing }}>
+          <View style={{ flex: 1, marginLeft: 12 * spacing }}>
             <View style={styles.row}>
               <Text style={{ color: colors.text, fontSize: 14 * font, fontWeight: '700' }}>{pet.nickname}</Text>
               <View
@@ -102,17 +109,18 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onPress }) => {
         <>
           <View
             style={{
-              width: 56 * spacing,
-              height: 56 * spacing,
-              borderRadius: 14 * radius,
+              width: avatarSize,
+              height: avatarSize,
+              borderRadius: 12 * radius,
               backgroundColor: colors.accentLight,
               alignItems: 'center',
               justifyContent: 'center',
+              overflow: 'hidden',
             }}
           >
-            <Text style={{ fontSize: 26 }}>🐾</Text>
+            <Text style={{ fontSize: avatarSize * 0.45 }}>🐾</Text>
           </View>
-          <View style={{ flex: 1, marginLeft: 10 * spacing }}>
+          <View style={{ flex: 1, marginLeft: 12 * spacing }}>
             <Text style={{ color: colors.text, fontSize: 14 * font, fontWeight: '700' }}>
               {t.petCardEmptyTitle}
             </Text>
@@ -147,8 +155,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    width: 48,
-    height: 48,
+    width: '100%',
+    height: '100%',
   },
 });
 
