@@ -12,15 +12,22 @@ export interface PetMotionManifest {
   front: {
     body: string;
     lid?: string;
+    /** 视觉缩放，用来和侧身形象对齐身高 */
+    scale?: number;
     actions: Partial<Record<'idle' | 'happy' | 'feed' | 'evolve', string>>;
   };
   side: {
     body: string;
     /** 侧身图默认朝向，决定镜像方向 */
     facing?: 'left' | 'right';
+    scale?: number;
     /** 走动速度（px/s，按 400 画布计） */
     walkSpeed?: number;
     actions: Partial<Record<'idle' | 'walk', string>>;
+  };
+  /** 转身过渡帧（30°、55°…），按顺序插在正面与侧身之间 */
+  turn?: {
+    frames?: string[];
   };
 }
 
@@ -37,6 +44,12 @@ interface PetMotionProps {
 }
 
 const WALK_MIN_DISTANCE = 28;
+// 每一段转身交叉淡化的时长（正面→30°→55°→侧身）
+const FADE_MS = 120;
+// 转身全部完成后再留一点余量才开始位移，避免起步瞬间滑步
+const WALK_START_GAP = 80;
+// 走完保持侧身待机的时间
+const SIDE_STAND_MS = 600;
 
 // 同一份 JSON 只解析一次（图片会内联成 base64，重复解析会重复占内存）
 const animationCache = new Map<string, Promise<AnimationObject>>();
@@ -60,6 +73,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 /**
  * 宠物互动动画：
  * - 有分层动作包时，原地待机/眨眼、随机横向走动（侧身）、点击开心、拖拽后弹回。
+ * - 正面与侧身用交叉淡化切换，配合 front.scale 对齐身高，避免转身时跳变。
  * - 没有动作包或 lottie 不可用（Expo Go / web）时，回落到 PetLottie 静态形象；
  *   走动仍用静态侧身图位移实现。
  */
@@ -89,8 +103,14 @@ const PetMotion: React.FC<PetMotionProps> = ({
   const dragStart = useRef(0);
   const dragging = useRef(false);
   const walkingRef = useRef(false);
+  const walkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const happyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const turnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 0 = 正面；中间为转身过渡帧；stages = 侧身
+  const turnProgress = useRef(new Animated.Value(0)).current;
+  const frontLottieRef = useRef<React.ElementRef<typeof LottieView>>(null);
+  const sideLottieRef = useRef<React.ElementRef<typeof LottieView>>(null);
 
   const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
   const lottieAvailable = Platform.OS !== 'web' && !isExpoGo;
@@ -107,6 +127,7 @@ const PetMotion: React.FC<PetMotionProps> = ({
     setManifestFailed(false);
     setAnimations({});
     setLottieFailed(false);
+    turnProgress.setValue(0);
 
     (async () => {
       const response = await fetch(manifestUrl);
@@ -120,7 +141,7 @@ const PetMotion: React.FC<PetMotionProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [manifestUrl]);
+  }, [manifestUrl, turnProgress]);
 
   // 预加载动作包内所有 JSON
   useEffect(() => {
@@ -170,6 +191,7 @@ const PetMotion: React.FC<PetMotionProps> = ({
   const cancelWalk = useCallback(() => {
     walkingRef.current = false;
     setWalking(false);
+    if (walkTimer.current) clearTimeout(walkTimer.current);
     offset.stopAnimation();
   }, [offset]);
 
@@ -200,19 +222,25 @@ const PetMotion: React.FC<PetMotionProps> = ({
     setHappy(false);
     setFacingLeft(goLeft);
 
-    Animated.timing(offset, {
-      toValue: target,
-      duration,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (!finished) return;
-      walkingRef.current = false;
-      setWalking(false);
-      setSideStanding(true);
-      if (turnTimer.current) clearTimeout(turnTimer.current);
-      turnTimer.current = setTimeout(() => setSideStanding(false), 700);
-    });
+    // 等转身过渡全部走完再起步（原来固定 420ms 会早于淡化结束，产生滑步）
+    const fadeMs = FADE_MS * ((manifest.turn?.frames?.length ?? 0) + 2);
+    if (walkTimer.current) clearTimeout(walkTimer.current);
+    walkTimer.current = setTimeout(() => {
+      if (!walkingRef.current) return;
+      Animated.timing(offset, {
+        toValue: target,
+        duration,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished) return;
+        walkingRef.current = false;
+        setWalking(false);
+        setSideStanding(true);
+        if (turnTimer.current) clearTimeout(turnTimer.current);
+        turnTimer.current = setTimeout(() => setSideStanding(false), SIDE_STAND_MS);
+      });
+    }, fadeMs + WALK_START_GAP);
   }, [manifest, layoutWidth, size, offset]);
 
   // 空闲时随机走动
@@ -226,7 +254,7 @@ const PetMotion: React.FC<PetMotionProps> = ({
       if (!walkingRef.current && !dragging.current) startWalk();
       timer = setTimeout(tick, 5000 + Math.random() * 4000);
     };
-    timer = setTimeout(tick, 2500 + Math.random() * 2000);
+    timer = setTimeout(tick, 3000 + Math.random() * 2000);
 
     return () => {
       cancelled = true;
@@ -245,34 +273,74 @@ const PetMotion: React.FC<PetMotionProps> = ({
 
   useEffect(
     () => () => {
+      if (walkTimer.current) clearTimeout(walkTimer.current);
       if (happyTimer.current) clearTimeout(happyTimer.current);
       if (turnTimer.current) clearTimeout(turnTimer.current);
     },
     [],
   );
 
-  // 无法播放 lottie 时，喂食/进化用定时器推进状态，避免父级卡在一次性动作
-  const view: 'front' | 'side' =
-    kind === 'feed' || kind === 'evolve' ? 'front' : walking || sideStanding ? 'side' : 'front';
-  const action: 'idle' | 'happy' | 'feed' | 'evolve' | 'walk' =
-    kind === 'feed'
-      ? 'feed'
-      : kind === 'evolve'
-        ? 'evolve'
-        : walking
-          ? 'walk'
-          : happy
-            ? 'happy'
-            : 'idle';
+  // 转身过渡：正面 → 30° → 55° → 侧身，逐段交叉淡化
+  const turnFrames = manifest?.turn?.frames ?? [];
+  const stages = turnFrames.length + 2;
+  const sideOn = walking || sideStanding;
+  useEffect(() => {
+    Animated.timing(turnProgress, {
+      toValue: sideOn ? stages : 0,
+      duration: FADE_MS * stages,
+      // 交叉淡化必须是线性的，两条曲线之和不恒定会在中间叠加出双轮廓
+      easing: Easing.linear,
+      useNativeDriver: true,
+    }).start();
+  }, [sideOn, stages, turnProgress]);
 
-  const animationUrl = manifest
-    ? view === 'side'
-      ? manifest.side.actions[action === 'walk' ? 'walk' : 'idle']
-      : manifest.front.actions[action as 'idle' | 'happy' | 'feed' | 'evolve']
-    : undefined;
-  const animation = animationUrl ? animations[animationUrl] : undefined;
-  const playing = lottieAvailable && animation && !lottieFailed;
-  const expectedLottie = lottieAvailable && !lottieFailed && Boolean(animationUrl);
+  const stageOpacity = (index: number) => {
+    if (index === 0) {
+      return turnProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0], extrapolate: 'clamp' });
+    }
+    if (index === stages) {
+      return turnProgress.interpolate({ inputRange: [stages - 1, stages], outputRange: [0, 1], extrapolate: 'clamp' });
+    }
+    return turnProgress.interpolate({
+      inputRange: [index - 1, index, index + 1],
+      outputRange: [0, 1, 0],
+      extrapolate: 'clamp',
+    });
+  };
+
+  // 转身时轻微收身，弱化坐姿→站姿轮廓突变带来的显胖观感
+  const turnDip =
+    stages >= 3
+      ? turnProgress.interpolate({
+          inputRange: [0, 1, stages - 1, stages],
+          outputRange: [1, 0.96, 0.96, 1],
+          extrapolate: 'clamp',
+        })
+      : null;
+
+  const frontAction: 'idle' | 'happy' | 'feed' | 'evolve' =
+    kind === 'feed' ? 'feed' : kind === 'evolve' ? 'evolve' : happy ? 'happy' : 'idle';
+  const sideAction: 'idle' | 'walk' = walking ? 'walk' : 'idle';
+
+  const frontUrl = manifest?.front.actions[frontAction];
+  const sideUrl = manifest?.side.actions[sideAction];
+
+  const frontAnimation = frontUrl ? animations[frontUrl] : undefined;
+  const sideAnimation = sideUrl ? animations[sideUrl] : undefined;
+  const playing = lottieAvailable && !lottieFailed;
+  const expectedLottie = playing && Boolean(frontUrl);
+
+  // 只让可见的一层在播，避免两个 Lottie 常驻解码抢帧
+  useEffect(() => {
+    if (!playing) return;
+    if (sideOn) {
+      frontLottieRef.current?.pause();
+      sideLottieRef.current?.play();
+    } else {
+      sideLottieRef.current?.pause();
+      frontLottieRef.current?.resume();
+    }
+  }, [playing, sideOn, frontAction, sideAction, frontUrl, sideUrl]);
 
   useEffect(() => {
     if (kind !== 'feed' && kind !== 'evolve') return;
@@ -291,6 +359,7 @@ const PetMotion: React.FC<PetMotionProps> = ({
         onPanResponderGrant: () => {
           dragging.current = true;
           walkingRef.current = false;
+          if (walkTimer.current) clearTimeout(walkTimer.current);
           setWalking(false);
           setSideStanding(false);
           offset.stopAnimation();
@@ -321,8 +390,8 @@ const PetMotion: React.FC<PetMotionProps> = ({
     [layoutWidth, size, offset],
   );
 
-  const handleAnimationFinish = () => {
-    if (action === 'happy') {
+  const handleFrontFinish = () => {
+    if (frontAction === 'happy') {
       setHappy(false);
       return;
     }
@@ -349,9 +418,11 @@ const PetMotion: React.FC<PetMotionProps> = ({
     );
   }
 
-  const staticBody = view === 'side' ? manifest.side.body || sideImageUrl : manifest.front.body || imageUrl;
-  const mirrored = view === 'side' && (manifest.side.facing ?? 'left') !== (facingLeft ? 'left' : 'right');
-  const loop = action === 'idle' || action === 'walk';
+  const frontScale = manifest.front.scale ?? 1;
+  const sideScale = manifest.side.scale ?? 1;
+  const mirrored = (manifest.side.facing ?? 'left') !== (facingLeft ? 'left' : 'right');
+  const frontBody = manifest.front.body || imageUrl;
+  const sideBody = manifest.side.body || sideImageUrl;
 
   return (
     <View
@@ -363,29 +434,81 @@ const PetMotion: React.FC<PetMotionProps> = ({
         style={{
           width: size,
           height: size,
-          transform: [{ translateX: offset }, { scaleX: mirrored ? -1 : 1 }],
+          transform: turnDip
+            ? [{ translateX: offset }, { scale: turnDip }]
+            : [{ translateX: offset }],
         }}
       >
-        <Pressable onPress={handlePress} style={{ width: size, height: size }}>
-          {playing ? (
-            <LottieView
-              key={animationUrl}
-              source={animation}
-              autoPlay
-              loop={loop}
-              resizeMode="contain"
-              onAnimationFinish={handleAnimationFinish}
-              onAnimationFailure={() => setLottieFailed(true)}
-              style={styles.lottie}
-            />
-          ) : staticBody ? (
-            <Image
-              source={{ uri: staticBody }}
-              contentFit="contain"
-              style={{ width: size, height: size }}
-            />
-          ) : null}
-        </Pressable>
+        {/* 正面层 */}
+        <Animated.View style={[styles.layer, { opacity: stageOpacity(0) }]} pointerEvents="none">
+          <View style={{ width: size, height: size, transform: [{ scale: frontScale }] }}>
+            {playing && frontAnimation ? (
+              <LottieView
+                key={frontUrl}
+                ref={frontLottieRef}
+                source={frontAnimation}
+                autoPlay
+                loop={frontAction === 'idle'}
+                resizeMode="contain"
+                onAnimationFinish={handleFrontFinish}
+                onAnimationFailure={() => setLottieFailed(true)}
+                style={styles.lottie}
+              />
+            ) : frontBody ? (
+              <Image
+                source={{ uri: frontBody }}
+                contentFit="contain"
+                style={{ width: size, height: size }}
+              />
+            ) : null}
+          </View>
+        </Animated.View>
+
+        {/* 转身过渡帧 + 侧身层：共用同一套镜像/缩放 */}
+        <View
+          pointerEvents="none"
+          style={[
+            styles.layer,
+            {
+              width: size,
+              height: size,
+              transform: [{ scale: sideScale }, { scaleX: mirrored ? -1 : 1 }],
+            },
+          ]}
+        >
+          {turnFrames.map((url, index) => (
+            <Animated.View key={url} style={[styles.layer, { opacity: stageOpacity(index + 1) }]}>
+              <Image
+                source={{ uri: url }}
+                contentFit="contain"
+                style={{ width: size, height: size }}
+              />
+            </Animated.View>
+          ))}
+
+          <Animated.View style={[styles.layer, { opacity: stageOpacity(stages) }]}>
+            {playing && sideAnimation ? (
+              <LottieView
+                key={sideUrl}
+                ref={sideLottieRef}
+                source={sideAnimation}
+                autoPlay={false}
+                loop
+                resizeMode="contain"
+                onAnimationFailure={() => setLottieFailed(true)}
+                style={styles.lottie}
+              />
+            ) : sideBody ? (
+              <Image
+                source={{ uri: sideBody }}
+                contentFit="contain"
+                style={{ width: size, height: size }}
+              />
+            ) : null}
+          </Animated.View>
+        </View>
+
+        <Pressable onPress={handlePress} style={StyleSheet.absoluteFill} />
       </Animated.View>
     </View>
   );
@@ -394,6 +517,9 @@ const PetMotion: React.FC<PetMotionProps> = ({
 const styles = StyleSheet.create({
   wrap: {
     alignSelf: 'stretch',
+  },
+  layer: {
+    ...StyleSheet.absoluteFillObject,
   },
   lottie: {
     width: '100%',

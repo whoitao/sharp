@@ -93,7 +93,49 @@ const PetAdoptScreen: React.FC<PetAdoptScreenProps> = ({ navigation }) => {
     >
       <Text style={{ color: colors.textSecondary, fontSize: 13 * font }}>{t.petAdoptHint}</Text>
 
-      <View style={styles.grid}>
+      <Text style={{ color: colors.text, fontSize: 14 * font, fontWeight: '600', marginTop: 16 * spacing }}>
+        {t.petAdoptNickname}
+      </Text>
+      <TextInput
+        value={nickname}
+        onChangeText={setNickname}
+        maxLength={8}
+        placeholder={t.petAdoptNicknamePlaceholder}
+        placeholderTextColor={colors.textTertiary}
+        style={[
+          styles.input,
+          {
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            color: colors.text,
+            borderRadius: 12 * radius,
+            paddingHorizontal: 12 * spacing,
+            fontSize: 15 * font,
+            marginTop: 8 * spacing,
+          },
+        ]}
+      />
+
+      <TouchableOpacity
+        onPress={handleAdopt}
+        disabled={!selectedId || submitting}
+        style={[
+          styles.submit,
+          {
+            backgroundColor: selectedId && !submitting ? colors.accent : colors.border,
+            borderRadius: 12 * radius,
+            marginTop: 12 * spacing,
+          },
+        ]}
+      >
+        {submitting ? (
+          <ActivityIndicator color="#FFFFFF" size="small" />
+        ) : (
+          <Text style={styles.submitText}>{t.petAdoptConfirm}</Text>
+        )}
+      </TouchableOpacity>
+
+      <View style={[styles.grid, { marginTop: 20 * spacing }]}>
         {species.map((item) => {
           const active = item.id === selectedId;
           const cover = item.stages[0]?.imageUrl;
@@ -133,48 +175,6 @@ const PetAdoptScreen: React.FC<PetAdoptScreenProps> = ({ navigation }) => {
           );
         })}
       </View>
-
-      <Text style={{ color: colors.text, fontSize: 14 * font, fontWeight: '600', marginTop: 20 * spacing }}>
-        {t.petAdoptNickname}
-      </Text>
-      <TextInput
-        value={nickname}
-        onChangeText={setNickname}
-        maxLength={8}
-        placeholder={t.petAdoptNicknamePlaceholder}
-        placeholderTextColor={colors.textTertiary}
-        style={[
-          styles.input,
-          {
-            borderColor: colors.border,
-            backgroundColor: colors.surface,
-            color: colors.text,
-            borderRadius: 12 * radius,
-            paddingHorizontal: 12 * spacing,
-            fontSize: 15 * font,
-            marginTop: 8 * spacing,
-          },
-        ]}
-      />
-
-      <TouchableOpacity
-        onPress={handleAdopt}
-        disabled={!selectedId || submitting}
-        style={[
-          styles.submit,
-          {
-            backgroundColor: selectedId && !submitting ? colors.accent : colors.border,
-            borderRadius: 12 * radius,
-            marginTop: 20 * spacing,
-          },
-        ]}
-      >
-        {submitting ? (
-          <ActivityIndicator color="#FFFFFF" size="small" />
-        ) : (
-          <Text style={styles.submitText}>{t.petAdoptConfirm}</Text>
-        )}
-      </TouchableOpacity>
     </ScrollView>
   );
 };

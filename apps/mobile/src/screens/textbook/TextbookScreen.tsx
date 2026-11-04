@@ -92,16 +92,12 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
     );
   }, [allTextbooks, selectedGrade, selectedSubject]);
 
-  // 选中的教材不在当前筛选结果里时，优先回落到全局教材，再回落到第一本（仅本地高亮，不落库）
+  // 只有用户真正选过（savedTextbookId 落在当前筛选结果里）才展示选中态；
+  // 没选过、或已选教材不在当前筛选结果里时一律不高亮，避免"默认选中第一本"的假选中
   useEffect(() => {
-    if (visibleTextbooks.length === 0) {
-      if (selectedTextbookId !== null) setSelectedTextbookId(null);
-      return;
-    }
     if (visibleTextbooks.some((textbook) => textbook.id === selectedTextbookId)) return;
-    const preferred =
-      visibleTextbooks.find((textbook) => textbook.id === savedTextbookId) ?? visibleTextbooks[0];
-    setSelectedTextbookId(preferred.id);
+    const saved = visibleTextbooks.find((textbook) => textbook.id === savedTextbookId);
+    setSelectedTextbookId(saved?.id ?? null);
   }, [visibleTextbooks, savedTextbookId, selectedTextbookId]);
 
   const handleChangeGrade = useCallback(
