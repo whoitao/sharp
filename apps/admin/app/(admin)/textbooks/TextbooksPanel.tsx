@@ -1,6 +1,7 @@
 "use client";
 
 import SubjectSelect from "@/components/SubjectSelect";
+import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import IonIcon from "@/components/IonIcon";
 import { CloudDownloadOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
@@ -59,6 +60,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 }
 
 export default function TextbooksPanel() {
+  const { pageSize } = usePageSize();
   const { message, modal } = App.useApp();
   const [data, setData] = useState<Textbook[]>([]);
   const [loading, setLoading] = useState(false);
@@ -398,7 +400,7 @@ export default function TextbooksPanel() {
         dataSource={data}
         columns={columns}
         scroll={{ x: 1080 }}
-        pagination={{ pageSize: 20, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
+        pagination={{ pageSize, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
       />
 
       <Modal

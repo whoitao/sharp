@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
 import {
@@ -37,6 +38,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 }
 
 export default function TagsPanel() {
+  const { pageSize } = usePageSize();
   const { message, modal } = App.useApp();
   const [data, setData] = useState<QuestionTag[]>([]);
   const [loading, setLoading] = useState(false);
@@ -160,7 +162,7 @@ export default function TagsPanel() {
         loading={loading}
         dataSource={data}
         columns={columns}
-        pagination={{ pageSize: 20, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
+        pagination={{ pageSize, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
       />
       <Modal
         title={editing ? "编辑标签" : "新建标签"}

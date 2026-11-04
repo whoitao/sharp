@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
 import {
@@ -37,6 +38,7 @@ const STAGE_COLORS: Record<string, string> = {
 };
 
 export default function StagesPanel() {
+  const { pageSize } = usePageSize();
   const { message, modal } = App.useApp();
   const [data, setData] = useState<Stage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -162,7 +164,7 @@ export default function StagesPanel() {
         loading={loading}
         dataSource={data}
         columns={columns}
-        pagination={{ pageSize: 20, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
+        pagination={{ pageSize, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
       />
       <Modal
         title={editing ? "编辑学段" : "新建学段"}

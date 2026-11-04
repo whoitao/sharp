@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
 import {
@@ -26,6 +27,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 }
 
 export default function PublishersPanel() {
+  const { pageSize } = usePageSize();
   const { message, modal } = App.useApp();
   const [data, setData] = useState<Publisher[]>([]);
   const [loading, setLoading] = useState(false);
@@ -125,7 +127,7 @@ export default function PublishersPanel() {
         loading={loading}
         dataSource={data}
         columns={columns}
-        pagination={{ pageSize: 20, showSizeChanger: false }}
+        pagination={{ pageSize, showSizeChanger: false }}
       />
       <Modal
         title={editing ? "编辑教材版本" : "新建教材版本"}
