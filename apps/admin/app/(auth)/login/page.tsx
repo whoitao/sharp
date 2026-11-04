@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n";
+import { primeIdentity } from "@/components/permissions";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { Alert, Button, Card, Form, Input, theme as antdTheme } from "antd";
 import { useRouter } from "next/navigation";
@@ -38,6 +39,15 @@ export default function LoginPage() {
 
       localStorage.setItem("admin_token", data.token);
       localStorage.setItem("admin_username", data.admin.username);
+      // 登录即写入身份缓存，进去后不必等 /me 就能渲染，避免 Safari 下被判未登录弹回
+      primeIdentity({
+        id: data.admin.id,
+        username: data.admin.username,
+        role: data.admin.role,
+        roleName: data.admin.roleName ?? data.admin.role,
+        roleId: data.admin.roleId ?? null,
+        permissions: data.admin.permissions ?? [],
+      });
       router.push("/dashboard");
     } catch {
       setError(t("login.networkError"));

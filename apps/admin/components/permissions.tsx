@@ -13,14 +13,22 @@ export interface AdminIdentity {
 }
 
 const CACHE_KEY = "admin_identity";
+const TOKEN_KEY = "admin_token";
+
+type FetchStatus = "ok" | "unauthorized" | "error";
+
+interface FetchResult {
+  status: FetchStatus;
+  identity: AdminIdentity | null;
+}
 
 let identityCache: AdminIdentity | null = null;
-let inflight: Promise<AdminIdentity | null> | null = null;
+let inflight: Promise<FetchResult> | null = null;
 
 function readLocal(): AdminIdentity | null {
   if (typeof window === "undefined") return null;
   // 没有 token 时缓存一律作废，避免退出登录后仍渲染后台
-  if (!localStorage.getItem("admin_token")) {
+  if (!localStorage.getItem(TOKEN_KEY)) {
     localStorage.removeItem(CACHE_KEY);
     return null;
   }
@@ -32,29 +40,38 @@ function readLocal(): AdminIdentity | null {
   }
 }
 
-export async function fetchIdentity(force = false): Promise<AdminIdentity | null> {
-  if (!force && identityCache) return identityCache;
+/** 登录成功后立即写入本地身份，避免依赖二次 /me 请求 */
+export function primeIdentity(identity: AdminIdentity) {
+  identityCache = identity;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(identity));
+  }
+}
+
+export async function fetchIdentity(force = false): Promise<FetchResult> {
+  if (!force && identityCache) return { status: "ok", identity: identityCache };
   if (!force && inflight) return inflight;
 
-  inflight = (async () => {
-    const token = localStorage.getItem("admin_token");
-    if (!token) return null;
+  inflight = (async (): Promise<FetchResult> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return { status: "unauthorized", identity: null };
     try {
       const res = await fetch("/api/admin/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) {
-        // token 失效：清掉缓存，避免脏身份继续显示
+      // 只有明确的鉴权失败才认定未登录；网络/服务端异常不踢人
+      if (res.status === 401 || res.status === 403) {
         identityCache = null;
         localStorage.removeItem(CACHE_KEY);
-        return null;
+        return { status: "unauthorized", identity: null };
       }
+      if (!res.ok) return { status: "error", identity: null };
       const data = (await res.json()) as AdminIdentity;
       identityCache = data;
       localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-      return data;
+      return { status: "ok", identity: data };
     } catch {
-      return null;
+      return { status: "error", identity: null };
     } finally {
       inflight = null;
     }
@@ -71,16 +88,22 @@ export function invalidateIdentity() {
 
 export function usePermissions() {
   const [identity, setIdentity] = useState<AdminIdentity | null>(() => readLocal());
-  const [loading, setLoading] = useState(() => !identityCache);
+  const [status, setStatus] = useState<FetchStatus | "loading">(() =>
+    identityCache ? "ok" : "loading"
+  );
 
   useEffect(() => {
     let cancelled = false;
     fetchIdentity()
-      .then((data) => {
-        if (!cancelled) setIdentity(data);
+      .then((res) => {
+        if (cancelled) return;
+        if (res.status === "ok") setIdentity(res.identity);
+        else if (res.status === "unauthorized") setIdentity(null);
+        // error：保留已有身份，不跳登录
+        setStatus(res.status);
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+      .catch(() => {
+        if (!cancelled) setStatus("error");
       });
     return () => {
       cancelled = true;
@@ -89,25 +112,21 @@ export function usePermissions() {
 
   const refresh = useCallback(async () => {
     invalidateIdentity();
-    const data = await fetchIdentity(true);
-    setIdentity(data);
-    return data;
+    const res = await fetchIdentity(true);
+    setIdentity(res.identity);
+    setStatus(res.status);
+    return res.identity;
   }, []);
 
   const permissions = identity?.permissions ?? [];
-  const has = useCallback(
-    (perm: Permission) => can(permissions, perm),
-    [permissions]
-  );
-  const hasAny = useCallback(
-    (perms: Permission[]) => canAny(permissions, perms),
-    [permissions]
-  );
+  const has = useCallback((perm: Permission) => can(permissions, perm), [permissions]);
+  const hasAny = useCallback((perms: Permission[]) => canAny(permissions, perms), [permissions]);
 
   return {
     identity,
     permissions,
-    loading,
+    loading: status === "loading",
+    unauthenticated: status === "unauthorized",
     can: has,
     canAny: hasAny,
     isSuper: permissions.includes("*"),

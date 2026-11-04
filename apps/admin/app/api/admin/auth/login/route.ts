@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         passwordHash: true,
         role: true,
         roleId: true,
-        adminRole: { select: { code: true } },
+        adminRole: { select: { code: true, name: true } },
       },
     });
 
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         id: admin.id,
         username: admin.username,
         role: roleCode,
+        roleName: admin.adminRole?.name ?? roleCode,
         roleId: admin.roleId,
         permissions,
       },

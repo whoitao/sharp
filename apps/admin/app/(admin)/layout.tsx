@@ -71,7 +71,7 @@ export default function AdminLayout({
   const { mode, setMode } = useThemeMode();
   const { pageSize, setPageSize } = usePageSize();
   const { locale, setLocale, t } = useLocale();
-  const { canAny, identity, loading: permLoading } = usePermissions();
+  const { canAny, identity, unauthenticated, loading: permLoading } = usePermissions();
   const {
     token: { colorBgContainer, colorBorderSecondary, colorPrimary },
   } = antdTheme.useToken();
@@ -101,11 +101,11 @@ export default function AdminLayout({
     setPendingKey(null);
   }, [pathname]);
 
-  // 未登录（无 token 或 token 失效）直接跳登录页
+  // 仅在明确未鉴权（无 token 或 401/403）时跳登录页，网络异常不踢人
   useEffect(() => {
     if (permLoading) return;
-    if (!identity) router.replace("/login");
-  }, [identity, permLoading, router]);
+    if (unauthenticated) router.replace("/login");
+  }, [unauthenticated, permLoading, router]);
 
   // 路由级权限守卫：不在可访问页面里就跳到第一个有权限的页面
   useEffect(() => {
