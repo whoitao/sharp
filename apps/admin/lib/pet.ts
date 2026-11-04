@@ -56,40 +56,33 @@ export function stateOf(satiety: number, lastFedAt: Date | null, now: Date = new
 }
 
 /**
- * 饱腹度衰减：从 lastDecayDate 次日起逐日检查，当日喂食次数为 0 则扣一次。
- * 最多回溯 7 天，避免长期不登录时循环过久。
+ * 饱腹度衰减（按小时）：从 lastDecayDate 到 now 经过的完整小时数 × satietyDecay。
+ * 最多回溯 168 小时（7 天），避免长期不登录时一次扣穿。
  */
 export async function applySatietyDecay(userId: string, pet: Pet, config: PetConfig): Promise<Pet> {
-  const today = todayKey();
-  const last = localMidnight(pet.lastDecayDate);
-  if (last.getTime() >= today.getTime()) return pet;
+  const now = new Date();
+  const last = pet.lastDecayDate;
+  // 兜底：历史上可能有 lastDecayDate 为 null 的脏数据，用 adoptedAt 或现在
+  const anchor = last ?? pet.adoptedAt ?? now;
+  if (anchor.getTime() >= now.getTime()) return pet;
 
-  const days: Date[] = [];
-  const cursor = new Date(last);
-  while (days.length < 7) {
-    cursor.setDate(cursor.getDate() + 1);
-    if (cursor.getTime() >= today.getTime()) break;
-    days.push(localMidnight(cursor));
+  const elapsedMs = now.getTime() - anchor.getTime();
+  const MAX_HOURS = 168; // 7 天封顶
+  const hours = Math.min(MAX_HOURS, Math.floor(elapsedMs / 3600_000));
+
+  if (hours <= 0) {
+    return prisma.pet.update({
+      where: { id: pet.id },
+      data: { lastDecayDate: now },
+    });
   }
 
-  if (days.length === 0) {
-    return prisma.pet.update({ where: { id: pet.id }, data: { lastDecayDate: today } });
-  }
-
-  const stats = await prisma.petDailyStat.findMany({
-    where: { userId, dateKey: { in: days } },
-    select: { dateKey: true, feedCount: true },
-  });
-  const fedDays = new Set(
-    stats.filter((s) => s.feedCount > 0).map((s) => localMidnight(s.dateKey).getTime()),
-  );
-
-  const lost = days.filter((d) => !fedDays.has(d.getTime())).length * config.satietyDecay;
+  const lost = hours * config.satietyDecay;
   const satiety = Math.max(0, pet.satiety - lost);
 
   return prisma.pet.update({
     where: { id: pet.id },
-    data: { satiety, lastDecayDate: today },
+    data: { satiety, lastDecayDate: now },
   });
 }
 

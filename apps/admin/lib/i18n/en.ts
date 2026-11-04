@@ -462,7 +462,7 @@ export const en = {
     growingLevel: "Growing Stage Level",
     matureLevel: "Mature Stage Level",
     satietyMax: "Max Satiety",
-    satietyDecay: "Daily Satiety Decay",
+    satietyDecay: "Hourly Satiety Decay",
     premiumStreak: "Premium Food Streak",
     rareMinQuestions: "Rare Food Min Questions",
     minSecondsPerQuestion: "Min Seconds per Question",

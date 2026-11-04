@@ -463,7 +463,7 @@ export const zh: Messages = {
     growingLevel: "成长期起始等级",
     matureLevel: "成熟期起始等级",
     satietyMax: "饱腹度上限",
-    satietyDecay: "每日饱腹度衰减",
+    satietyDecay: "每小时饱腹度衰减",
     premiumStreak: "高级食物连对门槛",
     rareMinQuestions: "稀有食物最少题量",
     minSecondsPerQuestion: "每题最短用时（秒）",

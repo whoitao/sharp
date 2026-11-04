@@ -583,7 +583,7 @@ model PetConfig {
   dailyExpCap            Int      @default(300)
   dailyLoginExp          Int      @default(5)
   satietyMax             Int      @default(100)
-  satietyDecay           Int      @default(30)
+  satietyDecay           Int      @default(5)
   expPerLevel            Int      @default(100)
   maxLevel               Int      @default(30)
   growingLevel           Int      @default(10)
