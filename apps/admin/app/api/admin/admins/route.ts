@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "admins");
   if (admin instanceof NextResponse) return admin;
 
   const { searchParams } = new URL(request.url);
@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
         id: true,
         username: true,
         role: true,
+        roleId: true,
+        adminRole: { select: { code: true, name: true, isSystem: true } },
         createdAt: true,
       },
       orderBy: { createdAt: "asc" },
@@ -37,7 +39,15 @@ export async function GET(request: NextRequest) {
   ]);
 
   return NextResponse.json({
-    data: admins,
+    data: admins.map((a) => ({
+      id: a.id,
+      username: a.username,
+      role: a.adminRole?.code ?? a.role,
+      roleName: a.adminRole?.name ?? a.role,
+      roleId: a.roleId,
+      roleIsSystem: a.adminRole?.isSystem ?? false,
+      createdAt: a.createdAt,
+    })),
     total,
     page,
     pageSize,

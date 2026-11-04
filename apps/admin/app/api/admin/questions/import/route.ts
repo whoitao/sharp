@@ -1,10 +1,10 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "questions");
   if (admin instanceof NextResponse) return admin;
 
   const formData = await request.formData().catch(() => null);

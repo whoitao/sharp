@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, signAdminToken } from "@/lib/auth";
+import { loadUserPermissions } from "@/lib/middleware";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +17,14 @@ export async function POST(request: NextRequest) {
 
     const admin = await prisma.admin.findUnique({
       where: { username },
+      select: {
+        id: true,
+        username: true,
+        passwordHash: true,
+        role: true,
+        roleId: true,
+        adminRole: { select: { code: true } },
+      },
     });
 
     if (!admin) {
@@ -33,10 +42,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const roleCode = admin.adminRole?.code ?? admin.role;
     const token = signAdminToken({
       id: admin.id,
       username: admin.username,
-      role: admin.role,
+      role: roleCode,
+      roleId: admin.roleId,
+    });
+
+    const permissions = await loadUserPermissions({
+      id: admin.id,
+      username: admin.username,
+      role: roleCode,
+      roleId: admin.roleId,
     });
 
     return NextResponse.json({
@@ -44,7 +62,9 @@ export async function POST(request: NextRequest) {
       admin: {
         id: admin.id,
         username: admin.username,
-        role: admin.role,
+        role: roleCode,
+        roleId: admin.roleId,
+        permissions,
       },
     });
   } catch (error) {

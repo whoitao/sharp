@@ -13,6 +13,7 @@ export const en = {
     dashboard: "Control Panel",
     users: "Users",
     admins: "Admins",
+    roles: "Roles & Permissions",
     userManagement: "User Management",
     questionManagement: "Question Management",
     subjects: "Subjects",

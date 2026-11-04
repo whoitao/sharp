@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,7 +6,7 @@ const CONFIG_ID = "default";
 
 /** 读取全局宠物配置，不存在时按默认值创建 */
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "pets");
   if (admin instanceof NextResponse) return admin;
 
   const config = await prisma.petConfig.upsert({
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "pets");
   if (admin instanceof NextResponse) return admin;
 
   const body = await request.json().catch(() => null);

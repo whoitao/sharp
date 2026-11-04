@@ -15,6 +15,7 @@ export const zh: Messages = {
     dashboard: "控制面板",
     users: "用户",
     admins: "管理员",
+    roles: "角色权限",
     userManagement: "用户管理",
     questionManagement: "问题管理",
     subjects: "科目",

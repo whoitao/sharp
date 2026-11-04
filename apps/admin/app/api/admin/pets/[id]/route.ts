@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,7 +6,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "pets");
   if (admin instanceof NextResponse) return admin;
 
   const { id } = await params;
@@ -55,7 +55,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "pets");
   if (admin instanceof NextResponse) return admin;
 
   const { id } = await params;

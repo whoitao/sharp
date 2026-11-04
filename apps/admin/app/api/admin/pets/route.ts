@@ -1,11 +1,11 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 /** 宠物列表：按昵称 / 用户名 / 用户昵称搜索，可按种类筛选 */
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "pets");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);

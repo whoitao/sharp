@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import {
     MAX_QUESTION_IMAGE_BYTES,
     StorageConfigError,
@@ -40,7 +40,7 @@ async function shrinkImage(
  * 返回相对路径和完整 URL，编辑器直接拿 URL 插入 <img>。
  */
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "questions");
   if (admin instanceof NextResponse) return admin;
 
   let form: FormData | null = null;

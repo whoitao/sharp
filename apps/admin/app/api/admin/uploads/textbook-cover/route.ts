@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import {
   MAX_TEXTBOOK_COVER_BYTES,
   StorageConfigError,
@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /** 上传教材封面：multipart/form-data，字段名 file */
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   let form: FormData | null = null;

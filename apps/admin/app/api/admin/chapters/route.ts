@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -20,7 +20,7 @@ function serializeNode(n: any): any {
  * level 1=章 2=节，树根是章。
  */
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   const body = await request.json();
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
@@ -192,7 +192,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);

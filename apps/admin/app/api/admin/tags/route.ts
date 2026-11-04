@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,7 +6,7 @@ const TYPES = ["exam", "source", "difficulty"];
 
 /** 题目标签字典：中考真题 / 模拟题 / 课后练习… */
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "tags");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "tags");
   if (admin instanceof NextResponse) return admin;
 
   const body = await request.json();
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "tags");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
@@ -78,7 +78,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "tags");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);

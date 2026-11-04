@@ -2,6 +2,7 @@
 
 import SubjectSelect from "@/components/SubjectSelect";
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import {
   DeleteOutlined,
@@ -65,6 +66,7 @@ interface EditFormValues {
 }
 
 export default function KnowledgePointsPanel() {
+  const { can } = usePermissions();
   const { message } = App.useApp();
   const { t } = useLocale();
   const [tree, setTree] = useState<KPNode[]>([]);
@@ -328,26 +330,27 @@ export default function KnowledgePointsPanel() {
   }, [tree, t]);
 
   const headerActions = useMemo(
-    () => (
-      <Button
-        type="primary"
-        icon={<PlusOutlined />}
-        onClick={() => {
-          setPendingCreateValues({
-            name: "",
-            parentId: "0",
-            subjectId: selectedSubjectId,
-            stageId: selectedStageId ?? "",
-            sortOrder: 0,
-          });
-          setCreateOpen(true);
-        }}
-      >
-        {t("knowledgePoints.addKnowledgePoint")}
-      </Button>
-    ),
+    () =>
+      can("knowledge-points:write") ? (
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            setPendingCreateValues({
+              name: "",
+              parentId: "0",
+              subjectId: selectedSubjectId,
+              stageId: selectedStageId ?? "",
+              sortOrder: 0,
+            });
+            setCreateOpen(true);
+          }}
+        >
+          {t("knowledgePoints.addKnowledgePoint")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, selectedSubjectId, selectedStageId]
+    [t, selectedSubjectId, selectedStageId, can]
   );
   usePageActions(headerActions);
 

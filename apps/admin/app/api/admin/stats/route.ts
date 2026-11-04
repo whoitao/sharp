@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { buildChapterParentMap, resolveChapterRoot } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
@@ -12,7 +12,7 @@ const dateKey = (date: Date) => {
 
 // 管理端学习统计：全部指标来自不可变的学习事实（StudyAttempt + StudyAttemptItem）。
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "dashboard");
   if (admin instanceof NextResponse) return admin;
 
   const { searchParams } = new URL(request.url);

@@ -15,13 +15,20 @@ export async function verifyPassword(
   return bcrypt.compare(password, hash);
 }
 
-export function signAdminToken(payload: { id: string; username: string; role: string }): string {
+export interface AdminTokenPayload {
+  id: string;
+  username: string;
+  role: string;
+  roleId?: string | null;
+}
+
+export function signAdminToken(payload: AdminTokenPayload): string {
   return jwt.sign(payload, ADMIN_JWT_SECRET, { expiresIn: "7d" });
 }
 
-export function verifyAdminToken(token: string): { id: string; username: string; role: string } | null {
+export function verifyAdminToken(token: string): AdminTokenPayload | null {
   try {
-    return jwt.verify(token, ADMIN_JWT_SECRET) as { id: string; username: string; role: string };
+    return jwt.verify(token, ADMIN_JWT_SECRET) as AdminTokenPayload;
   } catch {
     return null;
   }

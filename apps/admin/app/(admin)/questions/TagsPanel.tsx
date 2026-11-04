@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageSize } from "@/components/antd-providers";
+import { usePermissions } from "@/components/permissions";
 import { usePageActions } from "@/components/page-actions";
 import { PlusOutlined } from "@ant-design/icons";
 import {
@@ -39,6 +40,8 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 
 export default function TagsPanel() {
   const { pageSize } = usePageSize();
+  const { can } = usePermissions();
+  const canWrite = can("tags:write");
   const { message, modal } = App.useApp();
   const [data, setData] = useState<QuestionTag[]>([]);
   const [loading, setLoading] = useState(false);
@@ -139,13 +142,14 @@ export default function TagsPanel() {
   ];
 
   const headerActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-        新建标签
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          新建标签
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [canWrite]
   );
   usePageActions(headerActions);
 

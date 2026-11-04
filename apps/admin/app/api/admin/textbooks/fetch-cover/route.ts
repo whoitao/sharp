@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import {
   StorageConfigError,
@@ -141,7 +141,7 @@ async function buildQuery(body: RequestBody): Promise<string | null> {
  * 仅返回存储路径，是否保存到教材由调用方提交表单时决定。
  */
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   const body = (await request.json().catch(() => ({}))) as RequestBody;

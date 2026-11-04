@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { textbookCoverPublicUrl } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
@@ -62,7 +62,7 @@ function serialize(t: any) {
 
 /** 教材列表，支持 学段/科目/年级/版本 过滤 */
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   const body = await request.json();
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
@@ -239,7 +239,7 @@ export async function PATCH(request: NextRequest) {
 
 /** 删除保护：有章节或题目的教材禁止删除 */
 export async function DELETE(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);

@@ -58,7 +58,38 @@ model Admin {
   username     String   @unique
   passwordHash String
   role         String   @default("admin")
+  roleId       String?
+  adminRole    AdminRole? @relation(fields: [roleId], references: [id])
   createdAt    DateTime @default(now())
+
+  @@index([roleId])
+}
+
+// 管理员角色：权限以「模块:动作」形式挂在 AdminRolePermission
+model AdminRole {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions AdminRolePermission[]
+  admins      Admin[]
+
+  @@index([sortOrder])
+}
+
+model AdminRolePermission {
+  id         String    @id @default(uuid())
+  roleId     String
+  permission String
+  role       AdminRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permission])
+  @@index([roleId])
 }
 
 model Subject {

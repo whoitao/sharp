@@ -1,9 +1,9 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
   const pubs = await prisma.publisher.findMany({
     orderBy: { id: "asc" },
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
   const { name } = await request.json();
   if (!name?.trim()) return NextResponse.json({ error: "name required" }, { status: 400 });
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
@@ -43,7 +43,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
   const url = new URL(request.url);
   const id = url.searchParams.get("id");

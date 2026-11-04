@@ -4,6 +4,7 @@ import SubjectSelect from "@/components/SubjectSelect";
 import { usePageSize } from "@/components/antd-providers";
 import IonIcon from "@/components/IonIcon";
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import {
   DeleteOutlined,
@@ -129,6 +130,7 @@ const stageGroups = (grades: GradeOption[]) => {
 };
 
 export default function QuestionsPanel() {
+  const { can } = usePermissions();
   const { message } = App.useApp();
   const { token } = antdTheme.useToken();
   const { t } = useLocale();
@@ -981,23 +983,27 @@ export default function QuestionsPanel() {
         <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
           {t("questions.downloadTemplate")}
         </Button>
-        <Button
-          icon={<UploadOutlined />}
-          onClick={() => setImportOpen(true)}
-        >
-          {t("questions.import")}
-        </Button>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setCreateOpen(true)}
-        >
-          {t("questions.addQuestion")}
-        </Button>
+        {can("questions:write") && (
+          <Button
+            icon={<UploadOutlined />}
+            onClick={() => setImportOpen(true)}
+          >
+            {t("questions.import")}
+          </Button>
+        )}
+        {can("questions:write") && (
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateOpen(true)}
+          >
+            {t("questions.addQuestion")}
+          </Button>
+        )}
       </Space>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t]
+    [t, can]
   );
   usePageActions(headerActions);
 

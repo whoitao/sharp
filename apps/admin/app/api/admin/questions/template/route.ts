@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import * as XLSX from "xlsx";
 
 const HEADERS = [
@@ -79,7 +79,7 @@ const SAMPLE_ROWS: (string | number)[][] = [
 ];
 
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "questions");
   if (admin instanceof NextResponse) return admin;
 
   const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...SAMPLE_ROWS]);

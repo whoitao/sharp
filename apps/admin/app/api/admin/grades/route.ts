@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -26,7 +26,7 @@ async function resolveStageId(
 
 /** 年级字典：纯年级（初一/高一…），与科目、教材版本无关 */
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "grades");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "grades");
   if (admin instanceof NextResponse) return admin;
 
   const body = await request.json();
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "grades");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);
@@ -126,7 +126,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "grades");
   if (admin instanceof NextResponse) return admin;
 
   const url = new URL(request.url);

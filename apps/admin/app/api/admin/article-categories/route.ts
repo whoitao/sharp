@@ -1,10 +1,10 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 /** 文章分类：名称唯一，有文章引用时禁止删除 */
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "articles");
   if (admin instanceof NextResponse) return admin;
 
   const categories = await prisma.articleCategory.findMany({
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "articles");
   if (admin instanceof NextResponse) return admin;
 
   const body = await request.json();
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "articles");
   if (admin instanceof NextResponse) return admin;
 
   const id = new URL(request.url).searchParams.get("id");
@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "articles");
   if (admin instanceof NextResponse) return admin;
 
   const id = new URL(request.url).searchParams.get("id");

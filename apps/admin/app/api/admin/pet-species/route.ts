@@ -1,10 +1,10 @@
-import { requireAdmin } from "@/lib/middleware";
+import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 /** 宠物种类列表：附带阶段数与已领养宠物数 */
 export async function GET(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "pets");
   if (admin instanceof NextResponse) return admin;
 
   const species = await prisma.petSpecies.findMany({
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const admin = requireAdmin(request);
+  const admin = await requirePermission(request, "pets");
   if (admin instanceof NextResponse) return admin;
 
   const body = await request.json().catch(() => null);

@@ -2,6 +2,7 @@
 
 import SubjectSelect from "@/components/SubjectSelect";
 import { usePageSize } from "@/components/antd-providers";
+import { usePermissions } from "@/components/permissions";
 import { usePageActions } from "@/components/page-actions";
 import IonIcon from "@/components/IonIcon";
 import { CloudDownloadOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
@@ -61,6 +62,8 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 
 export default function TextbooksPanel() {
   const { pageSize } = usePageSize();
+  const { can } = usePermissions();
+  const canWrite = can("textbooks:write");
   const { message, modal } = App.useApp();
   const [data, setData] = useState<Textbook[]>([]);
   const [loading, setLoading] = useState(false);
@@ -287,13 +290,14 @@ export default function TextbooksPanel() {
   };
 
   const headerActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-        新建教材
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          新建教材
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [canWrite]
   );
   usePageActions(headerActions);
 

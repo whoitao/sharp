@@ -1,8 +1,10 @@
 "use client";
 
 import { PAGE_SIZE_OPTIONS, usePageSize, useThemeMode, type ThemeMode } from "@/components/antd-providers";
+import { usePermissions } from "@/components/permissions";
 import { PageActionsContext, PageTitleContext } from "@/components/page-actions";
 import { useLocale, type Locale, type MessageKey } from "@/lib/i18n";
+import { NAV_PERMISSIONS } from "@/lib/permissions";
 import {
   BookOutlined,
   DashboardOutlined,
@@ -69,6 +71,7 @@ export default function AdminLayout({
   const { mode, setMode } = useThemeMode();
   const { pageSize, setPageSize } = usePageSize();
   const { locale, setLocale, t } = useLocale();
+  const { canAny, loading: permLoading } = usePermissions();
   const {
     token: { colorBgContainer, colorBorderSecondary, colorPrimary },
   } = antdTheme.useToken();
@@ -98,6 +101,17 @@ export default function AdminLayout({
     setPendingKey(null);
   }, [pathname]);
 
+  // 路由级权限守卫：不在可访问页面里就跳到第一个有权限的页面
+  useEffect(() => {
+    if (permLoading) return;
+    const navKey = Object.keys(NAV_PERMISSIONS).find((k) => pathname.startsWith(k));
+    if (!navKey) return;
+    if (canAny(NAV_PERMISSIONS[navKey])) return;
+    const fallback =
+      NAV_ITEMS.find((item) => canAny(NAV_PERMISSIONS[item.key]))?.key ?? "/dashboard";
+    if (fallback !== pathname) router.replace(fallback);
+  }, [pathname, permLoading, canAny, router]);
+
   const handleNavClick = ({ key }: { key: string }) => {
     if (key === pathname) return;
     setPendingKey(key);
@@ -126,7 +140,9 @@ export default function AdminLayout({
     });
   };
 
-  const navItems: MenuProps["items"] = NAV_ITEMS.map((item) => ({
+  const navItems: MenuProps["items"] = NAV_ITEMS.filter((item) =>
+    canAny(NAV_PERMISSIONS[item.key])
+  ).map((item) => ({
     key: item.key,
     icon: item.icon,
     label: t(item.labelKey),
