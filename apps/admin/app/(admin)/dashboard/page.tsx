@@ -3,6 +3,7 @@
 import { useThemeMode } from "@/components/antd-providers";
 import IonIcon from "@/components/IonIcon";
 import { useLocale } from "@/lib/i18n";
+import { getAdminPalette, type AdminPalette } from "@/lib/theme";
 import {
   AimOutlined,
   BookOutlined,
@@ -16,13 +17,11 @@ import {
 import {
   App,
   Col,
-  ConfigProvider,
   Empty,
   Row,
   Segmented,
   Select,
   Table,
-  theme as antdTheme,
   type TableProps,
 } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -81,45 +80,8 @@ interface GradeOption extends Option {
 
 const DAY_OPTIONS = [7, 14, 30];
 
-// 与移动端 apps/mobile/src/theme/colors.ts 保持同一套色值：
-// 浅色绿调白底、深色墨绿底，避免两端主题观感割裂。
-const MOBILE_LIGHT = {
-  background: "#F2F8F5",
-  surface: "#FFFFFF",
-  surfaceSecondary: "#F7FBF9",
-  text: "#10231A",
-  textSecondary: "#4F6B5E",
-  textTertiary: "#5C7268",
-  border: "#DDE7E1",
-  borderLight: "#EDF3F0",
-  accent: "#10B981",
-  accentStrong: "#0B7F58",
-  accentLight: "#DDF6EA",
-  warning: "#B45309",
-  warningLight: "#FEF3C7",
-  error: "#C62828",
-  errorLight: "#FDECEC",
-};
-
-const MOBILE_DARK = {
-  background: "#0B1512",
-  surface: "#14201B",
-  surfaceSecondary: "#1B2A23",
-  text: "#F2F7F4",
-  textSecondary: "#A6BAB0",
-  textTertiary: "#93A99F",
-  border: "#27362F",
-  borderLight: "#1F2E27",
-  accent: "#34D399",
-  accentStrong: "#34D399",
-  accentLight: "#123B2C",
-  warning: "#FBBF24",
-  warningLight: "#3A2E12",
-  error: "#FCA5A5",
-  errorLight: "#3A1D1D",
-};
-
-type Palette = typeof MOBILE_LIGHT;
+// 色值与主题统一在 lib/theme.ts 维护，与移动端 apps/mobile/src/theme/colors.ts 同源。
+type Palette = AdminPalette;
 
 function SectionCard({
   title,
@@ -179,7 +141,7 @@ export default function DashboardPage() {
   const { locale, t } = useLocale();
   const { resolved } = useThemeMode();
   const isDark = resolved === "dark";
-  const palette: Palette = isDark ? MOBILE_DARK : MOBILE_LIGHT;
+  const palette: Palette = getAdminPalette(isDark);
 
   const [days, setDays] = useState(14);
   const [gradeId, setGradeId] = useState<string | null>(null);
@@ -320,67 +282,17 @@ export default function DashboardPage() {
     return { bg: palette.errorLight, fg: palette.error };
   };
 
-  const dashboardTheme = useMemo(
-    () => ({
-      algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      token: {
-        colorPrimary: palette.accent,
-        colorInfo: palette.accent,
-        colorLink: palette.accentStrong,
-        colorBgContainer: palette.surface,
-        colorBgElevated: palette.surface,
-        colorBgLayout: palette.background,
-        colorBgSpotlight: palette.surfaceSecondary,
-        colorBorder: palette.border,
-        colorBorderSecondary: palette.borderLight,
-        colorText: palette.text,
-        colorTextSecondary: palette.textSecondary,
-        colorTextTertiary: palette.textTertiary,
-        colorTextQuaternary: palette.textTertiary,
-        colorFillSecondary: palette.surfaceSecondary,
-        colorFillTertiary: palette.surfaceSecondary,
-        borderRadius: 10,
-        borderRadiusLG: 12,
-        fontSize: 13,
-      },
-      components: {
-        Segmented: {
-          trackBg: palette.surfaceSecondary,
-          itemColor: palette.textSecondary,
-          itemSelectedBg: palette.surface,
-          itemSelectedColor: palette.accentStrong,
-        },
-        Table: {
-          headerBg: palette.surfaceSecondary,
-          headerColor: palette.textSecondary,
-          headerSplitColor: "transparent",
-          rowHoverBg: palette.surfaceSecondary,
-          borderColor: palette.borderLight,
-        },
-        Select: {
-          optionSelectedBg: palette.accentLight,
-          optionSelectedColor: palette.accentStrong,
-        },
-        Empty: {
-          colorTextDescription: palette.textTertiary,
-        },
-      },
-    }),
-    [palette, isDark],
-  );
-
   const trendLabelStep = Math.max(1, Math.ceil((data?.trend.length ?? 0) / 10));
 
   return (
-    <ConfigProvider theme={dashboardTheme}>
-      <div
-        style={{
-          margin: -8,
-          padding: 16,
-          minHeight: "calc(100vh - 50px)",
-          background: palette.background,
-        }}
-      >
+    <div
+      style={{
+        margin: -16,
+        padding: 16,
+        minHeight: "calc(100vh - 50px)",
+        background: palette.background,
+      }}
+    >
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
           <Segmented
             value={days}
@@ -686,6 +598,5 @@ export default function DashboardPage() {
           </Col>
         </Row>
       </div>
-    </ConfigProvider>
   );
 }

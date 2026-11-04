@@ -15,6 +15,7 @@ import {
     Space,
     Table,
     Tag,
+    theme,
     type TableProps,
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
@@ -40,6 +41,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 
 export default function TagsPanel() {
   const { pageSize } = usePageSize();
+  const { token } = theme.useToken();
   const { can } = usePermissions();
   const canWrite = can("tags:write");
   const { message, modal } = App.useApp();
@@ -156,7 +158,7 @@ export default function TagsPanel() {
   return (
     <div>
       <div style={{ marginBottom: 12, display: "flex", alignItems: "center" }}>
-        <div style={{ flex: 1, color: "#888" }}>
+        <div style={{ flex: 1, color: token.colorTextTertiary }}>
           标签用于横向筛选题目：中考真题 / 模拟题 / 课后练习…，可与年级、科目、章节、知识点自由叠加。
         </div>
       </div>

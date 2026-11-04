@@ -195,7 +195,7 @@ export default function UsersPanel() {
 
   return (
     <div>
-      <Space style={{ marginBottom: 10 }}>
+      <Space style={{ marginBottom: 12 }}>
         <Input.Search
           allowClear
           placeholder={t("users.searchPlaceholder")}
@@ -227,7 +227,7 @@ export default function UsersPanel() {
         confirmLoading={resetting}
         okText="重置"
         cancelText="取消"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={resetForm} layout="vertical" style={{ marginTop: 12 }}>
           <Form.Item

@@ -439,7 +439,7 @@ export default function ArticlesPanel() {
     <div>
       <Card
         size="small"
-        style={{ marginBottom: 10 }}
+        style={{ marginBottom: 12 }}
         styles={{ body: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 } }}
       >
         <Input.Search

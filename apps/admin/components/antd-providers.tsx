@@ -1,7 +1,8 @@
 "use client";
 
 import { LocaleProvider, useLocale } from "@/lib/i18n";
-import { App as AntdApp, ConfigProvider, theme as antdTheme } from "antd";
+import { buildAdminTheme } from "@/lib/theme";
+import { App as AntdApp, ConfigProvider } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -62,11 +63,6 @@ const applyThemeToDocument = (value: ResolvedTheme) => {
   document.documentElement.dataset.theme = value;
   document.documentElement.style.colorScheme = value;
 };
-
-// 深色下 antd 默认的派生色偏暗（选中项 #1668dc on #15325b 只有 2.47:1），这里显式抬高文字色
-const DARK_TEXT_ON_PRIMARY_BG = "#69b1ff";
-const PRIMARY_BG_DARK = "rgba(64,150,255,0.16)";
-const PRIMARY_BG_LIGHT = "#e6f4ff";
 
 function ConfiguredApp({
   children,
@@ -155,23 +151,7 @@ function ConfiguredApp({
   const isDarkTheme = resolved === "dark";
 
   const themeConfig = useMemo(
-    () => ({
-      algorithm: isDarkTheme ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      token: {
-        // 深色下 #1677ff 对 #141414 只有 4.5:1 且文字场景更差，抬到 #4096ff
-        colorPrimary: isDarkTheme ? "#4096ff" : "#1677ff",
-        borderRadius: 8,
-        colorLink: isDarkTheme ? "#69b1ff" : "#0958d9",
-        colorSuccessText: isDarkTheme ? "#95de64" : "#237804",
-        colorErrorText: isDarkTheme ? "#ff7875" : "#cf1322",
-      },
-      components: {
-        Menu: {
-          itemSelectedColor: isDarkTheme ? DARK_TEXT_ON_PRIMARY_BG : "#0958d9",
-          itemSelectedBg: isDarkTheme ? PRIMARY_BG_DARK : PRIMARY_BG_LIGHT,
-        },
-      },
-    }),
+    () => buildAdminTheme(isDarkTheme),
     [isDarkTheme]
   );
 

@@ -19,6 +19,7 @@ import {
   Space,
   Table,
   Tag,
+  theme,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo, useState } from "react";
@@ -64,6 +65,7 @@ interface StageFormValues {
 export default function PetStagesPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
+  const { token: themeToken } = theme.useToken();
 
   const [items, setItems] = useState<StageItem[]>([]);
   const [species, setSpecies] = useState<SpeciesOption[]>([]);
@@ -229,7 +231,7 @@ export default function PetStagesPanel() {
             alt=""
             width={56}
             height={56}
-            style={{ objectFit: "contain", borderRadius: 6, background: "#f5f5f5" }}
+            style={{ objectFit: "contain", borderRadius: 6, background: themeToken.colorFillQuaternary }}
           />
         ) : (
           "-"

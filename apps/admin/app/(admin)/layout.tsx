@@ -325,7 +325,8 @@ export default function AdminLayout({
           )}
         </div>
 
-        <Content style={{ padding: 8, overflow: "auto", position: "relative", minHeight: 0 }}>
+        {/* 页面统一 16px 内边距，与 Dashboard 的容器对齐 */}
+        <Content style={{ padding: 16, overflow: "auto", position: "relative", minHeight: 0 }}>
           {children}
         </Content>
       </Layout>

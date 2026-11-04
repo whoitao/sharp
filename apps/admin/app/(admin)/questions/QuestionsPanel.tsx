@@ -677,7 +677,7 @@ export default function QuestionsPanel() {
         record.knowledgePoints?.length ? (
           <Space size={2} wrap>
             {record.knowledgePoints.map((kp) => (
-              <Tag key={kp.id} color="geekblue" style={{ fontSize: 11 }}>
+              <Tag key={kp.id} color="green" style={{ fontSize: 11 }}>
                 {kp.name}
               </Tag>
             ))}
@@ -1009,7 +1009,7 @@ export default function QuestionsPanel() {
 
   return (
     <div>
-      <Card size="small" style={{ marginBottom: 10 }} styles={{ body: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 } }}>
+      <Card size="small" style={{ marginBottom: 12 }} styles={{ body: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 } }}>
         <SubjectSelect
           allowClear
           style={{ width: 200 }}

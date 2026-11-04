@@ -2,7 +2,7 @@
 
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
-import { PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import {
     App,
     Button,
@@ -98,11 +98,24 @@ export default function PublishersPanel() {
     { title: "章节数", dataIndex: "chapterCount", width: 100, align: "center" },
     {
       title: "操作",
-      width: 160,
+      width: 100,
       render: (_, row) => (
-        <Space>
-          <Button type="link" size="small" onClick={() => openEdit(row)}>编辑</Button>
-          <Button type="link" size="small" danger onClick={() => handleDelete(row)}>删除</Button>
+        <Space size={4}>
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            title="编辑"
+            onClick={() => openEdit(row)}
+          />
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            title="删除"
+            onClick={() => handleDelete(row)}
+          />
         </Space>
       ),
     },

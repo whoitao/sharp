@@ -4,13 +4,14 @@ html, body {
   min-height: 100%;
 }
 
-/* 根节点颜色随主题走：overscroll 区域、登录页这类不铺 antd Layout 的页面不会露出白底 */
+/* 根节点颜色随主题走：overscroll 区域、登录页这类不铺 antd Layout 的页面不会露出白底；
+   色值与 lib/theme.ts 中的 palette.background 一致 */
 html {
-  background-color: #F5F5F5;
+  background-color: #F2F8F5;
 }
 
 html[data-theme='dark'] {
-  background-color: #000000;
+  background-color: #0B1512;
 }
 
 * {
@@ -34,11 +35,11 @@ html, body {
 }
 
 .theme-veil--light {
-  background-color: #F5F5F5;
+  background-color: #F2F8F5;
 }
 
 .theme-veil--dark {
-  background-color: #000000;
+  background-color: #0B1512;
 }
 
 /* Ionicons：与移动端 @expo/vector-icons 共用同一字体，用于科目图标 */
@@ -84,7 +85,7 @@ html, body {
 .sharp-rich-text [data-type='inline-math']:focus, .sharp-rich-text [data-type='block-math']:focus {
   border-radius: 3px;
 
-  outline: 2px solid rgba(22, 119, 255, .4);
+  outline: 2px solid rgba(16, 185, 129, .4);
 }
 
 /* 题目图片：不超过容器宽度，也不超过 480px 绝对上限；
@@ -101,7 +102,7 @@ html, body {
 }
 
 .sharp-rich-text img.ProseMirror-selectednode {
-  outline: 2px solid rgba(22, 119, 255, .4);
+  outline: 2px solid rgba(16, 185, 129, .4);
 }
 
 /* 表格：固定列宽布局，避免长公式把某一列撑爆 */
@@ -140,7 +141,7 @@ html, body {
 .sharp-rich-text .selectedCell::after {
   position: absolute;
 
-  background: rgba(22, 119, 255, .08);
+  background: rgba(16, 185, 129, .08);
 
   content: '';
   pointer-events: none;

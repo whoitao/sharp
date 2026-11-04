@@ -288,7 +288,7 @@ export default function KnowledgePointsPanel() {
         >
           <Typography.Text strong>{node.name}</Typography.Text>
           <Space size={4}>
-            <Tag color="blue">
+            <Tag color="green">
               {t("knowledgePoints.questionCount", { n: node.questionCount })}
             </Tag>
             <Button
@@ -356,7 +356,7 @@ export default function KnowledgePointsPanel() {
 
   return (
     <div>
-      <Card size="small" style={{ marginBottom: 10 }}>
+      <Card size="small" style={{ marginBottom: 12 }}>
         <Space wrap>
           <SubjectSelect
             allowClear

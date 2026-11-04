@@ -5,7 +5,13 @@ import { usePageSize } from "@/components/antd-providers";
 import { usePermissions } from "@/components/permissions";
 import { usePageActions } from "@/components/page-actions";
 import IonIcon from "@/components/IonIcon";
-import { CloudDownloadOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  CloudDownloadOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import {
   App,
   Button,
@@ -19,6 +25,7 @@ import {
   Space,
   Table,
   Tag,
+  theme,
   type TableProps,
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
@@ -62,6 +69,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 
 export default function TextbooksPanel() {
   const { pageSize } = usePageSize();
+  const { token } = theme.useToken();
   const { can } = usePermissions();
   const canWrite = can("textbooks:write");
   const { message, modal } = App.useApp();
@@ -324,8 +332,8 @@ export default function TextbooksPanel() {
               width: 48,
               height: 64,
               borderRadius: 4,
-              background: "#f0f0f0",
-              color: "#bbb",
+              background: token.colorFillQuaternary,
+              color: token.colorTextQuaternary,
               fontSize: 12,
               display: "flex",
               alignItems: "center",
@@ -343,7 +351,7 @@ export default function TextbooksPanel() {
       render: (value: string, row) => (
         <div>
           <div style={{ fontWeight: 500 }}>{value}</div>
-          {row.isbn && <div style={{ color: "#999", fontSize: 12 }}>ISBN {row.isbn}</div>}
+          {row.isbn && <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>ISBN {row.isbn}</div>}
         </div>
       ),
     },
@@ -362,15 +370,24 @@ export default function TextbooksPanel() {
     { title: "排序", dataIndex: "sortOrder", width: 60, align: "center" },
     {
       title: "操作",
-      width: 110,
+      width: 90,
       render: (_, row) => (
-        <Space>
-          <Button type="link" size="small" onClick={() => openEdit(row)}>
-            编辑
-          </Button>
-          <Button type="link" size="small" danger onClick={() => handleDelete(row)}>
-            删除
-          </Button>
+        <Space size={4}>
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            title="编辑"
+            onClick={() => openEdit(row)}
+          />
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            title="删除"
+            onClick={() => handleDelete(row)}
+          />
         </Space>
       ),
     },
@@ -481,11 +498,11 @@ export default function TextbooksPanel() {
                   aspectRatio: "3 / 4",
                   borderRadius: 8,
                   overflow: "hidden",
-                  background: "#f5f5f5",
+                  background: token.colorFillQuaternary,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#bbb",
+                  color: token.colorTextQuaternary,
                 }}
               >
                 {coverPreview ? (

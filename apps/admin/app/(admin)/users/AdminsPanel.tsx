@@ -209,7 +209,7 @@ export default function AdminsPanel() {
       <Input.Search
         allowClear
         placeholder={t("admins.searchPlaceholder")}
-        style={{ width: 320, marginBottom: 10 }}
+        style={{ width: 320, marginBottom: 12 }}
         onSearch={handleSearch}
       />
 
@@ -236,7 +236,7 @@ export default function AdminsPanel() {
         confirmLoading={creating}
         okText="创建"
         cancelText="取消"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={createForm} layout="vertical" style={{ marginTop: 12 }}>
           <Form.Item
