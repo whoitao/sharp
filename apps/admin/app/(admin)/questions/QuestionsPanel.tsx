@@ -1,5 +1,6 @@
 "use client";
 
+import SubjectSelect from "@/components/SubjectSelect";
 import { usePageSize } from "@/components/antd-providers";
 import IonIcon from "@/components/IonIcon";
 import { usePageActions } from "@/components/page-actions";
@@ -770,24 +771,10 @@ export default function QuestionsPanel() {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label={t("questions.subject")} name="subjectId">
-                <Select
-                  showSearch
-                  allowClear
-                  options={subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }))}
+                <SubjectSelect
+                  subjects={subjects}
                   placeholder={t("questions.subjectPlaceholder")}
                   onChange={(v) => setFormSubjectId(v)}
-                  optionRender={(opt: any) => (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                      <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
-                      {opt.label}
-                    </span>
-                  )}
-                  labelRender={(opt: any) => (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                      <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
-                      {opt.label}
-                    </span>
-                  )}
                 />
               </Form.Item>
             </Col>
@@ -1017,29 +1004,16 @@ export default function QuestionsPanel() {
   return (
     <div>
       <Card size="small" style={{ marginBottom: 10 }} styles={{ body: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 } }}>
-        <Select
-          showSearch
+        <SubjectSelect
           allowClear
           style={{ width: 200 }}
           placeholder={t("questions.subjectPlaceholder")}
           value={selectedSubjectId}
+          subjects={subjects}
           onChange={(value) => {
-            setSelectedSubjectId(value);
+            setSelectedSubjectId(value ?? undefined);
             setPage(1);
           }}
-          options={subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }))}
-          optionRender={(opt: any) => (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
-              {opt.label}
-            </span>
-          )}
-          labelRender={(opt: any) => (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
-              {opt.label}
-            </span>
-          )}
         />
         <Select
           showSearch

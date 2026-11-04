@@ -1,7 +1,7 @@
 "use client";
 
 import { usePageActions } from "@/components/page-actions";
-import { PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { App, Button, Cascader, Form, Input, InputNumber, Modal, Select, Space, Tag, Tree, theme } from "antd";
 import type { DataNode } from "antd/es/tree";
 import Link from "next/link";
@@ -256,7 +256,6 @@ export default function ChaptersPanel() {
             background: token.colorFillAlter,
             borderRadius: 8,
             padding: 12,
-            marginBottom: 12,
           }}
         >
           {selectedTextbook.coverUrl ? (
@@ -319,12 +318,8 @@ export default function ChaptersPanel() {
                     <span>{node.title as React.ReactNode}</span>
                     {chapter && (
                       <>
-                        <Button type="link" size="small" onClick={() => openEdit(chapter)}>
-                          编辑
-                        </Button>
-                        <Button type="link" size="small" danger onClick={() => handleDelete(chapter)}>
-                          删除
-                        </Button>
+                        <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(chapter)} />
+                        <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(chapter)} />
                       </>
                     )}
                   </Space>

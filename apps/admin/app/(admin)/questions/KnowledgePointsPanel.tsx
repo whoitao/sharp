@@ -1,6 +1,6 @@
 "use client";
 
-import IonIcon from "@/components/IonIcon";
+import SubjectSelect from "@/components/SubjectSelect";
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
@@ -175,19 +175,6 @@ export default function KnowledgePointsPanel() {
   }, [tree]);
 
   const stageOptions = stages.map((s) => ({ value: s.id, label: s.name }));
-  const subjectOptions = subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }));
-  const subjectOptionRender = (opt: any) => (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
-      {opt.label}
-    </span>
-  );
-  const subjectLabelRender = (opt: any) => (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
-      {opt.label}
-    </span>
-  );
 
   const handleCreate = async (values: CreateFormValues) => {
     setSaving(true);
@@ -368,15 +355,13 @@ export default function KnowledgePointsPanel() {
     <div>
       <Card size="small" style={{ marginBottom: 10 }}>
         <Space wrap>
-          <Select
+          <SubjectSelect
             allowClear
             style={{ width: 200 }}
             placeholder={t("knowledgePoints.selectSubject")}
             value={selectedSubjectId}
+            subjects={subjects}
             onChange={(v) => setSelectedSubjectId(v)}
-            options={subjectOptions}
-            optionRender={subjectOptionRender}
-            labelRender={subjectLabelRender}
           />
           <Select
             allowClear
@@ -458,12 +443,10 @@ export default function KnowledgePointsPanel() {
             />
           </Form.Item>
           <Form.Item label={t("knowledgePoints.subjectOptional")} name="subjectId">
-            <Select
+            <SubjectSelect
               allowClear
+              subjects={subjects}
               placeholder={t("knowledgePoints.subjectPlaceholder")}
-              options={subjectOptions}
-              optionRender={subjectOptionRender}
-              labelRender={subjectLabelRender}
             />
           </Form.Item>
           <Form.Item label={t("knowledgePoints.sortOrder")} name="sortOrder" initialValue={0}>
@@ -502,12 +485,10 @@ export default function KnowledgePointsPanel() {
             <Input maxLength={100} />
           </Form.Item>
           <Form.Item label={t("knowledgePoints.subjectOptional")} name="subjectId">
-            <Select
+            <SubjectSelect
               allowClear
+              subjects={subjects}
               placeholder={t("knowledgePoints.subjectPlaceholder")}
-              options={subjectOptions}
-              optionRender={subjectOptionRender}
-              labelRender={subjectLabelRender}
             />
           </Form.Item>
           <Form.Item label={t("knowledgePoints.sortOrder")} name="sortOrder">

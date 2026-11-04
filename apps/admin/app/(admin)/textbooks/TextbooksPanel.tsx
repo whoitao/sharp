@@ -1,5 +1,6 @@
 "use client";
 
+import SubjectSelect from "@/components/SubjectSelect";
 import { usePageActions } from "@/components/page-actions";
 import IonIcon from "@/components/IonIcon";
 import { CloudDownloadOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
@@ -380,13 +381,13 @@ export default function TextbooksPanel() {
           options={stages.map((s) => ({ value: s.id, label: s.name }))}
           onChange={setFilterStageId}
         />
-        <Select
+        <SubjectSelect
           placeholder="全部科目"
           allowClear
           style={{ width: 160 }}
           value={filterSubjectId}
-          options={subjects.map((s) => ({ value: s.id, label: s.name }))}
-          onChange={setFilterSubjectId}
+          subjects={subjects}
+          onChange={(v) => setFilterSubjectId(v ?? undefined)}
         />
       </div>
 
@@ -439,23 +440,9 @@ export default function TextbooksPanel() {
               <Row gutter={12}>
                 <Col span={12}>
                   <Form.Item name="subjectId" label="科目" rules={[{ required: true, message: "请选择科目" }]}>
-                    <Select
+                    <SubjectSelect
+                      subjects={subjects}
                       placeholder="科目"
-                      options={subjects.map((s) => ({ value: s.id, label: s.name, icon: s.icon }))}
-                      showSearch
-                      optionFilterProp="label"
-                      optionRender={(opt: any) => (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                          <IonIcon name={opt.data?.icon} size={18} color="var(--ant-primary-color)" />
-                          {opt.label}
-                        </span>
-                      )}
-                      labelRender={(opt: any) => (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                          <IonIcon name={opt.icon} size={16} color="var(--ant-primary-color)" />
-                          {opt.label}
-                        </span>
-                      )}
                     />
                   </Form.Item>
                 </Col>
