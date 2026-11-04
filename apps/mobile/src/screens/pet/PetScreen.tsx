@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { PetBackpackItem, PetFeedResult, PetHomeData } from '@sharp/shared';
 import { Image } from 'expo-image';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -65,6 +65,24 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
   // Lottie：idle 循环；喂食/进化播一次后回到 idle
   const [animation, setAnimation] = useState<PetAnimationKind>('idle');
   const pendingEvolve = useRef(false);
+
+  // 养宠规则说明弹窗
+  const [rulesOpen, setRulesOpen] = useState(false);
+
+  // header 右上角：养宠指南问号按钮
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => setRulesOpen(true)}
+          hitSlop={10}
+          style={{ marginRight: 8, padding: 4 }}
+        >
+          <Ionicons name="help-circle-outline" size={22 * font} color={colors.text} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, colors.text, font]);
 
   const loadPet = useCallback(async () => {
     try {
@@ -216,7 +234,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
 
   return (
     <ScrollView
-      contentContainerStyle={{ paddingHorizontal: 16 * spacing, paddingBottom: 28 * spacing }}
+      contentContainerStyle={{ paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 12 * spacing }}
       showsVerticalScrollIndicator={false}
     >
       {/* 形象区 */}
@@ -352,6 +370,8 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
         <View style={[styles.rowGap, { gap: 8 * spacing }]}>
           {pet.route.map((stage) => {
             const active = stage.stageKey === pet.growthStage.key;
+            const past = !active && stage.level <= pet.level;
+            const locked = !active && !past;
             return (
               <View
                 key={stage.stageKey}
@@ -359,29 +379,52 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                   styles.routeCard,
                   active ? cardShadow(isDark) : null,
                   {
-                    backgroundColor: active ? colors.accentLight : colors.surface,
-                    borderColor: active ? colors.accent : colors.border,
+                    backgroundColor: active
+                      ? colors.accentLight
+                      : locked
+                        ? colors.borderLight
+                        : colors.surface,
+                    borderColor: active
+                      ? colors.accent
+                      : past
+                        ? colors.border
+                        : colors.borderLight,
                     borderRadius: 12 * radius,
                     padding: 10 * spacing,
+                    opacity: locked ? 0.6 : 1,
                   },
                 ]}
               >
                 {stage.imageUrl ? (
-                  <Image source={{ uri: stage.imageUrl }} contentFit="contain" style={styles.routeImage} />
+                  <Image
+                    source={{ uri: stage.imageUrl }}
+                    contentFit="contain"
+                    style={[styles.routeImage, locked && { opacity: 0.5 }]}
+                  />
                 ) : (
-                  <Text style={{ fontSize: 28 }}>{pet.species.icon ?? '🐾'}</Text>
+                  <Text style={{ fontSize: 28, opacity: locked ? 0.5 : 1 }}>
+                    {pet.species.icon ?? '🐾'}
+                  </Text>
                 )}
                 <Text
                   style={{
-                    color: colors.text,
+                    color: locked
+                      ? colors.textTertiary
+                      : colors.text,
                     fontSize: 13 * font,
-                    fontWeight: active ? '700' : '500',
+                    fontWeight: active ? '700' : past ? '600' : '500',
                     marginTop: 4 * spacing,
                   }}
                 >
                   {stage.name}
                 </Text>
-                <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font, marginTop: 2 * spacing }}>
+                <Text
+                  style={{
+                    color: locked ? colors.textTertiary : colors.textTertiary,
+                    fontSize: 10.5 * font,
+                    marginTop: 2 * spacing,
+                  }}
+                >
                   {t.petLevel(stage.level)}
                 </Text>
               </View>
@@ -630,6 +673,61 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+
+      {/* 养宠规则说明 */}
+      <Modal visible={rulesOpen} transparent animationType="fade" onRequestClose={() => setRulesOpen(false)}>
+        <TouchableOpacity
+          style={styles.rulesMask}
+          activeOpacity={1}
+          onPress={() => setRulesOpen(false)}
+        >
+          <View
+            style={[
+              styles.rulesSheet,
+              {
+                backgroundColor: colors.surface,
+                borderRadius: 16 * radius,
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: colors.border,
+              },
+              cardShadow(isDark),
+            ]}
+          >
+            <View style={[styles.rowBetween, { marginBottom: 12 * spacing }]}>
+              <Text style={{ color: colors.text, fontSize: 16 * font, fontWeight: '700' }}>
+                {t.petRulesTitle}
+              </Text>
+              <TouchableOpacity onPress={() => setRulesOpen(false)} hitSlop={10}>
+                <Ionicons name="close" size={20 * font} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {t.petRulesItems.map((item, idx) => (
+              <View key={idx} style={{ flexDirection: 'row', marginTop: idx > 0 ? 10 * spacing : 0 }}>
+                <Text
+                  style={{
+                    color: colors.accent,
+                    fontSize: 14 * font,
+                    fontWeight: '700',
+                    marginRight: 8 * spacing,
+                    minWidth: 20,
+                  }}
+                >
+                  {idx + 1}.
+                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.text, fontSize: 14 * font, fontWeight: '600' }}>
+                    {item.title}
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12.5 * font, marginTop: 3 * spacing, lineHeight: 18 }}>
+                    {item.body}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 };
@@ -737,6 +835,18 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  rulesMask: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  rulesSheet: {
+    width: '100%',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
   },
 });
 

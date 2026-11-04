@@ -386,7 +386,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     return (
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 * spacing }}
+        contentContainerStyle={{ paddingBottom: 12 * spacing }}
       >
         <Text style={{ color: colors.textTertiary, fontSize: 12 * font, marginBottom: 8 * spacing }}>
           {scopeTextbook.publisherName} · {scopeTextbook.gradeName}
@@ -410,7 +410,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     return (
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 * spacing }}
+        contentContainerStyle={{ paddingBottom: 12 * spacing }}
       >
         <Text style={{ color: colors.textTertiary, fontSize: 12 * font, marginBottom: 8 * spacing }}>
           {selectedSubject.name}
@@ -436,7 +436,7 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         style={{
           flexDirection: 'row',
           marginHorizontal: 16 * spacing,
-          marginTop: (isTablet ? 20 : 8) * spacing,
+          marginTop: 0,
           padding: 3 * spacing,
           borderRadius: 10 * radius,
           backgroundColor: colors.surfaceSecondary,

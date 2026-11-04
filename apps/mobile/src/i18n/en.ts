@@ -291,4 +291,25 @@ export const en: TranslationKeys = {
   petMaxLevel: 'Fully grown',
   petGrowing: 'Evolving soon',
   petCancel: 'Cancel',
+  petStagePast: 'Grown',
+  petStageLocked: 'Locked',
+  petRulesTitle: 'Pet Guide',
+  petRulesItems: [
+    {
+      title: 'How to Earn Food',
+      body: 'Complete practice sessions to earn food. A 5-question correct streak unlocks premium food; finish 10+ questions for a chance at rare food.',
+    },
+    {
+      title: 'Feed & Satiety',
+      body: 'Spend food to raise satiety and EXP. Satiety caps at 100 and decays by 30 daily — feed your pet every day.',
+    },
+    {
+      title: 'EXP & Leveling',
+      body: '+1 EXP per correct answer, +5 bonus for daily login. 100 EXP per level, 300 daily EXP cap.',
+    },
+    {
+      title: 'Evolution Stages',
+      body: 'Three stages: growth at Lv.10, mature at Lv.20, max Lv.30. Each evolution unlocks a new form.',
+    },
+  ],
 };

@@ -56,7 +56,7 @@ const PetFeedsScreen: React.FC = () => {
     <FlatList
       data={records}
       keyExtractor={(item) => item.id}
-      contentContainerStyle={{ paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 32 * spacing }}
+      contentContainerStyle={{ paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 12 * spacing }}
       onEndReachedThreshold={0.4}
       onEndReached={() => {
         if (!loadingMore && page < totalPages) load(page + 1);

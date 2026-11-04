@@ -294,7 +294,7 @@ const KnowledgeUnitsScreen: React.FC<KnowledgeUnitsScreenProps> = ({ navigation,
           renderItem={renderItem}
           contentContainerStyle={[
             styles.list,
-            { padding: 16 * spacing, paddingTop: 8 * spacing, paddingBottom: 24 * spacing },
+            { padding: 16 * spacing, paddingTop: 8 * spacing, paddingBottom: 12 * spacing },
           ]}
           ListHeaderComponent={listHeader}
           refreshControl={
@@ -323,7 +323,7 @@ const KnowledgeUnitsScreen: React.FC<KnowledgeUnitsScreenProps> = ({ navigation,
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  list: { padding: 16, paddingTop: 8, paddingBottom: 24 },
+  list: { padding: 16, paddingTop: 8, paddingBottom: 12 },
   empty: { alignItems: 'center' },
 });
 

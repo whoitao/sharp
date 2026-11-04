@@ -291,6 +291,27 @@ export const zh = {
   petMaxLevel: '已长大',
   petGrowing: '即将进化',
   petCancel: '取消',
+  petStagePast: '已长成',
+  petStageLocked: '未解锁',
+  petRulesTitle: '养宠指南',
+  petRulesItems: [
+    {
+      title: '如何赚取食物',
+      body: '完成答题练习即可获得食物。连续答对 5 题可解锁高级食物，单次完成 10 题以上有机会获得稀有食物。',
+    },
+    {
+      title: '喂食与饱腹度',
+      body: '消耗食物可提升宠物饱腹度和经验值。饱腹度上限为 100，每日自然衰减 30，记得每天喂食。',
+    },
+    {
+      title: '经验与升级',
+      body: '每题答对 +1 经验，每日登录额外 +5 经验。每攒够 100 经验升一级，每日经验上限 300。',
+    },
+    {
+      title: '进化阶段',
+      body: '宠物分为三个阶段：Lv.10 进入成长期，Lv.20 进入成熟期，最高 Lv.30。每次进化都会解锁新形态。',
+    },
+  ],
 };
 
 export type TranslationKeys = typeof zh;

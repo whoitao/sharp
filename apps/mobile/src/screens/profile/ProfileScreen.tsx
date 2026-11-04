@@ -114,7 +114,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   ];
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} contentContainerStyle={[styles.content, { paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 40 * spacing }]}>
+    <ScrollView style={[styles.container, { backgroundColor: 'transparent' }]} contentContainerStyle={[styles.content, { paddingHorizontal: 16 * spacing, paddingTop: 0, paddingBottom: 12 * spacing }]}>
       {/* User info — 整块点击进入「个人信息」 */}
       <TouchableOpacity
         style={[styles.userCard, userCardStyle, { paddingHorizontal: 16 * spacing, paddingVertical: 20 * spacing, borderRadius: 12 * radius, marginBottom: 20 * spacing }]}
@@ -185,8 +185,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingTop: 0,
-    paddingBottom: 40,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   userCard: {
     flexDirection: 'row',

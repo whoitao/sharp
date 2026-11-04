@@ -184,8 +184,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: 16 * spacing,
-          paddingTop: 4 * spacing,
-          paddingBottom: 24 * spacing,
+          paddingTop: 0,
+          paddingBottom: 12 * spacing,
         }}
         showsVerticalScrollIndicator={false}
       >
