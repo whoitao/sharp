@@ -56,33 +56,44 @@ export function stateOf(satiety: number, lastFedAt: Date | null, now: Date = new
 }
 
 /**
- * 饱腹度衰减（按小时）：从 lastDecayDate 到 now 经过的完整小时数 × satietyDecay。
- * 最多回溯 168 小时（7 天），避免长期不登录时一次扣穿。
+ * 饱腹度衰减：按天回溯（最多 7 天），跳过有喂食的日子。
+ * satietyDecay 单位为"每小时"，每天按 24 小时折算，即每天扣 24 × satietyDecay。
+ * 首次调用时 lastDecayDate 为 null，用 adoptedAt 作为锚点避免从 1970 年起算。
  */
 export async function applySatietyDecay(userId: string, pet: Pet, config: PetConfig): Promise<Pet> {
-  const now = new Date();
-  const last = pet.lastDecayDate;
-  // 兜底：历史上可能有 lastDecayDate 为 null 的脏数据，用 adoptedAt 或现在
-  const anchor = last ?? pet.adoptedAt ?? now;
-  if (anchor.getTime() >= now.getTime()) return pet;
+  const today = todayKey();
+  // 首次衰减：没有历史锚点时，从领养日开始算
+  const anchor = pet.lastDecayDate ?? pet.adoptedAt;
+  const last = localMidnight(anchor);
+  if (last.getTime() >= today.getTime()) return pet;
 
-  const elapsedMs = now.getTime() - anchor.getTime();
-  const MAX_HOURS = 168; // 7 天封顶
-  const hours = Math.min(MAX_HOURS, Math.floor(elapsedMs / 3600_000));
-
-  if (hours <= 0) {
-    return prisma.pet.update({
-      where: { id: pet.id },
-      data: { lastDecayDate: now },
-    });
+  const days: Date[] = [];
+  const cursor = new Date(last);
+  while (days.length < 7) {
+    cursor.setDate(cursor.getDate() + 1);
+    if (cursor.getTime() >= today.getTime()) break;
+    days.push(localMidnight(cursor));
   }
 
-  const lost = hours * config.satietyDecay;
+  if (days.length === 0) {
+    return prisma.pet.update({ where: { id: pet.id }, data: { lastDecayDate: today } });
+  }
+
+  const stats = await prisma.petDailyStat.findMany({
+    where: { userId, dateKey: { in: days } },
+    select: { dateKey: true, feedCount: true },
+  });
+  const fedDays = new Set(
+    stats.filter((s) => s.feedCount > 0).map((s) => localMidnight(s.dateKey).getTime()),
+  );
+
+  // satietyDecay 是"每小时"衰减，一天折算 24 小时
+  const lost = days.filter((d) => !fedDays.has(d.getTime())).length * 24 * config.satietyDecay;
   const satiety = Math.max(0, pet.satiety - lost);
 
   return prisma.pet.update({
     where: { id: pet.id },
-    data: { satiety, lastDecayDate: now },
+    data: { satiety, lastDecayDate: today },
   });
 }
 
