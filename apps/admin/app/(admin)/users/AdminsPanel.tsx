@@ -1,9 +1,11 @@
 "use client";
 
 import { usePageSize } from "@/components/antd-providers";
+import { usePageActions } from "@/components/page-actions";
 import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
-import { App, Input, Select, Table, Tag } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import { App, Button, Form, Input, Modal, Select, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
 
@@ -42,6 +44,37 @@ export default function AdminsPanel() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createForm] = Form.useForm();
+
+  const handleCreate = async () => {
+    const values = await createForm.validateFields();
+    setCreating(true);
+    try {
+      const res = await fetch("/api/admin/admins", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        message.success("管理员已创建");
+        setCreateOpen(false);
+        createForm.resetFields();
+        fetchAdmins(1, search, pageSize);
+      } else {
+        message.error(data.error ?? "创建失败");
+      }
+    } catch {
+      message.error("创建失败");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const fetchRoles = async () => {
     try {
@@ -163,6 +196,14 @@ export default function AdminsPanel() {
     },
   ];
 
+  usePageActions(
+    canWrite ? (
+      <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+        新增管理员
+      </Button>
+    ) : null
+  );
+
   return (
     <div>
       <Input.Search
@@ -186,6 +227,46 @@ export default function AdminsPanel() {
           onChange: (p) => fetchAdmins(p, search, pageSize),
         }}
       />
+
+      <Modal
+        title="新增管理员"
+        open={createOpen}
+        onCancel={() => setCreateOpen(false)}
+        onOk={handleCreate}
+        confirmLoading={creating}
+        okText="创建"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <Form form={createForm} layout="vertical" style={{ marginTop: 12 }}>
+          <Form.Item
+            label="用户名"
+            name="username"
+            rules={[
+              { required: true, message: "请输入用户名" },
+              { pattern: /^[A-Za-z0-9_]{3,32}$/, message: "3-32 位字母/数字/下划线" },
+            ]}
+          >
+            <Input placeholder="登录用户名" autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            label="初始密码"
+            name="password"
+            rules={[
+              { required: true, message: "请输入初始密码" },
+              { min: 6, message: "密码至少 6 位" },
+            ]}
+          >
+            <Input.Password placeholder="至少 6 位" autoComplete="new-password" />
+          </Form.Item>
+          <Form.Item label="角色" name="roleId" rules={[{ required: true, message: "请选择角色" }]}>
+            <Select
+              placeholder="选择角色"
+              options={roleOptions.map((r) => ({ value: r.id, label: `${r.name}（${r.code}）` }))}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

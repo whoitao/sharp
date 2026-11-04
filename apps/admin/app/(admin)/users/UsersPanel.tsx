@@ -1,7 +1,9 @@
 "use client";
 
+import { usePageSize } from "@/components/antd-providers";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
-import { Button, Input, Space, Table, Tag } from "antd";
+import { App, Button, Form, Input, Modal, Space, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
 
@@ -24,21 +26,54 @@ interface PaginatedData {
   totalPages: number;
 }
 
-const PAGE_SIZE = 10;
-
 export default function UsersPanel() {
   const { locale, t } = useLocale();
+  const { pageSize } = usePageSize();
+  const { can } = usePermissions();
+  const { message } = App.useApp();
+  const canWrite = can("users:write");
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [resetTarget, setResetTarget] = useState<User | null>(null);
+  const [resetForm] = Form.useForm();
+  const [resetting, setResetting] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!resetTarget) return;
+    const values = await resetForm.validateFields();
+    setResetting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${resetTarget.id}/password`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password: values.password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        message.success("密码已重置");
+        setResetTarget(null);
+        resetForm.resetFields();
+      } else {
+        message.error(data.error ?? "重置失败");
+      }
+    } catch {
+      message.error("重置失败");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const fetchUsers = async (p: number, s: string) => {
     setLoading(true);
     const token = localStorage.getItem("admin_token");
-    const params = new URLSearchParams({ page: String(p), pageSize: String(PAGE_SIZE) });
+    const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
     if (s) params.set("search", s);
 
     try {
@@ -132,13 +167,28 @@ export default function UsersPanel() {
       key: "actions",
       align: "right",
       render: (_, record) => (
-        <Button
-          size="small"
-          loading={togglingId === record.id}
-          onClick={() => toggleUserStatus(record)}
-        >
-          {record.status === "active" ? t("users.disable") : t("users.enable")}
-        </Button>
+        <Space>
+          {canWrite && (
+            <Button
+              size="small"
+              onClick={() => {
+                resetForm.resetFields();
+                setResetTarget(record);
+              }}
+            >
+              重置密码
+            </Button>
+          )}
+          {canWrite && (
+            <Button
+              size="small"
+              loading={togglingId === record.id}
+              onClick={() => toggleUserStatus(record)}
+            >
+              {record.status === "active" ? t("users.disable") : t("users.enable")}
+            </Button>
+          )}
+        </Space>
       ),
     },
   ];
@@ -161,13 +211,37 @@ export default function UsersPanel() {
         dataSource={users}
         pagination={{
           current: page,
-          pageSize: PAGE_SIZE,
+          pageSize,
           total,
           showSizeChanger: false,
           showTotal: (n) => t("common.total", { n }),
           onChange: (p) => fetchUsers(p, search),
         }}
       />
+
+      <Modal
+        title={`重置密码${resetTarget ? ` · ${resetTarget.username}` : ""}`}
+        open={!!resetTarget}
+        onCancel={() => setResetTarget(null)}
+        onOk={handleResetPassword}
+        confirmLoading={resetting}
+        okText="重置"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <Form form={resetForm} layout="vertical" style={{ marginTop: 12 }}>
+          <Form.Item
+            label="新密码"
+            name="password"
+            rules={[
+              { required: true, message: "请输入新密码" },
+              { min: 6, message: "密码至少 6 位" },
+            ]}
+          >
+            <Input.Password placeholder="至少 6 位" autoComplete="new-password" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
