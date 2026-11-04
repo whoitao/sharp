@@ -1,7 +1,7 @@
 "use client";
 
 import { PAGE_SIZE_OPTIONS, usePageSize, useThemeMode, type ThemeMode } from "@/components/antd-providers";
-import { usePermissions } from "@/components/permissions";
+import { invalidateIdentity, usePermissions } from "@/components/permissions";
 import { PageActionsContext, PageTitleContext } from "@/components/page-actions";
 import { useLocale, type Locale, type MessageKey } from "@/lib/i18n";
 import { NAV_PERMISSIONS } from "@/lib/permissions";
@@ -71,7 +71,7 @@ export default function AdminLayout({
   const { mode, setMode } = useThemeMode();
   const { pageSize, setPageSize } = usePageSize();
   const { locale, setLocale, t } = useLocale();
-  const { canAny, loading: permLoading } = usePermissions();
+  const { canAny, identity, loading: permLoading } = usePermissions();
   const {
     token: { colorBgContainer, colorBorderSecondary, colorPrimary },
   } = antdTheme.useToken();
@@ -101,16 +101,22 @@ export default function AdminLayout({
     setPendingKey(null);
   }, [pathname]);
 
-  // 路由级权限守卫：不在可访问页面里就跳到第一个有权限的页面
+  // 未登录（无 token 或 token 失效）直接跳登录页
   useEffect(() => {
     if (permLoading) return;
+    if (!identity) router.replace("/login");
+  }, [identity, permLoading, router]);
+
+  // 路由级权限守卫：不在可访问页面里就跳到第一个有权限的页面
+  useEffect(() => {
+    if (permLoading || !identity) return;
     const navKey = Object.keys(NAV_PERMISSIONS).find((k) => pathname.startsWith(k));
     if (!navKey) return;
     if (canAny(NAV_PERMISSIONS[navKey])) return;
     const fallback =
       NAV_ITEMS.find((item) => canAny(NAV_PERMISSIONS[item.key]))?.key ?? "/dashboard";
     if (fallback !== pathname) router.replace(fallback);
-  }, [pathname, permLoading, canAny, router]);
+  }, [pathname, permLoading, identity, canAny, router]);
 
   const handleNavClick = ({ key }: { key: string }) => {
     if (key === pathname) return;
@@ -124,6 +130,7 @@ export default function AdminLayout({
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_username");
+    invalidateIdentity();
     window.location.href = "/login";
   };
 
@@ -202,6 +209,9 @@ export default function AdminLayout({
       onClick: handleLogout,
     },
   ];
+
+  // 未登录时先不渲染后台骨架，避免登录页跳转前闪一下空白后台
+  if (permLoading || !identity) return null;
 
   return (
     <PageActionsContext.Provider value={pageActionsContextValue}>

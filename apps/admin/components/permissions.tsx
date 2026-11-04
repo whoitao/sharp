@@ -19,6 +19,11 @@ let inflight: Promise<AdminIdentity | null> | null = null;
 
 function readLocal(): AdminIdentity | null {
   if (typeof window === "undefined") return null;
+  // 没有 token 时缓存一律作废，避免退出登录后仍渲染后台
+  if (!localStorage.getItem("admin_token")) {
+    localStorage.removeItem(CACHE_KEY);
+    return null;
+  }
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     return raw ? (JSON.parse(raw) as AdminIdentity) : null;
@@ -38,7 +43,12 @@ export async function fetchIdentity(force = false): Promise<AdminIdentity | null
       const res = await fetch("/api/admin/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        // token 失效：清掉缓存，避免脏身份继续显示
+        identityCache = null;
+        localStorage.removeItem(CACHE_KEY);
+        return null;
+      }
       const data = (await res.json()) as AdminIdentity;
       identityCache = data;
       localStorage.setItem(CACHE_KEY, JSON.stringify(data));
@@ -67,7 +77,7 @@ export function usePermissions() {
     let cancelled = false;
     fetchIdentity()
       .then((data) => {
-        if (!cancelled && data) setIdentity(data);
+        if (!cancelled) setIdentity(data);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
