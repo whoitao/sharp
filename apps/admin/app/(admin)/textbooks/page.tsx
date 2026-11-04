@@ -6,15 +6,17 @@ import { useLocale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import ChaptersPanel from "./ChaptersPanel";
 import PublishersPanel from "./PublishersPanel";
+import SubjectsPanel from "./SubjectsPanel";
 import TextbooksPanel from "./TextbooksPanel";
 
-type TabKey = "publishers" | "textbooks" | "chapters";
+type TabKey = "subjects" | "publishers" | "textbooks" | "chapters";
 
 export default function TextbooksPage() {
   const { t } = useLocale();
   const [activeKey, setActiveKey] = useState<TabKey>("textbooks");
 
   const tabs: { key: TabKey; label: string }[] = [
+    { key: "subjects", label: t("subjects.title") },
     { key: "publishers", label: t("nav.publishers") },
     { key: "textbooks", label: t("nav.textbooks") },
     { key: "chapters", label: t("nav.chapters") },
@@ -28,6 +30,7 @@ export default function TextbooksPage() {
 
   usePageTitle(headerTabs);
 
+  if (activeKey === "subjects") return <SubjectsPanel />;
   if (activeKey === "publishers") return <PublishersPanel />;
   if (activeKey === "chapters") return <ChaptersPanel />;
   return <TextbooksPanel />;

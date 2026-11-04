@@ -6,10 +6,9 @@ import { useLocale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import KnowledgePointsPanel from "./KnowledgePointsPanel";
 import QuestionsPanel from "./QuestionsPanel";
-import SubjectsPanel from "./SubjectsPanel";
 import TagsPanel from "./TagsPanel";
 
-type TabKey = "questions" | "subjects" | "knowledgePoints" | "tags";
+type TabKey = "questions" | "knowledgePoints" | "tags";
 
 export default function QuestionsPage() {
   const { t } = useLocale();
@@ -17,7 +16,6 @@ export default function QuestionsPage() {
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: "questions", label: t("questions.title") },
-    { key: "subjects", label: t("subjects.title") },
     { key: "knowledgePoints", label: t("knowledgePoints.title") },
     { key: "tags", label: t("nav.tags") },
   ];
@@ -30,7 +28,6 @@ export default function QuestionsPage() {
 
   usePageTitle(headerTabs);
 
-  if (activeKey === "subjects") return <SubjectsPanel />;
   if (activeKey === "knowledgePoints") return <KnowledgePointsPanel />;
   if (activeKey === "tags") return <TagsPanel />;
   return <QuestionsPanel />;
