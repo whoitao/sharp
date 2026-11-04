@@ -292,28 +292,36 @@ export default function KnowledgePointsPanel() {
               {t("knowledgePoints.questionCount", { n: node.questionCount })}
             </Tag>
             <Button
-              type="text"
+              variant="text"
+              color="primary"
               size="small"
               icon={<PlusOutlined />}
+              title={t("common.create")}
+              aria-label={t("common.create")}
               onClick={(e) => {
                 e.stopPropagation();
                 openCreateChild(node);
               }}
             />
             <Button
-              type="text"
+              variant="text"
+              color="primary"
               size="small"
               icon={<EditOutlined />}
+              title={t("common.edit")}
+              aria-label={t("common.edit")}
               onClick={(e) => {
                 e.stopPropagation();
                 openEdit(node);
               }}
             />
             <Button
-              type="text"
+              variant="text"
+              color="danger"
               size="small"
-              danger
               icon={<DeleteOutlined />}
+              title={t("common.delete")}
+              aria-label={t("common.delete")}
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedNode(node);

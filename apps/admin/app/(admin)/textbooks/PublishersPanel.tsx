@@ -2,6 +2,7 @@
 
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
+import { useLocale } from "@/lib/i18n";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import {
     App,
@@ -27,6 +28,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 }
 
 export default function PublishersPanel() {
+  const { t } = useLocale();
   const { pageSize } = usePageSize();
   const { message, modal } = App.useApp();
   const [data, setData] = useState<Publisher[]>([]);
@@ -52,13 +54,11 @@ export default function PublishersPanel() {
 
   const openCreate = () => {
     setEditing(null);
-    form.resetFields();
     setModalOpen(true);
   };
 
   const openEdit = (row: Publisher) => {
     setEditing(row);
-    form.setFieldsValue({ name: row.name });
     setModalOpen(true);
   };
 
@@ -71,7 +71,7 @@ export default function PublishersPanel() {
         : await fetch("/api/admin/publishers", { method: "POST", body, headers: authHeaders({ "Content-Type": "application/json" }) });
       if (!r.ok) throw new Error(await r.text());
       setModalOpen(false);
-      message.success(editing ? "更新成功" : "创建成功");
+      message.success(editing ? t("common.updated") : t("common.created"));
       load();
     } catch (e: any) {
       message.error(e.message);
@@ -80,13 +80,14 @@ export default function PublishersPanel() {
 
   const handleDelete = (row: Publisher) => {
     modal.confirm({
-      title: `确认删除「${row.name}」？`,
-      content: row.chapterCount > 0 ? `该版本下有 ${row.chapterCount} 个章节，删除会级联清除关联数据` : null,
+      title: t("publishers.deleteTitle", { name: row.name }),
+      content:
+        row.chapterCount > 0 ? t("publishers.deleteBlocked", { n: row.chapterCount }) : null,
       okButtonProps: { danger: true },
       onOk: async () => {
         const r = await fetch(`/api/admin/publishers?id=${row.id}`, { method: "DELETE", headers: authHeaders() });
         if (!r.ok) throw new Error(await r.text());
-        message.success("已删除");
+        message.success(t("common.deleted"));
         load();
       },
     });
@@ -94,26 +95,30 @@ export default function PublishersPanel() {
 
   const columns: TableProps<Publisher>["columns"] = [
     { title: "ID", dataIndex: "id", width: 80 },
-    { title: "名称", dataIndex: "name" },
-    { title: "章节数", dataIndex: "chapterCount", width: 100, align: "center" },
+    { title: t("publishers.colName"), dataIndex: "name" },
+    { title: t("publishers.colChapterCount"), dataIndex: "chapterCount", width: 100, align: "center" },
     {
-      title: "操作",
-      width: 100,
+      title: t("publishers.colActions"),
+      width: 90,
+      align: "right",
       render: (_, row) => (
         <Space size={4}>
           <Button
-            type="text"
+            variant="text"
+            color="primary"
             size="small"
             icon={<EditOutlined />}
-            title="编辑"
+            title={t("common.edit")}
+            aria-label={t("common.edit")}
             onClick={() => openEdit(row)}
           />
           <Button
-            type="text"
+            variant="text"
+            color="danger"
             size="small"
-            danger
             icon={<DeleteOutlined />}
-            title="删除"
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
             onClick={() => handleDelete(row)}
           />
         </Space>
@@ -124,11 +129,11 @@ export default function PublishersPanel() {
   const headerActions = useMemo(
     () => (
       <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-        新建版本
+        {t("publishers.addPublisher")}
       </Button>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [t],
   );
   usePageActions(headerActions);
 
@@ -140,18 +145,36 @@ export default function PublishersPanel() {
         loading={loading}
         dataSource={data}
         columns={columns}
-        pagination={{ pageSize, showSizeChanger: false }}
+        pagination={{
+          pageSize,
+          showSizeChanger: false,
+          showTotal: (n) => t("common.total", { n }),
+        }}
       />
       <Modal
-        title={editing ? "编辑教材版本" : "新建教材版本"}
+        title={editing ? t("publishers.editTitle") : t("publishers.createTitle")}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        okText={t("common.create")}
+        cancelText={t("common.cancel")}
         destroyOnHidden
+        afterOpenChange={(open) => {
+          if (!open) return;
+          if (editing) {
+            form.setFieldsValue({ name: editing.name });
+          } else {
+            form.resetFields();
+          }
+        }}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="名称" rules={[{ required: true, message: "请输入名称" }]}>
-            <Input placeholder="如：人教版 / 苏教版 / 鲁教版" maxLength={32} />
+          <Form.Item
+            name="name"
+            label={t("publishers.name")}
+            rules={[{ required: true, message: t("publishers.nameRequired") }]}
+          >
+            <Input placeholder={t("publishers.namePlaceholder")} maxLength={32} />
           </Form.Item>
         </Form>
       </Modal>

@@ -3,6 +3,7 @@
 import { usePageSize } from "@/components/antd-providers";
 import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
+import { KeyOutlined, PlayCircleOutlined, StopOutlined } from "@ant-design/icons";
 import { App, Button, Form, Input, Modal, Space, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
@@ -57,14 +58,14 @@ export default function UsersPanel() {
       });
       const data = await res.json();
       if (res.ok) {
-        message.success("密码已重置");
+        message.success(t("users.passwordReset"));
         setResetTarget(null);
         resetForm.resetFields();
       } else {
-        message.error(data.error ?? "重置失败");
+        message.error(data.error ?? t("users.resetFailed"));
       }
     } catch {
-      message.error("重置失败");
+      message.error(t("users.resetFailed"));
     } finally {
       setResetting(false);
     }
@@ -165,28 +166,32 @@ export default function UsersPanel() {
     {
       title: t("users.colActions"),
       key: "actions",
+      width: 120,
       align: "right",
       render: (_, record) => (
-        <Space>
+        <Space size={4}>
           {canWrite && (
             <Button
+              variant="text"
+              color="primary"
               size="small"
-              onClick={() => {
-                resetForm.resetFields();
-                setResetTarget(record);
-              }}
-            >
-              重置密码
-            </Button>
+              icon={<KeyOutlined />}
+              title={t("users.resetPassword")}
+              aria-label={t("users.resetPassword")}
+              onClick={() => setResetTarget(record)}
+            />
           )}
           {canWrite && (
             <Button
+              variant="text"
+              color={record.status === "active" ? "danger" : "primary"}
               size="small"
+              icon={record.status === "active" ? <StopOutlined /> : <PlayCircleOutlined />}
               loading={togglingId === record.id}
+              title={record.status === "active" ? t("users.disable") : t("users.enable")}
+              aria-label={record.status === "active" ? t("users.disable") : t("users.enable")}
               onClick={() => toggleUserStatus(record)}
-            >
-              {record.status === "active" ? t("users.disable") : t("users.enable")}
-            </Button>
+            />
           )}
         </Space>
       ),
@@ -220,25 +225,29 @@ export default function UsersPanel() {
       />
 
       <Modal
-        title={`重置密码${resetTarget ? ` · ${resetTarget.username}` : ""}`}
+        title={`${t("users.resetTitle")}${resetTarget ? ` · ${resetTarget.username}` : ""}`}
         open={!!resetTarget}
         onCancel={() => setResetTarget(null)}
         onOk={handleResetPassword}
         confirmLoading={resetting}
-        okText="重置"
-        cancelText="取消"
+        okText={t("common.reset")}
+        cancelText={t("common.cancel")}
         destroyOnHidden
+        afterOpenChange={(open) => {
+          // destroyOnHidden 下 Form 只在打开后挂载，重置必须放到挂载之后
+          if (open) resetForm.resetFields();
+        }}
       >
         <Form form={resetForm} layout="vertical" style={{ marginTop: 12 }}>
           <Form.Item
-            label="新密码"
+            label={t("users.newPassword")}
             name="password"
             rules={[
-              { required: true, message: "请输入新密码" },
-              { min: 6, message: "密码至少 6 位" },
+              { required: true, message: t("users.newPasswordRequired") },
+              { min: 6, message: t("users.passwordMin") },
             ]}
           >
-            <Input.Password placeholder="至少 6 位" autoComplete="new-password" />
+            <Input.Password placeholder={t("users.passwordPlaceholder")} autoComplete="new-password" />
           </Form.Item>
         </Form>
       </Modal>

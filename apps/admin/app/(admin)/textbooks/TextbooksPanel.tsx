@@ -4,6 +4,7 @@ import SubjectSelect from "@/components/SubjectSelect";
 import { usePageSize } from "@/components/antd-providers";
 import { usePermissions } from "@/components/permissions";
 import { usePageActions } from "@/components/page-actions";
+import { useLocale, type MessageKey } from "@/lib/i18n";
 import IonIcon from "@/components/IonIcon";
 import {
   CloudDownloadOutlined,
@@ -56,11 +57,18 @@ type SubjectOption = { id: string; name: string; icon: string | null };
 type GradeOption = { id: string; name: string; stageId: string };
 type PublisherOption = { id: string; name: string };
 
-const SEMESTER_OPTIONS = [
-  { value: 1, label: "上册" },
-  { value: 2, label: "下册" },
-  { value: 0, label: "全一册" },
+// semester 是数据库存储值，仅 label 按语言渲染
+const SEMESTER_OPTIONS: { value: number; labelKey: MessageKey }[] = [
+  { value: 1, labelKey: "textbooks.semesterFirst" },
+  { value: 2, labelKey: "textbooks.semesterSecond" },
+  { value: 0, labelKey: "textbooks.semesterFull" },
 ];
+
+const SEMESTER_LABEL_KEYS: Record<number, MessageKey> = {
+  1: "textbooks.semesterFirst",
+  2: "textbooks.semesterSecond",
+  0: "textbooks.semesterFull",
+};
 
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
   const token = localStorage.getItem("admin_token") ?? "";
@@ -68,6 +76,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 }
 
 export default function TextbooksPanel() {
+  const { t } = useLocale();
   const { pageSize } = usePageSize();
   const { token } = theme.useToken();
   const { can } = usePermissions();
@@ -188,7 +197,7 @@ export default function TextbooksPanel() {
         headers: authHeaders(),
       });
       const json = await r.json();
-      if (!r.ok) throw new Error(json?.error ?? "上传失败");
+      if (!r.ok) throw new Error(json?.error ?? t("textbooks.uploadFailed"));
       setPendingCoverPath(json.path);
       setCoverPreview(json.url);
     } catch (e: any) {
@@ -201,7 +210,7 @@ export default function TextbooksPanel() {
   const handleFetchCover = async () => {
     const v = form.getFieldsValue();
     if (!editing && (!v.stageId || !v.gradeId || !v.publisherId || !v.subjectId || v.semester === undefined)) {
-      message.warning("请先选择学段、年级、学期、科目和版本");
+      message.warning(t("textbooks.selectCoverFirst"));
       return;
     }
 
@@ -222,11 +231,11 @@ export default function TextbooksPanel() {
         headers: authHeaders({ "Content-Type": "application/json" }),
       });
       const json = await r.json().catch(() => null);
-      if (!r.ok) throw new Error(json?.error ?? "抓取失败");
+      if (!r.ok) throw new Error(json?.error ?? t("textbooks.fetchFailed"));
       setPendingCoverPath(json.path);
       setCoverPreview(json.url);
       setCoverFetchOffset((n) => n + 1);
-      message.success("已抓取封面，不满意可再点击一次换一张");
+      message.success(t("textbooks.coverFetched"));
     } catch (e: any) {
       message.error(e.message);
     } finally {
@@ -263,9 +272,9 @@ export default function TextbooksPanel() {
             headers: authHeaders({ "Content-Type": "application/json" }),
           });
       const json = await r.json().catch(() => null);
-      if (!r.ok) throw new Error(json?.error ?? "保存失败");
+      if (!r.ok) throw new Error(json?.error ?? t("common.saveFailed"));
       setModalOpen(false);
-      message.success(editing ? "更新成功" : "创建成功");
+      message.success(editing ? t("common.updated") : t("common.created"));
       loadData();
     } catch (e: any) {
       message.error(e.message);
@@ -277,10 +286,13 @@ export default function TextbooksPanel() {
   const handleDelete = (row: Textbook) => {
     const blocked = row.chapterCount > 0 || row.questionCount > 0;
     modal.confirm({
-      title: `确认删除「${row.name}」？`,
+      title: t("textbooks.deleteTitle", { name: row.name }),
       content: blocked
-        ? `该教材下有 ${row.chapterCount} 个章节、${row.questionCount} 道题目，需先移除后再删除`
-        : "删除后无法撤销",
+        ? t("textbooks.deleteBlocked", {
+            chapters: row.chapterCount,
+            questions: row.questionCount,
+          })
+        : t("textbooks.deleteNoUndo"),
       okButtonProps: { danger: true, disabled: blocked },
       onOk: async () => {
         const r = await fetch(`/api/admin/textbooks?id=${row.id}`, {
@@ -289,9 +301,9 @@ export default function TextbooksPanel() {
         });
         if (!r.ok) {
           const err = await r.json().catch(() => null);
-          throw new Error(err?.error ?? "删除失败");
+          throw new Error(err?.error ?? t("common.deleteFailed"));
         }
-        message.success("已删除");
+        message.success(t("common.deleted"));
         loadData();
       },
     });
@@ -301,11 +313,11 @@ export default function TextbooksPanel() {
     () =>
       canWrite ? (
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          新建教材
+          {t("textbooks.addTextbook")}
         </Button>
       ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [canWrite]
+    [canWrite, t]
   );
   usePageActions(headerActions);
 
@@ -319,13 +331,17 @@ export default function TextbooksPanel() {
 
   const columns: TableProps<Textbook>["columns"] = [
     {
-      title: "封面",
+      title: t("textbooks.colCover"),
       dataIndex: "coverUrl",
       width: 70,
       render: (url: string | null) =>
         url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="封面" style={{ width: 48, height: 64, objectFit: "cover", borderRadius: 4 }} />
+          <img
+            src={url}
+            alt={t("textbooks.coverAlt")}
+            style={{ width: 48, height: 64, objectFit: "cover", borderRadius: 4 }}
+          />
         ) : (
           <div
             style={{
@@ -340,12 +356,12 @@ export default function TextbooksPanel() {
               justifyContent: "center",
             }}
           >
-            无
+            {t("textbooks.noCover")}
           </div>
         ),
     },
     {
-      title: "教材",
+      title: t("textbooks.colTextbook"),
       dataIndex: "name",
       width: 260,
       render: (value: string, row) => (
@@ -356,36 +372,45 @@ export default function TextbooksPanel() {
       ),
     },
     {
-      title: "学段",
+      title: t("textbooks.colStage"),
       dataIndex: "stageName",
       width: 80,
       render: (v: string) => <Tag>{v}</Tag>,
     },
-    { title: "科目", dataIndex: "subjectName", width: 80 },
-    { title: "年级", dataIndex: "gradeName", width: 80 },
-    { title: "学期", dataIndex: "semesterLabel", width: 80 },
-    { title: "版本", dataIndex: "publisherName", width: 110 },
-    { title: "章节数", dataIndex: "chapterCount", width: 80, align: "center" },
-    { title: "题数", dataIndex: "questionCount", width: 70, align: "center" },
-    { title: "排序", dataIndex: "sortOrder", width: 60, align: "center" },
+    { title: t("textbooks.colSubject"), dataIndex: "subjectName", width: 80 },
+    { title: t("textbooks.colGrade"), dataIndex: "gradeName", width: 80 },
     {
-      title: "操作",
+      title: t("textbooks.colSemester"),
+      dataIndex: "semester",
+      width: 80,
+      render: (v: number, row) =>
+        SEMESTER_LABEL_KEYS[v] ? t(SEMESTER_LABEL_KEYS[v]) : row.semesterLabel,
+    },
+    { title: t("textbooks.colPublisher"), dataIndex: "publisherName", width: 110 },
+    { title: t("textbooks.colChapterCount"), dataIndex: "chapterCount", width: 80, align: "center" },
+    { title: t("textbooks.colQuestionCount"), dataIndex: "questionCount", width: 70, align: "center" },
+    { title: t("textbooks.colSortOrder"), dataIndex: "sortOrder", width: 60, align: "center" },
+    {
+      title: t("textbooks.colActions"),
       width: 90,
       render: (_, row) => (
         <Space size={4}>
           <Button
-            type="text"
+            variant="text"
+            color="primary"
             size="small"
             icon={<EditOutlined />}
-            title="编辑"
+            title={t("common.edit")}
+            aria-label={t("common.edit")}
             onClick={() => openEdit(row)}
           />
           <Button
-            type="text"
+            variant="text"
+            color="danger"
             size="small"
-            danger
             icon={<DeleteOutlined />}
-            title="删除"
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
             onClick={() => handleDelete(row)}
           />
         </Space>
@@ -397,7 +422,7 @@ export default function TextbooksPanel() {
     <div>
       <div style={{ marginBottom: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <Select
-          placeholder="全部学段"
+          placeholder={t("textbooks.filterAllStages")}
           allowClear
           style={{ width: 160 }}
           value={filterStageId}
@@ -405,7 +430,7 @@ export default function TextbooksPanel() {
           onChange={setFilterStageId}
         />
         <SubjectSelect
-          placeholder="全部科目"
+          placeholder={t("textbooks.filterAllSubjects")}
           allowClear
           style={{ width: 160 }}
           value={filterSubjectId}
@@ -421,58 +446,89 @@ export default function TextbooksPanel() {
         dataSource={data}
         columns={columns}
         scroll={{ x: 1080 }}
-        pagination={{ pageSize, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
+        pagination={{ pageSize, showSizeChanger: false, showTotal: (n) => t("common.total", { n }) }}
       />
 
       <Modal
-        title={editing ? "编辑教材" : "新建教材"}
+        title={editing ? t("textbooks.editTitle") : t("textbooks.createTitle")}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
         confirmLoading={saving}
+        okText={t("common.create")}
+        cancelText={t("common.cancel")}
         forceRender={formReady}
         width={720}
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Row gutter={24}>
             <Col span={15}>
-              <Form.Item name="name" label="教材名称" extra="留空则按「科目 · 版本 · 年级学期」自动生成">
-                <Input placeholder="如：数学 · 人教版 · 七年级上册" maxLength={64} />
+              <Form.Item
+                name="name"
+                label={t("textbooks.name")}
+                extra={t("textbooks.nameHint")}
+              >
+                <Input placeholder={t("textbooks.namePlaceholder")} maxLength={64} />
               </Form.Item>
               <Row gutter={12}>
                 <Col span={8}>
-                  <Form.Item name="stageId" label="学段" rules={[{ required: true, message: "请选择学段" }]}>
+                  <Form.Item
+                    name="stageId"
+                    label={t("textbooks.stage")}
+                    rules={[{ required: true, message: t("textbooks.stageRequired") }]}
+                  >
                     <Select
-                      placeholder="学段"
+                      placeholder={t("textbooks.stagePlaceholder")}
                       options={stages.map((s) => ({ value: s.id, label: s.name }))}
                       onChange={() => form.setFieldValue("gradeId", undefined)}
                     />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
-                  <Form.Item name="gradeId" label="年级" rules={[{ required: true, message: "请选择年级" }]}>
-                    <Select placeholder="年级" options={gradeOptions} showSearch optionFilterProp="label" />
+                  <Form.Item
+                    name="gradeId"
+                    label={t("textbooks.grade")}
+                    rules={[{ required: true, message: t("textbooks.gradeRequired") }]}
+                  >
+                    <Select
+                      placeholder={t("textbooks.gradePlaceholder")}
+                      options={gradeOptions}
+                      showSearch
+                      optionFilterProp="label"
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
-                  <Form.Item name="semester" label="学期" rules={[{ required: true, message: "请选择学期" }]}>
-                    <Select placeholder="学期" options={SEMESTER_OPTIONS} />
+                  <Form.Item
+                    name="semester"
+                    label={t("textbooks.semester")}
+                    rules={[{ required: true, message: t("textbooks.semesterRequired") }]}
+                  >
+                    <Select
+                      placeholder={t("textbooks.semesterPlaceholder")}
+                      options={SEMESTER_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+                    />
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={12}>
                 <Col span={12}>
-                  <Form.Item name="subjectId" label="科目" rules={[{ required: true, message: "请选择科目" }]}>
-                    <SubjectSelect
-                      subjects={subjects}
-                      placeholder="科目"
-                    />
+                  <Form.Item
+                    name="subjectId"
+                    label={t("textbooks.subject")}
+                    rules={[{ required: true, message: t("textbooks.subjectRequired") }]}
+                  >
+                    <SubjectSelect subjects={subjects} placeholder={t("textbooks.subjectPlaceholder")} />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="publisherId" label="版本" rules={[{ required: true, message: "请选择版本" }]}>
+                  <Form.Item
+                    name="publisherId"
+                    label={t("textbooks.publisher")}
+                    rules={[{ required: true, message: t("textbooks.publisherRequired") }]}
+                  >
                     <Select
-                      placeholder="版本"
+                      placeholder={t("textbooks.publisherPlaceholder")}
                       options={publishers.map((p) => ({ value: p.id, label: p.name }))}
                       showSearch
                       optionFilterProp="label"
@@ -480,18 +536,18 @@ export default function TextbooksPanel() {
                   </Form.Item>
                 </Col>
               </Row>
-              <Form.Item name="isbn" label="ISBN">
-                <Input placeholder="可选" maxLength={32} />
+              <Form.Item name="isbn" label={t("textbooks.isbn")}>
+                <Input placeholder={t("common.optional")} maxLength={32} />
               </Form.Item>
-              <Form.Item name="description" label="描述">
-                <Input.TextArea rows={2} placeholder="可选" maxLength={200} />
+              <Form.Item name="description" label={t("textbooks.description")}>
+                <Input.TextArea rows={2} placeholder={t("common.optional")} maxLength={200} />
               </Form.Item>
-              <Form.Item name="sortOrder" label="排序">
+              <Form.Item name="sortOrder" label={t("textbooks.sortOrder")}>
                 <InputNumber min={0} style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col span={9}>
-              <div style={{ fontSize: 14, marginBottom: 8 }}>封面（竖版 3:4）</div>
+              <div style={{ fontSize: 14, marginBottom: 8 }}>{t("textbooks.coverSection")}</div>
               <div
                 style={{
                   width: "100%",
@@ -507,9 +563,13 @@ export default function TextbooksPanel() {
               >
                 {coverPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={coverPreview} alt="封面预览" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img
+                    src={coverPreview}
+                    alt={t("textbooks.coverPreviewAlt")}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
                 ) : (
-                  "暂无封面"
+                  t("textbooks.noCoverYet")
                 )}
               </div>
               <Space style={{ marginTop: 12 }}>
@@ -527,10 +587,10 @@ export default function TextbooksPanel() {
                     input.click();
                   }}
                 >
-                  上传
+                  {t("textbooks.upload")}
                 </Button>
                 <Button icon={<CloudDownloadOutlined />} loading={fetchingCover} onClick={handleFetchCover}>
-                  抓取
+                  {t("textbooks.fetch")}
                 </Button>
                 {(coverPreview || pendingCoverPath !== undefined) && (
                   <Button
@@ -540,7 +600,7 @@ export default function TextbooksPanel() {
                       setCoverPreview(null);
                     }}
                   >
-                    移除
+                    {t("textbooks.remove")}
                   </Button>
                 )}
               </Space>

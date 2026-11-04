@@ -224,21 +224,26 @@ export default function PetSpeciesPanel() {
       width: 100,
       align: "right",
       render: (_, record) => (
-        <Space size={0}>
+        <Space size={4}>
           <Button
-            type="text"
+            variant="text"
+            color="primary"
             size="small"
             icon={<EditOutlined />}
+            title={t("common.edit")}
+            aria-label={t("common.edit")}
             onClick={() => {
               setSelected(record);
               setEditOpen(true);
             }}
           />
           <Button
-            type="text"
+            variant="text"
+            color="danger"
             size="small"
-            danger
             icon={<DeleteOutlined />}
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
             onClick={() => {
               setSelected(record);
               setDeleteOpen(true);
@@ -277,7 +282,7 @@ export default function PetSpeciesPanel() {
         <Input maxLength={30} />
       </Form.Item>
       <Form.Item label={t("pets.speciesTheme")} name="theme">
-        <Input maxLength={30} placeholder="可爱系 / 忠诚系" />
+        <Input maxLength={30} placeholder={t("pets.speciesThemePlaceholder")} />
       </Form.Item>
       <Form.Item label={t("pets.icon")} name="icon">
         <Input maxLength={8} placeholder="🐱" />

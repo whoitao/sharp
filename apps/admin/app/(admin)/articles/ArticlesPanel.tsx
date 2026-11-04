@@ -334,21 +334,32 @@ export default function ArticlesPanel() {
       width: 130,
       align: "right",
       render: (_, record) => (
-        <Space size={0}>
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
+        <Space size={4}>
           <Button
-            type="text"
+            variant="text"
+            color="primary"
+            size="small"
+            icon={<EditOutlined />}
+            title={t("common.edit")}
+            aria-label={t("common.edit")}
+            onClick={() => openEdit(record)}
+          />
+          <Button
+            variant="text"
+            color="primary"
             size="small"
             icon={<SyncOutlined />}
+            title={record.status === "published" ? t("articles.offline") : t("articles.publish")}
+            aria-label={record.status === "published" ? t("articles.offline") : t("articles.publish")}
             onClick={() => handleToggleStatus(record)}
-          >
-            {record.status === "published" ? t("articles.offline") : t("articles.publish")}
-          </Button>
+          />
           <Button
-            type="text"
+            variant="text"
+            color="danger"
             size="small"
-            danger
             icon={<DeleteOutlined />}
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
             onClick={() => {
               setSelected(record);
               setDeleteOpen(true);

@@ -9,6 +9,7 @@ import {
   TableOutlined,
   UnderlineOutlined
 } from "@ant-design/icons";
+import { useLocale } from "@/lib/i18n";
 import Image from "@tiptap/extension-image";
 import Mathematics from "@tiptap/extension-mathematics";
 import { TableKit } from "@tiptap/extension-table";
@@ -141,7 +142,8 @@ async function uploadImageFile(file: File): Promise<string> {
   });
   const data = await res.json().catch(() => null);
   if (!res.ok || !data?.url) {
-    throw new Error(data?.error || "图片上传失败");
+    // 具体错误由调用方按当前语言兜底
+    throw new Error(data?.error || "");
   }
   return data.url as string;
 }
@@ -155,6 +157,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   disabled = false,
   style,
 }) => {
+  const { t } = useLocale();
   const { token } = antdTheme.useToken();
   const { message } = App.useApp();
   const [mathOpen, setMathOpen] = useState(false);
@@ -234,7 +237,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   insertImageRef.current = (file, pos) => {
     if (!editorRef.current) return;
     if (!isAcceptedImage(file)) {
-      message.error("只支持 JPG / PNG / WebP 图片");
+      message.error(t("editor.imageTypeError"));
       return;
     }
     uploadingCountRef.current += 1;
@@ -254,7 +257,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
       })
       .catch((err) => {
-        message.error(err instanceof Error ? err.message : "图片上传失败");
+        message.error(
+          err instanceof Error && err.message ? err.message : t("editor.uploadFailed")
+        );
       })
       .finally(() => {
         uploadingCountRef.current -= 1;
@@ -312,18 +317,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   // 光标在表格内才展示「表格操作」，避免工具栏常驻一排低频按钮
   const tableMenuItems: MenuProps["items"] = [
-    { key: "rowBefore", label: "上方插入行" },
-    { key: "rowAfter", label: "下方插入行" },
-    { key: "colBefore", label: "左侧插入列" },
-    { key: "colAfter", label: "右侧插入列" },
+    { key: "rowBefore", label: t("editor.rowBefore") },
+    { key: "rowAfter", label: t("editor.rowAfter") },
+    { key: "colBefore", label: t("editor.colBefore") },
+    { key: "colAfter", label: t("editor.colAfter") },
     { type: "divider" },
-    { key: "mergeCells", label: "合并单元格", disabled: !editor?.can().mergeCells() },
-    { key: "splitCell", label: "拆分单元格", disabled: !editor?.can().splitCell() },
+    { key: "mergeCells", label: t("editor.mergeCells"), disabled: !editor?.can().mergeCells() },
+    { key: "splitCell", label: t("editor.splitCell"), disabled: !editor?.can().splitCell() },
     { type: "divider" },
-    { key: "toggleHeaderRow", label: "切换表头行" },
-    { key: "deleteRow", label: "删除当前行" },
-    { key: "deleteColumn", label: "删除当前列" },
-    { key: "deleteTable", label: "删除表格", danger: true },
+    { key: "toggleHeaderRow", label: t("editor.toggleHeaderRow") },
+    { key: "deleteRow", label: t("editor.deleteRow") },
+    { key: "deleteColumn", label: t("editor.deleteColumn") },
+    { key: "deleteTable", label: t("editor.deleteTable"), danger: true },
   ];
 
   const handleTableAction: MenuProps["onClick"] = ({ key }) => {
@@ -420,19 +425,19 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <BoldOutlined />,
           editor.isActive("bold"),
           () => editor.chain().focus().toggleBold().run(),
-          "加粗"
+          t("editor.bold")
         )}
         {toolbarButton(
           <ItalicOutlined />,
           editor.isActive("italic"),
           () => editor.chain().focus().toggleItalic().run(),
-          "斜体"
+          t("editor.italic")
         )}
         {toolbarButton(
           <UnderlineOutlined />,
           editor.isActive("underline"),
           () => editor.chain().focus().toggleUnderline().run(),
-          "下划线"
+          t("editor.underline")
         )}
         <span
           style={{
@@ -450,13 +455,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             setLatex("");
             setMathOpen(true);
           },
-          "插入数学公式"
+          t("editor.insertMath")
         )}
         {toolbarButton(
           <PictureOutlined />,
           false,
           () => fileInputRef.current?.click(),
-          "插入图片",
+          t("editor.insertImage"),
           uploading
         )}
         {/* 原生 file input 隐藏，由工具栏按钮触发；选完清空 value 才能重复选同一张图 */}
@@ -471,7 +476,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             e.target.value = "";
           }}
         />
-        {toolbarButton(<TableOutlined />, false, insertTable, "插入表格 3×3")}
+        {toolbarButton(<TableOutlined />, false, insertTable, t("editor.insertTable"))}
         {editor.isActive("table") && (
           <Dropdown
             menu={{ items: tableMenuItems, onClick: handleTableAction }}
@@ -482,7 +487,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               type="text"
               icon={<MoreOutlined />}
               disabled={disabled}
-              title="表格操作"
+              title={t("editor.tableActions")}
             />
           </Dropdown>
         )}
@@ -497,12 +502,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <EditorContent editor={editor} />
       </div>
       <Modal
-        title="插入数学公式"
+        title={t("editor.mathTitle")}
         open={mathOpen}
         onCancel={() => setMathOpen(false)}
         onOk={insertMath}
-        okText="插入"
-        cancelText="取消"
+        okText={t("editor.insert")}
+        cancelText={t("common.cancel")}
         destroyOnHidden
       >
         <Space orientation="vertical" style={{ width: "100%" }} size={12}>
@@ -510,7 +515,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             rows={3}
             value={latex}
             onChange={(e) => setLatex(e.target.value)}
-            placeholder="输入 LaTeX，例如 \frac{a}{b}、x^2+y^2、\sqrt{3}"
+            placeholder={t("editor.latexPlaceholder")}
             autoFocus
           />
           <div
@@ -529,12 +534,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             {previewHtml ? (
               <span dangerouslySetInnerHTML={{ __html: previewHtml }} />
             ) : (
-              <span style={{ color: token.colorTextTertiary }}>预览</span>
+              <span style={{ color: token.colorTextTertiary }}>{t("editor.preview")}</span>
             )}
           </div>
-          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>
-            也可直接在正文中输入 $公式$ 快速插入
-          </div>
+          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>{t("editor.mathHint")}</div>
         </Space>
       </Modal>
     </div>

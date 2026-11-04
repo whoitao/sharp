@@ -258,21 +258,26 @@ export default function PetStagesPanel() {
       width: 100,
       align: "right",
       render: (_, record) => (
-        <Space size={0}>
+        <Space size={4}>
           <Button
-            type="text"
+            variant="text"
+            color="primary"
             size="small"
             icon={<EditOutlined />}
+            title={t("common.edit")}
+            aria-label={t("common.edit")}
             onClick={() => {
               setSelected(record);
               setEditOpen(true);
             }}
           />
           <Button
-            type="text"
+            variant="text"
+            color="danger"
             size="small"
-            danger
             icon={<DeleteOutlined />}
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
             onClick={() => {
               setSelected(record);
               setDeleteOpen(true);

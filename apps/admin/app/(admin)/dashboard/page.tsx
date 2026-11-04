@@ -252,7 +252,7 @@ export default function DashboardPage() {
   const nameColumns: TableProps<NameStat>["columns"] = [
     { title: t("stats.colName"), dataIndex: "name", key: "name", ellipsis: true },
     { title: t("stats.colAttempts"), dataIndex: "attempts", key: "attempts", width: 80 },
-    { title: t("stats.colQuestions"), dataIndex: "questions", key: "questions", width: 80 },
+    { title: t("stats.colQuestions"), dataIndex: "questions", key: "questions", width: 96 },
     {
       title: t("stats.colAccuracy"),
       dataIndex: "accuracy",
@@ -282,7 +282,14 @@ export default function DashboardPage() {
     return { bg: palette.errorLight, fg: palette.error };
   };
 
-  const trendLabelStep = Math.max(1, Math.ceil((data?.trend.length ?? 0) / 10));
+  const trendLength = data?.trend.length ?? 0;
+  const trendLabelStep = Math.max(1, Math.ceil(trendLength / 10));
+  // 标签从最近一天往回等间隔取样：保证最后一天必有标签，且末两位标签不会相邻堆叠
+  const trendLabelIndexes = new Set(
+    Array.from({ length: trendLength }, (_, index) => index).filter(
+      (index) => (trendLength - 1 - index) % trendLabelStep === 0,
+    ),
+  );
 
   return (
     <div
@@ -430,8 +437,8 @@ export default function DashboardPage() {
                     const hasData = point.questions > 0;
                     const barHeight = hasData
                       ? Math.max(6, Math.round((point.questions / maxQuestions) * 140))
-                      : 3;
-                    const showLabel = index % trendLabelStep === 0 || index === data.trend.length - 1;
+                      : 5;
+                    const showLabel = trendLabelIndexes.has(index);
                     return (
                       <div key={point.date} style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
                         <div
@@ -439,10 +446,11 @@ export default function DashboardPage() {
                           style={{
                             height: barHeight,
                             marginBottom: 6,
-                            borderRadius: "4px 4px 2px 2px",
+                            borderRadius: hasData ? "4px 4px 2px 2px" : 2,
                             background: hasData
                               ? `linear-gradient(180deg, ${palette.accent}, ${palette.accentStrong})`
-                              : palette.borderLight,
+                              // 空数据日保留可见的占位短柱，避免整段窗口看起来像没有柱子
+                              : palette.border,
                           }}
                         />
                         <div

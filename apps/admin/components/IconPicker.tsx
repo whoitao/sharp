@@ -1,6 +1,7 @@
 "use client";
 
 import IonIcon from "@/components/IonIcon";
+import { useLocale } from "@/lib/i18n";
 import { SUBJECT_ICON_NAMES } from "@/lib/ionicons";
 import { Button, Popover, theme as antdTheme } from "antd";
 import { useState } from "react";
@@ -16,6 +17,7 @@ interface IconPickerProps {
 }
 
 const IconPicker: React.FC<IconPickerProps> = ({ value, onChange, disabled }) => {
+  const { t } = useLocale();
   const { token } = antdTheme.useToken();
   const [open, setOpen] = useState(false);
 
@@ -60,7 +62,7 @@ const IconPicker: React.FC<IconPickerProps> = ({ value, onChange, disabled }) =>
               setOpen(false);
             }}
           >
-            清除图标
+            {t("common.clearIcon")}
           </Button>
         </div>
       }
@@ -78,7 +80,7 @@ const IconPicker: React.FC<IconPickerProps> = ({ value, onChange, disabled }) =>
         {value ? (
           <IonIcon name={value} size={18} />
         ) : (
-          <span style={{ color: token.colorTextPlaceholder }}>选择图标</span>
+          <span style={{ color: token.colorTextPlaceholder }}>{t("common.selectIcon")}</span>
         )}
       </Button>
     </Popover>

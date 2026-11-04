@@ -3,7 +3,8 @@
 import { usePageSize } from "@/components/antd-providers";
 import { usePermissions } from "@/components/permissions";
 import { usePageActions } from "@/components/page-actions";
-import { PlusOutlined } from "@ant-design/icons";
+import { useLocale, type MessageKey } from "@/lib/i18n";
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import {
     App,
     Button,
@@ -28,10 +29,10 @@ type QuestionTag = {
   questionCount: number;
 };
 
-const TYPES: { value: string; label: string; color: string }[] = [
-  { value: "exam", label: "考试类型", color: "red" },
-  { value: "source", label: "题目来源", color: "blue" },
-  { value: "difficulty", label: "难度", color: "orange" },
+const TYPES: { value: string; labelKey: MessageKey; color: string }[] = [
+  { value: "exam", labelKey: "tags.typeExam", color: "red" },
+  { value: "source", labelKey: "tags.typeSource", color: "blue" },
+  { value: "difficulty", labelKey: "tags.typeDifficulty", color: "orange" },
 ];
 
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
@@ -40,6 +41,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 }
 
 export default function TagsPanel() {
+  const { t } = useLocale();
   const { pageSize } = usePageSize();
   const { token } = theme.useToken();
   const { can } = usePermissions();
@@ -69,13 +71,11 @@ export default function TagsPanel() {
 
   const openCreate = () => {
     setEditing(null);
-    form.resetFields();
     setModalOpen(true);
   };
 
   const openEdit = (row: QuestionTag) => {
     setEditing(row);
-    form.setFieldsValue({ name: row.name, type: row.type, sortOrder: row.sortOrder });
     setModalOpen(true);
   };
 
@@ -96,7 +96,7 @@ export default function TagsPanel() {
           });
       if (!r.ok) throw new Error(await r.text());
       setModalOpen(false);
-      message.success(editing ? "更新成功" : "创建成功");
+      message.success(editing ? t("common.updated") : t("common.created"));
       loadData();
     } catch (e: any) {
       message.error(e.message);
@@ -105,39 +105,56 @@ export default function TagsPanel() {
 
   const handleDelete = (row: QuestionTag) => {
     modal.confirm({
-      title: `确认删除标签「${row.name}」？`,
-      content: "删除后该标签与题目的关联会一并清除，题目本身不受影响。",
+      title: t("tags.deleteTitle", { name: row.name }),
+      content: t("tags.deleteConfirm"),
       okButtonProps: { danger: true },
       onOk: async () => {
         const r = await fetch(`/api/admin/tags?id=${row.id}`, { method: "DELETE", headers: authHeaders() });
         if (!r.ok) throw new Error(await r.text());
-        message.success("已删除");
+        message.success(t("common.deleted"));
         loadData();
       },
     });
   };
 
   const columns: TableProps<QuestionTag>["columns"] = [
-    { title: "ID", dataIndex: "id", width: 80 },
-    { title: "标签", dataIndex: "name" },
+    { title: t("tags.colId"), dataIndex: "id", width: 80 },
+    { title: t("tags.colName"), dataIndex: "name" },
     {
-      title: "用途",
+      title: t("tags.colType"),
       dataIndex: "type",
       width: 120,
       render: (v) => {
-        const t = TYPES.find((x) => x.value === v);
-        return t ? <Tag color={t.color}>{t.label}</Tag> : v;
+        const typeInfo = TYPES.find((x) => x.value === v);
+        return typeInfo ? <Tag color={typeInfo.color}>{t(typeInfo.labelKey)}</Tag> : v;
       },
     },
-    { title: "排序", dataIndex: "sortOrder", width: 80, align: "center" },
-    { title: "题目数", dataIndex: "questionCount", width: 90, align: "center" },
+    { title: t("tags.colSortOrder"), dataIndex: "sortOrder", width: 80, align: "center" },
+    { title: t("tags.colQuestionCount"), dataIndex: "questionCount", width: 90, align: "center" },
     {
-      title: "操作",
-      width: 160,
+      title: t("tags.colActions"),
+      width: 90,
+      align: "right",
       render: (_, row) => (
-        <Space>
-          <Button type="link" size="small" onClick={() => openEdit(row)}>编辑</Button>
-          <Button type="link" size="small" danger onClick={() => handleDelete(row)}>删除</Button>
+        <Space size={4}>
+          <Button
+            variant="text"
+            color="primary"
+            size="small"
+            icon={<EditOutlined />}
+            title={t("common.edit")}
+            aria-label={t("common.edit")}
+            onClick={() => openEdit(row)}
+          />
+          <Button
+            variant="text"
+            color="danger"
+            size="small"
+            icon={<DeleteOutlined />}
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
+            onClick={() => handleDelete(row)}
+          />
         </Space>
       ),
     },
@@ -147,20 +164,18 @@ export default function TagsPanel() {
     () =>
       canWrite ? (
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          新建标签
+          {t("tags.addTag")}
         </Button>
       ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [canWrite]
+    [canWrite, t]
   );
   usePageActions(headerActions);
 
   return (
     <div>
       <div style={{ marginBottom: 12, display: "flex", alignItems: "center" }}>
-        <div style={{ flex: 1, color: token.colorTextTertiary }}>
-          标签用于横向筛选题目：中考真题 / 模拟题 / 课后练习…，可与年级、科目、章节、知识点自由叠加。
-        </div>
+        <div style={{ flex: 1, color: token.colorTextTertiary }}>{t("tags.intro")}</div>
       </div>
       <Table
         rowKey="id"
@@ -168,24 +183,43 @@ export default function TagsPanel() {
         loading={loading}
         dataSource={data}
         columns={columns}
-        pagination={{ pageSize, showSizeChanger: false, showTotal: (t) => `共 ${t} 条` }}
+        pagination={{ pageSize, showSizeChanger: false, showTotal: (n) => t("common.total", { n }) }}
       />
       <Modal
-        title={editing ? "编辑标签" : "新建标签"}
+        title={editing ? t("tags.editTitle") : t("tags.createTitle")}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        okText={t("common.create")}
+        cancelText={t("common.cancel")}
         destroyOnHidden
         width={420}
+        afterOpenChange={(open) => {
+          if (!open) return;
+          if (editing) {
+            form.setFieldsValue({ name: editing.name, type: editing.type, sortOrder: editing.sortOrder });
+          } else {
+            form.resetFields();
+          }
+        }}
       >
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="name" label="标签名称" rules={[{ required: true }]}>
-            <Input placeholder="如：中考真题 / 模拟题 / 课后练习" />
+          <Form.Item
+            name="name"
+            label={t("tags.name")}
+            rules={[{ required: true, message: t("tags.nameRequired") }]}
+          >
+            <Input placeholder={t("tags.namePlaceholder")} />
           </Form.Item>
-          <Form.Item name="type" label="用途" rules={[{ required: true }]} initialValue="source">
-            <Select options={TYPES.map((t) => ({ value: t.value, label: t.label }))} />
+          <Form.Item
+            name="type"
+            label={t("tags.colType")}
+            rules={[{ required: true }]}
+            initialValue="source"
+          >
+            <Select options={TYPES.map((x) => ({ value: x.value, label: t(x.labelKey) }))} />
           </Form.Item>
-          <Form.Item name="sortOrder" label="排序">
+          <Form.Item name="sortOrder" label={t("tags.sortOrder")}>
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
         </Form>

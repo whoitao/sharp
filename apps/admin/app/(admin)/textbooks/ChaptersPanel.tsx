@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageActions } from "@/components/page-actions";
+import { useLocale, type MessageKey } from "@/lib/i18n";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { App, Button, Cascader, Form, Input, InputNumber, Modal, Select, Space, Tag, Tree, theme } from "antd";
 import type { DataNode } from "antd/es/tree";
@@ -31,7 +32,10 @@ type TextbookOption = {
   questionCount: number;
 };
 
-const LEVEL_LABEL: Record<number, string> = { 1: "章", 2: "节" };
+const LEVEL_KEYS: Record<number, MessageKey> = {
+  1: "chapters.levelChapter",
+  2: "chapters.levelSection",
+};
 
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
   const token = localStorage.getItem("admin_token") ?? "";
@@ -39,6 +43,7 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
 }
 
 export default function ChaptersPanel() {
+  const { t } = useLocale();
   const { message, modal } = App.useApp();
   const { token } = theme.useToken();
   const [textbooks, setTextbooks] = useState<TextbookOption[]>([]);
@@ -50,7 +55,7 @@ export default function ChaptersPanel() {
   const [form] = Form.useForm();
   const parentId = Form.useWatch("parentId", form);
 
-  const selectedTextbook = textbooks.find((t) => t.id === selectedTextbookId) ?? null;
+  const selectedTextbook = textbooks.find((x) => x.id === selectedTextbookId) ?? null;
 
   const loadTextbooks = async () => {
     const r = await fetch("/api/admin/textbooks", { headers: authHeaders() });
@@ -101,10 +106,10 @@ export default function ChaptersPanel() {
   // 教材按 学段 → 科目 分组，便于快速定位
   const textbookGroups = useMemo(() => {
     const map = new Map<string, { label: string; options: { value: string; label: string }[] }>();
-    for (const t of textbooks) {
-      const groupKey = `${t.stageName} / ${t.subjectName}`;
+    for (const x of textbooks) {
+      const groupKey = `${x.stageName} / ${x.subjectName}`;
       if (!map.has(groupKey)) map.set(groupKey, { label: groupKey, options: [] });
-      map.get(groupKey)!.options.push({ value: t.id, label: t.name });
+      map.get(groupKey)!.options.push({ value: x.id, label: x.name });
     }
     return Array.from(map.values());
   }, [textbooks]);
@@ -114,22 +119,20 @@ export default function ChaptersPanel() {
       ns.map((n) => {
         const node: DataNode = {
           key: n.id,
-          title: `${n.name} · ${n.questionCount} 题`,
+          title: t("chapters.treeTitle", { name: n.name, n: n.questionCount }),
         };
         if (n.children?.length) node.children = build(n.children);
         return node;
       });
     return build(tree);
-  }, [tree]);
+  }, [tree, t]);
 
   const openCreate = () => {
     if (!selectedTextbookId) {
-      message.warning("请先选择教材");
+      message.warning(t("chapters.selectTextbookFirst"));
       return;
     }
     setEditing(null);
-    form.resetFields();
-    form.setFieldsValue({ parentId: null, sortOrder: 0 });
     setModalOpen(true);
   };
 
@@ -137,10 +140,10 @@ export default function ChaptersPanel() {
     () => (
       <Space>
         <Link href="/textbooks">
-          <Button>教材管理</Button>
+          <Button>{t("chapters.manageTextbooks")}</Button>
         </Link>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          新建章节
+          {t("chapters.addChapter")}
         </Button>
       </Space>
     ),
@@ -151,7 +154,6 @@ export default function ChaptersPanel() {
 
   const openEdit = (node: ChapterNode) => {
     setEditing(node);
-    form.setFieldsValue({ name: node.name, sortOrder: node.sortOrder });
     setModalOpen(true);
   };
 
@@ -178,7 +180,7 @@ export default function ChaptersPanel() {
           });
       if (!r.ok) throw new Error(await r.text());
       setModalOpen(false);
-      message.success(editing ? "更新成功" : "创建成功");
+      message.success(editing ? t("common.updated") : t("common.created"));
       loadTree();
       loadTextbooks();
     } catch (e: any) {
@@ -189,8 +191,8 @@ export default function ChaptersPanel() {
   const handleDelete = (node: ChapterNode) => {
     const childCount = countDescendants(node);
     modal.confirm({
-      title: `确认删除「${node.name}」？`,
-      content: childCount > 0 ? `将连同 ${childCount} 个子章节一起删除` : null,
+      title: t("chapters.deleteTitle", { name: node.name }),
+      content: childCount > 0 ? t("chapters.deleteChildren", { n: childCount }) : null,
       okButtonProps: { danger: true },
       onOk: async () => {
         const r = await fetch(`/api/admin/chapters?id=${node.id}`, {
@@ -199,9 +201,9 @@ export default function ChaptersPanel() {
         });
         if (!r.ok) {
           const err = await r.json().catch(() => null);
-          throw new Error(err?.error ?? "删除失败");
+          throw new Error(err?.error ?? t("common.deleteFailed"));
         }
-        message.success("已删除");
+        message.success(t("common.deleted"));
         loadTree();
         loadTextbooks();
       },
@@ -229,14 +231,14 @@ export default function ChaptersPanel() {
           label: "　".repeat(depth) + n.name,
           children: n.children?.length ? buildOptions(n.children, depth + 1) : undefined,
         }));
-    return [{ value: "__root__", label: "（根节点：章）" }, ...buildOptions(tree)];
-  }, [tree, editing]);
+    return [{ value: "__root__", label: t("chapters.rootOption") }, ...buildOptions(tree)];
+  }, [tree, editing, t]);
 
   return (
     <div>
       <div style={{ marginBottom: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <Select
-          placeholder="选择教材"
+          placeholder={t("chapters.selectTextbook")}
           style={{ width: 360 }}
           value={selectedTextbookId}
           options={textbookGroups}
@@ -279,28 +281,35 @@ export default function ChaptersPanel() {
                 fontSize: 12,
               }}
             >
-              无封面
+              {t("chapters.noCover")}
             </div>
           )}
           <div>
             <div style={{ fontWeight: 600 }}>{selectedTextbook.name}</div>
             <div style={{ color: token.colorTextSecondary, fontSize: 12, marginTop: 4 }}>
-              {selectedTextbook.publisherName} · {selectedTextbook.chapterCount} 章 ·{" "}
-              {selectedTextbook.questionCount} 题
+              {t("chapters.textbookMeta", {
+                publisher: selectedTextbook.publisherName,
+                chapters: selectedTextbook.chapterCount,
+                questions: selectedTextbook.questionCount,
+              })}
             </div>
           </div>
         </div>
       )}
 
       {!selectedTextbookId ? (
-        <div style={{ padding: 48, textAlign: "center", color: token.colorTextSecondary }}>请先选择教材</div>
+        <div style={{ padding: 48, textAlign: "center", color: token.colorTextSecondary }}>
+          {t("chapters.selectTextbookFirst")}
+        </div>
       ) : (
         <div style={{ background: token.colorFillAlter, borderRadius: 8, padding: 16, minHeight: 200 }}>
           {loading ? (
-            <div style={{ color: token.colorTextSecondary, textAlign: "center", padding: 24 }}>加载中...</div>
+            <div style={{ color: token.colorTextSecondary, textAlign: "center", padding: 24 }}>
+              {t("chapters.loading")}
+            </div>
           ) : tree.length === 0 ? (
             <div style={{ color: token.colorTextSecondary, textAlign: "center", padding: 24 }}>
-              该教材暂无章节。先建「章」，再在章下建「节」。
+              {t("chapters.empty")}
             </div>
           ) : (
             <Tree
@@ -312,14 +321,30 @@ export default function ChaptersPanel() {
                   <Space>
                     {chapter && (
                       <Tag color={chapter.level === 1 ? "blue" : "geekblue"}>
-                        {LEVEL_LABEL[chapter.level] ?? "节点"}
+                        {t(LEVEL_KEYS[chapter.level] ?? "chapters.levelNode")}
                       </Tag>
                     )}
                     <span>{node.title as React.ReactNode}</span>
                     {chapter && (
                       <>
-                        <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(chapter)} />
-                        <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(chapter)} />
+                        <Button
+                          variant="text"
+                          color="primary"
+                          size="small"
+                          icon={<EditOutlined />}
+                          title={t("common.edit")}
+                          aria-label={t("common.edit")}
+                          onClick={() => openEdit(chapter)}
+                        />
+                        <Button
+                          variant="text"
+                          color="danger"
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          title={t("common.delete")}
+                          aria-label={t("common.delete")}
+                          onClick={() => handleDelete(chapter)}
+                        />
                       </>
                     )}
                   </Space>
@@ -331,30 +356,45 @@ export default function ChaptersPanel() {
       )}
 
       <Modal
-        title={editing ? "编辑章节" : "新建章节"}
+        title={editing ? t("chapters.editTitle") : t("chapters.createTitle")}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
+        okText={t("common.create")}
+        cancelText={t("common.cancel")}
         destroyOnHidden
         width={480}
+        afterOpenChange={(open) => {
+          if (!open) return;
+          if (editing) {
+            form.setFieldsValue({ name: editing.name, sortOrder: editing.sortOrder });
+          } else {
+            form.resetFields();
+            form.setFieldsValue({ parentId: null, sortOrder: 0 });
+          }
+        }}
       >
         <Form form={form} layout="vertical" preserve={false}>
           {!editing && (
-            <Form.Item name="parentId" label="父章节">
+            <Form.Item name="parentId" label={t("chapters.parent")}>
               <Cascader
                 options={parentOptions}
                 changeOnSelect
                 expandTrigger="hover"
-                placeholder="留空则为「章」根节点"
+                placeholder={t("chapters.parentPlaceholder")}
                 value={parentId ? [parentId === "__root__" ? "__root__" : parentId] : undefined}
                 onChange={(v) => form.setFieldValue("parentId", v && v[0] !== "__root__" ? v[0] : null)}
               />
             </Form.Item>
           )}
-          <Form.Item name="name" label="章节名称" rules={[{ required: true, message: "请输入章节名称" }]}>
-            <Input placeholder="如：第1章 有理数 / 1.1 正数与负数" maxLength={64} />
+          <Form.Item
+            name="name"
+            label={t("chapters.name")}
+            rules={[{ required: true, message: t("chapters.nameRequired") }]}
+          >
+            <Input placeholder={t("chapters.namePlaceholder")} maxLength={64} />
           </Form.Item>
-          <Form.Item name="sortOrder" label="排序">
+          <Form.Item name="sortOrder" label={t("chapters.sortOrder")}>
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
         </Form>

@@ -1,6 +1,7 @@
 "use client";
 
 import IonIcon from "@/components/IonIcon";
+import { useLocale } from "@/lib/i18n";
 import { Select, type SelectProps } from "antd";
 import { useCallback, useEffect, useState } from "react";
 
@@ -87,10 +88,11 @@ export default function SubjectSelect({
   showSearch = true,
   allowClear = false,
   iconColor = "var(--ant-primary-color)",
-  placeholder = "请选择科目",
+  placeholder,
   loading: externalLoading,
   ...rest
 }: SubjectSelectProps) {
+  const { t } = useLocale();
   const { subjects: internalSubjects, loading: internalLoading } = useSubjects();
   const subjects = externalSubjects ?? internalSubjects;
   const loading = externalLoading ?? internalLoading;
@@ -119,7 +121,7 @@ export default function SubjectSelect({
     <Select
       showSearch={showSearch}
       allowClear={allowClear}
-      placeholder={placeholder}
+      placeholder={placeholder ?? t("common.selectSubject")}
       loading={loading}
       options={options}
       optionFilterProp="label"

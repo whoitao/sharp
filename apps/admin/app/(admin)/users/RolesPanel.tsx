@@ -1,7 +1,8 @@
 "use client";
 
 import { usePermissions } from "@/components/permissions";
-import { PERMISSION_GROUPS, WILDCARD } from "@/lib/permissions";
+import { useLocale, type MessageKey } from "@/lib/i18n";
+import { PERMISSION_GROUPS, WILDCARD, type PermissionResource } from "@/lib/permissions";
 import { DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import {
   App,
@@ -35,8 +36,25 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
   return { Authorization: `Bearer ${token}`, ...extra };
 }
 
+/** 权限分组的中文 label 只保留在 lib/permissions.ts 作为兜底，UI 一律按 key 走语言包 */
+const PERMISSION_LABEL_KEYS: Record<PermissionResource, MessageKey> = {
+  dashboard: "permissions.dashboard",
+  questions: "permissions.questions",
+  "knowledge-points": "permissions.knowledgePoints",
+  tags: "permissions.tags",
+  textbooks: "permissions.textbooks",
+  grades: "permissions.grades",
+  articles: "permissions.articles",
+  pets: "permissions.pets",
+  "study-records": "permissions.studyRecords",
+  users: "permissions.users",
+  admins: "permissions.admins",
+  roles: "permissions.roles",
+};
+
 export default function RolesPanel() {
   const { message, modal } = App.useApp();
+  const { t } = useLocale();
   const { can } = usePermissions();
   const canWrite = can("roles:write");
 
@@ -55,6 +73,19 @@ export default function RolesPanel() {
   );
   const isWildcard = draft.includes(WILDCARD);
 
+  // 内置角色按 code 映射语言包；自定义角色回退到数据库里的名称/描述（数据内容不翻译）
+  const roleName = (role: RoleItem) => {
+    const key = `roles.${role.code}` as MessageKey;
+    const translated = t(key);
+    return translated === key ? role.name : translated;
+  };
+  const roleDescription = (role: RoleItem) => {
+    if (!role.description) return null;
+    const key = `roles.${role.code}Desc` as MessageKey;
+    const translated = t(key);
+    return translated === key ? role.description : translated;
+  };
+
   const load = async () => {
     setLoading(true);
     try {
@@ -64,10 +95,10 @@ export default function RolesPanel() {
         setRoles(data.data);
         setSelectedId((prev) => prev ?? data.data[0]?.id ?? null);
       } else {
-        message.error(data.error ?? "加载角色失败");
+        message.error(data.error ?? t("roles.loadFailed"));
       }
     } catch {
-      message.error("加载角色失败");
+      message.error(t("roles.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -119,13 +150,13 @@ export default function RolesPanel() {
       });
       const data = await res.json();
       if (res.ok) {
-        message.success("已保存");
+        message.success(t("common.saved"));
         await load();
       } else {
-        message.error(data.error ?? "保存失败");
+        message.error(data.error ?? t("common.saveFailed"));
       }
     } catch {
-      message.error("保存失败");
+      message.error(t("common.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -133,8 +164,8 @@ export default function RolesPanel() {
 
   const handleDelete = (role: RoleItem) => {
     modal.confirm({
-      title: `删除角色「${role.name}」？`,
-      content: "该操作不可撤销。",
+      title: t("roles.deleteTitle", { name: roleName(role) }),
+      content: t("roles.deleteConfirm"),
       okButtonProps: { danger: true },
       onOk: async () => {
         const res = await fetch(`/api/admin/roles/${role.id}`, {
@@ -143,11 +174,11 @@ export default function RolesPanel() {
         });
         const data = await res.json();
         if (res.ok) {
-          message.success("已删除");
+          message.success(t("common.deleted"));
           if (selectedId === role.id) setSelectedId(null);
           await load();
         } else {
-          message.error(data.error ?? "删除失败");
+          message.error(data.error ?? t("common.deleteFailed"));
         }
       },
     });
@@ -162,43 +193,51 @@ export default function RolesPanel() {
     });
     const data = await res.json();
     if (res.ok) {
-      message.success("已创建");
+      message.success(t("common.created"));
       setCreateOpen(false);
       createForm.resetFields();
       setSelectedId(data.id ?? null);
       await load();
     } else {
-      message.error(data.error ?? "创建失败");
+      message.error(data.error ?? t("common.createFailed"));
     }
   };
 
   const columns: ColumnsType<RoleItem> = [
     {
-      title: "角色",
+      title: t("roles.title"),
       dataIndex: "name",
       key: "name",
-      render: (name: string, row) => (
+      render: (_name: string, row) => (
         <Space size={6}>
-          <strong>{name}</strong>
+          <strong>{roleName(row)}</strong>
           <Tag>{row.code}</Tag>
-          {row.isSystem && <Tag color="default">内置</Tag>}
+          {row.isSystem && <Tag color="default">{t("roles.builtin")}</Tag>}
         </Space>
       ),
     },
     {
-      title: "管理员",
+      title: t("roles.adminCount"),
       dataIndex: "adminCount",
       key: "adminCount",
       width: 90,
       render: (n: number) => n,
     },
     {
-      title: "操作",
+      title: t("common.actions"),
       key: "actions",
       width: 80,
       render: (_: unknown, row) =>
         canWrite && !row.isSystem ? (
-          <Button size="small" type="text" danger icon={<DeleteOutlined />} onClick={() => handleDelete(row)} />
+          <Button
+            size="small"
+            variant="text"
+            color="danger"
+            icon={<DeleteOutlined />}
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
+            onClick={() => handleDelete(row)}
+          />
         ) : null,
     },
   ];
@@ -207,12 +246,12 @@ export default function RolesPanel() {
     <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
       <Card
         size="small"
-        title="角色列表"
+        title={t("roles.listTitle")}
         style={{ width: 520, flex: "0 0 auto" }}
         extra={
           canWrite ? (
             <Button size="small" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-              新建角色
+              {t("roles.addRole")}
             </Button>
           ) : null
         }
@@ -226,14 +265,18 @@ export default function RolesPanel() {
           pagination={false}
           rowClassName={(row) => (row.id === selectedId ? "ant-table-row-selected" : "")}
           onRow={(row) => ({ onClick: () => setSelectedId(row.id) })}
-          locale={{ emptyText: "暂无角色" }}
+          locale={{ emptyText: t("roles.empty") }}
         />
       </Card>
 
       <Card
         size="small"
         style={{ flex: "1 1 420px", minWidth: 420 }}
-        title={selected ? `权限配置 · ${selected.name}` : "权限配置"}
+        title={
+          selected
+            ? t("roles.permissionConfigFor", { name: roleName(selected) })
+            : t("roles.permissionConfig")
+        }
         extra={
           canWrite && selected ? (
             <Button
@@ -244,21 +287,19 @@ export default function RolesPanel() {
               disabled={isWildcard}
               onClick={handleSave}
             >
-              保存
+              {t("common.save")}
             </Button>
           ) : null
         }
       >
         {!selected ? (
-          <Empty description="请选择左侧角色" />
+          <Empty description={t("roles.selectRole")} />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {selected.description && (
-              <span style={{ opacity: 0.65, fontSize: 12 }}>{selected.description}</span>
+            {roleDescription(selected) && (
+              <span style={{ opacity: 0.65, fontSize: 12 }}>{roleDescription(selected)}</span>
             )}
-            {isWildcard && (
-              <Tag color="gold">该角色拥有全部权限（通配符），不可编辑</Tag>
-            )}
+            {isWildcard && <Tag color="gold">{t("roles.wildcardHint")}</Tag>}
             {PERMISSION_GROUPS.map((group) => {
               const keys = group.writable
                 ? [`${group.key}:read`, `${group.key}:write`]
@@ -267,20 +308,22 @@ export default function RolesPanel() {
               const disabled = !canWrite || isWildcard;
               return (
                 <div key={group.key} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 110, fontWeight: 600, flex: "0 0 auto" }}>{group.label}</div>
+                  <div style={{ width: 110, fontWeight: 600, flex: "0 0 auto" }}>
+                    {t(PERMISSION_LABEL_KEYS[group.key])}
+                  </div>
                   <Checkbox
                     checked={allChecked}
                     disabled={disabled}
                     onChange={(e) => toggleGroup(keys, e.target.checked)}
                   >
-                    全选
+                    {t("roles.selectAll")}
                   </Checkbox>
                   <Checkbox
                     checked={draft.includes(`${group.key}:read`)}
                     disabled={disabled}
                     onChange={(e) => toggle(`${group.key}:read`, e.target.checked)}
                   >
-                    查看
+                    {t("roles.view")}
                   </Checkbox>
                   {group.writable && (
                     <Checkbox
@@ -288,7 +331,7 @@ export default function RolesPanel() {
                       disabled={disabled}
                       onChange={(e) => toggle(`${group.key}:write`, e.target.checked)}
                     >
-                      编辑
+                      {t("roles.write")}
                     </Checkbox>
                   )}
                 </div>
@@ -299,29 +342,33 @@ export default function RolesPanel() {
       </Card>
 
       <Modal
-        title="新建角色"
+        title={t("roles.createTitle")}
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
         onOk={handleCreate}
-        okText="创建"
-        cancelText="取消"
+        okText={t("common.create")}
+        cancelText={t("common.cancel")}
       >
         <Form form={createForm} layout="vertical" style={{ marginTop: 12 }}>
           <Form.Item
-            label="角色编码"
+            label={t("roles.code")}
             name="code"
             rules={[
-              { required: true, message: "请输入角色编码" },
-              { pattern: /^[a-z][a-z0-9_-]{1,31}$/, message: "2-32 位小写字母/数字/下划线" },
+              { required: true, message: t("roles.codeRequired") },
+              { pattern: /^[a-z][a-z0-9_-]{1,31}$/, message: t("roles.codePattern") },
             ]}
           >
-            <Input placeholder="如 assistant" />
+            <Input placeholder={t("roles.codePlaceholder")} />
           </Form.Item>
-          <Form.Item label="角色名称" name="name" rules={[{ required: true, message: "请输入角色名称" }]}>
-            <Input placeholder="如 助教" />
+          <Form.Item
+            label={t("roles.name")}
+            name="name"
+            rules={[{ required: true, message: t("roles.nameRequired") }]}
+          >
+            <Input placeholder={t("roles.namePlaceholder")} />
           </Form.Item>
-          <Form.Item label="描述" name="description">
-            <Input.TextArea rows={2} placeholder="可选" />
+          <Form.Item label={t("roles.description")} name="description">
+            <Input.TextArea rows={2} placeholder={t("roles.descriptionPlaceholder")} />
           </Form.Item>
         </Form>
       </Modal>

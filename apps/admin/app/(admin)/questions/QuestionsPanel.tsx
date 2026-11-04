@@ -731,7 +731,7 @@ export default function QuestionsPanel() {
         </Popover>
       ),
     },
-    { title: t("questions.colDifficulty"), dataIndex: "difficulty", key: "difficulty", width: 70 },
+    { title: t("questions.colDifficulty"), dataIndex: "difficulty", key: "difficulty", width: 92 },
     { title: t("questions.colScore"), dataIndex: "score", key: "score", width: 70 },
     {
       title: t("questions.colActions"),
@@ -739,13 +739,23 @@ export default function QuestionsPanel() {
       width: 80,
       align: "right",
       render: (_, record) => (
-        <Space size={0}>
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
+        <Space size={4}>
           <Button
-            type="text"
+            variant="text"
+            color="primary"
             size="small"
-            danger
+            icon={<EditOutlined />}
+            title={t("common.edit")}
+            aria-label={t("common.edit")}
+            onClick={() => openEdit(record)}
+          />
+          <Button
+            variant="text"
+            color="danger"
+            size="small"
             icon={<DeleteOutlined />}
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
             onClick={() => {
               setSelectedQuestion(record);
               setDeleteOpen(true);
@@ -818,7 +828,7 @@ export default function QuestionsPanel() {
                   treeData={chapterTree.map(function convert(node: ChapterNode): any {
                     return {
                       value: node.id,
-                      title: `${node.name}${node.level === 1 ? "（章）" : ""}`,
+                      title: `${node.name}${node.level === 1 ? t("questions.chapterSuffix") : ""}`,
                       key: node.id,
                       children: node.children?.map(convert) || [],
                     };
@@ -843,7 +853,12 @@ export default function QuestionsPanel() {
               allowClear
               placeholder={t("questions.tagsPlaceholder")}
               options={["exam", "source", "difficulty"].map((type) => ({
-                label: type === "exam" ? "考试类型" : type === "source" ? "题目来源" : "难度",
+                label:
+                  type === "exam"
+                    ? t("tags.typeExam")
+                    : type === "source"
+                      ? t("tags.typeSource")
+                      : t("tags.typeDifficulty"),
                 options: tags
                   .filter((tag) => tag.type === type)
                   .map((tag) => ({ value: tag.id, label: tag.name })),
@@ -1083,6 +1098,7 @@ export default function QuestionsPanel() {
         loading={loading}
         columns={columns}
         dataSource={questions}
+        scroll={{ x: 1400 }}
         pagination={{
           current: page,
           pageSize,

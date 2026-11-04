@@ -174,13 +174,23 @@ export default function CategoriesPanel() {
       width: 100,
       align: "right",
       render: (_, record) => (
-        <Space size={0}>
-          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
+        <Space size={4}>
           <Button
-            type="text"
+            variant="text"
+            color="primary"
             size="small"
-            danger
+            icon={<EditOutlined />}
+            title={t("common.edit")}
+            aria-label={t("common.edit")}
+            onClick={() => openEdit(record)}
+          />
+          <Button
+            variant="text"
+            color="danger"
+            size="small"
             icon={<DeleteOutlined />}
+            title={t("common.delete")}
+            aria-label={t("common.delete")}
             onClick={() => {
               setSelected(record);
               setDeleteOpen(true);

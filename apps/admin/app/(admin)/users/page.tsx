@@ -42,7 +42,7 @@ export default function UsersPage() {
   usePageTitle(headerTabs);
 
   if (!loading && tabs.length === 0) {
-    return <div style={{ padding: 24, opacity: 0.65 }}>当前角色没有用户管理相关权限</div>;
+    return <div style={{ padding: 24, opacity: 0.65 }}>{t("users.noPermission")}</div>;
   }
 
   if (activeKey === "admins") return <AdminsPanel />;

@@ -3,7 +3,7 @@
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import { usePermissions } from "@/components/permissions";
-import { useLocale } from "@/lib/i18n";
+import { useLocale, type MessageKey } from "@/lib/i18n";
 import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Form, Input, Modal, Select, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -62,15 +62,15 @@ export default function AdminsPanel() {
       });
       const data = await res.json();
       if (res.ok) {
-        message.success("管理员已创建");
+        message.success(t("admins.created"));
         setCreateOpen(false);
         createForm.resetFields();
         fetchAdmins(1, search, pageSize);
       } else {
-        message.error(data.error ?? "创建失败");
+        message.error(data.error ?? t("admins.createFailed"));
       }
     } catch {
-      message.error("创建失败");
+      message.error(t("admins.createFailed"));
     } finally {
       setCreating(false);
     }
@@ -103,13 +103,13 @@ export default function AdminsPanel() {
       });
       const data = await res.json();
       if (res.ok) {
-        message.success("角色已更新");
+        message.success(t("admins.roleUpdated"));
         fetchAdmins(page, search, pageSize);
       } else {
-        message.error(data.error ?? "更新失败");
+        message.error(data.error ?? t("admins.updateFailed"));
       }
     } catch {
-      message.error("更新失败");
+      message.error(t("admins.updateFailed"));
     }
   };
 
@@ -158,6 +158,15 @@ export default function AdminsPanel() {
 
   const dateLocale = locale === "zh" ? "zh-CN" : "en-US";
 
+  // 内置角色按 code 映射到语言包；自定义角色回退到数据库中的名称（数据内容不翻译）
+  const roleName = (code: string, fallback: string) => {
+    const key = `roles.${code}` as MessageKey;
+    const translated = t(key);
+    return translated === key ? fallback : translated;
+  };
+  const roleLabel = (r: RoleOption) =>
+    `${roleName(r.code, r.name)}${locale === "zh" ? `（${r.code}）` : ` (${r.code})`}`;
+
   const columns: ColumnsType<AdminItem> = [
     {
       title: t("admins.colUsername"),
@@ -177,14 +186,16 @@ export default function AdminsPanel() {
               size="small"
               style={{ width: 140 }}
               value={currentRoleId ?? undefined}
-              options={roleOptions.map((r) => ({ value: r.id, label: `${r.name}（${r.code}）` }))}
+              options={roleOptions.map((r) => ({ value: r.id, label: roleLabel(r) }))}
               disabled={row.id === identity?.id}
               onChange={(value) => changeRole(row.id, value)}
             />
           );
         }
         return (
-          <Tag color={role === "super" ? "gold" : "geekblue"}>{row.roleName ?? role}</Tag>
+          <Tag color={role === "super" ? "gold" : "geekblue"}>
+            {roleName(role, row.roleName ?? role)}
+          </Tag>
         );
       },
     },
@@ -199,7 +210,7 @@ export default function AdminsPanel() {
   usePageActions(
     canWrite ? (
       <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-        新增管理员
+        {t("admins.addAdmin")}
       </Button>
     ) : null
   );
@@ -229,40 +240,44 @@ export default function AdminsPanel() {
       />
 
       <Modal
-        title="新增管理员"
+        title={t("admins.createTitle")}
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
         onOk={handleCreate}
         confirmLoading={creating}
-        okText="创建"
-        cancelText="取消"
+        okText={t("common.create")}
+        cancelText={t("common.cancel")}
         destroyOnHidden
       >
         <Form form={createForm} layout="vertical" style={{ marginTop: 12 }}>
           <Form.Item
-            label="用户名"
+            label={t("admins.username")}
             name="username"
             rules={[
-              { required: true, message: "请输入用户名" },
-              { pattern: /^[A-Za-z0-9_]{3,32}$/, message: "3-32 位字母/数字/下划线" },
+              { required: true, message: t("admins.usernameRequired") },
+              { pattern: /^[A-Za-z0-9_]{3,32}$/, message: t("admins.usernamePattern") },
             ]}
           >
-            <Input placeholder="登录用户名" autoComplete="off" />
+            <Input placeholder={t("admins.usernamePlaceholder")} autoComplete="off" />
           </Form.Item>
           <Form.Item
-            label="初始密码"
+            label={t("admins.password")}
             name="password"
             rules={[
-              { required: true, message: "请输入初始密码" },
-              { min: 6, message: "密码至少 6 位" },
+              { required: true, message: t("admins.passwordRequired") },
+              { min: 6, message: t("admins.passwordMin") },
             ]}
           >
-            <Input.Password placeholder="至少 6 位" autoComplete="new-password" />
+            <Input.Password placeholder={t("admins.passwordPlaceholder")} autoComplete="new-password" />
           </Form.Item>
-          <Form.Item label="角色" name="roleId" rules={[{ required: true, message: "请选择角色" }]}>
+          <Form.Item
+            label={t("admins.role")}
+            name="roleId"
+            rules={[{ required: true, message: t("admins.roleRequired") }]}
+          >
             <Select
-              placeholder="选择角色"
-              options={roleOptions.map((r) => ({ value: r.id, label: `${r.name}（${r.code}）` }))}
+              placeholder={t("admins.rolePlaceholder")}
+              options={roleOptions.map((r) => ({ value: r.id, label: roleLabel(r) }))}
             />
           </Form.Item>
         </Form>
