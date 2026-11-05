@@ -5,6 +5,7 @@ import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import RichTextEditor from "@/components/RichTextEditor";
+import { formatDateTime } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
 import {
     DeleteOutlined,
@@ -66,8 +67,7 @@ interface ArticleFormValues {
 
 const CHANNELS = ["web", "mobile"] as const;
 
-const formatDate = (value: string | null) =>
-  value ? new Date(value).toLocaleString() : "-";
+const formatDate = (value: string | null) => formatDateTime(value);
 
 export default function ArticlesPanel() {
   const { message } = App.useApp();

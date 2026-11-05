@@ -4,6 +4,7 @@ import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions
 
 import { usePageSize } from "@/components/antd-providers";
 import { usePermissions } from "@/components/permissions";
+import { formatDateOnly } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
 import { KeyOutlined, PlayCircleOutlined, StopOutlined } from "@ant-design/icons";
 import { App, Button, Form, Input, Modal, Space, Table, Tag } from "antd";
@@ -30,7 +31,7 @@ interface PaginatedData {
 }
 
 export default function UsersPanel() {
-  const { locale, t } = useLocale();
+  const { t } = useLocale();
   const { pageSize } = usePageSize();
   const { can } = usePermissions();
   const { message } = App.useApp();
@@ -129,8 +130,6 @@ export default function UsersPanel() {
     }
   };
 
-  const dateLocale = locale === "zh" ? "zh-CN" : "en-US";
-
   const columns: ColumnsType<User> = [
     {
       title: t("users.colUsername"),
@@ -163,7 +162,7 @@ export default function UsersPanel() {
       title: t("users.colCreatedAt"),
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (value: string) => new Date(value).toLocaleDateString(dateLocale),
+      render: (value: string) => formatDateOnly(value),
     },
     {
       title: t("users.colActions"),

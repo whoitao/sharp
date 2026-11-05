@@ -5,15 +5,15 @@ import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { CrashEntry } from '../../utils/crashLog';
 import { clearCrashes, readCrashes } from '../../utils/crashLog';
+import { getDisplayParts } from '../../utils/datetime';
 
 const keyExtractor = (item: CrashEntry) => item.at;
 
-const pad = (num: number) => num.toString().padStart(2, '0');
-
 const formatCrashTime = (iso: string): string => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  const parts = getDisplayParts(iso);
+  return parts
+    ? `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`
+    : iso;
 };
 
 interface CrashCardProps {

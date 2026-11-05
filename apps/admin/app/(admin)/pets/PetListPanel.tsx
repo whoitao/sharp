@@ -3,6 +3,7 @@
 import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
 
 import { usePageSize } from "@/components/antd-providers";
+import { formatDateTime } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import {
@@ -49,8 +50,7 @@ interface PetFormValues {
   schoolStageName?: string;
 }
 
-const formatDate = (value: string | null) =>
-  value ? new Date(value).toLocaleString() : "-";
+const formatDate = (value: string | null) => formatDateTime(value);
 
 export default function PetListPanel() {
   const { message } = App.useApp();

@@ -10,6 +10,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
+import { formatDate } from '../../utils/datetime';
 
 type DetailRoute = RouteProp<HomeStackParamList, 'ArticleDetail'>;
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'ArticleDetail'>;
@@ -19,8 +20,7 @@ interface ArticleDetailScreenProps {
   navigation: NavigationProp;
 }
 
-const formatDate = (value: string | null): string =>
-  value ? new Date(value).toISOString().slice(0, 10) : '';
+/** 固定 YYYY-MM-DD（北京时间），避免不同端本地化格式不一致 */
 
 const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({ route }) => {
   const { colors } = useTheme();

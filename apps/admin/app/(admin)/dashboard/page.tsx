@@ -4,6 +4,7 @@ import { useThemeMode } from "@/components/antd-providers";
 import GroupedGradeSelect from "@/components/GroupedGradeSelect";
 import IonIcon from "@/components/IonIcon";
 import TrendChart, { type TrendChartType } from "@/components/TrendChart";
+import { formatDateTime } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
 import { getAdminPalette, type AdminPalette } from "@/lib/theme";
 import {
@@ -142,7 +143,7 @@ function SectionCard({
 
 export default function DashboardPage() {
   const { message } = App.useApp();
-  const { locale, t } = useLocale();
+  const { t } = useLocale();
   const { resolved } = useThemeMode();
   const isDark = resolved === "dark";
   const palette: Palette = getAdminPalette(isDark);
@@ -264,13 +265,7 @@ export default function DashboardPage() {
     return t("stats.scopeBank");
   };
 
-  const formatRecentTime = (value: string) =>
-    new Date(value).toLocaleString(locale === "zh" ? "zh-CN" : "en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatRecentTime = (value: string) => formatDateTime(value);
 
   const accuracyTone = (accuracy: number) => {
     if (accuracy >= 80) return { bg: palette.accentLight, fg: palette.accentStrong };

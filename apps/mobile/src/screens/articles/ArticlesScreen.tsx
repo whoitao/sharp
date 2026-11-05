@@ -9,6 +9,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import { cardShadow } from '../../theme/shadows';
+import { formatDate } from '../../utils/datetime';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Articles'>;
 
@@ -16,9 +17,7 @@ interface ArticlesScreenProps {
   navigation: NavigationProp;
 }
 
-/** 固定 YYYY-MM-DD，避免不同端本地化格式不一致 */
-const formatDate = (value: string | null): string =>
-  value ? new Date(value).toISOString().slice(0, 10) : '';
+/** 固定 YYYY-MM-DD（北京时间），避免不同端本地化格式不一致 */
 
 const ArticlesScreen: React.FC<ArticlesScreenProps> = ({ navigation }) => {
   const { colors, isDark } = useTheme();

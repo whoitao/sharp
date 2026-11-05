@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageSize } from "@/components/antd-providers";
+import { formatDateTime } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
 import { Input, Select, Space, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -104,7 +105,7 @@ export default function PetFeedsPanel() {
       dataIndex: "createdAt",
       key: "createdAt",
       width: 170,
-      render: (value: string) => new Date(value).toLocaleString(),
+      render: (value: string) => formatDateTime(value),
     },
     {
       title: t("pets.colFeedUser"),

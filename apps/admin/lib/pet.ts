@@ -1,4 +1,5 @@
 import type { Pet, PetConfig, PetSpecies, PetSpeciesStage } from "@prisma/client";
+import { formatMonthDayTime } from "@/lib/datetime";
 import { prisma } from "@/lib/prisma";
 
 /** 服务器本地日期键：与现有 UserDailyStat 完全一致，不使用客户端时间 */
@@ -8,10 +9,9 @@ export function todayKey(): Date {
   return d;
 }
 
-/** 喂养记录展示用：MM-DD HH:mm（本地时区） */
+/** 喂养记录展示用：MM-DD HH:mm（固定北京时间，不依赖服务器进程时区） */
 export function formatFeedTime(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return formatMonthDayTime(d);
 }
 
 export async function getPetConfig(): Promise<PetConfig> {

@@ -27,6 +27,7 @@ import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { store as reduxStore } from '../../stores';
 import { finishQuiz, recordAnswer, restartQuiz, setCurrentIndex } from '../../stores/studySlice';
+import { getDisplayParts } from '../../utils/datetime';
 
 type QuizParamList = { Quiz: QuizParams; QuizResult: QuizResultParams };
 type NavigationProp = NativeStackNavigationProp<QuizParamList, 'Quiz'>;
@@ -88,10 +89,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
 
   // 上次学习摘要的日期 / 用时格式，与学习记录列表保持一致
   const formatRecordDate = (iso: string): string => {
-    const date = new Date(iso);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${t.monthDay(date.getMonth() + 1, date.getDate())} ${t.clockTime(hours, minutes)}`;
+    const parts = getDisplayParts(iso);
+    if (!parts) return '';
+    return `${t.monthDay(Number(parts.month), Number(parts.day))} ${t.clockTime(parts.hour, parts.minute)}`;
   };
 
   const formatRecordDuration = (seconds: number): string => {

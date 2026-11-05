@@ -28,6 +28,7 @@ import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
 import { updateSettings } from '../../stores/settingsSlice';
+import { getDisplayParts } from '../../utils/datetime';
 import { cardShadow } from '../../theme/shadows';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'Records'>;
@@ -225,17 +226,14 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   };
 
   const formatDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${t.monthDay(month, day)} ${t.clockTime(hours, minutes)}`;
+    const parts = getDisplayParts(dateStr);
+    if (!parts) return '';
+    return `${t.monthDay(Number(parts.month), Number(parts.day))} ${t.clockTime(parts.hour, parts.minute)}`;
   };
 
   const formatShortDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    return t.monthDay(date.getMonth() + 1, date.getDate());
+    const parts = getDisplayParts(dateStr);
+    return parts ? t.monthDay(Number(parts.month), Number(parts.day)) : '';
   };
 
   const formatDuration = (seconds: number): string => {

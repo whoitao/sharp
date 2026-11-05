@@ -3,6 +3,7 @@
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import { usePermissions } from "@/components/permissions";
+import { formatDateTime } from "@/lib/datetime";
 import { useLocale, type MessageKey } from "@/lib/i18n";
 import { PlusOutlined } from "@ant-design/icons";
 import { App, Button, Form, Input, Modal, Select, Table, Tag } from "antd";
@@ -156,8 +157,6 @@ export default function AdminsPanel() {
     fetchAdmins(1, value, pageSize);
   };
 
-  const dateLocale = locale === "zh" ? "zh-CN" : "en-US";
-
   // 内置角色按 code 映射到语言包；自定义角色回退到数据库中的名称（数据内容不翻译）
   const roleName = (code: string, fallback: string) => {
     const key = `roles.${code}` as MessageKey;
@@ -203,7 +202,7 @@ export default function AdminsPanel() {
       title: t("admins.colCreatedAt"),
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (value: string) => new Date(value).toLocaleString(dateLocale),
+      render: (value: string) => formatDateTime(value),
     },
   ];
 
