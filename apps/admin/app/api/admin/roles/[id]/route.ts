@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { invalidateRolePermissions, requirePermission } from "@/lib/middleware";
+import {
+  invalidateRolePermissions,
+  loadUserPermissions,
+  requirePermission,
+} from "@/lib/middleware";
+import { guardRolePermissionEdit, resolveActor } from "@/lib/admin-guard";
 import { ALL_PERMISSIONS, WILDCARD } from "@/lib/permissions";
 
 const VALID_PERMISSIONS = new Set<string>([...ALL_PERMISSIONS, WILDCARD]);
@@ -39,6 +44,19 @@ export async function PATCH(
     } else {
       permissions = body.permissions;
     }
+    if (!permissions) {
+      return NextResponse.json({ error: "权限不能为空" }, { status: 400 });
+    }
+
+    // H1：只有 super 能授予/保留 "*"；禁止修改自己所属角色；非 super 只能授予自己的权限子集
+    const actor = await resolveActor(admin);
+    const actorPermissions = await loadUserPermissions(actor);
+    const denied = guardRolePermissionEdit(actor, actorPermissions, {
+      roleId: role.id,
+      roleCode: role.code,
+      requestedPermissions: permissions,
+    });
+    if (denied) return denied;
   }
 
   await prisma.$transaction(async (tx) => {

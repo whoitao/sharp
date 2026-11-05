@@ -5,6 +5,7 @@ import * as XLSX from "xlsx";
 import { Prisma } from "@prisma/client";
 import { handleRouteError } from "@/lib/http";
 import { parseBigIntId } from "@/lib/query";
+import { sanitizeRichHtml } from "@/lib/rich-text";
 
 /** 导入上限：避免超大文件/超长表格打爆内存与数据库连接池。 */
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
@@ -140,6 +141,11 @@ export async function POST(request: NextRequest) {
         errors.push(`Row ${rowNo}: content is required`);
         continue;
       }
+      const safeContent = sanitizeRichHtml(content);
+      if (safeContent.trim() === "") {
+        errors.push(`Row ${rowNo}: content is empty after sanitize`);
+        continue;
+      }
 
       let targetGradeId = selectedGradeId;
       const gidRaw = rawId(row.grade_id);
@@ -225,14 +231,15 @@ export async function POST(request: NextRequest) {
       const score = parseInt(String(row.score ?? "").trim(), 10) || 1;
       const sortOrder = parseInt(String(row.sort_order ?? "").trim(), 10) || 0;
       const analysis = String(row.analysis ?? "").trim() || null;
+      const safeAnalysis = analysis ? sanitizeRichHtml(analysis) : null;
 
       pending.push({
         grade: { connect: { id: targetGradeId } },
         ...(subjectId ? { subject: { connect: { id: subjectId } } } : {}),
         ...(chapterId ? { chapter: { connect: { id: chapterId } } } : {}),
         type,
-        content,
-        analysis,
+        content: safeContent,
+        analysis: safeAnalysis,
         difficulty,
         score,
         sortOrder,
@@ -240,7 +247,7 @@ export async function POST(request: NextRequest) {
         options: {
           create: optionEntries.map((o, idx) => ({
             optionKey: o.key,
-            content: o.content,
+            content: sanitizeRichHtml(o.content),
             isCorrect: correctKeys.includes(o.key),
             sortNo: idx,
           })),

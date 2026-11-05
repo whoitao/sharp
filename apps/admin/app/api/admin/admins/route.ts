@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/middleware";
+import { guardRoleAssignment, resolveActor } from "@/lib/admin-guard";
 import { hashPassword } from "@/lib/auth";
 import { handleRouteError } from "@/lib/http";
 import { adminCreateSchema, adminsQuerySchema } from "@/lib/schemas";
@@ -24,6 +25,11 @@ export async function POST(request: NextRequest) {
     if (!role) {
       return NextResponse.json({ error: "角色不存在" }, { status: 404 });
     }
+
+    // H3：创建管理员同样受角色分配规则约束，非 super 不能创建 super 账号
+    const actor = await resolveActor(current);
+    const denied = guardRoleAssignment(actor, { nextRoleCode: role.code });
+    if (denied) return denied;
 
     const created = await prisma.admin.create({
       data: {

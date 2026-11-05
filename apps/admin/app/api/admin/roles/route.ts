@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/middleware";
+import { loadUserPermissions, requirePermission } from "@/lib/middleware";
+import { guardRolePermissionEdit, resolveActor } from "@/lib/admin-guard";
 import { ALL_PERMISSIONS, WILDCARD } from "@/lib/permissions";
 
 const VALID_PERMISSIONS = new Set<string>([...ALL_PERMISSIONS, WILDCARD]);
@@ -57,6 +58,16 @@ export async function POST(request: NextRequest) {
   if (exists) {
     return NextResponse.json({ error: "角色编码已存在" }, { status: 409 });
   }
+
+  // H1：创建角色同样只能授予自己已有的权限子集，非 super 不能授予 "*"
+  const actor = await resolveActor(admin);
+  const actorPermissions = await loadUserPermissions(actor);
+  const denied = guardRolePermissionEdit(actor, actorPermissions, {
+    roleId: "__new_role__",
+    roleCode: code,
+    requestedPermissions: permissions,
+  });
+  if (denied) return denied;
 
   const role = await prisma.adminRole.create({
     data: {

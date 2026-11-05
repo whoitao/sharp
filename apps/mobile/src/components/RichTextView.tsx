@@ -28,15 +28,19 @@ interface RichTextViewProps {
 
 /**
  * 用 WebView 渲染资源路径都指向 API 域名，避免跟随页面 baseUrl 解析。
- * 内容是后台管理员录入的，允许执行脚本以便测量高度。
+ * 内容虽已由服务端白名单清洗，这里再加一层 CSP nonce 隔离：
+ * 只有本函数生成的内联脚本能执行，内容里的 <script>、on* 事件、javascript: 链接
+ * 以及外部脚本都会被 CSP 拦截，同时保留 KaTeX 公式渲染与高度测量所需的可信脚本。
  */
 function buildDocument(html: string, fontSize: number, color: string, lineHeight: number): string {
   const base = API_BASE_URL.replace(/\/+$/, '');
+  const nonce = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline' ${base}; img-src * data: blob:; font-src ${base} data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'" />
 <link rel="stylesheet" href="${base}/katex/katex.min.css" />
 <style>
   html, body {
@@ -71,9 +75,9 @@ function buildDocument(html: string, fontSize: number, color: string, lineHeight
 </head>
 <body>
 ${html}
-<script src="${base}/katex/katex.min.js"></script>
-<script src="${base}/katex/auto-render.min.js"></script>
-<script>
+<script nonce="${nonce}" src="${base}/katex/katex.min.js"></script>
+<script nonce="${nonce}" src="${base}/katex/auto-render.min.js"></script>
+<script nonce="${nonce}">
   (function () {
     // 两种公式来源都要渲染：
     // 1. 编辑器插入的数学节点只会序列化成 data-latex

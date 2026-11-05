@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { parsePageParams } from "@/lib/query";
+import { sanitizeRichHtml } from "@/lib/rich-text";
 import { NextRequest, NextResponse } from "next/server";
 
 const CHANNELS = ["web", "mobile"];
@@ -107,7 +108,8 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const title = typeof body.title === "string" ? body.title.trim() : "";
-  const content = typeof body.content === "string" ? body.content : "";
+  const rawContent = typeof body.content === "string" ? body.content : "";
+  const content = sanitizeRichHtml(rawContent);
   const channels = normalizeChannels(body.channels);
   const categoryId = body.categoryId;
   const status = body.status === "published" ? "published" : "draft";
@@ -158,7 +160,11 @@ export async function PATCH(request: NextRequest) {
     if (typeof body.content !== "string" || body.content.trim() === "") {
       return NextResponse.json({ error: "正文不能为空" }, { status: 400 });
     }
-    data.content = body.content;
+    const sanitized = sanitizeRichHtml(body.content);
+    if (sanitized.trim() === "") {
+      return NextResponse.json({ error: "正文不能为空" }, { status: 400 });
+    }
+    data.content = sanitized;
   }
   if (body.summary !== undefined) {
     data.summary =

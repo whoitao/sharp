@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { handleRouteError } from "@/lib/http";
+import { sanitizeRichHtml } from "@/lib/rich-text";
 import { questionCreateSchema, questionsQuerySchema } from "@/lib/schemas";
 
 export async function GET(request: NextRequest) {
@@ -159,13 +160,20 @@ export async function POST(request: NextRequest) {
     }
     const finalSubjectId = chapter ? chapter.textbook.subjectId : subjectId ?? null;
 
+    // H4：题干/解析/选项在入库前做白名单清洗
+    const safeContent = sanitizeRichHtml(content);
+    const safeAnalysis = analysis ? sanitizeRichHtml(analysis) : null;
+    if (safeContent.trim() === "") {
+      return NextResponse.json({ error: "题干不能为空" }, { status: 400 });
+    }
+
     const question = await prisma.question.create({
     data: {
       gradeId: finalGradeId,
       subjectId: finalSubjectId,
       type,
-      content,
-      analysis: analysis || null,
+      content: safeContent,
+      analysis: safeAnalysis || null,
       difficulty,
       score,
       sortOrder,
@@ -174,7 +182,7 @@ export async function POST(request: NextRequest) {
       options: {
         create: options.map((opt: any, idx: number) => ({
           optionKey: opt.optionKey,
-          content: opt.content,
+          content: sanitizeRichHtml(opt.content),
           isCorrect: opt.isCorrect || false,
           sortNo: idx,
         })),

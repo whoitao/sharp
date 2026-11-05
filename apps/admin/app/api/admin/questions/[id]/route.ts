@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { handleRouteError } from "@/lib/http";
+import { sanitizeRichHtml } from "@/lib/rich-text";
 import { questionUpdateSchema } from "@/lib/schemas";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -47,8 +48,14 @@ export async function PUT(
     if (body.gradeId !== undefined) data.gradeId = body.gradeId ?? null;
     if (body.subjectId !== undefined) data.subjectId = body.subjectId ?? null;
     if (body.type !== undefined) data.type = body.type;
-    if (body.content !== undefined) data.content = body.content;
-    if (body.analysis !== undefined) data.analysis = body.analysis || null;
+    if (body.content !== undefined) {
+      const safeContent = sanitizeRichHtml(body.content);
+      if (safeContent.trim() === "") {
+        return NextResponse.json({ error: "题干不能为空" }, { status: 400 });
+      }
+      data.content = safeContent;
+    }
+    if (body.analysis !== undefined) data.analysis = body.analysis ? sanitizeRichHtml(body.analysis) : null;
     if (body.difficulty !== undefined) data.difficulty = body.difficulty;
     if (body.score !== undefined) data.score = body.score;
     if (body.sortOrder !== undefined) data.sortOrder = body.sortOrder;
@@ -86,7 +93,7 @@ export async function PUT(
           data: body.options.map((opt, idx) => ({
             questionId,
             optionKey: opt.optionKey,
-            content: opt.content,
+            content: sanitizeRichHtml(opt.content),
             isCorrect: opt.isCorrect || false,
             sortNo: idx,
           })),
