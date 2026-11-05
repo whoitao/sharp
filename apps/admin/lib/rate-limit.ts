@@ -60,9 +60,23 @@ export function resetLimit(key: string) {
   buckets.delete(key);
 }
 
-/** 从请求头取客户端 IP（优先 x-forwarded-for 第一个地址）。 */
+/**
+ * 从请求头取客户端 IP。
+ * 不再信任 x-forwarded-for 的第一个条目（客户端可任意伪造）；
+ * 优先使用反代写入的 x-real-ip，否则取 XFF 里代理最后追加的地址。
+ * 前提：服务部署在可信反向代理之后，由代理覆盖/追加这两个头。
+ */
 export function clientIp(request: Request): string {
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]!.trim();
-  return request.headers.get("x-real-ip")?.trim() || "unknown";
+  if (forwarded) {
+    const parts = forwarded
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (parts.length > 0) return parts[parts.length - 1]!;
+  }
+  return "unknown";
 }

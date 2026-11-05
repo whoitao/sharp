@@ -41,16 +41,19 @@ export function invalidateRolePermissions(roleId?: string) {
   else permCache.clear();
 }
 
-/** 解析管理员实际拥有的权限；JWT 里没有 roleId 的老 token 会回落到 DB 查询 */
+/**
+ * 解析管理员实际拥有的权限。
+ * 每次鉴权都以数据库中的当前 roleId 为准，不信任 JWT 里的 roleId，
+ * 这样调整角色/降权后旧 token 不会继续持有旧权限（立即生效）。
+ * 角色权限本身仍按 roleId 做 30s 缓存，角色权限编辑时由
+ * invalidateRolePermissions 主动失效。
+ */
 export async function loadUserPermissions(user: AdminUser): Promise<string[]> {
-  let roleId = user.roleId ?? null;
-  if (!roleId) {
-    const admin = await prisma.admin.findUnique({
-      where: { id: user.id },
-      select: { roleId: true },
-    });
-    roleId = admin?.roleId ?? null;
-  }
+  const admin = await prisma.admin.findUnique({
+    where: { id: user.id },
+    select: { roleId: true },
+  });
+  const roleId = admin?.roleId ?? null;
   if (!roleId) return [];
 
   const hit = permCache.get(roleId);

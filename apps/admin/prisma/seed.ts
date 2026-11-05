@@ -1,9 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === "production") {
+    console.error("[seed] 生产环境禁止执行破坏性 seed（会清空业务数据）");
+    process.exit(1);
+  }
+
   console.log("Seeding database...");
 
   // Clean up existing data (in order of dependencies)
@@ -18,15 +24,23 @@ async function main() {
   await prisma.admin.deleteMany();
 
   // Create admin user
-  const adminPasswordHash = await bcrypt.hash("admin123", 10);
+  const adminUsername = process.env.SEED_ADMIN_USERNAME?.trim() || "admin";
+  const envAdminPassword = process.env.SEED_ADMIN_PASSWORD?.trim();
+  const adminPassword = envAdminPassword || randomBytes(16).toString("base64url");
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
   const admin = await prisma.admin.create({
     data: {
-      username: "admin",
+      username: adminUsername,
       passwordHash: adminPasswordHash,
       role: "admin",
     },
   });
   console.log(`Created admin: ${admin.username}`);
+  if (!envAdminPassword) {
+    console.log(`初始密码（仅显示一次）: ${adminPassword}`);
+  } else {
+    console.log("初始密码来自 SEED_ADMIN_PASSWORD");
+  }
 
   // 学段字典（年级的上级维度）
   const stageSeeds = [

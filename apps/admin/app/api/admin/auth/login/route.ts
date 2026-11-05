@@ -12,8 +12,16 @@ const IP_FAILURE_LIMIT = 20;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, password } = body;
+    const usernameRaw = body?.username;
+    const password = body?.password;
 
+    if (typeof usernameRaw !== "string" || typeof password !== "string") {
+      return NextResponse.json(
+        { error: "Username and password are required" },
+        { status: 400 }
+      );
+    }
+    const username = usernameRaw.trim();
     if (!username || !password) {
       return NextResponse.json(
         { error: "Username and password are required" },
@@ -21,7 +29,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const accountKey = `login:account:${String(username)}`;
+    // 账号维度统一小写，避免通过大小写变体绕过失败次数限制
+    const accountKey = `login:account:${username.toLowerCase()}`;
     const ipKey = `login:ip:${clientIp(request)}`;
     const accountLimit = checkLimit(accountKey, ACCOUNT_FAILURE_LIMIT, LOGIN_WINDOW_MS);
     const ipLimit = checkLimit(ipKey, IP_FAILURE_LIMIT, LOGIN_WINDOW_MS);
