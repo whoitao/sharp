@@ -1,130 +1,11 @@
 import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { handleRouteError } from "@/lib/http";
+import { questionUpdateSchema } from "@/lib/schemas";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const admin = await requirePermission(request, "questions");
-  if (admin instanceof NextResponse) return admin;
-
-  const { id } = await params;
-  const body = await request.json();
-  const { gradeId, subjectId, type, content, analysis, difficulty, score, sortOrder, chapterId, source, options, knowledgePointIds, tagIds } = body;
-
-  const data: Record<string, any> = {};
-  if (gradeId !== undefined) data.gradeId = gradeId ? BigInt(gradeId) : null;
-  if (subjectId !== undefined) data.subjectId = subjectId ? BigInt(subjectId) : null;
-  if (type !== undefined) data.type = type;
-  if (content !== undefined) data.content = content;
-  if (analysis !== undefined) data.analysis = analysis || null;
-  if (difficulty !== undefined) data.difficulty = difficulty;
-  if (score !== undefined) data.score = score;
-  if (sortOrder !== undefined) data.sortOrder = sortOrder;
-
-  // 教材归属：null / 空字符串表示取消归属；传了值必须存在，并同步年级与科目
-  if (chapterId !== undefined) {
-    if (!chapterId) {
-      data.chapterId = null;
-    } else {
-      const chapter = await prisma.chapter.findUnique({
-        where: { id: BigInt(chapterId) },
-        select: {
-          id: true,
-          textbook: { select: { gradeId: true, subjectId: true } },
-        },
-      });
-      if (!chapter) {
-        return NextResponse.json({ error: "chapter not found" }, { status: 400 });
-      }
-      data.chapterId = chapter.id;
-      data.gradeId = chapter.textbook.gradeId;
-      data.subjectId = chapter.textbook.subjectId;
-    }
-  }
-
-  if (source !== undefined) {
-    if (!["exam", "textbook", "mock", "custom"].includes(source)) {
-      return NextResponse.json(
-        { error: "source must be one of exam/textbook/mock/custom" },
-        { status: 400 }
-      );
-    }
-    data.source = source;
-  }
-
-  // If options are provided, delete old and create new
-  if (options && Array.isArray(options)) {
-    await prisma.questionOption.deleteMany({
-      where: { questionId: BigInt(id) },
-    });
-
-    await prisma.question.update({
-      where: { id: BigInt(id) },
-      data: {
-        ...data,
-        options: {
-          create: options.map((opt: any, idx: number) => ({
-            optionKey: opt.optionKey,
-            content: opt.content,
-            isCorrect: opt.isCorrect || false,
-            sortNo: idx,
-          })),
-        },
-      },
-    });
-  } else {
-    await prisma.question.update({
-      where: { id: BigInt(id) },
-      data,
-    });
-  }
-
-  // Update knowledge points if provided
-  if (Array.isArray(knowledgePointIds)) {
-    await prisma.questionKnowledgePoint.deleteMany({
-      where: { questionId: BigInt(id) },
-    });
-    if (knowledgePointIds.length > 0) {
-      await prisma.questionKnowledgePoint.createMany({
-        data: knowledgePointIds.map((kpId: string) => ({
-          questionId: BigInt(id),
-          knowledgePointId: BigInt(kpId),
-        })),
-      });
-    }
-  }
-
-  // Update tags if provided
-  if (Array.isArray(tagIds)) {
-    await prisma.questionTagLink.deleteMany({ where: { questionId: BigInt(id) } });
-    if (tagIds.length > 0) {
-      await prisma.questionTagLink.createMany({
-        data: tagIds.map((tagId: string) => ({
-          questionId: BigInt(id),
-          tagId: BigInt(tagId),
-        })),
-      });
-    }
-  }
-
-  const question = await prisma.question.findUnique({
-    where: { id: BigInt(id) },
-    include: {
-      options: { orderBy: { sortNo: "asc" } },
-      knowledgePoints: {
-        include: { knowledgePoint: true },
-      },
-      tags: { include: { tag: true } },
-    },
-  });
-
-  if (!question) {
-    return NextResponse.json({ error: "Question not found" }, { status: 404 });
-  }
-
-  const serialize = (q: any) => ({
+function serialize(q: any) {
+  return {
     ...q,
     id: q.id.toString(),
     gradeId: q.gradeId?.toString() ?? null,
@@ -147,9 +28,112 @@ export async function PUT(
       name: link.tag.name,
       type: link.tag.type,
     })),
-  });
+  };
+}
 
-  return NextResponse.json(serialize(question));
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const admin = await requirePermission(request, "questions");
+  if (admin instanceof NextResponse) return admin;
+
+  try {
+    const { id } = await params;
+    const questionId = BigInt(id);
+    const body = questionUpdateSchema.parse(await request.json().catch(() => ({})));
+
+    const data: Record<string, any> = {};
+    if (body.gradeId !== undefined) data.gradeId = body.gradeId ?? null;
+    if (body.subjectId !== undefined) data.subjectId = body.subjectId ?? null;
+    if (body.type !== undefined) data.type = body.type;
+    if (body.content !== undefined) data.content = body.content;
+    if (body.analysis !== undefined) data.analysis = body.analysis || null;
+    if (body.difficulty !== undefined) data.difficulty = body.difficulty;
+    if (body.score !== undefined) data.score = body.score;
+    if (body.sortOrder !== undefined) data.sortOrder = body.sortOrder;
+    if (body.source !== undefined) data.source = body.source;
+
+    // 教材归属：null / 空字符串表示取消归属；传了值必须存在，并同步年级与科目
+    if (body.chapterId !== undefined) {
+      if (!body.chapterId) {
+        data.chapterId = null;
+      } else {
+        const chapter = await prisma.chapter.findUnique({
+          where: { id: body.chapterId },
+          select: {
+            id: true,
+            textbook: { select: { gradeId: true, subjectId: true } },
+          },
+        });
+        if (!chapter) {
+          return NextResponse.json({ error: "chapter not found" }, { status: 400 });
+        }
+        data.chapterId = chapter.id;
+        data.gradeId = chapter.textbook.gradeId;
+        data.subjectId = chapter.textbook.subjectId;
+      }
+    }
+
+    // 选项 / 知识点 / 标签的替换必须整体成功或整体失败：
+    // 先删后插分散执行时会留下「选项已删、题目未更新」这类半成品。
+    const question = await prisma.$transaction(async (tx) => {
+      await tx.question.update({ where: { id: questionId }, data });
+
+      if (Array.isArray(body.options)) {
+        await tx.questionOption.deleteMany({ where: { questionId } });
+        await tx.questionOption.createMany({
+          data: body.options.map((opt, idx) => ({
+            questionId,
+            optionKey: opt.optionKey,
+            content: opt.content,
+            isCorrect: opt.isCorrect || false,
+            sortNo: idx,
+          })),
+        });
+      }
+
+      if (Array.isArray(body.knowledgePointIds)) {
+        await tx.questionKnowledgePoint.deleteMany({ where: { questionId } });
+        if (body.knowledgePointIds.length > 0) {
+          await tx.questionKnowledgePoint.createMany({
+            data: body.knowledgePointIds.map((kpId) => ({
+              questionId,
+              knowledgePointId: kpId,
+            })),
+          });
+        }
+      }
+
+      if (Array.isArray(body.tagIds)) {
+        await tx.questionTagLink.deleteMany({ where: { questionId } });
+        if (body.tagIds.length > 0) {
+          await tx.questionTagLink.createMany({
+            data: body.tagIds.map((tagId) => ({ questionId, tagId })),
+          });
+        }
+      }
+
+      return tx.question.findUnique({
+        where: { id: questionId },
+        include: {
+          options: { orderBy: { sortNo: "asc" } },
+          knowledgePoints: {
+            include: { knowledgePoint: true },
+          },
+          tags: { include: { tag: true } },
+        },
+      });
+    });
+
+    if (!question) {
+      return NextResponse.json({ error: "Question not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(serialize(question));
+  } catch (err) {
+    return handleRouteError(err, "admin/questions/update");
+  }
 }
 
 export async function DELETE(
@@ -159,27 +143,21 @@ export async function DELETE(
   const admin = await requirePermission(request, "questions");
   if (admin instanceof NextResponse) return admin;
 
-  const { id } = await params;
+  try {
+    const { id } = await params;
+    const questionId = BigInt(id);
 
-  // Delete options first
-  await prisma.questionOption.deleteMany({
-    where: { questionId: BigInt(id) },
-  });
+    // 多表删除放在同一事务，避免「选项已删但题目还在」的部分成功
+    await prisma.$transaction(async (tx) => {
+      await tx.questionOption.deleteMany({ where: { questionId } });
+      await tx.questionKnowledgePoint.deleteMany({ where: { questionId } });
+      await tx.questionTagLink.deleteMany({ where: { questionId } });
+      await tx.userQuestionProgress.deleteMany({ where: { questionId } });
+      await tx.question.delete({ where: { id: questionId } });
+    });
 
-  // Delete knowledge point relations
-  await prisma.questionKnowledgePoint.deleteMany({
-    where: { questionId: BigInt(id) },
-  });
-
-  // Delete progress records
-  await prisma.userQuestionProgress.deleteMany({
-    where: { questionId: BigInt(id) },
-  });
-
-  // Delete question
-  await prisma.question.delete({
-    where: { id: BigInt(id) },
-  });
-
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return handleRouteError(err, "admin/questions/delete");
+  }
 }

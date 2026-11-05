@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { parsePageParams } from "@/lib/query";
 import { NextRequest, NextResponse } from "next/server";
 
 const CHANNELS = ["web", "mobile"];
@@ -44,8 +45,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const page = Math.max(1, Number(url.searchParams.get("page") ?? 1));
-  const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get("pageSize") ?? 20)));
+  const { page, pageSize } = parsePageParams(url.searchParams, { defaultPageSize: 20 });
   const keyword = url.searchParams.get("keyword")?.trim();
   const status = url.searchParams.get("status");
   const channel = url.searchParams.get("channel");

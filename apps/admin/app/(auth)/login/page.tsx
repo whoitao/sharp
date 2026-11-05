@@ -20,6 +20,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (values: LoginFormValues) => {
+    // 提交中直接忽略重复触发，避免连续回车/双击产生重复 POST
+    if (loading) return;
     setError("");
     setLoading(true);
 

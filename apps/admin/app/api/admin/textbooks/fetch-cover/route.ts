@@ -17,6 +17,10 @@ const USER_AGENT =
 const MAX_DOWNLOAD_BYTES = 15 * 1024 * 1024;
 /** 最多检查的候选数量，避免一次抓取耗时过长 */
 const MAX_CANDIDATES = 12;
+/** 整次抓取的总时间预算：超时后降级为「请手动上传」 */
+const OVERALL_BUDGET_MS = 20_000;
+/** 单批并发下载数（限制峰值内存：4 × 15MB） */
+const DOWNLOAD_CONCURRENCY = 4;
 
 /** 搜索词里使用通用叫法，命中率更高 */
 const SUBJECT_QUERY_NAMES: Record<string, string> = { 道法: "道德与法治" };
@@ -41,7 +45,7 @@ function decodeEntities(value: string): string {
 }
 
 /** 用必应图片搜索（无需 API Key）按「教材名 + 封面」搜图 */
-async function searchImageUrls(query: string): Promise<string[]> {
+async function searchImageUrls(query: string, deadline: number): Promise<string[]> {
   const url = new URL(BING_IMAGES_ENDPOINT);
   url.searchParams.set("q", query);
   url.searchParams.set("first", "0");
@@ -51,9 +55,10 @@ async function searchImageUrls(query: string): Promise<string[]> {
   url.searchParams.set("layout", "RowBased_Landscape");
   url.searchParams.set("mmasync", "1");
 
+  const timeout = Math.min(12_000, Math.max(1_000, deadline - Date.now()));
   const response = await fetch(url, {
     headers: { "User-Agent": USER_AGENT, Referer: "https://cn.bing.com/" },
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(timeout),
   });
   if (!response.ok) throw new Error(`image search failed: ${response.status}`);
 
@@ -73,13 +78,15 @@ async function searchImageUrls(query: string): Promise<string[]> {
   return urls.sort((a, b) => score(b) - score(a));
 }
 
-/** 下载候选图，限制体积与超时 */
-async function downloadImage(url: string): Promise<Uint8Array | null> {
+/** 下载候选图，限制体积与超时（超时取单图上限与整体剩余预算的较小值） */
+async function downloadImage(url: string, deadline: number): Promise<Uint8Array | null> {
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) return null;
   try {
     const response = await fetch(url, {
       headers: { "User-Agent": USER_AGENT, Referer: "https://cn.bing.com/" },
       redirect: "follow",
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(Math.min(10_000, remaining)),
     });
     if (!response.ok) return null;
 
@@ -154,38 +161,48 @@ export async function POST(request: NextRequest) {
   }
 
   const offset = Math.max(0, Number(body.offset ?? 0) || 0);
+  const deadline = Date.now() + OVERALL_BUDGET_MS;
 
   let urls: string[];
   try {
-    urls = await searchImageUrls(query);
+    urls = await searchImageUrls(query, deadline);
   } catch (err) {
     console.error("[textbook-cover] search failed", err);
     return NextResponse.json({ error: "封面搜索失败，请稍后重试" }, { status: 502 });
   }
 
-  let matched = 0;
-  let found: Uint8Array | null = null;
-  let sourceUrl = "";
+  // 分批并发下载（每批 4 张），按原排序收集合格候选，找到第 offset+1 张即停止。
+  // 整体预算耗尽后降级为「请手动上传」，不会让请求一直挂到网关超时。
+  const candidates = urls.slice(0, MAX_CANDIDATES);
+  const valid: Array<{ bytes: Uint8Array; url: string }> = [];
 
-  for (const url of urls.slice(0, MAX_CANDIDATES)) {
-    const bytes = await downloadImage(url);
-    if (!bytes) continue;
-    if (!(await isCoverCandidate(bytes))) continue;
-    if (matched < offset) {
-      matched++;
-      continue;
+  for (let i = 0; i < candidates.length; i += DOWNLOAD_CONCURRENCY) {
+    if (Date.now() >= deadline) break;
+    const chunk = candidates.slice(i, i + DOWNLOAD_CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map(async (url) => {
+        const bytes = await downloadImage(url, deadline);
+        if (!bytes) return null;
+        if (!(await isCoverCandidate(bytes))) return null;
+        return { bytes, url };
+      }),
+    );
+    for (const result of results) {
+      if (result) valid.push(result);
     }
-    found = bytes;
-    sourceUrl = url;
-    break;
+    if (valid.length > offset) break;
   }
 
-  if (!found) {
+  const picked = valid[offset];
+  if (!picked) {
+    const timedOut = Date.now() >= deadline;
     return NextResponse.json(
-      { error: "未找到合适的教材封面，请手动上传" },
-      { status: 404 },
+      { error: timedOut ? "封面抓取超时，请手动上传" : "未找到合适的教材封面，请手动上传" },
+      { status: timedOut ? 504 : 404 },
     );
   }
+  const found = picked.bytes;
+  const sourceUrl = picked.url;
 
   try {
     const contentType = detectImageType(found);

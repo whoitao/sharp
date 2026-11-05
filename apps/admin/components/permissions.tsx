@@ -24,6 +24,9 @@ interface FetchResult {
 
 let identityCache: AdminIdentity | null = null;
 let inflight: Promise<FetchResult> | null = null;
+// 后端异常（5xx/网络中断）后进入冷却，避免页面重载或多个组件挂载时反复请求 /me
+const ERROR_COOLDOWN_MS = 30_000;
+let lastErrorAt = 0;
 
 function readLocal(): AdminIdentity | null {
   if (typeof window === "undefined") return null;
@@ -51,6 +54,10 @@ export function primeIdentity(identity: AdminIdentity) {
 export async function fetchIdentity(force = false): Promise<FetchResult> {
   if (!force && identityCache) return { status: "ok", identity: identityCache };
   if (!force && inflight) return inflight;
+  // 冷却期内不重复打接口，直接沿用上一次的 error 结果
+  if (!force && Date.now() - lastErrorAt < ERROR_COOLDOWN_MS) {
+    return { status: "error", identity: null };
+  }
 
   inflight = (async (): Promise<FetchResult> => {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -65,12 +72,17 @@ export async function fetchIdentity(force = false): Promise<FetchResult> {
         localStorage.removeItem(CACHE_KEY);
         return { status: "unauthorized", identity: null };
       }
-      if (!res.ok) return { status: "error", identity: null };
+      if (!res.ok) {
+        lastErrorAt = Date.now();
+        return { status: "error", identity: null };
+      }
       const data = (await res.json()) as AdminIdentity;
       identityCache = data;
+      lastErrorAt = 0;
       localStorage.setItem(CACHE_KEY, JSON.stringify(data));
       return { status: "ok", identity: data };
     } catch {
+      lastErrorAt = Date.now();
       return { status: "error", identity: null };
     } finally {
       inflight = null;

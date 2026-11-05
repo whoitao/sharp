@@ -35,7 +35,7 @@ import {
   type MenuProps
 } from "antd";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 const { Sider, Content } = Layout;
 
@@ -101,10 +101,18 @@ export default function AdminLayout({
     setPendingKey(null);
   }, [pathname]);
 
-  // 仅在明确未鉴权（无 token 或 401/403）时跳登录页，网络异常不踢人
+  // 仅在明确未鉴权（无 token 或 401/403）时跳登录页，网络异常不踢人；
+  // 加一次性护栏，避免「跳登录 → 页面重挂载 → 再次判定未鉴权 → 再跳」的正反馈
+  const redirectingToLogin = useRef(false);
   useEffect(() => {
     if (permLoading) return;
-    if (unauthenticated) router.replace("/login");
+    if (!unauthenticated) {
+      redirectingToLogin.current = false;
+      return;
+    }
+    if (redirectingToLogin.current) return;
+    redirectingToLogin.current = true;
+    router.replace("/login");
   }, [unauthenticated, permLoading, router]);
 
   // 路由级权限守卫：不在可访问页面里就跳到第一个有权限的页面

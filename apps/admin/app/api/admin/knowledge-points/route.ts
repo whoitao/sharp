@@ -1,32 +1,27 @@
 import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { handleRouteError } from "@/lib/http";
+import { parseBigIntParam } from "@/lib/query";
 
 export async function GET(request: NextRequest) {
   const admin = await requirePermission(request, "knowledge-points");
   if (admin instanceof NextResponse) return admin;
 
-  const { searchParams } = new URL(request.url);
-  const subjectId = searchParams.get("subjectId");
-  const stageId = searchParams.get("stageId");
+  try {
+    const { searchParams } = new URL(request.url);
+    const subjectId = parseBigIntParam(searchParams.get("subjectId"), "subjectId");
+    const stageId = parseBigIntParam(searchParams.get("stageId"), "stageId");
 
-  const where: any = {};
-  if (subjectId) {
-    where.subjectId = BigInt(subjectId);
-  }
-  if (stageId) {
-    where.stageId = BigInt(stageId);
-  }
-
-  const knowledgePoints = await prisma.knowledgePoint.findMany({
-    where,
-    orderBy: { sortOrder: "asc" },
-    include: {
-      _count: {
-        select: { questions: true },
+    const knowledgePoints = await prisma.knowledgePoint.findMany({
+      where: { subjectId, stageId },
+      orderBy: { sortOrder: "asc" },
+      include: {
+        _count: {
+          select: { questions: true },
+        },
       },
-    },
-  });
+    });
 
   const serialize = (kp: any) => ({
     id: kp.id.toString(),
@@ -42,16 +37,24 @@ export async function GET(request: NextRequest) {
 
   const items = knowledgePoints.map(serialize);
 
-  const buildTree = (parentId: string | null): any[] => {
-    return items
-      .filter((item) => item.parentId === parentId)
-      .map((item) => ({
-        ...item,
-        children: buildTree(item.id),
-      }));
-  };
+  // parentId → children 索引：避免每一层都 filter 一遍全量数组（O(n²)）
+  const childrenMap = new Map<string | null, typeof items>();
+  for (const item of items) {
+    const key = item.parentId;
+    if (!childrenMap.has(key)) childrenMap.set(key, []);
+    childrenMap.get(key)!.push(item);
+  }
+
+  const buildTree = (parentId: string | null): any[] =>
+    (childrenMap.get(parentId) ?? []).map((item) => ({
+      ...item,
+      children: buildTree(item.id),
+    }));
 
   return NextResponse.json(buildTree(null));
+  } catch (err) {
+    return handleRouteError(err, "admin/knowledge-points");
+  }
 }
 
 export async function POST(request: NextRequest) {

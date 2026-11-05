@@ -1,6 +1,9 @@
 import { requirePermission } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import { textbookCoverPublicUrl } from "@/lib/storage";
+import { handleRouteError } from "@/lib/http";
+import { parseBigIntId } from "@/lib/query";
+import { textbookCreateSchema, textbooksQuerySchema, textbookUpdateSchema } from "@/lib/schemas";
 import { NextRequest, NextResponse } from "next/server";
 
 const SEMESTER_LABEL: Record<number, string> = { 0: "全一册", 1: "上册", 2: "下册" };
@@ -15,16 +18,29 @@ function buildName(
   return `${subjectName} · ${publisherName} · ${gradeName}${SEMESTER_LABEL[semester] ?? ""}`;
 }
 
-/** 每个教材的章节数与题数（章节 → 题目聚合） */
-async function loadCounts() {
+/**
+ * 指定教材集合的章节数与题数（章节 → 题目聚合）。
+ * 只聚合传入教材范围内的数据，不再每次请求扫描整张 question 表。
+ */
+async function loadCounts(textbookIds: bigint[]) {
+  const byTextbook = new Map<string, { chapterCount: number; questionCount: number }>();
+  if (textbookIds.length === 0) return byTextbook;
+
   const [chapters, questionGroups] = await Promise.all([
-    prisma.chapter.findMany({ select: { id: true, textbookId: true } }),
-    prisma.question.groupBy({ by: ["chapterId"], _count: { _all: true } }),
+    prisma.chapter.findMany({
+      where: { textbookId: { in: textbookIds } },
+      select: { id: true, textbookId: true },
+    }),
+    prisma.question.groupBy({
+      by: ["chapterId"],
+      where: { chapter: { textbookId: { in: textbookIds } } },
+      _count: { _all: true },
+    }),
   ]);
+
   const questionByChapter = new Map(
     questionGroups.map((g) => [g.chapterId?.toString() ?? "", g._count._all]),
   );
-  const byTextbook = new Map<string, { chapterCount: number; questionCount: number }>();
   for (const c of chapters) {
     const key = c.textbookId.toString();
     const entry = byTextbook.get(key) ?? { chapterCount: 0, questionCount: 0 };
@@ -65,20 +81,13 @@ export async function GET(request: NextRequest) {
   const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
-  const url = new URL(request.url);
-  const stageId = url.searchParams.get("stageId");
-  const subjectId = url.searchParams.get("subjectId");
-  const gradeId = url.searchParams.get("gradeId");
-  const publisherId = url.searchParams.get("publisherId");
+  try {
+    const { stageId, subjectId, gradeId, publisherId } = textbooksQuerySchema.parse(
+      Object.fromEntries(new URL(request.url).searchParams),
+    );
 
-  const [textbooks, counts] = await Promise.all([
-    prisma.textbook.findMany({
-      where: {
-        stageId: stageId ? BigInt(stageId) : undefined,
-        subjectId: subjectId ? BigInt(subjectId) : undefined,
-        gradeId: gradeId ? BigInt(gradeId) : undefined,
-        publisherId: publisherId ? BigInt(publisherId) : undefined,
-      },
+    const textbooks = await prisma.textbook.findMany({
+      where: { stageId, subjectId, gradeId, publisherId },
       include: {
         subject: { select: { name: true, icon: true } },
         publisher: { select: { name: true } },
@@ -86,55 +95,48 @@ export async function GET(request: NextRequest) {
         grade: { select: { name: true } },
       },
       orderBy: [{ stageId: "asc" }, { subjectId: "asc" }, { gradeId: "asc" }, { semester: "asc" }, { sortOrder: "asc" }],
-    }),
-    loadCounts(),
-  ]);
+    });
 
-  return NextResponse.json(
-    textbooks.map((t) =>
-      serialize({
-        ...t,
-        chapterCount: counts.get(t.id.toString())?.chapterCount ?? 0,
-        questionCount: counts.get(t.id.toString())?.questionCount ?? 0,
-      }),
-    ),
-  );
+    const counts = await loadCounts(textbooks.map((t) => t.id));
+
+    return NextResponse.json(
+      textbooks.map((t) =>
+        serialize({
+          ...t,
+          chapterCount: counts.get(t.id.toString())?.chapterCount ?? 0,
+          questionCount: counts.get(t.id.toString())?.questionCount ?? 0,
+        }),
+      ),
+    );
+  } catch (err) {
+    return handleRouteError(err, "admin/textbooks");
+  }
 }
 
 export async function POST(request: NextRequest) {
   const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
-  const body = await request.json();
-  const { name, subjectId, gradeId, publisherId, semester, coverUrl, isbn, description, sortOrder } = body;
-
-  if (!subjectId || !gradeId || !publisherId || semester == null) {
-    return NextResponse.json(
-      { error: "subjectId/gradeId/publisherId/semester 必填" },
-      { status: 400 },
-    );
-  }
-
-  const [subject, grade, publisher] = await Promise.all([
-    prisma.subject.findUnique({ where: { id: BigInt(subjectId) }, select: { id: true, name: true } }),
-    prisma.grade.findUnique({
-      where: { id: BigInt(gradeId) },
-      select: { id: true, name: true, stageId: true },
-    }),
-    prisma.publisher.findUnique({ where: { id: BigInt(publisherId) }, select: { id: true, name: true } }),
-  ]);
-  if (!subject || !grade || !publisher) {
-    return NextResponse.json({ error: "科目/年级/版本不存在" }, { status: 400 });
-  }
-  if (![0, 1, 2].includes(Number(semester))) {
-    return NextResponse.json({ error: "semester 只能是 0/1/2" }, { status: 400 });
-  }
-
-  const finalName = name?.trim()
-    ? name.trim()
-    : buildName(subject.name, publisher.name, grade.name, Number(semester));
-
   try {
+    const body = textbookCreateSchema.parse(await request.json().catch(() => ({})));
+    const { subjectId, gradeId, publisherId, semester, coverUrl, isbn, description, sortOrder } = body;
+
+    const [subject, grade, publisher] = await Promise.all([
+      prisma.subject.findUnique({ where: { id: subjectId }, select: { id: true, name: true } }),
+      prisma.grade.findUnique({
+        where: { id: gradeId },
+        select: { id: true, name: true, stageId: true },
+      }),
+      prisma.publisher.findUnique({ where: { id: publisherId }, select: { id: true, name: true } }),
+    ]);
+    if (!subject || !grade || !publisher) {
+      return NextResponse.json({ error: "科目/年级/版本不存在" }, { status: 400 });
+    }
+
+    const finalName = body.name?.trim()
+      ? body.name.trim()
+      : buildName(subject.name, publisher.name, grade.name, semester);
+
     const created = await prisma.textbook.create({
       data: {
         name: finalName,
@@ -143,7 +145,7 @@ export async function POST(request: NextRequest) {
         // 学段由年级推导，避免前端传入不一致
         stageId: grade.stageId,
         publisherId: publisher.id,
-        semester: Number(semester),
+        semester,
         coverUrl: coverUrl || null,
         isbn: isbn?.trim() || null,
         description: description?.trim() || null,
@@ -160,14 +162,8 @@ export async function POST(request: NextRequest) {
       serialize({ ...created, chapterCount: 0, questionCount: 0 }),
       { status: 201 },
     );
-  } catch (err: any) {
-    if (err?.code === "P2002") {
-      return NextResponse.json(
-        { error: "同一科目、年级、版本、学期的教材已存在" },
-        { status: 409 },
-      );
-    }
-    throw err;
+  } catch (err) {
+    return handleRouteError(err, "admin/textbooks/create");
   }
 }
 
@@ -175,41 +171,34 @@ export async function PATCH(request: NextRequest) {
   const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
-  const url = new URL(request.url);
-  const id = url.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-
-  const body = await request.json();
-  const data: Record<string, unknown> = {};
-  if (body.name !== undefined) {
-    if (!body.name?.trim()) return NextResponse.json({ error: "name 不能为空" }, { status: 400 });
-    data.name = body.name.trim();
-  }
-  if (body.subjectId !== undefined) data.subjectId = BigInt(body.subjectId);
-  if (body.publisherId !== undefined) data.publisherId = BigInt(body.publisherId);
-  if (body.semester !== undefined) {
-    if (![0, 1, 2].includes(Number(body.semester))) {
-      return NextResponse.json({ error: "semester 只能是 0/1/2" }, { status: 400 });
-    }
-    data.semester = Number(body.semester);
-  }
-  if (body.gradeId !== undefined) {
-    const grade = await prisma.grade.findUnique({
-      where: { id: BigInt(body.gradeId) },
-      select: { id: true, stageId: true },
-    });
-    if (!grade) return NextResponse.json({ error: "grade not found" }, { status: 400 });
-    data.gradeId = grade.id;
-    data.stageId = grade.stageId;
-  }
-  if (body.coverUrl !== undefined) data.coverUrl = body.coverUrl || null;
-  if (body.isbn !== undefined) data.isbn = body.isbn?.trim() || null;
-  if (body.description !== undefined) data.description = body.description?.trim() || null;
-  if (body.sortOrder != null) data.sortOrder = body.sortOrder;
-
   try {
+    const id = parseBigIntId(new URL(request.url).searchParams.get("id") ?? "", "id");
+    const body = textbookUpdateSchema.parse(await request.json().catch(() => ({})));
+
+    const data: Record<string, unknown> = {};
+    if (body.name !== undefined) {
+      if (!body.name?.trim()) return NextResponse.json({ error: "name 不能为空" }, { status: 400 });
+      data.name = body.name.trim();
+    }
+    if (body.subjectId !== undefined) data.subjectId = body.subjectId;
+    if (body.publisherId !== undefined) data.publisherId = body.publisherId;
+    if (body.semester !== undefined) data.semester = body.semester;
+    if (body.gradeId !== undefined) {
+      const grade = await prisma.grade.findUnique({
+        where: { id: body.gradeId },
+        select: { id: true, stageId: true },
+      });
+      if (!grade) return NextResponse.json({ error: "grade not found" }, { status: 400 });
+      data.gradeId = grade.id;
+      data.stageId = grade.stageId;
+    }
+    if (body.coverUrl !== undefined) data.coverUrl = body.coverUrl || null;
+    if (body.isbn !== undefined) data.isbn = body.isbn?.trim() || null;
+    if (body.description !== undefined) data.description = body.description?.trim() || null;
+    if (body.sortOrder != null) data.sortOrder = body.sortOrder;
+
     const updated = await prisma.textbook.update({
-      where: { id: BigInt(id) },
+      where: { id },
       data,
       include: {
         subject: { select: { name: true, icon: true } },
@@ -218,7 +207,9 @@ export async function PATCH(request: NextRequest) {
         grade: { select: { name: true } },
       },
     });
-    const counts = await loadCounts();
+
+    // 单条更新只统计该教材自身，避免触发全表聚合
+    const counts = await loadCounts([updated.id]);
     return NextResponse.json(
       serialize({
         ...updated,
@@ -226,14 +217,8 @@ export async function PATCH(request: NextRequest) {
         questionCount: counts.get(updated.id.toString())?.questionCount ?? 0,
       }),
     );
-  } catch (err: any) {
-    if (err?.code === "P2002") {
-      return NextResponse.json(
-        { error: "同一科目、年级、版本、学期的教材已存在" },
-        { status: 409 },
-      );
-    }
-    throw err;
+  } catch (err) {
+    return handleRouteError(err, "admin/textbooks/update");
   }
 }
 
@@ -242,24 +227,31 @@ export async function DELETE(request: NextRequest) {
   const admin = await requirePermission(request, "textbooks");
   if (admin instanceof NextResponse) return admin;
 
-  const url = new URL(request.url);
-  const id = url.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  try {
+    const bigId = parseBigIntId(new URL(request.url).searchParams.get("id") ?? "", "id");
 
-  const bigId = BigInt(id);
-  const [chapterCount, questionCount] = await Promise.all([
-    prisma.chapter.count({ where: { textbookId: bigId } }),
-    prisma.question.count({ where: { chapter: { textbookId: bigId } } }),
-  ]);
-  if (chapterCount > 0 || questionCount > 0) {
-    return NextResponse.json(
-      { error: `该教材下仍有 ${chapterCount} 个章节、${questionCount} 道题目，无法删除` },
-      { status: 409 },
-    );
+    const [chapterCount, questionCount] = await Promise.all([
+      prisma.chapter.count({ where: { textbookId: bigId } }),
+      prisma.question.count({ where: { chapter: { textbookId: bigId } } }),
+    ]);
+    if (chapterCount > 0 || questionCount > 0) {
+      return NextResponse.json(
+        { error: `该教材下仍有 ${chapterCount} 个章节、${questionCount} 道题目，无法删除` },
+        { status: 409 },
+      );
+    }
+
+    // 清引用与删除必须原子：否则删除失败会留下「设置已清空但教材还在」
+    await prisma.$transaction([
+      prisma.userSettings.updateMany({
+        where: { textbookId: bigId },
+        data: { textbookId: null },
+      }),
+      prisma.textbook.delete({ where: { id: bigId } }),
+    ]);
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return handleRouteError(err, "admin/textbooks/delete");
   }
-
-  // 清掉用户设置里的引用，避免外键报错
-  await prisma.userSettings.updateMany({ where: { textbookId: bigId }, data: { textbookId: null } });
-  await prisma.textbook.delete({ where: { id: bigId } });
-  return NextResponse.json({ ok: true });
 }
