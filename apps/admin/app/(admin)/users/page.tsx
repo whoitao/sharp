@@ -30,8 +30,8 @@ export default function UsersPage() {
   useEffect(() => {
     if (loading) return;
     if (!activeKey || !tabs.some((item) => item.key === activeKey)) {
-      // 页签顺序调整后「用户」排在第一位，但默认落地页仍保持「管理员」
-      const fallback = tabs.find((item) => item.key === "admins")?.key ?? tabs[0]?.key ?? null;
+      // 默认落地「用户」；无该权限时回落到第一个可见页签
+      const fallback = tabs.find((item) => item.key === "users")?.key ?? tabs[0]?.key ?? null;
       setActiveKey(fallback);
     }
   }, [loading, tabs, activeKey]);

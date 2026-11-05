@@ -1,5 +1,5 @@
 import { requireAppUser } from "@/lib/middleware";
-import { getPetConfig, getPrimaryPet } from "@/lib/pet";
+import { applySatietyDecay, getPetConfig, getPrimaryPet } from "@/lib/pet";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
     getPetConfig(),
   ]);
 
+  // 与宠物详情保持同一口径：返回结算后的饱腹度
+  const pet = link ? await applySatietyDecay(link.pet, config) : null;
+
   const quantityOf = (type: string) => items.find((i) => i.foodType === type)?.quantity ?? 0;
 
   return NextResponse.json({
@@ -27,7 +30,7 @@ export async function GET(request: NextRequest) {
       exp: d.expGain,
       obtainHint: d.obtainRule,
     })),
-    satiety: link?.pet.satiety ?? 0,
+    satiety: pet?.satiety ?? 0,
     satietyMax: config.satietyMax,
   });
 }

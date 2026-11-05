@@ -478,8 +478,8 @@ model Pet {
   schoolStageName     String? // 领养时的学段名称快照
   level               Int        @default(1) // 由 experience 推导后落库，便于列表展示
   experience          Int        @default(0) // 累计经验，只增不减
-  satiety             Int        @default(60) // 饱腹度 0-100
-  lastDecayDate       DateTime   @default(now()) @db.Date
+  satiety             Int        @default(60) // 饱腹度 0-200
+  lastDecayAt         DateTime   @default(now()) // 衰减结算基准（按完整小时累计）
   lastLoginRewardDate DateTime?  @db.Date // 每日首次登录奖励
   adoptedAt           DateTime   @default(now())
   lastFedAt           DateTime?
@@ -613,7 +613,7 @@ model PetConfig {
   streakBonusMax         Int      @default(10)
   dailyExpCap            Int      @default(300)
   dailyLoginExp          Int      @default(5)
-  satietyMax             Int      @default(100)
+  satietyMax             Int      @default(200)
   satietyDecay           Int      @default(5)
   expPerLevel            Int      @default(100)
   maxLevel               Int      @default(30)

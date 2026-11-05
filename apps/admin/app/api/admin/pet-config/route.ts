@@ -47,6 +47,9 @@ export async function PUT(request: NextRequest) {
       data[field] = Math.max(0, Number(body[field]) || 0);
     }
   }
+  if (data.satietyMax !== undefined) {
+    data.satietyMax = Math.min(200, Number(data.satietyMax));
+  }
   data.updatedBy = admin.username;
 
   const config = await prisma.petConfig.upsert({

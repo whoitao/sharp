@@ -301,7 +301,7 @@ export const en: TranslationKeys = {
     },
     {
       title: 'Feed & Satiety',
-      body: 'Spend food to raise satiety and EXP. Satiety caps at 100 and decays by 30 daily — feed your pet every day.',
+      body: 'Spend food to raise satiety and EXP. Satiety caps at 200 and decays by 5 every full hour — feed your pet regularly.',
     },
     {
       title: 'EXP & Leveling',

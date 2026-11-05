@@ -333,7 +333,7 @@ export default function ArticlesPanel() {
     {
       title: t("common.actions"),
       key: "actions",
-      width: 130,
+      width: 120,
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (

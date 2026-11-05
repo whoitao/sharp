@@ -752,7 +752,7 @@ export default function QuestionsPanel() {
     {
       title: t("questions.colActions"),
       key: "actions",
-      width: 80,
+      width: 90,
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (

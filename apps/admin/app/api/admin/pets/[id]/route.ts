@@ -22,7 +22,7 @@ export async function PUT(
     data.schoolStageName = body.schoolStageName ? String(body.schoolStageName).trim() : null;
   }
   if (body?.satiety !== undefined) {
-    const satiety = Math.min(100, Math.max(0, Number(body.satiety) || 0));
+    const satiety = Math.min(200, Math.max(0, Number(body.satiety) || 0));
     data.satiety = satiety;
   }
   if (body?.experience !== undefined) {

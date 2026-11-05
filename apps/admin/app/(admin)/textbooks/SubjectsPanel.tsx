@@ -186,7 +186,7 @@ export default function SubjectsPanel() {
     {
       title: t("common.actions"),
       key: "actions",
-      width: 100,
+      width: 90,
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (

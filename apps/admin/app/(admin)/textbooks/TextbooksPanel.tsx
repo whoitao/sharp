@@ -394,7 +394,7 @@ export default function TextbooksPanel() {
     { title: t("textbooks.colSortOrder"), dataIndex: "sortOrder", width: 60, align: "center" },
     {
       title: t("textbooks.colActions"),
-      width: 90,
+      width: 72,
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, row) => (

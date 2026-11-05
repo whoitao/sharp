@@ -86,10 +86,10 @@ export default function PetConfigPanel() {
   );
   usePageActions(headerActions);
 
-  const numberField = (name: keyof ConfigValues, label: string) => (
+  const numberField = (name: keyof ConfigValues, label: string, max?: number) => (
     <Col xs={24} md={8} key={name}>
       <Form.Item label={label} name={name} style={{ marginBottom: 16 }}>
-        <InputNumber min={0} style={{ width: "100%" }} />
+        <InputNumber min={0} max={max} style={{ width: "100%" }} />
       </Form.Item>
     </Col>
   );
@@ -118,7 +118,7 @@ export default function PetConfigPanel() {
           {t("pets.groupSatiety")}
         </Divider>
         <Row gutter={16}>
-          {numberField("satietyMax", t("pets.satietyMax"))}
+          {numberField("satietyMax", t("pets.satietyMax"), 200)}
           {numberField("satietyDecay", t("pets.satietyDecay"))}
         </Row>
 

@@ -8,13 +8,6 @@ export function todayKey(): Date {
   return d;
 }
 
-/** @db.Date 字段读回来是 UTC 零点，统一换算成本地零点再比较 */
-function localMidnight(d: Date): Date {
-  const copy = new Date(d);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
-}
-
 /** 喂养记录展示用：MM-DD HH:mm（本地时区） */
 export function formatFeedTime(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -55,45 +48,49 @@ export function stateOf(satiety: number, lastFedAt: Date | null, now: Date = new
   return "normal";
 }
 
+const HOUR_MS = 3600_000;
+/** 最多补算 30 天；超出部分饱腹度直接置 0 */
+const MAX_DECAY_HOURS = 30 * 24;
+
 /**
- * 饱腹度衰减：按天回溯（最多 7 天），跳过有喂食的日子。
- * satietyDecay 单位为"每小时"，每天按 24 小时折算，即每天扣 24 × satietyDecay。
- * 首次调用时 lastDecayDate 为 null，用 adoptedAt 作为锚点避免从 1970 年起算。
+ * 饱腹度按「完整小时」结算：每满 1 小时扣 satietyDecay，不足 1 小时的余量
+ * 留在 lastDecayAt 里下次累计，避免每次请求把余量重置。
+ * 纯函数，便于单测与复用。
  */
-export async function applySatietyDecay(userId: string, pet: Pet, config: PetConfig): Promise<Pet> {
-  const today = todayKey();
-  // 首次衰减：没有历史锚点时，从领养日开始算
-  const anchor = pet.lastDecayDate ?? pet.adoptedAt;
-  const last = localMidnight(anchor);
-  if (last.getTime() >= today.getTime()) return pet;
-
-  const days: Date[] = [];
-  const cursor = new Date(last);
-  while (days.length < 7) {
-    cursor.setDate(cursor.getDate() + 1);
-    if (cursor.getTime() >= today.getTime()) break;
-    days.push(localMidnight(cursor));
+export function settleSatietyDecay(pet: Pet, config: PetConfig, now: Date = new Date()) {
+  const elapsedMs = now.getTime() - pet.lastDecayAt.getTime();
+  if (elapsedMs < HOUR_MS) {
+    return { satiety: pet.satiety, lastDecayAt: pet.lastDecayAt, settledHours: 0, capped: false };
   }
 
-  if (days.length === 0) {
-    return prisma.pet.update({ where: { id: pet.id }, data: { lastDecayDate: today } });
-  }
+  const hours = Math.floor(elapsedMs / HOUR_MS);
+  const settledHours = Math.min(hours, MAX_DECAY_HOURS);
+  const satiety = Math.max(0, pet.satiety - settledHours * config.satietyDecay);
 
-  const stats = await prisma.petDailyStat.findMany({
-    where: { userId, dateKey: { in: days } },
-    select: { dateKey: true, feedCount: true },
-  });
-  const fedDays = new Set(
-    stats.filter((s) => s.feedCount > 0).map((s) => localMidnight(s.dateKey).getTime()),
-  );
+  return {
+    satiety,
+    lastDecayAt:
+      hours > MAX_DECAY_HOURS ? now : new Date(pet.lastDecayAt.getTime() + settledHours * HOUR_MS),
+    settledHours,
+    capped: hours > MAX_DECAY_HOURS,
+  };
+}
 
-  // satietyDecay 是"每小时"衰减，一天折算 24 小时
-  const lost = days.filter((d) => !fedDays.has(d.getTime())).length * 24 * config.satietyDecay;
-  const satiety = Math.max(0, pet.satiety - lost);
+/**
+ * 读取宠物数据时按真实经过小时数一次性补齐衰减。
+ * 只有存在完整小时可结算时才写库，因此不会出现「扣 0 却推进基准」。
+ */
+export async function applySatietyDecay(
+  pet: Pet,
+  config: PetConfig,
+  now: Date = new Date(),
+): Promise<Pet> {
+  const result = settleSatietyDecay(pet, config, now);
+  if (result.settledHours === 0) return pet;
 
   return prisma.pet.update({
     where: { id: pet.id },
-    data: { satiety, lastDecayDate: today },
+    data: { satiety: result.satiety, lastDecayAt: result.lastDecayAt },
   });
 }
 

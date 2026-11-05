@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const pet = await applySatietyDecay(appUser.id, link.pet, config);
+  const pet = await applySatietyDecay(link.pet, config);
   const backpackQuantity = Object.values(backpack).reduce((sum, n) => sum + n, 0);
 
   const recentFeeds = await prisma.petFeedLog.findMany({

@@ -29,6 +29,7 @@ interface PetItem {
   level: number;
   experience: number;
   satiety: number;
+  satietyMax: number;
   adoptedAt: string;
   lastFedAt: string | null;
   ownerUsername: string | null;
@@ -202,7 +203,9 @@ export default function PetListPanel() {
       dataIndex: "satiety",
       key: "satiety",
       width: 140,
-      render: (value: number) => <Progress percent={value} size="small" />,
+      render: (value: number, record: PetItem) => (
+        <Progress percent={Math.min(100, Math.round((value / record.satietyMax) * 100))} size="small" />
+      ),
     },
     {
       title: t("pets.colAdoptedAt"),
@@ -221,7 +224,7 @@ export default function PetListPanel() {
     {
       title: t("common.actions"),
       key: "actions",
-      width: 100,
+      width: 90,
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (
@@ -337,7 +340,7 @@ export default function PetListPanel() {
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item label={t("pets.petSatiety")} name="satiety">
-            <InputNumber min={0} max={100} style={{ width: "100%" }} />
+            <InputNumber min={0} max={200} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item label={t("pets.schoolStage")} name="schoolStageName">
             <Input maxLength={20} />

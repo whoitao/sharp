@@ -13,9 +13,12 @@ import PetStagesPanel from "./PetStagesPanel";
 
 type TabKey = "species" | "stages" | "pets" | "foods" | "feeds" | "config";
 
+// 默认落地「宠物」页签（key: pets），页签顺序保持不变
+const DEFAULT_TAB: TabKey = "pets";
+
 export default function PetsPage() {
   const { t } = useLocale();
-  const [activeKey, setActiveKey] = useState<TabKey>("species");
+  const [activeKey, setActiveKey] = useState<TabKey>(DEFAULT_TAB);
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: "species", label: t("pets.tabSpecies") },

@@ -176,7 +176,7 @@
   <p><b>喂食规则：</b></p>
   <ul>
     <li>喂食由用户手动触发，一次可选择 1–10 个同类型食物。</li>
-    <li>饱腹度上限 100；超出部分不增加饱腹度，但经验照常发放（未达每日经验上限时）。</li>
+    <li>饱腹度上限 200；超出部分不增加饱腹度，但经验照常发放（未达每日经验上限时）。</li>
     <li>饱腹度已满时禁止喂食，提示「宠物吃饱了，明天再来喂吧」，食物保留在背包。</li>
     <li>每日经验已达上限时仍可喂食获得饱腹度，经验为 0，提示「今日经验已满，明天继续」。</li>
   </ul>
@@ -193,9 +193,9 @@
     </tbody>
   </table>
   <ul>
-    <li>每日 00:00 后，若当日喂食次数为 0，则次日饱腹度 -30；当日有任意一次喂食则当日不衰减。</li>
-    <li>衰减在读取宠物数据时按日期间隔一次性补齐，最低 0；离线超过 30 天只补算 30 天并直接置 0。</li>
-    <li>日期键以服务端时间与用户时区确定；修改设备时间不影响已记录数据。</li>
+    <li>每满 1 小时饱腹度 -5；不足 1 小时的余量累计到下次，不做每日零点结算。</li>
+    <li>衰减在读取宠物数据时按真实经过小时数一次性补齐，最低 0；离线超过 30 天只补算 720 小时并直接置 0。</li>
+    <li>衰减基准为服务端时间戳（lastDecayAt），修改设备时间不影响已记录数据。</li>
     <li>饱腹度不参与等级、阶段、错题与学习统计的任何计算。</li>
   </ul>
 
@@ -321,10 +321,10 @@
     <div class="id">FR-07 饱腹度与衰减</div>
     <h3>状态维持</h3>
     <ul>
-      <li>饱腹度 0–100；喂食时按食物效果增加，超过 100 按 100 计。</li>
-      <li>每日 00:00 按用户日期键衰减 30；若当日有任意一次喂食，则当日不衰减。</li>
-      <li>衰减在读取宠物数据时按日期间隔一次性补齐，最低 0，不做逐日定时任务。</li>
-      <li>日期键以服务端结算时间与用户时区确定；修改设备时间不影响已记录数据。</li>
+      <li>饱腹度 0–200；喂食时按食物效果增加，超过 200 按 200 计。</li>
+      <li>每满 1 小时衰减 5（不足 1 小时的余量累计到下次）；读取时按真实经过小时数一次性补齐。</li>
+      <li>衰减在读取宠物数据时按小时差一次性补齐，最低 0，最多补算 30 天（720 小时），超出直接置 0，不做定时任务。</li>
+      <li>衰减基准为服务端时间戳；修改设备时间不影响已记录数据。</li>
       <li>饱腹度不参与等级、阶段、错题与学习统计的任何计算。</li>
       <li>饱腹度与状态不导致宠物死亡、离开或经验扣除。</li>
     </ul>
@@ -569,8 +569,8 @@ model Pet {
   stageName           String?                  // 学段名称快照，接口中输出为 schoolStageName
   level               Int      @default(1)     // 由 experience 推导后落库，便于列表展示
   experience          Int      @default(0)     // 累计经验，只增不减
-  satiety             Int      @default(60)    // 0-100
-  lastDecayDate       DateTime @db.Date
+  satiety             Int      @default(60)    // 0-200
+  lastDecayAt         DateTime @default(now()) // 按完整小时累计的衰减基准
   lastLoginRewardDate DateTime? @db.Date       // 每日首次登录奖励
   adoptedAt           DateTime @default(now())
   lastFedAt           DateTime?
@@ -696,8 +696,8 @@ model PetConfig {
   rareFoodDailyCap       Int      @default(2)
   premiumStreak          Int      @default(5)
   rareMinQuestions       Int      @default(10)
-  satietyMax             Int      @default(100)
-  satietyDecay           Int      @default(30)
+  satietyMax             Int      @default(200)
+  satietyDecay           Int      @default(5)
   expPerLevel            Int      @default(100)
   maxLevel               Int      @default(30)
   growingLevel           Int      @default(10)
@@ -761,7 +761,7 @@ model PetConfig {
     "experience": 1120,
     "expToNext": 1200,
     "satiety": 80,
-    "satietyMax": 100,
+    "satietyMax": 200,
     "state": "active",              // active / normal / hungry / asleep
     "canFeed": true,
     "adoptedAt": "2026-11-01T08:00:00.000Z",
@@ -808,7 +808,7 @@ model PetConfig {
     { "foodType": "rare",    "name": "稀有食物", "quantity": 1, "satiety": 50, "exp": 15, "obtainHint": "完成一个单元获得" }
   ],
   "satiety": 80,
-  "satietyMax": 100
+  "satietyMax": 200
 }</pre>
 
   <p><b>POST /api/app/pet/feed 请求与响应：</b></p>
@@ -961,15 +961,13 @@ if (pet.lastLoginRewardDate !== today) {
   <p class="note">登录奖励只增加经验，不进入喂养记录；若当日经验已达上限则发放 0，但仍更新日期，避免次日重复领取。</p>
 
   <h3>11.5 饱腹衰减（读取时补齐）</h3>
-  <p>不做定时任务。每次读取宠物（首页、详情、结算）时，从 <code>lastDecayDate</code> 的次日逐日计算到今日：若该日 <code>PetDailyStat.feedCount &gt; 0</code> 则跳过，否则扣 <code>satietyDecay</code>；饱腹度最低 0。离线超过 30 天只循环 30 次，随后直接置 0 并把 <code>lastDecayDate</code> 更新为今日，避免长循环。</p>
+  <p>不做定时任务。每次读取宠物（首页、详情、结算）时，按 <code>lastDecayAt</code> 与当前时间的「完整小时数」一次性结算：每满 1 小时扣 <code>satietyDecay</code>，不足 1 小时的余量保留到下次；饱腹度最低 0。最多补算 30 天（720 小时），超出部分直接置 0 并把 <code>lastDecayAt</code> 更新为当前时间。没有完整小时可结算时不写库，避免「扣 0 却推进基准」。</p>
   <pre class="code">// 伪代码
-for (let d = addDays(pet.lastDecayDate, 1); d &lt;= today; d = addDays(d, 1)) {
-  const stat = await getPetDailyStat(userId, d);
-  if (!stat || stat.feedCount === 0) {
-    pet.satiety = Math.max(0, pet.satiety - config.satietyDecay);
-  }
-}
-pet.lastDecayDate = today;</pre>
+const hours = Math.floor((now - pet.lastDecayAt) / 3600_000);
+if (hours <= 0) return pet;
+const settled = Math.min(hours, 720);
+pet.satiety = Math.max(0, pet.satiety - settled * config.satietyDecay);
+pet.lastDecayAt = hours > 720 ? now : addHours(pet.lastDecayAt, settled);</pre>
 
   <h3>11.6 状态派生</h3>
   <table>

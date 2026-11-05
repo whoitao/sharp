@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     ];
   }
 
-  const [items, total] = await Promise.all([
+  const [items, total, config] = await Promise.all([
     prisma.pet.findMany({
       where,
       orderBy: { adoptedAt: "desc" },
@@ -39,7 +39,9 @@ export async function GET(request: NextRequest) {
       },
     }),
     prisma.pet.count({ where }),
+    prisma.petConfig.findUnique({ where: { id: "default" }, select: { satietyMax: true } }),
   ]);
+  const satietyMax = config?.satietyMax ?? 200;
 
   return NextResponse.json({
     items: items.map((pet) => {
@@ -54,6 +56,7 @@ export async function GET(request: NextRequest) {
         level: pet.level,
         experience: pet.experience,
         satiety: pet.satiety,
+        satietyMax,
         adoptedAt: pet.adoptedAt,
         lastFedAt: pet.lastFedAt,
         ownerUserId: owner?.id ?? null,

@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "PET_NOT_ADOPTED" }, { status: 409 });
   }
 
-  const pet = await applySatietyDecay(appUser.id, link.pet, config);
+  const pet = await applySatietyDecay(link.pet, config);
   if (pet.satiety >= config.satietyMax) {
     return NextResponse.json({ error: "PET_FULL", message: "宠物吃饱了，明天再来喂吧" }, { status: 409 });
   }
