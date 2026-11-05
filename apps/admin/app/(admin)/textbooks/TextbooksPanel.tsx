@@ -1,5 +1,7 @@
 "use client";
 
+import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
+
 import SubjectSelect from "@/components/SubjectSelect";
 import { usePageSize } from "@/components/antd-providers";
 import { usePermissions } from "@/components/permissions";
@@ -393,6 +395,8 @@ export default function TextbooksPanel() {
     {
       title: t("textbooks.colActions"),
       width: 90,
+      align: "right",
+      ...FIXED_ACTIONS_COLUMN,
       render: (_, row) => (
         <Space size={4}>
           <Button
@@ -445,7 +449,7 @@ export default function TextbooksPanel() {
         loading={loading}
         dataSource={data}
         columns={columns}
-        scroll={{ x: 1080 }}
+        scroll={{ x: TABLE_SCROLL_X }}
         pagination={{ pageSize, showSizeChanger: false, showTotal: (n) => t("common.total", { n }) }}
       />
 

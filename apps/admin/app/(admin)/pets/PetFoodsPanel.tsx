@@ -1,5 +1,7 @@
 "use client";
 
+import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
+
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import {
@@ -233,6 +235,7 @@ export default function PetFoodsPanel() {
       key: "actions",
       width: 100,
       align: "right",
+      ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (
         <Space size={4}>
           <Button
@@ -350,7 +353,7 @@ export default function PetFoodsPanel() {
         columns={columns}
         dataSource={items}
         pagination={false}
-        scroll={{ x: 1100 }}
+        scroll={{ x: TABLE_SCROLL_X }}
         locale={{ emptyText: t("pets.empty") }}
       />
 

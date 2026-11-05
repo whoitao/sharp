@@ -1,5 +1,7 @@
 "use client";
 
+import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
+
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
@@ -173,6 +175,7 @@ export default function CategoriesPanel() {
       key: "actions",
       width: 100,
       align: "right",
+      ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (
         <Space size={4}>
           <Button
@@ -218,6 +221,7 @@ export default function CategoriesPanel() {
         rowKey="id"
         loading={loading}
         columns={columns}
+        scroll={{ x: TABLE_SCROLL_X }}
         dataSource={categories}
         pagination={false}
         locale={{ emptyText: t("articleCategories.empty") }}

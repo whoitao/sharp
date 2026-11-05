@@ -1,5 +1,7 @@
 "use client";
 
+import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
+
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import { useLocale } from "@/lib/i18n";
@@ -101,6 +103,7 @@ export default function PublishersPanel() {
       title: t("publishers.colActions"),
       width: 90,
       align: "right",
+      ...FIXED_ACTIONS_COLUMN,
       render: (_, row) => (
         <Space size={4}>
           <Button
@@ -145,6 +148,7 @@ export default function PublishersPanel() {
         loading={loading}
         dataSource={data}
         columns={columns}
+        scroll={{ x: TABLE_SCROLL_X }}
         pagination={{
           pageSize,
           showSizeChanger: false,

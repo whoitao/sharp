@@ -1,5 +1,7 @@
 "use client";
 
+import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
+
 import { usePageSize } from "@/components/antd-providers";
 import { usePermissions } from "@/components/permissions";
 import { usePageActions } from "@/components/page-actions";
@@ -135,6 +137,7 @@ export default function TagsPanel() {
       title: t("tags.colActions"),
       width: 90,
       align: "right",
+      ...FIXED_ACTIONS_COLUMN,
       render: (_, row) => (
         <Space size={4}>
           <Button
@@ -183,6 +186,7 @@ export default function TagsPanel() {
         loading={loading}
         dataSource={data}
         columns={columns}
+        scroll={{ x: TABLE_SCROLL_X }}
         pagination={{ pageSize, showSizeChanger: false, showTotal: (n) => t("common.total", { n }) }}
       />
       <Modal

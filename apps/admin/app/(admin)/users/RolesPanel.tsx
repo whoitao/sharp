@@ -1,5 +1,7 @@
 "use client";
 
+import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
+
 import { usePermissions } from "@/components/permissions";
 import { useLocale, type MessageKey } from "@/lib/i18n";
 import { PERMISSION_GROUPS, WILDCARD, type PermissionResource } from "@/lib/permissions";
@@ -227,6 +229,7 @@ export default function RolesPanel() {
       title: t("common.actions"),
       key: "actions",
       width: 80,
+      ...FIXED_ACTIONS_COLUMN,
       render: (_: unknown, row) =>
         canWrite && !row.isSystem ? (
           <Button
@@ -261,6 +264,7 @@ export default function RolesPanel() {
           size="small"
           loading={loading}
           columns={columns}
+          scroll={{ x: TABLE_SCROLL_X }}
           dataSource={roles}
           pagination={false}
           rowClassName={(row) => (row.id === selectedId ? "ant-table-row-selected" : "")}

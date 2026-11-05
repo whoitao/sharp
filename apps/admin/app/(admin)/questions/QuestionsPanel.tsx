@@ -1,5 +1,7 @@
 "use client";
 
+import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
+
 import SubjectSelect from "@/components/SubjectSelect";
 import { usePageSize } from "@/components/antd-providers";
 import IonIcon from "@/components/IonIcon";
@@ -693,14 +695,24 @@ export default function QuestionsPanel() {
       width: 90,
       render: (type: number) => <Tag>{typeLabel(type)}</Tag>,
     },
-    // 内容列不设宽度，自动占满剩余空间（其余列均显式收窄）
+    // 内容列限制 300px，超出部分省略号截断
     {
       title: t("questions.colContent"),
       dataIndex: "content",
       key: "content",
-      ellipsis: true,
-      // 富文本以 HTML 存储，列表展示纯文本并把公式渲染出来
-      render: (value: string) => <MathText html={value} />,
+      width: 300,
+      render: (value: string) => (
+        <div
+          style={{
+            maxWidth: 300,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <MathText html={value} />
+        </div>
+      ),
     },
     {
       title: t("questions.colOptions"),
@@ -738,6 +750,7 @@ export default function QuestionsPanel() {
       key: "actions",
       width: 80,
       align: "right",
+      ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (
         <Space size={4}>
           <Button
@@ -1098,7 +1111,7 @@ export default function QuestionsPanel() {
         loading={loading}
         columns={columns}
         dataSource={questions}
-        scroll={{ x: 1400 }}
+        scroll={{ x: TABLE_SCROLL_X }}
         pagination={{
           current: page,
           pageSize,
