@@ -88,6 +88,8 @@ export const zh: Messages = {
     totalGrades: "年级总数",
     totalQuestions: "题目总数",
     loadFailed: "加载仪表盘数据失败。",
+    barChart: "柱状图",
+    lineChart: "折线图",
   },
   users: {
     title: "用户",

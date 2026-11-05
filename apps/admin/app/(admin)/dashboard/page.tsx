@@ -2,15 +2,18 @@
 
 import { useThemeMode } from "@/components/antd-providers";
 import IonIcon from "@/components/IonIcon";
+import TrendChart, { type TrendChartType } from "@/components/TrendChart";
 import { useLocale } from "@/lib/i18n";
 import { getAdminPalette, type AdminPalette } from "@/lib/theme";
 import {
   AimOutlined,
+  BarChartOutlined,
   BookOutlined,
   CalendarOutlined,
   ClockCircleOutlined,
   FileTextOutlined,
   HistoryOutlined,
+  LineChartOutlined,
   TeamOutlined,
   UnorderedListOutlined,
 } from "@ant-design/icons";
@@ -21,10 +24,11 @@ import {
   Row,
   Segmented,
   Select,
+  Spin,
   Table,
   type TableProps,
 } from "antd";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface TrendPoint {
   date: string;
@@ -150,8 +154,12 @@ export default function DashboardPage() {
   const [subjects, setSubjects] = useState<Option[]>([]);
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [chartType, setChartType] = useState<TrendChartType>("bar");
+  // 请求序号：快速切换筛选条件时只接受最后一次请求的结果
+  const requestIdRef = useRef(0);
 
   const fetchStats = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     const authToken = localStorage.getItem("admin_token");
     const params = new URLSearchParams({ days: String(days) });
@@ -162,13 +170,15 @@ export default function DashboardPage() {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const body = await res.json();
+      if (requestId !== requestIdRef.current) return;
       if (res.ok && body?.kpis) setData(body);
       else setData(null);
     } catch {
+      if (requestId !== requestIdRef.current) return;
       setData(null);
       message.error(t("stats.loadFailed"));
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, gradeId, subjectId]);
@@ -247,8 +257,6 @@ export default function DashboardPage() {
       ]
     : [];
 
-  const maxQuestions = Math.max(1, ...(data?.trend.map((point) => point.questions) ?? [0]));
-
   const nameColumns: TableProps<NameStat>["columns"] = [
     { title: t("stats.colName"), dataIndex: "name", key: "name", ellipsis: true },
     { title: t("stats.colAttempts"), dataIndex: "attempts", key: "attempts", width: 80 },
@@ -281,15 +289,6 @@ export default function DashboardPage() {
     if (accuracy >= 60) return { bg: palette.warningLight, fg: palette.warning };
     return { bg: palette.errorLight, fg: palette.error };
   };
-
-  const trendLength = data?.trend.length ?? 0;
-  const trendLabelStep = Math.max(1, Math.ceil(trendLength / 10));
-  // 标签从最近一天往回等间隔取样：保证最后一天必有标签，且末两位标签不会相邻堆叠
-  const trendLabelIndexes = new Set(
-    Array.from({ length: trendLength }, (_, index) => index).filter(
-      (index) => (trendLength - 1 - index) % trendLabelStep === 0,
-    ),
-  );
 
   return (
     <div
@@ -350,71 +349,83 @@ export default function DashboardPage() {
             <Empty description={t("stats.empty")} />
           </SectionCard>
         ) : (
-          <Row gutter={[12, 12]}>
+          <div
+            style={{
+              // KPI 卡片始终单行展示：空间不足时横向滚动，而不是折成两排。
+              display: "flex",
+              flexWrap: "nowrap",
+              gap: 12,
+              overflowX: "auto",
+              paddingBottom: 4,
+              scrollbarWidth: "thin",
+            }}
+          >
             {kpis.map((kpi) => (
-              <Col key={kpi.label} xs={12} sm={8} xl={4}>
-                <div
+              <div
+                key={kpi.label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  flex: "1 0 168px",
+                  paddingTop: 14,
+                  paddingBottom: 14,
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                  background: palette.surface,
+                  border: `1px solid ${palette.border}`,
+                  borderRadius: 12,
+                  boxShadow: isDark ? "none" : "0 1px 2px rgba(16, 35, 26, 0.05)",
+                  opacity: loading ? 0.65 : 1,
+                  transition: "opacity 0.2s",
+                }}
+              >
+                <span
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
-                    height: "100%",
-                    padding: "14px 16px",
-                    background: palette.surface,
-                    border: `1px solid ${palette.border}`,
-                    borderRadius: 12,
-                    boxShadow: isDark ? "none" : "0 1px 2px rgba(16, 35, 26, 0.05)",
-                    opacity: loading && !data ? 0.6 : 1,
-                    transition: "opacity 0.2s",
+                    justifyContent: "center",
+                    width: 34,
+                    height: 34,
+                    flex: "0 0 auto",
+                    borderRadius: 10,
+                    background: palette.accentLight,
+                    color: palette.accentStrong,
+                    fontSize: 16,
                   }}
                 >
-                  <span
+                  {kpi.icon}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 34,
-                      height: 34,
-                      flex: "0 0 auto",
-                      borderRadius: 10,
-                      background: palette.accentLight,
-                      color: palette.accentStrong,
-                      fontSize: 16,
+                      fontSize: 21,
+                      fontWeight: 700,
+                      lineHeight: 1.15,
+                      color: palette.text,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
                     }}
                   >
-                    {kpi.icon}
-                  </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 21,
-                        fontWeight: 700,
-                        lineHeight: 1.15,
-                        color: palette.text,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {kpi.value}
-                    </div>
-                    <div
-                      style={{
-                        marginTop: 2,
-                        fontSize: 12,
-                        color: palette.textSecondary,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {kpi.label}
-                    </div>
+                    {kpi.value}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 2,
+                      fontSize: 12,
+                      color: palette.textSecondary,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {kpi.label}
                   </div>
                 </div>
-              </Col>
+              </div>
             ))}
-          </Row>
+          </div>
         )}
 
         {data && (
@@ -426,48 +437,52 @@ export default function DashboardPage() {
                 style={{ height: "100%" }}
                 title={t("stats.trendTitle")}
                 extra={
-                  <span style={{ fontSize: 12, fontWeight: 400, color: palette.textTertiary }}>
-                    {data.kpis.attempts} {t("stats.kpiAttempts")}
-                  </span>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Segmented
+                      size="small"
+                      value={chartType}
+                      onChange={(value) => setChartType(value as TrendChartType)}
+                      options={[
+                        {
+                          value: "bar",
+                          icon: <BarChartOutlined />,
+                          label: t("dashboard.barChart"),
+                        },
+                        {
+                          value: "line",
+                          icon: <LineChartOutlined />,
+                          label: t("dashboard.lineChart"),
+                        },
+                      ]}
+                    />
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 400,
+                        color: palette.textTertiary,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {data.kpis.attempts} {t("stats.kpiAttempts")}
+                    </span>
+                  </div>
                 }
                 bodyStyle={{ padding: "16px 16px 10px" }}
               >
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 170 }}>
-                  {data.trend.map((point, index) => {
-                    const hasData = point.questions > 0;
-                    const barHeight = hasData
-                      ? Math.max(6, Math.round((point.questions / maxQuestions) * 140))
-                      : 5;
-                    const showLabel = trendLabelIndexes.has(index);
-                    return (
-                      <div key={point.date} style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
-                        <div
-                          title={`${point.date} · ${point.questions} ${t("stats.trendQuestions")} · ${point.sessions} ${t("stats.trendSessions")}`}
-                          style={{
-                            height: barHeight,
-                            marginBottom: 6,
-                            borderRadius: hasData ? "4px 4px 2px 2px" : 2,
-                            background: hasData
-                              ? `linear-gradient(180deg, ${palette.accent}, ${palette.accentStrong})`
-                              // 空数据日保留可见的占位短柱，避免整段窗口看起来像没有柱子
-                              : palette.border,
-                          }}
-                        />
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: palette.textTertiary,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {showLabel ? point.date.slice(5) : ""}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <TrendChart
+                  trend={data.trend}
+                  palette={palette}
+                  chartType={chartType}
+                  isDark={isDark}
+                  loading={loading}
+                />
               </SectionCard>
             </Col>
             <Col xs={24} xl={10}>
@@ -478,9 +493,10 @@ export default function DashboardPage() {
                 title={t("stats.recentTitle")}
                 bodyStyle={{ padding: "4px 16px 8px" }}
               >
-                {data.recent.length === 0 ? (
-                  <Empty description={t("stats.empty")} image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                ) : (
+                <Spin spinning={loading} size="small">
+                  {data.recent.length === 0 ? (
+                    <Empty description={t("stats.empty")} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  ) : (
                   <div style={{ maxHeight: 224, overflowY: "auto" }}>
                     {data.recent.map((item) => {
                       const answered = item.correctCount + item.wrongCount;
@@ -560,6 +576,7 @@ export default function DashboardPage() {
                     })}
                   </div>
                 )}
+                </Spin>
               </SectionCard>
             </Col>
           </Row>

@@ -86,6 +86,8 @@ export const en = {
     totalGrades: "Total Grades",
     totalQuestions: "Total Questions",
     loadFailed: "Failed to load dashboard stats.",
+    barChart: "Bar chart",
+    lineChart: "Line chart",
   },
   users: {
     title: "Users",
