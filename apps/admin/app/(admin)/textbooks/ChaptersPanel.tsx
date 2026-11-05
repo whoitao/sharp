@@ -5,7 +5,6 @@ import { useLocale, type MessageKey } from "@/lib/i18n";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { App, Button, Cascader, Form, Input, InputNumber, Modal, Select, Space, Tag, Tree, theme } from "antd";
 import type { DataNode } from "antd/es/tree";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type ChapterNode = {
@@ -138,14 +137,9 @@ export default function ChaptersPanel() {
 
   const headerActions = useMemo(
     () => (
-      <Space>
-        <Link href="/textbooks">
-          <Button>{t("chapters.manageTextbooks")}</Button>
-        </Link>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          {t("chapters.addChapter")}
-        </Button>
-      </Space>
+      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        {t("chapters.addChapter")}
+      </Button>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectedTextbookId],

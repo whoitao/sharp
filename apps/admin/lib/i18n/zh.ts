@@ -217,7 +217,6 @@ export const zh: Messages = {
     levelNode: "节点",
     selectTextbook: "选择教材",
     selectTextbookFirst: "请先选择教材",
-    manageTextbooks: "教材管理",
     addChapter: "新建章节",
     createTitle: "新建章节",
     editTitle: "编辑章节",

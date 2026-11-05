@@ -217,7 +217,6 @@ export const en = {
     levelNode: "Node",
     selectTextbook: "Select a textbook",
     selectTextbookFirst: "Please select a textbook first",
-    manageTextbooks: "Textbooks",
     addChapter: "New Chapter",
     createTitle: "New Chapter",
     editTitle: "Edit Chapter",
