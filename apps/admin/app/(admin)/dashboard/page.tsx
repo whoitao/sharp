@@ -1,6 +1,7 @@
 "use client";
 
 import { useThemeMode } from "@/components/antd-providers";
+import GroupedGradeSelect from "@/components/GroupedGradeSelect";
 import IonIcon from "@/components/IonIcon";
 import TrendChart, { type TrendChartType } from "@/components/TrendChart";
 import { useLocale } from "@/lib/i18n";
@@ -15,7 +16,6 @@ import {
   HistoryOutlined,
   LineChartOutlined,
   TeamOutlined,
-  UnorderedListOutlined,
 } from "@ant-design/icons";
 import {
   App,
@@ -201,18 +201,6 @@ export default function DashboardPage() {
       .catch(() => undefined);
   }, []);
 
-  // 年级按学段分组展示（小学 / 初中 / 高中 / 大学）
-  const gradeGroups = useMemo(() => {
-    const groups = new Map<string, { value: string; label: string }[]>();
-    grades.forEach((grade) => {
-      const key = grade.stage || "";
-      const list = groups.get(key) ?? [];
-      list.push({ value: grade.id, label: grade.name });
-      groups.set(key, list);
-    });
-    return Array.from(groups.entries()).map(([stage, options]) => ({ label: stage, options }));
-  }, [grades]);
-
   const formatDuration = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -308,14 +296,14 @@ export default function DashboardPage() {
               label: t(`stats.days${value}` as "stats.days7"),
             }))}
           />
-          <Select
+          <GroupedGradeSelect
             allowClear
             style={{ width: 170 }}
-            prefix={<UnorderedListOutlined style={{ color: palette.textTertiary }} />}
+            iconColor={palette.textTertiary}
             placeholder={t("stats.allGrades")}
             value={gradeId}
-            onChange={(value) => setGradeId(value ?? null)}
-            options={gradeGroups}
+            onChange={(value) => setGradeId((value as string) ?? null)}
+            grades={grades}
           />
           <Select
             allowClear

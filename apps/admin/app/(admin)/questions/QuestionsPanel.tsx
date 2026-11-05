@@ -8,12 +8,16 @@ import IonIcon from "@/components/IonIcon";
 import { usePageActions } from "@/components/page-actions";
 import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
+import GroupedGradeSelect, {
+  groupGradesByStage,
+} from "@/components/GroupedGradeSelect";
 import {
   DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
   InboxOutlined,
   PlusOutlined,
+  SearchOutlined,
   UploadOutlined
 } from "@ant-design/icons";
 import {
@@ -121,15 +125,8 @@ const DEFAULT_OPTIONS: QuestionOption[] = ["A", "B", "C", "D"].map((key) => ({
   isCorrect: false,
 }));
 
-/** 年级下拉按学段分组：初中 → 初一/初二/初三，用户只选一次，分类由此推导 */
-const stageGroups = (grades: GradeOption[]) => {
-  const map = new Map<string, { value: string; label: string }[]>();
-  for (const g of grades) {
-    if (!map.has(g.stage)) map.set(g.stage, []);
-    map.get(g.stage)!.push({ value: g.id, label: g.name });
-  }
-  return Array.from(map, ([stage, options]) => ({ label: stage, options }));
-};
+// 筛选区统一宽度：宽屏单行排列，窄屏自动换行
+const FILTER_WIDTH = 180;
 
 export default function QuestionsPanel() {
   const { can } = usePermissions();
@@ -366,14 +363,21 @@ export default function QuestionsPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSubjectId]);
 
-  // 内容模糊搜索：防抖 300ms，避免每敲一个字符都发请求
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchText(searchInput.trim());
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+  // 内容模糊搜索改为按钮 / 回车触发；输入清空后恢复全量列表
+  const applyContentSearch = () => {
+    const value = searchInput.trim();
+    if (!value) return;
+    if (value === searchText) {
+      if (page !== 1) {
+        setPage(1);
+      } else {
+        fetchQuestions();
+      }
+      return;
+    }
+    setSearchText(value);
+    setPage(1);
+  };
 
   useEffect(() => {
     fetchQuestions();
@@ -829,7 +833,7 @@ export default function QuestionsPanel() {
                 <Select
                   showSearch={{ optionFilterProp: "label" }}
                   placeholder={t("questions.gradePlaceholder")}
-                  options={stageGroups(grades)}
+                  options={groupGradesByStage(grades)}
                   onChange={(v) => setFormGradeId(v)}
                 />
               </Form.Item>
@@ -1038,9 +1042,22 @@ export default function QuestionsPanel() {
   return (
     <div>
       <Card size="small" style={{ marginBottom: 12 }} styles={{ body: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 } }}>
+        <GroupedGradeSelect
+          showSearch
+          allowClear
+          style={{ width: FILTER_WIDTH }}
+          iconColor={token.colorTextTertiary}
+          placeholder={t("stats.allGrades")}
+          value={selectedGradeId}
+          onChange={(value) => {
+            setSelectedGradeId(value as string | undefined);
+            setPage(1);
+          }}
+          grades={grades}
+        />
         <SubjectSelect
           allowClear
-          style={{ width: 200 }}
+          style={{ width: FILTER_WIDTH }}
           placeholder={t("questions.subjectPlaceholder")}
           value={selectedSubjectId}
           subjects={subjects}
@@ -1049,33 +1066,10 @@ export default function QuestionsPanel() {
             setPage(1);
           }}
         />
-        <Select
-          showSearch
-          allowClear
-          style={{ width: 150 }}
-          placeholder={t("questions.gradePlaceholder")}
-          value={selectedGradeId}
-          onChange={(value) => {
-            setSelectedGradeId(value);
-            setPage(1);
-          }}
-          options={grades.map((g) => ({ value: g.id, label: g.name }))}
-        />
-        <Select
-          allowClear
-          style={{ width: 150 }}
-          placeholder={t("questions.colTags")}
-          value={selectedTagId}
-          onChange={(value) => {
-            setSelectedTagId(value);
-            setPage(1);
-          }}
-          options={tags.map((tag) => ({ value: tag.id, label: tag.name }))}
-        />
         <TreeSelect
           showSearch
           allowClear
-          style={{ width: 200 }}
+          style={{ width: FILTER_WIDTH }}
           disabled={!selectedSubjectId}
           placeholder={
             selectedSubjectId
@@ -1097,12 +1091,44 @@ export default function QuestionsPanel() {
           })}
           treeDefaultExpandAll
         />
+        <Select
+          allowClear
+          style={{ width: FILTER_WIDTH }}
+          placeholder={t("questions.colTags")}
+          value={selectedTagId}
+          onChange={(value) => {
+            setSelectedTagId(value);
+            setPage(1);
+          }}
+          options={tags.map((tag) => ({ value: tag.id, label: tag.name }))}
+        />
         <Input
           allowClear
-          style={{ width: 200 }}
+          style={{ width: FILTER_WIDTH }}
           placeholder={t("questions.searchContentPlaceholder")}
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSearchInput(value);
+            // 清空输入时同步清掉已生效的搜索条件，避免无法退出搜索态
+            if (!value.trim() && searchText) {
+              setSearchText("");
+              setPage(1);
+            }
+          }}
+          onPressEnter={applyContentSearch}
+          suffix={
+            <Button
+              type="text"
+              size="small"
+              icon={<SearchOutlined />}
+              title={t("common.search")}
+              aria-label={t("common.search")}
+              disabled={!searchInput.trim()}
+              onClick={applyContentSearch}
+              style={{ marginRight: -6 }}
+            />
+          }
         />
       </Card>
 
@@ -1204,7 +1230,7 @@ export default function QuestionsPanel() {
               placeholder={t("questions.gradePlaceholder")}
               value={importGradeId}
               onChange={(v) => setImportGradeId(v)}
-              options={stageGroups(grades)}
+              options={groupGradesByStage(grades)}
             />
           </Form.Item>
           <p style={{ color: token.colorTextTertiary }}>

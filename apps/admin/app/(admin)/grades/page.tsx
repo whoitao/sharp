@@ -14,8 +14,8 @@ export default function GradesPage() {
   const [activeKey, setActiveKey] = useState<TabKey>("grades");
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: "stages", label: t("nav.stages") },
     { key: "grades", label: t("nav.grades") },
+    { key: "stages", label: t("nav.stages") },
   ];
 
   const headerTabs = useMemo(

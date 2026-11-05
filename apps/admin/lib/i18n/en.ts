@@ -10,6 +10,7 @@ export const en = {
     reset: "Reset",
     optional: "Optional",
     actions: "Actions",
+    search: "Search",
     name: "Name",
     sortOrder: "Sort Order",
     saved: "Saved",

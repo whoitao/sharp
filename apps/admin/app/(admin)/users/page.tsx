@@ -19,8 +19,8 @@ export default function UsersPage() {
   const tabs = useMemo(
     () =>
       [
-        { key: "admins" as TabKey, label: t("nav.admins"), perm: "admins:read" as const },
         { key: "users" as TabKey, label: t("nav.users"), perm: "users:read" as const },
+        { key: "admins" as TabKey, label: t("nav.admins"), perm: "admins:read" as const },
         { key: "roles" as TabKey, label: t("nav.roles"), perm: "roles:read" as const },
       ].filter((item) => can(item.perm)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -30,7 +30,9 @@ export default function UsersPage() {
   useEffect(() => {
     if (loading) return;
     if (!activeKey || !tabs.some((item) => item.key === activeKey)) {
-      setActiveKey(tabs[0]?.key ?? null);
+      // 页签顺序调整后「用户」排在第一位，但默认落地页仍保持「管理员」
+      const fallback = tabs.find((item) => item.key === "admins")?.key ?? tabs[0]?.key ?? null;
+      setActiveKey(fallback);
     }
   }, [loading, tabs, activeKey]);
 

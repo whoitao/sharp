@@ -12,6 +12,7 @@ export const zh: Messages = {
     reset: "重置",
     optional: "可选",
     actions: "操作",
+    search: "搜索",
     name: "名称",
     sortOrder: "排序",
     saved: "已保存",
