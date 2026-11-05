@@ -15,7 +15,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -76,9 +75,6 @@ function flattenTree<T extends TreeSource>(
 const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
-  // 平板（iPad / 安卓平板）的 header 没有状态栏高度，标题下方会显得贴住内容，需要额外留白
-  const { width, height } = useWindowDimensions();
-  const isTablet = Math.min(width, height) >= 600;
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const {

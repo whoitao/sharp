@@ -4,7 +4,7 @@ import { NavigationContainer, useNavigationContainerRef } from '@react-navigatio
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { StudyRecord, StudyRecordSummary } from '@sharp/shared';
 import React, { useEffect, useRef } from 'react';
-import { BackHandler, StyleSheet } from 'react-native';
+import { BackHandler, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -189,6 +189,35 @@ const withGradient = (Comp: React.ComponentType<any>): React.FC<any> => {
   return Wrapped;
 };
 
+// Android 平板的原生 header（react-native-screens）高度靠 Toolbar 子组件撑开，
+// 没有返回键的 Tab 根页面拿不到状态栏高度，标题下方会贴住内容；手机与 iOS 不受影响。
+// 这里统一用安全区 insets.top 补一段间距，避免写死 20/24 之类的数值。
+const TabRootTopInset: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  // 用短边判断平板，横竖屏都成立；手机（含刘海机型）短边远小于 600
+  const isTablet = Math.min(width, height) >= 600;
+  const gap = Platform.OS === 'android' && isTablet ? insets.top : 0;
+
+  return (
+    <View style={{ flex: 1 }}>
+      {gap > 0 ? <View style={{ height: gap }} pointerEvents="none" /> : null}
+      {children}
+    </View>
+  );
+};
+
+/** 套在 Tab 根页面（首页 / 学习 / 我的）上，与 pushed 页面区分 */
+const withTabRootTopInset = (Comp: React.ComponentType<any>): React.FC<any> => {
+  const Wrapped: React.FC<any> = (props) => (
+    <TabRootTopInset>
+      <Comp {...props} />
+    </TabRootTopInset>
+  );
+  Wrapped.displayName = `withTabRootTopInset(${Comp.displayName || Comp.name || 'Screen'})`;
+  return Wrapped;
+};
+
 // ─── Auth Navigator ───────────────────────────────────────────────────────────
 
 const AuthNavigator: React.FC = () => (
@@ -229,7 +258,7 @@ const HomeStackNavigator: React.FC = () => {
     >
     <HomeStack.Screen
       name="Home"
-      component={withGradient(HomeScreen)}
+      component={withGradient(withTabRootTopInset(HomeScreen))}
       options={{ title: t.home }}
     />
     {/* 从首页快捷入口进入的错题本 / 学习记录，返回时回到首页 */}
@@ -319,7 +348,7 @@ const StudyStackNavigator: React.FC = () => {
     >
     <StudyStack.Screen
       name="Study"
-      component={withGradient(StudyScreen)}
+      component={withGradient(withTabRootTopInset(StudyScreen))}
       options={{ title: t.study }}
     />
     <StudyStack.Screen
@@ -380,7 +409,7 @@ const ProfileStackNavigator: React.FC = () => {
     >
     <ProfileStack.Screen
       name="Profile"
-      component={withGradient(ProfileScreen)}
+      component={withGradient(withTabRootTopInset(ProfileScreen))}
       options={{ title: t.profile }}
     />
     <ProfileStack.Screen
