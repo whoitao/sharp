@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import katex from "katex";
 import renderMathInElement from "katex/contrib/auto-render";
 import "katex/dist/katex.min.css";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 
 const DELIMITERS = [
   { left: "$$", right: "$$", display: true },
@@ -22,9 +22,11 @@ const DELIMITERS = [
 export function RichText({
   html,
   className,
+  style,
 }: {
   html?: string | null;
   className?: string;
+  style?: CSSProperties;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const clean = useMemo(() => sanitizeHtml(html), [html]);
@@ -65,6 +67,7 @@ export function RichText({
     <div
       ref={ref}
       className={cn("article-content", className)}
+      style={style}
       dangerouslySetInnerHTML={{ __html: clean }}
     />
   );

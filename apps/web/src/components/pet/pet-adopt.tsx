@@ -193,7 +193,7 @@ export function PetAdopt() {
                   <div className="mt-2 text-center">
                     <p className="truncate text-sm font-bold">{item.name}</p>
                     {item.theme && (
-                      <p className="mt-0.5 truncate text-[11px] text-foreground-tertiary">
+                      <p className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
                         {item.theme}
                       </p>
                     )}
@@ -202,7 +202,7 @@ export function PetAdopt() {
                         {item.tagline}
                       </p>
                     )}
-                    <p className="mt-1.5 truncate text-[10px] text-foreground-tertiary">
+                    <p className="mt-1.5 truncate text-[0.625rem] text-foreground-tertiary">
                       {item.stages.map((stage) => stage.name).join(" → ")}
                     </p>
                   </div>
@@ -229,7 +229,7 @@ export function PetAdopt() {
               placeholder={t("pet.adoptNicknamePlaceholder")}
               className="mt-2 h-10 w-full rounded-[10px] border border-border bg-surface px-3 text-sm text-foreground outline-none transition-colors placeholder:text-foreground-tertiary hover:border-primary/40 focus:border-primary"
             />
-            <p className="mt-1.5 text-[11px] text-foreground-tertiary">
+            <p className="mt-1.5 text-[0.6875rem] text-foreground-tertiary">
               {t("pet.adoptNicknamePlaceholder")}
             </p>
 

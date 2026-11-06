@@ -1,5 +1,6 @@
 "use client";
 
+import { PetLottie, type PetAnimationKind } from "@/components/pet/pet-lottie";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
 import {
@@ -24,7 +25,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type LoadStatus = "loading" | "ready" | "error";
 
@@ -81,7 +82,7 @@ function StateChip({ state }: { state: PetDetail["state"] }) {
   return (
     <span
       className={cn(
-        "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+        "shrink-0 rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold",
         config.className,
       )}
     >
@@ -90,15 +91,22 @@ function StateChip({ state }: { state: PetDetail["state"] }) {
   );
 }
 
-/** 底部弹层：390 贴底，桌面居中；Esc / 点击遮罩关闭 */
+/**
+ * 弹层：390 贴底。
+ * - 默认桌面居中（养宠指南）；
+ * - drawer 模式在桌面贴右侧，喂食时左侧的宠物动画仍可见。
+ * Esc / 点击遮罩关闭。
+ */
 function Sheet({
   label,
   onClose,
   children,
+  drawer = false,
 }: {
   label: string;
   onClose: () => void;
   children: React.ReactNode;
+  drawer?: boolean;
 }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -117,14 +125,24 @@ function Sheet({
     <div
       role="presentation"
       onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
+      className={cn(
+        "fixed inset-0 z-[100] flex bg-black/50",
+        drawer
+          ? "items-end justify-end sm:items-stretch"
+          : "items-end justify-center sm:items-center sm:p-4",
+      )}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={label}
         onClick={(event) => event.stopPropagation()}
-        className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-border bg-surface p-4 shadow-xl sm:rounded-2xl sm:p-5"
+        className={cn(
+          "overflow-y-auto border border-border bg-surface p-4 shadow-xl",
+          drawer
+            ? "max-h-[88vh] w-full rounded-t-2xl p-4 sm:h-full sm:max-h-none sm:w-[420px] sm:max-w-[420px] sm:rounded-l-2xl sm:rounded-tr-none sm:border-y-0 sm:border-r-0 sm:p-5"
+            : "max-h-[88vh] w-full max-w-md rounded-t-2xl sm:rounded-2xl sm:p-5",
+        )}
       >
         {children}
       </div>
@@ -152,6 +170,11 @@ export function PetHome() {
   const [modalSatiety, setModalSatiety] = useState(0);
   const [modalSatietyMax, setModalSatietyMax] = useState(200);
 
+  // 宠物形象动画：idle 常驻循环，喂食 / 进化播放一次后回到 idle
+  const [animKind, setAnimKind] = useState<PetAnimationKind>("idle");
+  // 本次喂食触发了进化时，等喂食动画播完再切进化动画
+  const pendingEvolveRef = useRef(false);
+
   const loadPet = useCallback(async () => {
     setStatus("loading");
     try {
@@ -176,6 +199,30 @@ export function PetHome() {
       /* 喂食成功后的静默刷新，失败不影响当前弹层结果 */
     }
   }, []);
+
+  /** feed / evolve 播放结束：喂食后若升级阶段则先刷新数据再播进化，否则回到 idle */
+  const handleAnimationFinish = useCallback(() => {
+    if (animKind === "feed") {
+      if (pendingEvolveRef.current) {
+        pendingEvolveRef.current = false;
+        void refreshHome().then(() => setAnimKind("evolve"));
+      } else {
+        setAnimKind("idle");
+      }
+      return;
+    }
+    if (animKind === "evolve") setAnimKind("idle");
+  }, [animKind, refreshHome]);
+
+  // 兜底：动画地址缺失 / 未触发 complete 时，最多停留 6s 必须回到 idle
+  useEffect(() => {
+    if (animKind === "idle") return;
+    const timer = window.setTimeout(() => {
+      pendingEvolveRef.current = false;
+      setAnimKind("idle");
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [animKind]);
 
   const pet = home?.pet ?? null;
   const backpack = useMemo(() => home?.backpack ?? [], [home]);
@@ -255,7 +302,18 @@ export function PetHome() {
       );
       const remaining = result.backpack[result.foodType] ?? 0;
       setQuantity((current) => Math.max(1, Math.min(current, Math.min(10, remaining))));
-      void refreshHome();
+
+      // 喂食成功后播喂食动画；进化要等刷出新阶段数据再播，保证用新阶段的动画地址
+      pendingEvolveRef.current = result.stageUp && !!result.evolution;
+      if (pet?.growthStage.feedLottieUrl) {
+        setAnimKind("feed");
+        void refreshHome();
+      } else if (pendingEvolveRef.current) {
+        pendingEvolveRef.current = false;
+        void refreshHome().then(() => setAnimKind("evolve"));
+      } else {
+        void refreshHome();
+      }
     } catch (error) {
       const code = error instanceof PetApiError ? error.code : null;
       setFeedError(
@@ -324,269 +382,288 @@ export function PetHome() {
         </div>
       ) : (
         <>
-          <section className="mt-5 rounded-lg border border-border bg-surface p-4 card-shadow sm:p-5">
-            <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
-              {/* 图片加载中/失败/无图时，露出的浅绿底与 emoji 作为占位 */}
-              <div className="relative flex h-40 w-40 shrink-0 items-center justify-center rounded-lg bg-primary-light">
-                <span className="text-6xl">{pet.species.icon ?? "🐾"}</span>
-                {pet.growthStage.imageUrl && (
-                  // 宠物形象来自后台配置的公共存储，域名随环境变化，使用原生 img
-                  <img
-                    src={pet.growthStage.imageUrl}
-                    alt={pet.nickname}
-                    className="absolute inset-0 h-full w-full object-contain p-2"
-                    onError={(event) => {
-                      event.currentTarget.style.display = "none";
-                    }}
-                  />
-                )}
-              </div>
-
-              <div className="w-full min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="min-w-0 truncate text-lg font-bold sm:text-xl">
-                    {pet.nickname} · {t("pet.level", { n: pet.level })}
-                  </h2>
-                  <StateChip state={pet.state} />
-                </div>
-                <p className="mt-1 truncate text-xs text-foreground-tertiary">
-                  {pet.species.name} · {pet.growthStage.name} ·{" "}
-                  {t("pet.companionDays", { n: pet.companionDays })}
-                </p>
-
-                <div className="mt-4">
-                  <div className="flex items-center justify-between gap-3 text-[11px] text-foreground-secondary">
-                    <span className="truncate">
-                      {isMaxLevel
-                        ? t("pet.maxLevel")
-                        : t("pet.expToNext", {
-                            n: Math.max(0, pet.expToNext - pet.experience),
-                          })}
-                    </span>
-                    <span className="shrink-0 tabular-nums text-foreground-tertiary">
-                      {t("pet.expValue", {
-                        current: pet.experience,
-                        next: pet.expToNext,
-                      })}
-                    </span>
+          {/* 宽屏两栏：左栏是宠物舞台与今日经验（吸顶），右栏是统计、进化与记录 */}
+          <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-5">
+            <div className="space-y-3 lg:sticky lg:top-[76px]">
+              <section className="rounded-xl border border-border bg-surface p-4 card-shadow sm:p-5">
+                <div className="relative mx-auto w-full max-w-[280px]">
+                  {/* 舞台固定正方形，动画切换不引起布局跳动 */}
+                  <div className="relative aspect-square w-full p-3">
+                    <PetLottie
+                      kind={animKind}
+                      idleUrl={pet.growthStage.idleLottieUrl}
+                      feedUrl={pet.growthStage.feedLottieUrl}
+                      evolveUrl={pet.growthStage.evolveLottieUrl}
+                      imageUrl={pet.growthStage.imageUrl}
+                      fallbackIcon={pet.species.icon}
+                      onFinish={handleAnimationFinish}
+                      className="h-full w-full"
+                    />
                   </div>
-                  <ProgressBar
-                    className="mt-1.5"
-                    value={
-                      pet.expToNext > 0 ? pet.experience / pet.expToNext : 1
-                    }
-                  />
                 </div>
 
-                <div className="mt-3">
-                  <div className="flex items-center justify-between gap-3 text-[11px] text-foreground-secondary">
-                    <span>{t("pet.satiety")}</span>
-                    <span className="shrink-0 tabular-nums text-foreground-tertiary">
-                      {t("pet.satietyValue", {
-                        satiety: pet.satiety,
-                        max: pet.satietyMax,
-                      })}
-                    </span>
+                <div className="mt-4 w-full min-w-0">
+                  <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 lg:justify-start">
+                    <h2 className="min-w-0 truncate text-[1.375rem] font-bold leading-tight">
+                      {pet.nickname} · {t("pet.level", { n: pet.level })}
+                    </h2>
+                    <StateChip state={pet.state} />
                   </div>
-                  <ProgressBar
-                    className="mt-1.5"
-                    tone="warning"
-                    value={pet.satietyMax > 0 ? pet.satiety / pet.satietyMax : 0}
-                  />
-                  <p className="mt-1 text-[11px] text-foreground-tertiary">
-                    {t("pet.satietyHint", { max: pet.satietyMax })}
+                  <p className="mt-1 truncate text-center text-xs text-foreground-tertiary lg:text-left">
+                    {pet.species.name} · {pet.growthStage.name} ·{" "}
+                    {t("pet.companionDays", { n: pet.companionDays })}
                   </p>
-                </div>
 
-                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    type="button"
-                    className="justify-center sm:flex-1"
-                    disabled={!pet.canFeed}
-                    onClick={() => void openFeed()}
-                  >
-                    {t("pet.feed")}
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="justify-center sm:flex-1"
-                  >
-                    <Link href="/learn">
-                      {t("pet.practice")}
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-                {!hasFood && (
-                  <p className="mt-2 text-center text-[11px] text-foreground-tertiary">
-                    {t("pet.backpackEmpty")}
-                  </p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section className="mt-3 rounded-lg border border-border bg-surface p-4 card-shadow">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold text-foreground-secondary">
-                {t("pet.todayExp")}
-              </p>
-              <p className="shrink-0 text-xs tabular-nums text-foreground-tertiary">
-                {t("pet.todayExpValue", {
-                  current: home?.today.expGained ?? 0,
-                  cap: home?.today.expCap ?? 0,
-                })}
-              </p>
-            </div>
-            <ProgressBar
-              className="mt-2"
-              value={
-                home && home.today.expCap > 0
-                  ? home.today.expGained / home.today.expCap
-                  : 0
-              }
-            />
-            <p className="mt-1.5 text-[11px] text-foreground-tertiary">
-              {t("pet.remainingExp", { n: home?.today.remainingExp ?? 0 })}
-            </p>
-          </section>
-
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {[
-              {
-                label: t("pet.totalCorrect"),
-                value: String(home?.stats.totalCorrect ?? 0),
-              },
-              {
-                label: t("pet.totalFeeds"),
-                value: String(home?.stats.feedCount ?? 0),
-              },
-              {
-                label: t("pet.favoriteSubject"),
-                value: home?.stats.favoriteSubject ?? t("pet.noData"),
-              },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="min-w-0 rounded-lg border border-border bg-surface p-3 card-shadow"
-              >
-                <p className="truncate text-[11px] text-foreground-tertiary">
-                  {item.label}
-                </p>
-                <p className="mt-1 truncate text-base font-bold">{item.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <section className="mt-5">
-            <h2 className="text-base font-bold">{t("pet.routeTitle")}</h2>
-            <div className="mt-2.5 grid grid-cols-3 gap-2">
-              {pet.route.map((stage) => {
-                const active = stage.stageKey === pet.growthStage.key;
-                const past = !active && stage.level <= pet.level;
-                const locked = !active && !past;
-                return (
-                  <div
-                    key={stage.stageKey}
-                    className={cn(
-                      "min-w-0 rounded-lg border p-2.5 text-center",
-                      active
-                        ? "border-primary bg-primary-light card-shadow"
-                        : past
-                          ? "border-border bg-surface"
-                          : "border-border-light bg-surface-secondary/60 opacity-60",
-                    )}
-                  >
-                    <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-primary-light">
-                      <span className={cn("text-2xl", locked && "opacity-50")}>
-                        {pet.species.icon ?? "🐾"}
-                      </span>
-                      {stage.imageUrl && (
-                        <img
-                          src={stage.imageUrl}
-                          alt={stage.name}
-                          className={cn(
-                            "absolute inset-0 h-full w-full object-contain",
-                            locked && "opacity-50",
-                          )}
-                          onError={(event) => {
-                            event.currentTarget.style.display = "none";
-                          }}
-                        />
-                      )}
-                    </div>
-                    <p
-                      className={cn(
-                        "mt-1 truncate text-xs",
-                        active ? "font-bold" : past ? "font-semibold" : "font-medium",
-                        locked ? "text-foreground-tertiary" : "text-foreground",
-                      )}
-                    >
-                      {stage.name}
-                    </p>
-                    <p className="mt-0.5 truncate text-[10px] text-foreground-tertiary">
-                      {t("pet.level", { n: stage.level })}
-                    </p>
-                    {(past || locked) && (
-                      <p className="mt-0.5 truncate text-[10px] text-foreground-tertiary">
-                        {past ? t("pet.stagePast") : t("pet.stageLocked")}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="mt-5">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base font-bold">{t("pet.recentFeeds")}</h2>
-              <Link
-                href="/pet/feeds"
-                className="shrink-0 text-xs font-semibold text-primary-strong transition-colors hover:text-primary"
-              >
-                {t("pet.viewAll")}
-              </Link>
-            </div>
-            <div className="mt-2.5">
-              {home?.recentFeeds.length === 0 ? (
-                <p className="rounded-lg border border-border bg-surface px-4 py-6 text-center text-sm text-foreground-secondary card-shadow">
-                  {t("pet.noFeeds")}
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {home?.recentFeeds.map((record) => {
-                    const meta = foodMeta.get(record.foodType);
-                    return (
-                      <li
-                        key={record.id}
-                        className="flex min-w-0 items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 card-shadow"
-                      >
-                        <span className="shrink-0 text-xl">
-                          {meta?.icon ?? FALLBACK_FOOD_ICON[record.foodType] ?? "🍎"}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm">
-                            {t("pet.gain", {
-                              satiety: record.satietyGain,
-                              exp: record.expGain,
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between gap-3 text-[0.6875rem] text-foreground-secondary">
+                      <span className="truncate">
+                        {isMaxLevel
+                          ? t("pet.maxLevel")
+                          : t("pet.expToNext", {
+                              n: Math.max(0, pet.expToNext - pet.experience),
                             })}
-                          </span>
-                          <span className="mt-0.5 block text-[11px] text-foreground-tertiary">
-                            {record.dateLabel} · ×{record.quantity}
-                          </span>
-                        </span>
-                        {(record.levelUp || record.stageUp) && (
-                          <ArrowUpCircle className="h-4 w-4 shrink-0 text-primary-strong" />
+                      </span>
+                      <span className="shrink-0 tabular-nums text-foreground-tertiary">
+                        {t("pet.expValue", {
+                          current: pet.experience,
+                          next: pet.expToNext,
+                        })}
+                      </span>
+                    </div>
+                    <ProgressBar
+                      className="mt-1.5"
+                      value={
+                        pet.expToNext > 0 ? pet.experience / pet.expToNext : 1
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between gap-3 text-[0.6875rem] text-foreground-secondary">
+                      <span>{t("pet.satiety")}</span>
+                      <span className="shrink-0 tabular-nums text-foreground-tertiary">
+                        {t("pet.satietyValue", {
+                          satiety: pet.satiety,
+                          max: pet.satietyMax,
+                        })}
+                      </span>
+                    </div>
+                    <ProgressBar
+                      className="mt-1.5"
+                      tone="warning"
+                      value={
+                        pet.satietyMax > 0 ? pet.satiety / pet.satietyMax : 0
+                      }
+                    />
+                    <p className="mt-1 text-[0.6875rem] text-foreground-tertiary">
+                      {t("pet.satietyHint", { max: pet.satietyMax })}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      type="button"
+                      className="justify-center sm:flex-1"
+                      disabled={!pet.canFeed}
+                      onClick={() => void openFeed()}
+                    >
+                      {t("pet.feed")}
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="justify-center sm:flex-1"
+                    >
+                      <Link href="/learn">
+                        {t("pet.practice")}
+                        <ArrowRight className="ml-1 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                  {!hasFood && (
+                    <p className="mt-2 text-center text-[0.6875rem] text-foreground-tertiary">
+                      {t("pet.backpackEmpty")}
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              <section className="rounded-xl border border-border bg-surface p-4 card-shadow">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold text-foreground-secondary">
+                    {t("pet.todayExp")}
+                  </p>
+                  <p className="shrink-0 text-sm font-bold tabular-nums text-primary-strong">
+                    {t("pet.todayExpValue", {
+                      current: home?.today.expGained ?? 0,
+                      cap: home?.today.expCap ?? 0,
+                    })}
+                  </p>
+                </div>
+                <ProgressBar
+                  className="mt-2"
+                  value={
+                    home && home.today.expCap > 0
+                      ? home.today.expGained / home.today.expCap
+                      : 0
+                  }
+                />
+                <p className="mt-1.5 text-[0.6875rem] text-foreground-tertiary">
+                  {t("pet.remainingExp", { n: home?.today.remainingExp ?? 0 })}
+                </p>
+              </section>
+            </div>
+
+            <div className="space-y-3 lg:space-y-5">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {[
+                  {
+                    label: t("pet.totalCorrect"),
+                    value: String(home?.stats.totalCorrect ?? 0),
+                  },
+                  {
+                    label: t("pet.totalFeeds"),
+                    value: String(home?.stats.feedCount ?? 0),
+                  },
+                  {
+                    label: t("pet.favoriteSubject"),
+                    value: home?.stats.favoriteSubject ?? t("pet.noData"),
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="min-w-0 rounded-xl border border-border bg-surface p-3 card-shadow sm:p-4"
+                  >
+                    <p className="truncate text-xs text-foreground-tertiary">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 truncate text-base font-bold">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <section>
+                <h2 className="text-base font-bold">{t("pet.routeTitle")}</h2>
+                <div className="mt-2.5 grid grid-cols-3 gap-2 sm:gap-3">
+                  {pet.route.map((stage) => {
+                    const active = stage.stageKey === pet.growthStage.key;
+                    const past = !active && stage.level <= pet.level;
+                    const locked = !active && !past;
+                    return (
+                      <div
+                        key={stage.stageKey}
+                        className={cn(
+                          "min-w-0 rounded-xl border p-2.5 text-center sm:p-3",
+                          active
+                            ? "border-primary bg-primary-light card-shadow"
+                            : past
+                              ? "border-border bg-surface"
+                              : "border-border-light bg-surface-secondary/60 opacity-60",
                         )}
-                      </li>
+                      >
+                        <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-primary-light sm:h-20 sm:w-20">
+                          <span
+                            className={cn("text-2xl", locked && "opacity-50")}
+                          >
+                            {pet.species.icon ?? "🐾"}
+                          </span>
+                          {stage.imageUrl && (
+                            <img
+                              src={stage.imageUrl}
+                              alt={stage.name}
+                              className={cn(
+                                "absolute inset-0 h-full w-full object-contain",
+                                locked && "opacity-50",
+                              )}
+                              onError={(event) => {
+                                event.currentTarget.style.display = "none";
+                              }}
+                            />
+                          )}
+                        </div>
+                        <p
+                          className={cn(
+                            "mt-1 truncate text-xs sm:text-sm",
+                            active
+                              ? "font-bold"
+                              : past
+                                ? "font-semibold"
+                                : "font-medium",
+                            locked
+                              ? "text-foreground-tertiary"
+                              : "text-foreground",
+                          )}
+                        >
+                          {stage.name}
+                        </p>
+                        <p className="mt-0.5 truncate text-[0.625rem] text-foreground-tertiary">
+                          {t("pet.level", { n: stage.level })}
+                        </p>
+                        {past && (
+                          <p className="mt-0.5 truncate text-[0.625rem] text-foreground-tertiary">
+                            {t("pet.stagePast")}
+                          </p>
+                        )}
+                      </div>
                     );
                   })}
-                </ul>
-              )}
+                </div>
+              </section>
+
+              <section>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-base font-bold">{t("pet.recentFeeds")}</h2>
+                  <Link
+                    href="/pet/feeds"
+                    className="shrink-0 text-xs font-semibold text-primary-strong transition-colors hover:text-primary"
+                  >
+                    {t("pet.viewAll")}
+                  </Link>
+                </div>
+                <div className="mt-2.5">
+                  {home?.recentFeeds.length === 0 ? (
+                    <p className="rounded-xl border border-border bg-surface px-4 py-6 text-center text-sm text-foreground-secondary card-shadow">
+                      {t("pet.noFeeds")}
+                    </p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {home?.recentFeeds.map((record) => {
+                        const meta = foodMeta.get(record.foodType);
+                        return (
+                          <li
+                            key={record.id}
+                            className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 card-shadow sm:px-4 sm:py-3"
+                          >
+                            <span className="shrink-0 text-xl">
+                              {meta?.icon ??
+                                FALLBACK_FOOD_ICON[record.foodType] ??
+                                "🍎"}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm">
+                                {t("pet.gain", {
+                                  satiety: record.satietyGain,
+                                  exp: record.expGain,
+                                })}
+                              </span>
+                              <span className="mt-0.5 block text-[0.6875rem] text-foreground-tertiary">
+                                {record.dateLabel} · ×{record.quantity}
+                              </span>
+                            </span>
+                            {(record.levelUp || record.stageUp) && (
+                              <ArrowUpCircle className="h-4 w-4 shrink-0 text-primary-strong" />
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </section>
             </div>
-          </section>
+          </div>
         </>
       )}
 
@@ -611,7 +688,7 @@ export function PetHome() {
               { title: t("pet.rule4Title"), body: t("pet.rule4Body") },
             ].map((item, index) => (
               <li key={item.title} className="flex gap-2.5">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-light text-[11px] font-bold text-primary-strong">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-light text-[0.6875rem] font-bold text-primary-strong">
                   {index + 1}
                 </span>
                 <div className="min-w-0">
@@ -627,7 +704,7 @@ export function PetHome() {
       )}
 
       {feedOpen && (
-        <Sheet label={t("pet.feedTitle")} onClose={closeFeed}>
+        <Sheet label={t("pet.feedTitle")} onClose={closeFeed} drawer>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-bold">{t("pet.feedTitle")}</h2>
             <button
@@ -681,7 +758,7 @@ export function PetHome() {
                         <span className="block truncate text-sm font-semibold">
                           {item.name}
                         </span>
-                        <span className="mt-0.5 block truncate text-[11px] text-foreground-secondary">
+                        <span className="mt-0.5 block truncate text-[0.6875rem] text-foreground-secondary">
                           {t("pet.gain", {
                             satiety: item.satiety,
                             exp: item.exp,
@@ -764,12 +841,12 @@ export function PetHome() {
                     </p>
                   )}
                   {feedResult.capped.satiety && (
-                    <p className="mt-0.5 text-[11px] text-foreground-tertiary">
+                    <p className="mt-0.5 text-[0.6875rem] text-foreground-tertiary">
                       {t("pet.cappedSatiety", { n: feedResult.satietyGain })}
                     </p>
                   )}
                   {feedResult.capped.exp && (
-                    <p className="mt-0.5 text-[11px] text-foreground-tertiary">
+                    <p className="mt-0.5 text-[0.6875rem] text-foreground-tertiary">
                       {t("pet.cappedExp")}
                     </p>
                   )}

@@ -75,6 +75,12 @@ function QuizPageInner() {
     [chapterId, subjectId, gradeId, publisherId, knowledgePointId],
   );
 
+  // 结果页「再练一轮」：沿用当前范围与单元参数重新进入答题
+  const retryHref = useMemo(() => {
+    const qs = searchParams.toString();
+    return qs ? `/learn/quiz?${qs}` : "/learn/quiz";
+  }, [searchParams]);
+
   const [state, setState] = useState<LoadState>("loading");
   const [reload, setReload] = useState(0);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -201,6 +207,7 @@ function QuizPageInner() {
         questions={questions}
         outcome={outcome}
         unitIndex={unitIndex}
+        retryHref={retryHref}
       />
     );
   }

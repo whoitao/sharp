@@ -8,5 +8,6 @@ export const themeInitScript = `(function(){try{
   if(dark)document.documentElement.classList.add('dark');
   else document.documentElement.classList.remove('dark');
   var density=localStorage.getItem('density');
-  if(density==='compact'||density==='spacious')document.documentElement.dataset.density=density;
+  // 三档都要写入属性：comfortable 也有显式的根字号规则，缺省会让浏览器默认字号生效
+  document.documentElement.dataset.density=(density==='compact'||density==='spacious')?density:'comfortable';
 }catch(e){}})();`;

@@ -66,7 +66,7 @@ function TreeItems({
               >
                 {node.name}
               </span>
-              <span className="mt-0.5 block text-[10px] text-foreground-tertiary">
+              <span className="mt-0.5 block text-[0.625rem] text-foreground-tertiary">
                 {questionsLabel(node.questionCount)}
               </span>
             </span>
@@ -222,7 +222,7 @@ export function ChapterBrowser({
         <aside className="rounded-lg border border-border bg-surface p-4 card-shadow lg:sticky lg:top-20">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold">{t("learn.treeTitle")}</h2>
-            <span className="text-[11px] font-semibold text-foreground-tertiary">
+            <span className="text-[0.6875rem] font-semibold text-foreground-tertiary">
               {t("learn.chaptersCount", { n: textbook.chapterCount })}
             </span>
           </div>
@@ -340,15 +340,15 @@ export function ChapterBrowser({
                     key={unit.unitIndex}
                     className="grid grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border-light px-4 py-3.5 transition-colors last:border-b-0 hover:bg-surface-secondary lg:grid-cols-[38px_minmax(0,1fr)_120px_auto] lg:px-5"
                   >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-surface-secondary text-[11px] font-extrabold text-foreground-tertiary">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-surface-secondary text-[0.6875rem] font-extrabold text-foreground-tertiary">
                       {unit.unitIndex + 1}
                     </span>
 
                     <div className="min-w-0">
-                      <h3 className="text-[13px] font-bold">
+                      <h3 className="text-[0.8125rem] font-bold">
                         {t("learn.unitName", { n: unit.unitIndex + 1 })}
                       </h3>
-                      <p className="mt-0.5 truncate text-[11px] text-foreground-tertiary">
+                      <p className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
                         {t("learn.unitRange", {
                           start: unit.startIndex + 1,
                           end: unit.endIndex + 1,
@@ -370,7 +370,7 @@ export function ChapterBrowser({
                     </div>
 
                     <div className="hidden lg:block">
-                      <div className="mb-1 flex items-center justify-between text-[10px] text-foreground-tertiary">
+                      <div className="mb-1 flex items-center justify-between text-[0.625rem] text-foreground-tertiary">
                         <span>
                           {t("learn.unitStats", {
                             answered: unit.answeredCount,

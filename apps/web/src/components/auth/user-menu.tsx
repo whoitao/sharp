@@ -10,7 +10,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLocale } from "@/lib/i18n";
 import { notifySessionChanged, subscribeSession } from "@/lib/auth/client";
-import { BookOpen, BarChart3, LogOut, NotebookPen, PawPrint, UserRound } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  LogOut,
+  NotebookPen,
+  PawPrint,
+  Settings,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -120,6 +128,12 @@ export function UserMenu() {
           <Link href="/account/wrong-questions">
             <NotebookPen className="mr-2 h-4 w-4" />
             {t("account.wrongQuestions")}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/account/settings">
+            <Settings className="mr-2 h-4 w-4" />
+            {t("account.settings")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">

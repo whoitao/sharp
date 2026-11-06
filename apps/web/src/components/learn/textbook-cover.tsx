@@ -52,7 +52,7 @@ export function TextbookCover({
         <span
           className={cn(
             "truncate font-bold tracking-wider opacity-90",
-            isSmall ? "text-[6px]" : "text-[9px]",
+            isSmall ? "text-[0.375rem]" : "text-[0.5625rem]",
           )}
         >
           {textbook.gradeName} · {textbook.semesterLabel}

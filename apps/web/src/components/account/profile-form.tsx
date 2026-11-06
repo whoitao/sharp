@@ -183,7 +183,7 @@ export function ProfileForm({
             )}
             {uploading ? t("account.uploading") : t("account.changeAvatar")}
           </Button>
-          <p className="mt-2 max-w-sm text-[11px] leading-5 text-foreground-tertiary">
+          <p className="mt-2 max-w-sm text-[0.6875rem] leading-5 text-foreground-tertiary">
             {t("account.avatarHint")}
           </p>
           <input
@@ -231,7 +231,7 @@ export function ProfileForm({
             ))}
           </div>
           {!gender && (
-            <p className="mt-1.5 text-[11px] text-foreground-tertiary">
+            <p className="mt-1.5 text-[0.6875rem] text-foreground-tertiary">
               {t("account.genderUnset")}
             </p>
           )}

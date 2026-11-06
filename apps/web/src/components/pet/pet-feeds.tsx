@@ -149,12 +149,12 @@ export function PetFeeds() {
                         exp: record.expGain,
                       })}
                     </p>
-                    <p className="mt-0.5 truncate text-[11px] text-foreground-tertiary">
+                    <p className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
                       {record.dateLabel} · ×{record.quantity}
                     </p>
                   </div>
                   {(record.levelUp || record.stageUp) && (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
+                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary-light px-2 py-0.5 text-[0.625rem] font-semibold text-primary-strong">
                       <ArrowUpCircle className="h-3 w-3" />
                       {record.stageUp
                         ? t("pet.stageUpShort")

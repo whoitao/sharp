@@ -88,14 +88,19 @@
   /*
    * 展示效果（信息密度）：Tailwind 的间距与字号都以 rem 为基准，
    * 通过根字号整体缩放即可在不改组件的前提下调整密度。
-   * comfortable 使用浏览器默认 16px，不额外声明。
+   * 三档都显式声明，避免 comfortable 继承浏览器默认字号（可能是 18px 及以上）
+   * 导致「宽松」比「标准」还小。整体字号偏小时直接调这三个值即可。
    */
   html[data-density="compact"] {
-    font-size: 15px;
+    font-size: 18px;
+  }
+
+  html[data-density="comfortable"] {
+    font-size: 20px;
   }
 
   html[data-density="spacious"] {
-    font-size: 17px;
+    font-size: 24px;
   }
 
   body {
@@ -248,4 +253,42 @@
   margin: 1.5em 0;
   border: 0;
   border-top: 1px solid hsl(var(--border));
+}
+
+/*
+ * 答题富文本：与设计稿的 math-block / figure 对齐。
+ * 宽公式在容器内横向滚动，避免长公式把卡片撑出横向溢出。
+ */
+.quiz-richtext .katex {
+  font-size: 1.1em;
+}
+
+.quiz-richtext .katex-display {
+  margin: 1rem 0;
+  border: 1px solid hsl(var(--border-light));
+  border-radius: .5rem;
+  padding: .9rem 1rem;
+  background-color: hsl(var(--surface-secondary));
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.quiz-richtext figure {
+  margin: 1rem 0;
+  border: 1px solid hsl(var(--border-light));
+  border-radius: .5rem;
+  padding: .625rem;
+  background-color: hsl(var(--surface-secondary));
+}
+
+.quiz-richtext figure img {
+  margin: 0;
+  background-color: transparent;
+}
+
+.quiz-richtext figcaption {
+  margin-top: .25rem;
+  font-size: 10px;
+  text-align: center;
+  color: hsl(var(--foreground-tertiary));
 }

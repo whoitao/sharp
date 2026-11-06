@@ -23,6 +23,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Circle,
   Clock,
   Loader2,
   X,
@@ -79,9 +80,18 @@ export function QuizRunner({
   const currentJudged = Boolean(judged[current.id]);
   const currentCorrect = Boolean(correctMap[current.id]);
   const answeredCount = questions.filter((question) => judged[question.id]).length;
+  const correctAnswered = questions.filter((question) => correctMap[question.id]).length;
+  const wrongAnswered = answeredCount - correctAnswered;
+  const unansweredCount = questions.length - answeredCount;
   const percent = questions.length
     ? Math.round((answeredCount / questions.length) * 100)
     : 0;
+  const typeLabel =
+    current.type === 3
+      ? t("quiz.judgement")
+      : multiple
+        ? t("quiz.multipleChoice")
+        : t("quiz.singleChoice");
 
   const judge = (keys: string[]) => {
     const isCorrect = isAnswerCorrect(current, keys);
@@ -189,124 +199,137 @@ export function QuizRunner({
   const sheetClass = (question: QuizQuestion, position: number) => {
     const state = sheetState(question);
     return cn(
-      "flex items-center justify-center rounded-md border text-[11px] font-bold transition-colors",
-      state === "correct" && "border-primary bg-primary-light text-primary-strong",
-      state === "wrong" && "border-destructive/40 bg-destructive/5 text-destructive",
+      "flex aspect-square w-full items-center justify-center rounded-[7px] border text-[0.6875rem] font-bold transition-colors",
+      state === "correct" &&
+        "border-primary/30 bg-primary-light text-primary-strong",
+      state === "wrong" &&
+        "border-destructive/30 bg-destructive/10 text-destructive",
       state === "idle" &&
-        "border-border bg-surface-secondary text-foreground-tertiary hover:border-primary/40",
-      position === index && "ring-2 ring-primary/40 ring-offset-1 ring-offset-surface",
+        "border-border bg-surface text-foreground-tertiary hover:border-primary/40",
+      position === index &&
+        (state === "wrong"
+          ? "border-destructive ring-2 ring-destructive/20"
+          : "border-primary ring-2 ring-primary/20"),
     );
   };
 
   const optionClass = (tone: OptionTone) =>
     cn(
-      "flex w-full items-start gap-3 rounded-lg border px-3.5 py-3 text-left transition-colors",
+      "flex w-full items-start gap-3 rounded-[8px] border px-3.5 py-3 text-left transition-colors",
       tone === "idle" &&
-        "border-border bg-surface hover:border-primary/40 hover:bg-primary-light/40",
+        "border-border bg-surface hover:border-primary/45 hover:bg-surface-secondary",
       tone === "selected" && "border-primary bg-primary-light",
       tone === "correct" && "border-primary bg-primary-light",
-      tone === "wrong" && "border-destructive/50 bg-destructive/5",
-      tone === "muted" && "border-border-light bg-surface-secondary/60 opacity-70",
+      tone === "wrong" && "border-destructive bg-destructive/10",
+      tone === "muted" && "border-border-light bg-surface-secondary/60 opacity-80",
     );
 
   const badgeClass = (tone: OptionTone) =>
     cn(
-      "flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] text-[11px] font-extrabold",
+      "flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px] border text-xs font-extrabold",
       tone === "idle" || tone === "muted"
-        ? "bg-surface-secondary text-foreground-secondary"
+        ? "border-border bg-surface text-foreground-secondary"
         : tone === "selected" || tone === "correct"
-          ? "bg-primary text-primary-foreground"
-          : "bg-destructive text-destructive-foreground",
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-destructive bg-destructive text-destructive-foreground",
     );
 
   return (
     <div className="pb-6 md:pb-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2 text-xs text-foreground-tertiary">
-          <Link
-            href="/learn"
-            className="inline-flex items-center gap-1 font-semibold text-foreground-secondary transition-colors hover:text-foreground"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            {t("quiz.backToCatalog")}
-          </Link>
-          <span>·</span>
-          <span className="truncate">{t("quiz.unitTitle", { n: unitIndex + 1 })}</span>
-          <span>·</span>
-          <span className="whitespace-nowrap">
-            {t("quiz.questionsCount", { n: questions.length })}
-          </span>
+      {/* 顶部：单元信息 + 题型/计时/结算 */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5">
+        <div className="min-w-0">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.12em] text-primary-strong">
+              {t("quiz.eyebrow")}
+            </p>
+            <Link
+              href="/learn"
+              className="inline-flex shrink-0 items-center gap-1 text-[0.6875rem] font-semibold text-foreground-tertiary transition-colors hover:text-foreground"
+            >
+              <ChevronLeft className="h-3 w-3" />
+              {t("quiz.backToCatalog")}
+            </Link>
+          </div>
+          <h1 className="mt-1 text-2xl font-bold leading-tight tracking-[-0.035em]">
+            {t("quiz.unitTitle", { n: unitIndex + 1 })}
+            <small className="mt-1 block text-xs font-medium tracking-normal text-foreground-secondary">
+              {t("quiz.questionsCount", { n: questions.length })}
+            </small>
+          </h1>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center gap-1 text-xs font-semibold tabular-nums text-foreground-secondary">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-[0.6875rem] font-semibold text-primary-strong">
+            {typeLabel}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold tabular-nums text-foreground-secondary">
             <Clock className="h-3.5 w-3.5" />
             {formatDuration(elapsed)}
           </span>
           <Button
+            variant="ghost"
             size="sm"
+            className="rounded-[8px] hover:bg-surface-secondary hover:text-foreground"
             onClick={handleSubmit}
             disabled={submitting || answeredCount === 0}
           >
-            {submitting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-            {submitting ? t("quiz.submitting") : t("quiz.submit")}
+            {submitting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+            {submitting ? t("quiz.submitting") : t("quiz.endRound")}
           </Button>
         </div>
       </div>
 
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-secondary">
-        <div
-          className="h-full rounded-full bg-primary transition-all"
-          style={{ width: `${percent}%` }}
-        />
+      {/* 进度 */}
+      <div className="mb-[18px] mt-4">
+        <div className="mb-[7px] flex items-center justify-between gap-3 text-[0.6875rem] text-foreground-tertiary">
+          <span>
+            {t("quiz.stepOf", { current: index + 1, total: questions.length })}
+          </span>
+          <span>
+            {t("quiz.answered", {
+              answered: answeredCount,
+              total: questions.length,
+            })}
+          </span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-border-light">
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${percent}%` }}
+          />
+        </div>
       </div>
 
       {submitError && (
-        <p className="mt-2 rounded-md bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
+        <p className="mb-3 rounded-[8px] border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
           {t("quiz.submitError")}
         </p>
       )}
 
-      {previous && (
-        <p className="mt-2 rounded-md border border-border-light bg-surface-secondary px-3 py-2 text-[11px] text-foreground-secondary">
-          {t("quiz.previousSummary", {
-            correct: previous.correctCount,
-            total: previous.totalQuestions,
-            duration: formatDuration(previous.durationSeconds),
-          })}
-        </p>
-      )}
-
-      {/* 窄屏：答题卡常驻在导航栏下方，横向滚动跳题 */}
-      <div className="sticky top-14 z-30 mt-3 flex gap-2 overflow-x-auto rounded-lg border border-border bg-surface/95 p-2 card-shadow backdrop-blur lg:hidden">
-        {questions.map((question, position) => (
-          <button
-            key={question.id}
-            type="button"
-            aria-label={`${t("quiz.answerSheet")} ${position + 1}`}
-            aria-current={position === index}
-            onClick={() => setIndex(position)}
-            className={cn("h-8 w-8 shrink-0", sheetClass(question, position))}
-          >
-            {position + 1}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-3 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <section className="rounded-lg border border-border bg-surface p-4 card-shadow sm:p-6">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_286px]">
+        <section className="min-w-0 rounded-xl border border-border bg-surface px-5 py-5 card-shadow sm:px-7 sm:py-[26px]">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-bold tabular-nums text-foreground-tertiary">
-              {index + 1} / {questions.length}
-            </span>
-            <span className="rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary-strong">
-              {multiple ? t("quiz.multipleChoice") : t("quiz.singleChoice")}
+            <div className="text-xs font-extrabold uppercase tracking-[0.08em] text-foreground-tertiary">
+              Question{" "}
+              <b className="text-[0.9375rem] font-extrabold tracking-normal text-foreground">
+                {String(index + 1).padStart(2, "0")}
+              </b>
+            </div>
+            <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[0.6875rem] font-semibold text-foreground-secondary">
+              {current.score > 0
+                ? t("quiz.scoreType", { score: current.score, type: typeLabel })
+                : typeLabel}
             </span>
           </div>
 
-          <RichText html={current.content} className="mt-2 text-[15px] leading-7" />
+          <RichText
+            html={current.content}
+            className="quiz-richtext mt-[18px] text-[0.9375rem] leading-[1.85]"
+            style={{ fontSize: 15, lineHeight: 1.85 }}
+          />
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-5 flex flex-col gap-[9px]">
             {current.options.map((option) => {
               const tone = optionTone(option);
               const missed =
@@ -326,123 +349,213 @@ export function QuizRunner({
                   <span className={badgeClass(tone)}>{option.optionKey}</span>
                   <RichText
                     html={option.content}
-                    className="min-w-0 flex-1 text-sm [&_p]:my-0 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0"
+                    className="quiz-richtext min-w-0 flex-1 break-words text-sm [&_p]:my-0"
+                    style={{ fontSize: 14, lineHeight: 1.6 }}
                   />
-                  <span className="flex shrink-0 items-center gap-1.5">
+                  <span className="flex shrink-0 items-center gap-1.5 pt-0.5">
                     {missed && (
-                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[0.625rem] font-semibold text-destructive">
                         {t("quiz.missed")}
                       </span>
                     )}
                     {tone === "correct" && (
-                      <Check className="h-4 w-4 text-primary-strong" />
+                      <Check className="h-[18px] w-[18px] text-primary-strong" />
                     )}
-                    {tone === "wrong" && <X className="h-4 w-4 text-destructive" />}
+                    {tone === "wrong" && (
+                      <X className="h-[18px] w-[18px] text-destructive" />
+                    )}
                   </span>
                 </button>
               );
             })}
           </div>
 
-          {multiple && !currentJudged && (
-            <Button
-              className="mt-4 w-full sm:w-auto"
-              onClick={handleConfirm}
-              disabled={currentSelected.length === 0 || submitting}
-            >
-              {t("quiz.confirmAnswer")}
-            </Button>
-          )}
-
           {currentJudged && (
             <div
               className={cn(
-                "mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md px-3 py-2 text-sm font-bold",
+                "mt-[18px] rounded-[8px] border px-4 py-3.5",
                 currentCorrect
-                  ? "bg-primary-light text-primary-strong"
-                  : "bg-destructive/10 text-destructive",
+                  ? "border-primary/35 bg-primary-light"
+                  : "border-destructive/30 bg-destructive/10",
               )}
             >
-              {currentCorrect ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <X className="h-4 w-4" />
-              )}
-              <span>{currentCorrect ? t("quiz.correct") : t("quiz.wrong")}</span>
-              {!currentCorrect && (
-                <span className="text-xs font-semibold opacity-90">
-                  {t("quiz.correctAnswer")}: {correctKeys(current).join(" / ")}
+              <div
+                className={cn(
+                  "flex flex-wrap items-center gap-1.5 text-[0.8125rem] font-extrabold",
+                  currentCorrect ? "text-primary-strong" : "text-destructive",
+                )}
+              >
+                {currentCorrect ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <X className="h-4 w-4" />
+                )}
+                <span>
+                  {currentCorrect ? t("quiz.correct") : t("quiz.wrong")}
                 </span>
+                {currentCorrect && current.score > 0 && (
+                  <span>{" · "}{t("quiz.scorePts", { score: current.score })}</span>
+                )}
+                {!currentCorrect && (
+                  <span>
+                    {" · "}
+                    {t("quiz.correctAnswer")}{" "}
+                    {correctKeys(current).join(" / ")}
+                  </span>
+                )}
+              </div>
+              {current.analysis && (
+                <RichText
+                  html={current.analysis}
+                  className="quiz-richtext mt-1.5 text-foreground-secondary [&_strong]:text-foreground"
+                  style={{ fontSize: 12, lineHeight: 1.75 }}
+                />
               )}
             </div>
           )}
 
-          {currentJudged && current.analysis && (
-            <div className="mt-3 rounded-md border border-border-light bg-surface-secondary p-3.5">
-              <p className="text-[11px] font-bold text-foreground-tertiary">
-                {t("quiz.analysis")}
-              </p>
-              <RichText html={current.analysis} className="mt-1 text-sm leading-6" />
-            </div>
-          )}
-
-          <div className="mt-5 flex items-center justify-between gap-3 border-t border-border-light pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIndex((value) => Math.max(0, value - 1))}
-              disabled={index === 0}
-            >
-              <ChevronLeft className="mr-0.5 h-3.5 w-3.5" />
-              {t("quiz.prev")}
-            </Button>
-            <span className="text-xs tabular-nums text-foreground-tertiary">
-              {t("quiz.answered", { answered: answeredCount, total: questions.length })}
+          <div className="mt-[22px] flex items-center justify-between gap-3 border-t border-border-light pt-4">
+            <span className="hidden text-[0.6875rem] text-foreground-tertiary sm:inline">
+              {multiple ? t("quiz.ruleMultiple") : t("quiz.ruleSingle")}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setIndex((value) => Math.min(questions.length - 1, value + 1))
-              }
-              disabled={index === questions.length - 1}
-            >
-              {t("quiz.next")}
-              <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
-            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-[8px] hover:bg-surface-secondary hover:text-foreground"
+                onClick={() => setIndex((value) => Math.max(0, value - 1))}
+                disabled={index === 0}
+              >
+                {t("quiz.prev")}
+              </Button>
+              {multiple && !currentJudged ? (
+                <Button
+                  size="sm"
+                  className="rounded-[8px]"
+                  onClick={handleConfirm}
+                  disabled={currentSelected.length === 0 || submitting}
+                >
+                  {t("quiz.confirmAnswer")}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  className="rounded-[8px]"
+                  onClick={() =>
+                    setIndex((value) =>
+                      Math.min(questions.length - 1, value + 1),
+                    )
+                  }
+                  disabled={index === questions.length - 1}
+                >
+                  {t("quiz.next")}
+                  <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           </div>
         </section>
 
-        <aside className="hidden rounded-lg border border-border bg-surface p-4 card-shadow lg:sticky lg:top-20 lg:block">
-          <h2 className="text-sm font-bold">{t("quiz.answerSheet")}</h2>
-          <div className="mt-3 grid grid-cols-5 gap-2">
-            {questions.map((question, position) => (
-              <button
-                key={question.id}
-                type="button"
-                aria-label={`${t("quiz.answerSheet")} ${position + 1}`}
-                aria-current={position === index}
-                onClick={() => setIndex(position)}
-                className={cn("h-9", sheetClass(question, position))}
-              >
-                {position + 1}
-              </button>
-            ))}
+        <aside className="grid gap-3.5 sm:grid-cols-2 lg:sticky lg:top-20 lg:grid-cols-1">
+          <div className="rounded-xl border border-border bg-surface p-[17px] card-shadow sm:col-span-2 lg:col-span-1">
+            <div className="mb-[11px] flex items-center justify-between gap-3">
+              <h2 className="text-[0.8125rem] font-extrabold">{t("quiz.answerSheet")}</h2>
+              <span className="text-[0.625rem] text-foreground-tertiary">
+                {t("quiz.questionsCount", { n: questions.length })}
+              </span>
+            </div>
+            <div className="grid grid-cols-5 gap-1.5">
+              {questions.map((question, position) => (
+                <button
+                  key={question.id}
+                  type="button"
+                  aria-label={`${t("quiz.answerSheet")} ${position + 1}`}
+                  aria-current={position === index}
+                  onClick={() => setIndex(position)}
+                  className={sheetClass(question, position)}
+                >
+                  {position + 1}
+                </button>
+              ))}
+            </div>
+            <div className="mt-[11px] flex flex-wrap gap-x-3 gap-y-1 text-[0.625rem] text-foreground-tertiary">
+              <span className="inline-flex items-center gap-1">
+                <i className="inline-block h-[7px] w-[7px] rounded-[2px] bg-border" />
+                {t("quiz.legendUnanswered")}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <i className="inline-block h-[7px] w-[7px] rounded-[2px] bg-primary" />
+                {t("quiz.legendAnswered")}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <i className="inline-block h-[7px] w-[7px] rounded-[2px] bg-destructive" />
+                {t("quiz.legendWrong")}
+              </span>
+            </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[10px] text-foreground-tertiary">
-            <span className="inline-flex items-center gap-1">
-              <i className="h-2.5 w-2.5 rounded-sm border border-primary bg-primary-light" />
-              {t("quiz.legendAnswered")}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <i className="h-2.5 w-2.5 rounded-sm border border-border bg-surface-secondary" />
-              {t("quiz.legendUnanswered")}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <i className="h-2.5 w-2.5 rounded-sm ring-2 ring-primary/40" />
-              {t("quiz.legendCurrent")}
-            </span>
+
+          <div
+            className="rounded-xl border border-primary/25 p-[17px] card-shadow"
+            style={{
+              background:
+                "linear-gradient(120deg, hsl(var(--primary-light)), hsl(var(--surface)))",
+            }}
+          >
+            <div className="mb-[11px] flex items-center justify-between gap-3">
+              <h2 className="text-[0.8125rem] font-extrabold">
+                {t("quiz.roundProgress")}
+              </h2>
+              <span className="text-[0.625rem] text-foreground-tertiary">
+                {t("quiz.roundLive")}
+              </span>
+            </div>
+            <div className="flex flex-col gap-[7px] text-xs text-foreground-secondary">
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2">
+                  <Check className="h-3.5 w-3.5 text-primary-strong" />
+                  {t("quiz.correctCount")}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[0.6875rem] font-bold text-primary-strong">
+                  {correctAnswered}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2">
+                  <X className="h-3.5 w-3.5 text-destructive" />
+                  {t("quiz.wrongCount")}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[0.6875rem] font-bold text-destructive">
+                  {wrongAnswered}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2">
+                  <Circle className="h-3.5 w-3.5 text-foreground-tertiary" />
+                  {t("quiz.legendUnanswered")}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[0.6875rem] font-bold text-foreground-secondary">
+                  {unansweredCount}
+                </span>
+              </div>
+            </div>
           </div>
+
+          {previous && (
+            <div className="rounded-xl border border-border bg-surface p-[17px] card-shadow">
+              <div className="mb-[11px] flex items-center justify-between gap-3">
+                <h2 className="text-[0.8125rem] font-extrabold">
+                  {t("quiz.previousTitle")}
+                </h2>
+              </div>
+              <p className="text-[0.6875rem] leading-5 text-foreground-secondary">
+                {t("quiz.previousSummary", {
+                  correct: previous.correctCount,
+                  total: previous.totalQuestions,
+                  duration: formatDuration(previous.durationSeconds),
+                })}
+              </p>
+            </div>
+          )}
         </aside>
       </div>
     </div>

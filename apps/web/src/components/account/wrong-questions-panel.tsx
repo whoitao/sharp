@@ -210,7 +210,7 @@ export function WrongQuestionsPanel() {
 
                     {expanded && (
                       <div className="border-t border-border-light px-3.5 pb-3.5 pt-3">
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-foreground-tertiary">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.6875rem] text-foreground-tertiary">
                           <span>
                             {t("wrong.wrongCount", { n: item.wrongCount })}
                           </span>
@@ -238,7 +238,7 @@ export function WrongQuestionsPanel() {
                             >
                               <span
                                 className={cn(
-                                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-[10px] font-extrabold",
+                                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-[0.625rem] font-extrabold",
                                   option.isCorrect
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-surface-secondary text-foreground-tertiary",
@@ -262,7 +262,7 @@ export function WrongQuestionsPanel() {
 
                         {question.analysis && (
                           <div className="mt-2.5 rounded-md border-l-[3px] border-primary bg-primary-light px-3 py-2.5">
-                            <p className="text-[11px] font-bold text-primary-strong">
+                            <p className="text-[0.6875rem] font-bold text-primary-strong">
                               {t("wrong.analysis")}
                             </p>
                             <RichText

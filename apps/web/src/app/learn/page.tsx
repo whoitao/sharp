@@ -143,7 +143,7 @@ export default function LearnPage() {
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <TextbookCover textbook={selected} size="sm" />
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-primary-strong">
+            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.06em] text-primary-strong">
               {t("learn.currentLabel")}
             </p>
             <p className="mt-0.5 truncate text-base font-bold">{selected.name}</p>

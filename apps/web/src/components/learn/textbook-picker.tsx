@@ -394,7 +394,7 @@ export function TextbookPicker({ onOpen }: { onOpen: (textbook: TextbookDto) => 
             <SlidersHorizontal className="mr-1.5 h-4 w-4" />
             {t("learn.filters")}
             {activeFilterCount > 0 && (
-              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">
+              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[0.6875rem] font-bold text-primary-foreground">
                 {activeFilterCount}
               </span>
             )}
@@ -468,7 +468,7 @@ export function TextbookPicker({ onOpen }: { onOpen: (textbook: TextbookDto) => 
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <TextbookCover textbook={current} size="sm" />
                 <div className="min-w-0">
-                  <p className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-primary-strong">
+                  <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.06em] text-primary-strong">
                     {t("learn.currentLabel")}
                   </p>
                   <p className="mt-0.5 truncate text-base font-bold">{current.name}</p>
@@ -530,14 +530,14 @@ export function TextbookPicker({ onOpen }: { onOpen: (textbook: TextbookDto) => 
                       <TextbookCover textbook={textbook} />
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col">
-                      <h3 className="line-clamp-2 pr-7 text-[13px] font-bold leading-snug">
+                      <h3 className="line-clamp-2 pr-7 text-[0.8125rem] font-bold leading-snug">
                         {textbook.name}
                       </h3>
-                      <p className="mt-1 truncate text-[11px] text-foreground-tertiary">
+                      <p className="mt-1 truncate text-[0.6875rem] text-foreground-tertiary">
                         {textbook.publisherName} · {textbook.gradeName} ·{" "}
                         {textbook.semesterLabel}
                       </p>
-                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-light pt-2 text-[11px] text-foreground-secondary">
+                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-light pt-2 text-[0.6875rem] text-foreground-secondary">
                         <span className="truncate">
                           {t("learn.chaptersCount", { n: textbook.chapterCount })}
                         </span>

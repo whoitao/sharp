@@ -202,14 +202,6 @@ export function SettingsForm() {
               ))}
             </div>
           </div>
-          <div className="mt-4 rounded-[10px] border border-border-light bg-surface-secondary px-4 py-3">
-            <p className="text-xs font-bold text-foreground-tertiary">
-              {t("account.densityPreviewTitle")}
-            </p>
-            <p className="mt-1 text-sm text-foreground-secondary">
-              {t("account.densityPreviewBody")}
-            </p>
-          </div>
         </div>
       </section>
 

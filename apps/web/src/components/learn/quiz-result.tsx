@@ -11,16 +11,103 @@ import {
   type QuizQuestion,
 } from "@/lib/learn/quiz";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Circle,
+  Target,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 
 interface QuizResultProps {
   questions: QuizQuestion[];
   outcome: QuizOutcome;
   unitIndex: number;
+  /** 再练一轮：沿用当前范围参数重新进入答题 */
+  retryHref: string;
 }
 
-export function QuizResult({ questions, outcome, unitIndex }: QuizResultProps) {
+/** 折叠行里用纯文本摘要，去掉富文本标签与控制字符 */
+function plainText(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\$\$?/g, "")
+    .replace(/\\[a-zA-Z]+/g, " ")
+    .replace(/[{}]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone?: string;
+}) {
+  return (
+    <div className="rounded-[8px] border border-border bg-surface/80 px-3 py-2.5">
+      <b
+        className={cn(
+          "block text-[1.0625rem] leading-tight tracking-[-0.02em] tabular-nums",
+          tone,
+        )}
+      >
+        {value}
+      </b>
+      <span className="mt-0.5 block text-[0.625rem] text-foreground-tertiary">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function SummaryRow({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  tone: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="inline-flex items-center gap-2">
+        {icon}
+        {label}
+      </span>
+      <span
+        className={cn(
+          "inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[0.6875rem] font-bold",
+          tone,
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+export function QuizResult({
+  questions,
+  outcome,
+  unitIndex,
+  retryHref,
+}: QuizResultProps) {
   const { t } = useLocale();
 
   const accuracy =
@@ -33,9 +120,26 @@ export function QuizResult({ questions, outcome, unitIndex }: QuizResultProps) {
     return record && !record.isCorrect;
   });
 
+  // 有题目分值就按分值折算，否则回退到正确率
+  const totalScore = questions.reduce((sum, question) => sum + (question.score || 0), 0);
+  const earnedScore = questions.reduce(
+    (sum, question) =>
+      sum +
+      (outcome.records[question.id]?.isCorrect ? question.score || 0 : 0),
+    0,
+  );
+  const scorePct = totalScore > 0 ? Math.round((earnedScore / totalScore) * 100) : accuracy;
+
+  const headline =
+    accuracy >= 80
+      ? t("quiz.resultGreat")
+      : accuracy >= 50
+        ? t("quiz.resultGood")
+        : t("quiz.resultNeedsWork");
+
   return (
     <div className="pb-6 md:pb-8">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-foreground-tertiary">
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-foreground-tertiary">
         <Link
           href="/learn"
           className="inline-flex items-center gap-1 font-semibold text-foreground-secondary transition-colors hover:text-foreground"
@@ -43,196 +147,232 @@ export function QuizResult({ questions, outcome, unitIndex }: QuizResultProps) {
           <ArrowLeft className="h-3.5 w-3.5" />
           {t("quiz.backToCatalog")}
         </Link>
-        <span>·</span>
-        <span>{t("quiz.unitTitle", { n: unitIndex + 1 })}</span>
-        <span>·</span>
-        <span>{t("quiz.resultTitle")}</span>
       </div>
 
-      <section className="mt-3 rounded-lg border border-border bg-surface p-6 card-shadow sm:p-8">
-        <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-8">
-          <div className="flex h-24 w-24 shrink-0 flex-col items-center justify-center rounded-full border-[6px] border-primary-light bg-primary-light/40">
-            <span className="text-2xl font-extrabold tabular-nums text-primary-strong">
-              {accuracy}%
-            </span>
-            <span className="mt-0.5 text-[10px] font-semibold text-foreground-tertiary">
-              {t("quiz.accuracy")}
-            </span>
+      <section
+        className="rounded-xl border border-border px-6 py-6 card-shadow sm:px-[30px] sm:py-[30px]"
+        style={{
+          background:
+            "linear-gradient(120deg, hsl(var(--primary-light)), hsl(var(--surface)) 58%)",
+        }}
+      >
+        <div className="grid items-center justify-items-center gap-5 text-center lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-[30px] lg:text-left">
+          <div
+            className="h-[142px] w-[142px] shrink-0 rounded-full p-[9px] sm:h-[152px] sm:w-[152px]"
+            style={{
+              background: `conic-gradient(hsl(var(--primary)) ${scorePct}%, hsl(var(--border-light)) 0)`,
+            }}
+          >
+            <div className="flex h-full w-full items-baseline justify-center rounded-full bg-surface pt-[44px] sm:pt-[48px]">
+              <b className="text-[2.5rem] leading-none tracking-[-0.05em] tabular-nums">
+                {scorePct}
+              </b>
+              <small className="text-sm text-foreground-tertiary">/100</small>
+            </div>
           </div>
 
-          <div className="w-full">
-            <h1 className="text-center text-lg font-bold tracking-tight sm:text-left">
+          <div className="w-full min-w-0">
+            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.12em] text-primary-strong">
+              {t("quiz.unitTitle", { n: unitIndex + 1 })} ·{" "}
               {t("quiz.resultTitle")}
+            </p>
+            <h1 className="mt-1 text-[1.375rem] font-extrabold tracking-[-0.04em] sm:text-[1.75rem]">
+              {headline}
             </h1>
-            <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <div className="rounded-md bg-surface-secondary px-3 py-2">
-                <dt className="text-[11px] text-foreground-tertiary">
-                  {t("quiz.correctCount")}
-                </dt>
-                <dd className="mt-0.5 text-lg font-bold tabular-nums text-primary-strong">
-                  {outcome.correctCount}
-                </dd>
-              </div>
-              <div className="rounded-md bg-surface-secondary px-3 py-2">
-                <dt className="text-[11px] text-foreground-tertiary">
-                  {t("quiz.wrongCount")}
-                </dt>
-                <dd className="mt-0.5 text-lg font-bold tabular-nums text-destructive">
-                  {outcome.wrongCount}
-                </dd>
-              </div>
-              <div className="rounded-md bg-surface-secondary px-3 py-2">
-                <dt className="text-[11px] text-foreground-tertiary">
-                  {t("quiz.legendUnanswered")}
-                </dt>
-                <dd className="mt-0.5 text-lg font-bold tabular-nums text-foreground-secondary">
-                  {unanswered}
-                </dd>
-              </div>
-              <div className="rounded-md bg-surface-secondary px-3 py-2">
-                <dt className="text-[11px] text-foreground-tertiary">
-                  {t("quiz.duration")}
-                </dt>
-                <dd className="mt-0.5 text-lg font-bold tabular-nums">
-                  {formatDuration(outcome.durationSeconds)}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
+            <p className="mt-1.5 text-[0.8125rem] leading-6 text-foreground-secondary">
+              {t("quiz.resultSummary", {
+                duration: formatDuration(outcome.durationSeconds),
+                correct: outcome.correctCount,
+                total: outcome.totalQuestions,
+              })}
+            </p>
 
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          <Button asChild>
-            <Link href="/learn">{t("quiz.done")}</Link>
-          </Button>
-          <span className="text-xs text-foreground-tertiary">
-            {t("quiz.answered", {
-              answered: outcome.answeredCount,
-              total: outcome.totalQuestions,
-            })}
-          </span>
+            <div className="mt-[18px] grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              <Stat
+                label={t("quiz.correctCount")}
+                value={`${outcome.correctCount} / ${outcome.totalQuestions}`}
+                tone="text-primary-strong"
+              />
+              <Stat
+                label={t("quiz.duration")}
+                value={formatDuration(outcome.durationSeconds)}
+              />
+              <Stat label={t("quiz.legendUnanswered")} value={unanswered} />
+              <Stat
+                label={t("quiz.wrongCount")}
+                value={outcome.wrongCount}
+                tone="text-destructive"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="mt-5">
-        <h2 className="text-sm font-bold">{t("quiz.wrongReview")}</h2>
+      <div className="mt-[18px] grid items-start gap-[18px] lg:grid-cols-[minmax(0,1fr)_330px]">
+        <section className="min-w-0 rounded-xl border border-border bg-surface p-[22px] card-shadow">
+          <div className="mb-3.5 flex items-center justify-between gap-3">
+            <h2 className="text-base font-bold tracking-[-0.02em]">
+              {t("quiz.wrongReview")}{" "}
+              <small className="ml-1 text-[0.6875rem] font-normal text-foreground-tertiary">
+                {t("quiz.questionsCount", { n: wrongQuestions.length })}
+              </small>
+            </h2>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="rounded-[8px] hover:border-primary hover:bg-surface-secondary hover:text-primary-strong"
+            >
+              <Link href={retryHref}>{t("quiz.retryRound")}</Link>
+            </Button>
+          </div>
 
-        {wrongQuestions.length === 0 ? (
-          <p className="mt-2 rounded-lg border border-border-light bg-surface px-4 py-6 text-center text-sm text-foreground-secondary">
-            {t("quiz.noWrong")}
-          </p>
-        ) : (
-          <div className="mt-2 space-y-3">
-            {wrongQuestions.map((question) => {
-              const record = outcome.records[question.id];
-              const selected = record?.selectedKeys ?? [];
-              const correct = correctKeys(question);
-              const position = questions.indexOf(question) + 1;
-              const multiple = isMultipleChoice(question);
+          {wrongQuestions.length === 0 ? (
+            <p className="rounded-[8px] border border-border-light bg-surface-secondary px-4 py-6 text-center text-sm text-foreground-secondary">
+              {t("quiz.noWrong")}
+            </p>
+          ) : (
+            <div>
+              {wrongQuestions.map((question) => {
+                const record = outcome.records[question.id];
+                const selected = record?.selectedKeys ?? [];
+                const correct = correctKeys(question);
+                const position = questions.indexOf(question) + 1;
+                const multiple = isMultipleChoice(question);
+                const typeLabel =
+                  question.type === 3
+                    ? t("quiz.judgement")
+                    : multiple
+                      ? t("quiz.multipleChoice")
+                      : t("quiz.singleChoice");
 
-              return (
-                <article
-                  key={question.id}
-                  className="rounded-lg border border-border bg-surface p-4 card-shadow sm:p-5"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-bold tabular-nums text-foreground-tertiary">
-                      {position} / {questions.length}
-                    </span>
-                    <span className="rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary-strong">
-                      {multiple ? t("quiz.multipleChoice") : t("quiz.singleChoice")}
-                    </span>
-                  </div>
+                return (
+                  <details
+                    key={question.id}
+                    className="group border-t border-border-light first:border-t-0"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center gap-3 py-[13px] [&::-webkit-details-marker]:hidden">
+                      <span className="flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-[7px] bg-destructive/10 text-[0.6875rem] font-extrabold text-destructive">
+                        {String(position).padStart(2, "0")}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <b className="block truncate text-xs font-bold">
+                          {plainText(question.content)}
+                        </b>
+                        <span className="mt-0.5 block truncate text-[0.625rem] text-foreground-tertiary">
+                          {typeLabel} · {t("quiz.yourAnswer")}{" "}
+                          {selected.length > 0
+                            ? selected.join(" / ")
+                            : t("quiz.notAnswered")}{" "}
+                          · {t("quiz.correctAnswer")} {correct.join(" / ")}
+                        </span>
+                      </span>
+                      <ChevronDown className="h-4 w-4 shrink-0 text-foreground-tertiary transition-transform group-open:rotate-180" />
+                    </summary>
 
-                  <RichText
-                    html={question.content}
-                    className="mt-2 text-[15px] leading-7"
-                  />
+                    <div className="pb-3.5 pl-[37px]">
+                      <div className="mb-2 flex flex-wrap gap-x-[18px] gap-y-1 text-xs">
+                        <span className="font-bold text-destructive">
+                          {t("quiz.yourAnswer")}{" "}
+                          {selected.length > 0
+                            ? selected.join(" / ")
+                            : t("quiz.notAnswered")}
+                        </span>
+                        <em className="font-bold not-italic text-primary-strong">
+                          {t("quiz.correctAnswer")} {correct.join(" / ")}
+                        </em>
+                      </div>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                    <span className="text-foreground-secondary">
-                      {t("quiz.yourAnswer")}:{" "}
-                      <b className="font-semibold text-destructive">
-                        {selected.length > 0
-                          ? selected.join(" / ")
-                          : t("quiz.notAnswered")}
-                      </b>
-                    </span>
-                    <span className="text-foreground-secondary">
-                      {t("quiz.correctAnswer")}:{" "}
-                      <b className="font-semibold text-primary-strong">
-                        {correct.join(" / ")}
-                      </b>
-                    </span>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    {question.options.map((option) => {
-                      const isCorrect = option.isCorrect;
-                      const isPicked = selected.includes(option.optionKey);
-                      return (
-                        <div
-                          key={option.id}
-                          className={cn(
-                            "flex items-start gap-3 rounded-lg border px-3 py-2.5",
-                            isCorrect
-                              ? "border-primary bg-primary-light"
-                              : isPicked
-                                ? "border-destructive/50 bg-destructive/5"
-                                : "border-border-light bg-surface-secondary/60",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-[10px] font-extrabold",
-                              isCorrect
-                                ? "bg-primary text-primary-foreground"
-                                : isPicked
-                                  ? "bg-destructive text-destructive-foreground"
-                                  : "bg-surface-secondary text-foreground-tertiary",
-                            )}
-                          >
-                            {option.optionKey}
-                          </span>
-                          <RichText
-                            html={option.content}
-                            className="min-w-0 flex-1 text-sm [&_p]:my-0 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0"
-                          />
-                          <span className="flex shrink-0 items-center gap-1.5">
-                            {multiple && isCorrect && !isPicked && (
-                              <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
-                                {t("quiz.missed")}
-                              </span>
-                            )}
-                            {isCorrect && (
-                              <Check className="h-4 w-4 text-primary-strong" />
-                            )}
-                            {isPicked && !isCorrect && (
-                              <X className="h-4 w-4 text-destructive" />
-                            )}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {question.analysis && (
-                    <div className="mt-3 rounded-md border border-border-light bg-surface-secondary p-3.5">
-                      <p className="text-[11px] font-bold text-foreground-tertiary">
-                        {t("quiz.analysis")}
-                      </p>
                       <RichText
-                        html={question.analysis}
-                        className="mt-1 text-sm leading-6"
+                        html={question.content}
+                        className="quiz-richtext break-words"
+                        style={{ fontSize: 13, lineHeight: 1.7 }}
                       />
+
+                      {question.analysis && (
+                        <div className="mt-2">
+                          <p className="text-[0.6875rem] font-bold text-foreground-tertiary">
+                            {t("quiz.analysis")}
+                          </p>
+                          <RichText
+                            html={question.analysis}
+                            className="quiz-richtext mt-1 break-words text-foreground-secondary [&_strong]:text-foreground"
+                            style={{ fontSize: 13, lineHeight: 1.75 }}
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </article>
-              );
-            })}
+                  </details>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <div className="flex flex-col gap-3.5">
+          <div className="rounded-xl border border-border bg-surface p-[22px] card-shadow">
+            <h3 className="text-[0.8125rem] font-extrabold">
+              {t("quiz.roundSummary")}
+            </h3>
+            <div className="mt-2.5 flex flex-col gap-[7px] text-xs text-foreground-secondary">
+              <SummaryRow
+                icon={<Target className="h-3.5 w-3.5 text-primary-strong" />}
+                label={t("quiz.accuracy")}
+                value={`${accuracy}%`}
+                tone="text-primary-strong"
+              />
+              <SummaryRow
+                icon={<Check className="h-3.5 w-3.5 text-primary-strong" />}
+                label={t("quiz.correctCount")}
+                value={outcome.correctCount}
+                tone="text-primary-strong"
+              />
+              <SummaryRow
+                icon={<X className="h-3.5 w-3.5 text-destructive" />}
+                label={t("quiz.wrongCount")}
+                value={outcome.wrongCount}
+                tone="text-destructive"
+              />
+              <SummaryRow
+                icon={<Circle className="h-3.5 w-3.5 text-foreground-tertiary" />}
+                label={t("quiz.legendUnanswered")}
+                value={unanswered}
+                tone="text-foreground-secondary"
+              />
+            </div>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="mt-3 w-full rounded-[8px] hover:border-primary hover:bg-surface-secondary hover:text-primary-strong"
+            >
+              <Link href={retryHref}>{t("quiz.retryRound")}</Link>
+            </Button>
           </div>
-        )}
-      </section>
+
+          <div className="rounded-xl border border-border bg-surface p-[22px] card-shadow">
+            <h3 className="text-[0.8125rem] font-extrabold">{t("quiz.nextStep")}</h3>
+            <div className="mt-2 flex flex-col gap-2">
+              <Link
+                href={retryHref}
+                className="flex items-center justify-between gap-2.5 rounded-[8px] border border-border-light bg-surface-secondary px-2.5 py-2 text-xs font-bold transition-colors hover:border-primary/40"
+              >
+                {t("quiz.retryRound")}
+                <span className="rounded-full bg-primary-light px-2 py-0.5 text-[0.625rem] font-bold text-primary-strong">
+                  {t("quiz.questionsCount", { n: outcome.totalQuestions })}
+                </span>
+              </Link>
+              <Link
+                href="/learn"
+                className="flex items-center justify-between gap-2.5 rounded-[8px] border border-border-light bg-surface-secondary px-2.5 py-2 text-xs font-bold transition-colors hover:border-primary/40"
+              >
+                {t("quiz.backToCatalog")}
+                <ArrowRight className="h-3.5 w-3.5 text-foreground-tertiary" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
