@@ -85,6 +85,19 @@
     border-color: hsl(var(--border));
   }
 
+  /*
+   * 展示效果（信息密度）：Tailwind 的间距与字号都以 rem 为基准，
+   * 通过根字号整体缩放即可在不改组件的前提下调整密度。
+   * comfortable 使用浏览器默认 16px，不额外声明。
+   */
+  html[data-density="compact"] {
+    font-size: 15px;
+  }
+
+  html[data-density="spacious"] {
+    font-size: 17px;
+  }
+
   body {
     color: hsl(var(--foreground));
     background-color: hsl(var(--background));
@@ -170,6 +183,9 @@
   border-radius: .5rem;
   max-width: 100%;
   height: auto;
+
+  /* 正文图加载中/失败时统一露浅绿占位 */
+  background-color: hsl(var(--primary-light));
 }
 
 .article-content blockquote {

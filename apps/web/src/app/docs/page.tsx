@@ -44,7 +44,7 @@ export default function Docs() {
                     alt={section.title}
                     width={520}
                     height={1150}
-                    className="h-auto w-full rounded-xl border border-border bg-surface shadow-sm"
+                    className="h-auto w-full rounded-xl border border-border bg-primary-light shadow-sm"
                   />
                 </div>
               )}
