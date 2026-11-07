@@ -141,10 +141,10 @@ export function WikiBrowser({
         {mobileOpen ? t("wiki.hideToc") : t("wiki.toc")}
       </button>
 
-      <div className="grid items-start gap-5 lg:grid-cols-[21rem_minmax(0,1fr)]">
+      <div className="grid items-start gap-5 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside
           className={cn(
-            "overflow-hidden lg:block",
+            "overflow-hidden rounded-none border-0 bg-transparent shadow-none lg:block",
             mobileOpen ? "block" : "hidden",
           )}
         >
@@ -165,7 +165,7 @@ export function WikiBrowser({
           </div>
         </aside>
 
-        <article className="min-w-0 rounded-lg border border-border bg-surface p-5 card-shadow md:p-8">
+        <article className="min-w-0 rounded-none border-0 bg-transparent shadow-none">
           {detail ? (
             <>
               <nav
