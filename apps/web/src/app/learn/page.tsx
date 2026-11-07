@@ -8,7 +8,6 @@ import { useLocale } from "@/lib/i18n";
 import { fetchCatalog, findTextbook, type TextbookDto } from "@/lib/learn/api";
 import {
   BookOpen,
-  ChevronRight,
   Loader2,
   Network,
   RefreshCw,
@@ -16,8 +15,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
-type View = "hub" | "chapters" | "knowledge";
+type View = "chapters" | "knowledge";
 type Status = "loading" | "error" | "ready";
 
 /**
@@ -30,7 +30,7 @@ export default function LearnPage() {
   const [status, setStatus] = useState<Status>("loading");
   const [reloadKey, setReloadKey] = useState(0);
   const [selected, setSelected] = useState<TextbookDto | null>(null);
-  const [view, setView] = useState<View>("hub");
+  const [view, setView] = useState<View>("chapters");
 
   useEffect(() => {
     let alive = true;
@@ -41,7 +41,6 @@ export default function LearnPage() {
         const textbook = findTextbook(data, data.selectedTextbookId ?? null);
         setSelected(textbook);
         setStatus("ready");
-        setView("hub");
       })
       .catch(() => {
         if (alive) setStatus("error");
@@ -93,36 +92,14 @@ export default function LearnPage() {
     );
   }
 
-  if (view === "chapters") {
-    return (
-      <div className="pb-6 md:pb-8">
-        <ChapterBrowser
-          textbook={selected}
-          onBack={() => setView("hub")}
-          backLabel={t("learn.backToStudy")}
-        />
-      </div>
-    );
-  }
-
-  if (view === "knowledge") {
-    return (
-      <div className="pb-6 md:pb-8">
-        <KnowledgeBrowser textbook={selected} onBack={() => setView("hub")} />
-      </div>
-    );
-  }
-
   return (
     <div className="pb-6 md:pb-8">
-      <section className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-gradient-to-br from-primary-light to-surface p-4 card-shadow sm:flex-row sm:items-center sm:gap-4">
+      {/* Compact textbook banner */}
+      <section className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-gradient-to-br from-primary-light to-surface p-3 card-shadow sm:flex-row sm:items-center sm:gap-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <TextbookCover textbook={selected} size="sm" />
           <div className="min-w-0">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.06em] text-primary-strong">
-              {t("learn.currentLabel")}
-            </p>
-            <p className="mt-0.5 truncate text-base font-bold">{selected.name}</p>
+            <p className="truncate text-sm font-bold">{selected.name}</p>
             <p className="mt-0.5 truncate text-xs text-foreground-secondary">
               {selected.publisherName} · {selected.gradeName} · {selected.semesterLabel} ·{" "}
               {t("learn.chaptersCount", { n: selected.chapterCount })} ·{" "}
@@ -130,58 +107,51 @@ export default function LearnPage() {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          asChild
-          className="w-full shrink-0 justify-center sm:w-auto"
-        >
+        <Button variant="outline" asChild size="sm" className="w-full shrink-0 justify-center sm:w-auto">
           <Link href="/account/textbook">
-            <Repeat className="mr-1.5 h-4 w-4" />
+            <Repeat className="mr-1.5 h-3.5 w-3.5" />
             {t("learn.switchTextbook")}
           </Link>
         </Button>
       </section>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      {/* Tab toggle */}
+      <div className="mt-4 inline-flex gap-1 rounded-lg bg-surface-secondary p-1">
         <button
           type="button"
           onClick={() => setView("chapters")}
-          className="group flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border border-border bg-surface p-5 text-left card-shadow transition hover:-translate-y-0.5 hover:border-primary/35"
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+            view === "chapters"
+              ? "bg-surface text-foreground shadow-sm"
+              : "text-foreground-secondary hover:text-foreground"
+          )}
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-primary-light text-primary-strong">
-            <BookOpen className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 flex-1 basis-[calc(100%-3.75rem)] sm:basis-0">
-            <span className="block text-base font-bold">{t("learn.studyByChapter")}</span>
-            <span className="mt-1 block text-sm leading-6 text-foreground-secondary">
-              {t("learn.studyByChapterBody")}
-            </span>
-          </span>
-          <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary-strong">
-            {t("learn.enterStudy")}
-            <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-          </span>
+          <BookOpen className="h-3.5 w-3.5" />
+          {t("learn.studyByChapter")}
         </button>
-
         <button
           type="button"
           onClick={() => setView("knowledge")}
-          className="group flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border border-border bg-surface p-5 text-left card-shadow transition hover:-translate-y-0.5 hover:border-primary/35"
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+            view === "knowledge"
+              ? "bg-surface text-foreground shadow-sm"
+              : "text-foreground-secondary hover:text-foreground"
+          )}
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-primary-light text-primary-strong">
-            <Network className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 flex-1 basis-[calc(100%-3.75rem)] sm:basis-0">
-            <span className="block text-base font-bold">{t("learn.studyByKnowledge")}</span>
-            <span className="mt-1 block text-sm leading-6 text-foreground-secondary">
-              {t("learn.studyByKnowledgeBody")}
-            </span>
-          </span>
-          <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary-strong">
-            {t("learn.enterStudy")}
-            <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-          </span>
+          <Network className="h-3.5 w-3.5" />
+          {t("learn.studyByKnowledge")}
         </button>
+      </div>
+
+      {/* Active browser */}
+      <div className="mt-4">
+        {view === "chapters" ? (
+          <ChapterBrowser textbook={selected} />
+        ) : (
+          <KnowledgeBrowser textbook={selected} />
+        )}
       </div>
     </div>
   );

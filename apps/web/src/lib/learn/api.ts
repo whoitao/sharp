@@ -421,9 +421,19 @@ export function firstKnowledgePointWithQuestions(
   return null;
 }
 
-/** 答题入口：答题页本轮未实现，路由与参数先固定下来 */
-export function quizHref(chapterId: string, unitIndex: number): string {
-  return `/learn/quiz?chapterId=${encodeURIComponent(chapterId)}&unitIndex=${unitIndex}`;
+/** 答题入口：参数与 /api/app/chapters 的过滤口径一一对应 */
+export function quizHref(
+  chapterId: string,
+  unitIndex: number,
+  chapterName?: string | null,
+): string {
+  const query = new URLSearchParams({
+    chapterId,
+    unitIndex: String(unitIndex),
+  });
+  // 仅供答题页头部展示，不参与接口过滤
+  if (chapterName) query.set("chapterName", chapterName);
+  return `/learn/quiz?${query.toString()}`;
 }
 
 /** 知识点答题入口：参数与 /api/app/units 的过滤口径一一对应 */
@@ -432,6 +442,7 @@ export function knowledgeQuizHref(params: {
   gradeId: string | null;
   publisherId: string | null;
   knowledgePointId: string;
+  knowledgePointName?: string | null;
   unitIndex: number;
 }): string {
   const query = new URLSearchParams({
@@ -441,5 +452,7 @@ export function knowledgeQuizHref(params: {
   });
   if (params.gradeId) query.set("gradeId", params.gradeId);
   if (params.publisherId) query.set("publisherId", params.publisherId);
+  // 仅供答题页头部展示，不参与接口过滤
+  if (params.knowledgePointName) query.set("knowledgePointName", params.knowledgePointName);
   return `/learn/quiz?${query.toString()}`;
 }

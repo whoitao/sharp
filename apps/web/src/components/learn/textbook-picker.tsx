@@ -180,14 +180,14 @@ export function TextbookPicker({
                       <TextbookCover textbook={textbook} />
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col">
-                      <h3 className="line-clamp-2 pr-7 text-[0.8125rem] font-bold leading-snug">
+                      <h3 className="line-clamp-2 pr-7 text-sm font-bold leading-snug">
                         {textbook.name}
                       </h3>
-                      <p className="mt-1 truncate text-[0.6875rem] text-foreground-tertiary">
+                      <p className="mt-1 truncate text-xs text-foreground-tertiary">
                         {textbook.publisherName} · {textbook.gradeName} ·{" "}
                         {textbook.semesterLabel}
                       </p>
-                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-light pt-2 text-[0.6875rem] text-foreground-secondary">
+                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-light pt-2 text-xs text-foreground-secondary">
                         <span className="truncate">
                           {t("learn.chaptersCount", { n: textbook.chapterCount })}
                         </span>

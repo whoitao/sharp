@@ -13,7 +13,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
-  ArrowRight,
   Check,
   ChevronDown,
   Circle,
@@ -57,7 +56,7 @@ function Stat({
   tone?: string;
 }) {
   return (
-    <div className="rounded-[8px] border border-border bg-surface/80 px-3 py-2.5">
+    <div className="rounded-sm border border-border bg-surface/80 px-3 py-2.5">
       <b
         className={cn(
           "block text-[1.0625rem] leading-tight tracking-[-0.02em] tabular-nums",
@@ -92,7 +91,7 @@ function SummaryRow({
       </span>
       <span
         className={cn(
-          "inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[0.6875rem] font-bold",
+          "inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-xs font-bold",
           tone,
         )}
       >
@@ -150,13 +149,13 @@ export function QuizResult({
       </div>
 
       <section
-        className="rounded-xl border border-border px-6 py-6 card-shadow sm:px-[30px] sm:py-[30px]"
+        className="rounded-xl border border-border px-6 py-6 card-shadow sm:px-6 sm:py-7"
         style={{
           background:
             "linear-gradient(120deg, hsl(var(--primary-light)), hsl(var(--surface)) 58%)",
         }}
       >
-        <div className="grid items-center justify-items-center gap-5 text-center lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-[30px] lg:text-left">
+        <div className="grid items-center justify-items-center gap-5 text-center lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-6 lg:text-left">
           <div
             className="h-[142px] w-[142px] shrink-0 rounded-full p-[9px] sm:h-[152px] sm:w-[152px]"
             style={{
@@ -172,14 +171,14 @@ export function QuizResult({
           </div>
 
           <div className="w-full min-w-0">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.12em] text-primary-strong">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary-strong">
               {t("quiz.unitTitle", { n: unitIndex + 1 })} ·{" "}
               {t("quiz.resultTitle")}
             </p>
-            <h1 className="mt-1 text-[1.375rem] font-extrabold tracking-[-0.04em] sm:text-[1.75rem]">
+            <h1 className="mt-1 text-[1.375rem] font-bold tracking-[-0.04em] sm:text-[1.75rem]">
               {headline}
             </h1>
-            <p className="mt-1.5 text-[0.8125rem] leading-6 text-foreground-secondary">
+            <p className="mt-1.5 text-sm leading-6 text-foreground-secondary">
               {t("quiz.resultSummary", {
                 duration: formatDuration(outcome.durationSeconds),
                 correct: outcome.correctCount,
@@ -187,7 +186,7 @@ export function QuizResult({
               })}
             </p>
 
-            <div className="mt-[18px] grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               <Stat
                 label={t("quiz.correctCount")}
                 value={`${outcome.correctCount} / ${outcome.totalQuestions}`}
@@ -208,27 +207,19 @@ export function QuizResult({
         </div>
       </section>
 
-      <div className="mt-[18px] grid items-start gap-[18px] lg:grid-cols-[minmax(0,1fr)_330px]">
-        <section className="min-w-0 rounded-xl border border-border bg-surface p-[22px] card-shadow">
-          <div className="mb-3.5 flex items-center justify-between gap-3">
+      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_330px]">
+        <section className="min-w-0 rounded-xl border border-border bg-surface p-5 card-shadow">
+          <div className="mb-3.5">
             <h2 className="text-base font-bold tracking-[-0.02em]">
               {t("quiz.wrongReview")}{" "}
-              <small className="ml-1 text-[0.6875rem] font-normal text-foreground-tertiary">
+              <small className="ml-1 text-xs font-normal text-foreground-tertiary">
                 {t("quiz.questionsCount", { n: wrongQuestions.length })}
               </small>
             </h2>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="rounded-[8px] hover:border-primary hover:bg-surface-secondary hover:text-primary-strong"
-            >
-              <Link href={retryHref}>{t("quiz.retryRound")}</Link>
-            </Button>
           </div>
 
           {wrongQuestions.length === 0 ? (
-            <p className="rounded-[8px] border border-border-light bg-surface-secondary px-4 py-6 text-center text-sm text-foreground-secondary">
+            <p className="rounded-sm border border-border-light bg-surface-secondary px-4 py-6 text-center text-sm text-foreground-secondary">
               {t("quiz.noWrong")}
             </p>
           ) : (
@@ -252,7 +243,7 @@ export function QuizResult({
                     className="group border-t border-border-light first:border-t-0"
                   >
                     <summary className="flex cursor-pointer list-none items-center gap-3 py-[13px] [&::-webkit-details-marker]:hidden">
-                      <span className="flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-[7px] bg-destructive/10 text-[0.6875rem] font-extrabold text-destructive">
+                      <span className="flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-sm bg-destructive/10 text-xs font-bold text-destructive">
                         {String(position).padStart(2, "0")}
                       </span>
                       <span className="min-w-0 flex-1">
@@ -271,7 +262,7 @@ export function QuizResult({
                     </summary>
 
                     <div className="pb-3.5 pl-[37px]">
-                      <div className="mb-2 flex flex-wrap gap-x-[18px] gap-y-1 text-xs">
+                      <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
                         <span className="font-bold text-destructive">
                           {t("quiz.yourAnswer")}{" "}
                           {selected.length > 0
@@ -291,7 +282,7 @@ export function QuizResult({
 
                       {question.analysis && (
                         <div className="mt-2">
-                          <p className="text-[0.6875rem] font-bold text-foreground-tertiary">
+                          <p className="text-xs font-bold text-foreground-tertiary">
                             {t("quiz.analysis")}
                           </p>
                           <RichText
@@ -310,11 +301,11 @@ export function QuizResult({
         </section>
 
         <div className="flex flex-col gap-3.5">
-          <div className="rounded-xl border border-border bg-surface p-[22px] card-shadow">
-            <h3 className="text-[0.8125rem] font-extrabold">
+          <div className="rounded-xl border border-border bg-surface p-5 card-shadow">
+            <h3 className="text-sm font-bold">
               {t("quiz.roundSummary")}
             </h3>
-            <div className="mt-2.5 flex flex-col gap-[7px] text-xs text-foreground-secondary">
+            <div className="mt-2.5 flex flex-col gap-2 text-xs text-foreground-secondary">
               <SummaryRow
                 icon={<Target className="h-3.5 w-3.5 text-primary-strong" />}
                 label={t("quiz.accuracy")}
@@ -344,32 +335,16 @@ export function QuizResult({
               asChild
               variant="outline"
               size="sm"
-              className="mt-3 w-full rounded-[8px] hover:border-primary hover:bg-surface-secondary hover:text-primary-strong"
+              className="mt-3 w-full rounded-sm hover:border-primary hover:bg-surface-secondary hover:text-primary-strong"
             >
               <Link href={retryHref}>{t("quiz.retryRound")}</Link>
             </Button>
-          </div>
-
-          <div className="rounded-xl border border-border bg-surface p-[22px] card-shadow">
-            <h3 className="text-[0.8125rem] font-extrabold">{t("quiz.nextStep")}</h3>
-            <div className="mt-2 flex flex-col gap-2">
-              <Link
-                href={retryHref}
-                className="flex items-center justify-between gap-2.5 rounded-[8px] border border-border-light bg-surface-secondary px-2.5 py-2 text-xs font-bold transition-colors hover:border-primary/40"
-              >
-                {t("quiz.retryRound")}
-                <span className="rounded-full bg-primary-light px-2 py-0.5 text-[0.625rem] font-bold text-primary-strong">
-                  {t("quiz.questionsCount", { n: outcome.totalQuestions })}
-                </span>
-              </Link>
-              <Link
-                href="/learn"
-                className="flex items-center justify-between gap-2.5 rounded-[8px] border border-border-light bg-surface-secondary px-2.5 py-2 text-xs font-bold transition-colors hover:border-primary/40"
-              >
-                {t("quiz.backToCatalog")}
-                <ArrowRight className="h-3.5 w-3.5 text-foreground-tertiary" />
-              </Link>
-            </div>
+            <Link
+              href="/learn"
+              className="mt-2 flex items-center justify-center gap-1.5 rounded-sm px-2.5 py-2 text-xs font-semibold text-foreground-secondary transition-colors hover:text-foreground"
+            >
+              {t("quiz.backToCatalog")}
+            </Link>
           </div>
         </div>
       </div>

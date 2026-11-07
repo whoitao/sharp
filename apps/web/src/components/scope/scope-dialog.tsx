@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
@@ -10,7 +9,6 @@ import {
   Globe,
   Landmark,
   Languages,
-  Loader2,
   Magnet,
   Scale,
   Shapes,
@@ -65,7 +63,7 @@ function ChoiceChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-[0.8125rem] font-semibold transition-colors sm:px-3.5",
+        "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition-colors sm:px-3.5",
         active
           ? "border-primary bg-primary-light text-primary-strong"
           : "border-transparent bg-surface-secondary text-foreground hover:border-border hover:text-primary-strong",
@@ -90,7 +88,6 @@ export function ScopeDialog({
   subjectId,
   onGrade,
   onSubject,
-  saving,
   saveFailed,
 }: {
   open: boolean;
@@ -154,13 +151,13 @@ export function ScopeDialog({
 
         <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
           <section>
-            <h3 className="text-[0.8125rem] font-bold text-foreground">
+            <h3 className="text-sm font-bold text-foreground">
               {t("learn.filterGradeSection")}
             </h3>
             <div className="mt-3 space-y-2">
               {gradeGroups.map((group) => (
                 <div key={group.stageId} className="flex items-start gap-2.5">
-                  <span className="w-9 shrink-0 pt-1.5 text-[0.75rem] text-foreground-tertiary">
+                  <span className="w-9 shrink-0 pt-1.5 text-xs text-foreground-tertiary">
                     {group.stageName}
                   </span>
                   <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
@@ -180,7 +177,7 @@ export function ScopeDialog({
           </section>
 
           <section className="mt-5">
-            <h3 className="text-[0.8125rem] font-bold text-foreground">
+            <h3 className="text-sm font-bold text-foreground">
               {t("learn.filterSubjectSection")}
             </h3>
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -201,23 +198,13 @@ export function ScopeDialog({
           </section>
         </div>
 
-        <div className="border-t border-border-light px-5 py-3 sm:px-6">
-          {saveFailed && (
-            <p role="alert" className="mb-2 text-[0.75rem] text-destructive">
+        {saveFailed && (
+          <div className="px-5 pb-4 sm:px-6">
+            <p role="alert" className="text-xs text-destructive">
               {t("account.saveFailed")}
             </p>
-          )}
-          <div className="flex items-center justify-end gap-3">
-            <Button
-              onClick={onClose}
-              disabled={saving}
-              className="h-9 min-w-[5.5rem] text-[0.8125rem]"
-            >
-              {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              {t("scope.done")}
-            </Button>
           </div>
-        </div>
+        )}
       </div>
     </div>,
     document.body,

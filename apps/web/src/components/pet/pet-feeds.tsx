@@ -149,7 +149,7 @@ export function PetFeeds() {
                         exp: record.expGain,
                       })}
                     </p>
-                    <p className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
+                    <p className="mt-0.5 truncate text-xs text-foreground-tertiary">
                       {record.dateLabel} · ×{record.quantity}
                     </p>
                   </div>

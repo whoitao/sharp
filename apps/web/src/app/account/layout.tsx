@@ -1,5 +1,6 @@
 "use client";
 
+import { RequireAuth } from "@/components/auth/require-auth";
 import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { BarChart3, BookOpen, NotebookPen, PawPrint, Settings, UserRound } from "lucide-react";
@@ -66,34 +67,36 @@ export default function AccountLayout({
   ];
 
   return (
-    <div className="w-full pb-16">
-      <div className="grid gap-5 md:grid-cols-[200px_minmax(0,1fr)] md:gap-8">
-        <aside className="min-w-0">
-          <nav
-            aria-label={t("account.menu")}
-            className="flex flex-wrap gap-2 pb-1 md:flex-col md:gap-1 md:pb-0"
-          >
-            {tabs.map(({ href, label, icon: Icon, active }) => (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "inline-flex shrink-0 items-center gap-2 rounded-[10px] px-3 py-2.5 text-sm font-semibold transition-colors md:w-full",
-                  active
-                    ? "bg-primary-light text-primary-strong"
-                    : "bg-surface text-foreground-secondary hover:bg-accent hover:text-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
+    <RequireAuth>
+      <div className="w-full pb-16">
+        <div className="grid gap-5 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-5">
+          <aside className="min-w-0">
+            <nav
+              aria-label={t("account.menu")}
+              className="flex flex-wrap gap-2 pb-1 md:flex-col md:gap-1 md:pb-0"
+            >
+              {tabs.map(({ href, label, icon: Icon, active }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors md:w-full",
+                    active
+                      ? "bg-primary-light text-primary-strong"
+                      : "bg-surface text-foreground-secondary hover:bg-accent hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </aside>
 
-        <div className="min-w-0">{children}</div>
+          <div className="min-w-0">{children}</div>
+        </div>
       </div>
-    </div>
+    </RequireAuth>
   );
 }

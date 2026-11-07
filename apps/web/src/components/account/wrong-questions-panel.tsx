@@ -137,7 +137,12 @@ export function WrongQuestionsPanel() {
                       </span>
                       <RichText
                         html={question.content}
-                        className="wrong-stem prose-compact line-clamp-2 min-w-0 flex-1"
+                        className={cn(
+                          "wrong-stem prose-compact min-w-0 flex-1",
+                          // 折叠态只露一行纯文字：表格、图片默认不展示，展开后再看全貌
+                          !expanded &&
+                            "line-clamp-1 [&_figure]:hidden [&_img]:hidden [&_table]:hidden",
+                        )}
                       />
                       {expanded ? (
                         <ChevronUp className="mt-1 h-4 w-4 shrink-0 text-foreground-tertiary" />
@@ -148,7 +153,7 @@ export function WrongQuestionsPanel() {
 
                     {expanded && (
                       <div className="border-t border-border-light px-3.5 pb-3.5 pt-3">
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.6875rem] text-foreground-tertiary">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-foreground-tertiary">
                           <span>
                             {t("wrong.wrongCount", { n: item.wrongCount })}
                           </span>
@@ -176,7 +181,7 @@ export function WrongQuestionsPanel() {
                             >
                               <span
                                 className={cn(
-                                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-[0.625rem] font-extrabold",
+                                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-[0.625rem] font-bold",
                                   option.isCorrect
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-surface-secondary text-foreground-tertiary",
@@ -200,7 +205,7 @@ export function WrongQuestionsPanel() {
 
                         {question.analysis && (
                           <div className="mt-2.5 rounded-md border-l-[3px] border-primary bg-primary-light px-3 py-2.5">
-                            <p className="text-[0.6875rem] font-bold text-primary-strong">
+                            <p className="text-xs font-bold text-primary-strong">
                               {t("wrong.analysis")}
                             </p>
                             <RichText

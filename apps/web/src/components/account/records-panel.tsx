@@ -272,7 +272,7 @@ export function RecordsPanel() {
             ].map((item) => (
               <div key={item.label} className="min-w-0">
                 <dd className="text-lg font-bold tabular-nums">{item.value}</dd>
-                <dt className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
+                <dt className="mt-0.5 truncate text-xs text-foreground-tertiary">
                   {item.label}
                 </dt>
               </div>
@@ -292,7 +292,7 @@ export function RecordsPanel() {
                 <dd className="text-sm font-semibold tabular-nums text-foreground-secondary">
                   {item.value}
                 </dd>
-                <dt className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
+                <dt className="mt-0.5 truncate text-xs text-foreground-tertiary">
                   {item.label}
                 </dt>
               </div>
@@ -305,7 +305,7 @@ export function RecordsPanel() {
       <div
         role="tablist"
         aria-label={t("account.records")}
-        className="mt-3 flex gap-1 rounded-[10px] bg-surface-secondary p-1"
+        className="mt-3 flex gap-1 rounded-md bg-surface-secondary p-1"
       >
         {tabs.map((item) => {
           const active = tab === item.key;
@@ -406,7 +406,7 @@ export function RecordsPanel() {
                           <dd className="text-sm font-semibold tabular-nums">
                             {record.totalQuestions}
                           </dd>
-                          <dt className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
+                          <dt className="mt-0.5 truncate text-xs text-foreground-tertiary">
                             {t("records.questions")}
                           </dt>
                         </div>
@@ -414,7 +414,7 @@ export function RecordsPanel() {
                           <dd className="text-sm font-semibold tabular-nums text-primary-strong">
                             {record.correctCount}
                           </dd>
-                          <dt className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
+                          <dt className="mt-0.5 truncate text-xs text-foreground-tertiary">
                             {t("records.correct")}
                           </dt>
                         </div>
@@ -422,7 +422,7 @@ export function RecordsPanel() {
                           <dd className="text-sm font-semibold tabular-nums text-destructive">
                             {record.wrongCount}
                           </dd>
-                          <dt className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
+                          <dt className="mt-0.5 truncate text-xs text-foreground-tertiary">
                             {t("records.wrong")}
                           </dt>
                         </div>
@@ -430,7 +430,7 @@ export function RecordsPanel() {
                           <dd className="text-sm font-semibold tabular-nums">
                             {formatDuration(record.durationSeconds ?? 0)}
                           </dd>
-                          <dt className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
+                          <dt className="mt-0.5 truncate text-xs text-foreground-tertiary">
                             {t("records.duration")}
                           </dt>
                         </div>

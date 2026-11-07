@@ -1,86 +1,14 @@
 "use client";
 
-import { TextbookCover } from "@/components/learn/textbook-cover";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
-import type { StudyRecordDto, TextbookDto, UnitDto, UnitsResponse } from "@/lib/learn/api";
+import type { StudyRecordDto, UnitDto, UnitsResponse } from "@/lib/learn/api";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ChevronRight, RefreshCw, Repeat } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 
 type Status = "loading" | "error" | "ready";
-
-/**
- * 「按章节学 / 按知识点学」共用的列表 UI：
- * 面包屑、当前教材头卡、左侧树面板、树行、右侧单元列表。
- * 两个页面只负责数据，不再各写一套样式。
- */
-
-/** 面包屑：返回入口 + 若干层级，超长层级单行省略 */
-export function StudyBreadcrumb({
-  onBack,
-  backLabel,
-  items,
-}: {
-  onBack: () => void;
-  backLabel: string;
-  items: string[];
-}) {
-  return (
-    <nav className="flex flex-wrap items-center gap-1.5 text-xs text-foreground-tertiary">
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-1 font-semibold text-foreground-secondary transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        {backLabel}
-      </button>
-      {items.map((item, index) => (
-        <span key={`${item}-${index}`} className="inline-flex min-w-0 items-center gap-1.5">
-          <ChevronRight className="h-3 w-3 shrink-0" />
-          <span
-            className={cn(
-              "max-w-[13.75rem] truncate",
-              index === 0 && "font-semibold text-foreground-secondary",
-            )}
-            title={item}
-          >
-            {item}
-          </span>
-        </span>
-      ))}
-    </nav>
-  );
-}
-
-/** 当前教材头卡：章节学与知识点学共用同一套展示 */
-export function StudyHeaderCard({ textbook }: { textbook: TextbookDto }) {
-  const { t } = useLocale();
-
-  return (
-    <div className="mt-4 flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 card-shadow sm:flex-row sm:items-center sm:gap-4">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <TextbookCover textbook={textbook} size="sm" />
-        <div className="min-w-0">
-          <h1 className="truncate text-lg font-bold tracking-tight">{textbook.name}</h1>
-          <p className="mt-0.5 truncate text-xs text-foreground-secondary">
-            {textbook.publisherName} · {textbook.gradeName} · {textbook.semesterLabel} ·{" "}
-            {t("learn.chaptersCount", { n: textbook.chapterCount })} ·{" "}
-            {t("learn.questionsCount", { n: textbook.questionCount })}
-          </p>
-        </div>
-      </div>
-      <Button variant="outline" asChild className="w-full shrink-0 justify-center sm:w-auto">
-        <Link href="/account/textbook">
-          <Repeat className="mr-1.5 h-4 w-4" />
-          {t("learn.switchTextbook")}
-        </Link>
-      </Button>
-    </div>
-  );
-}
 
 /** 左侧树面板：统一容器、滚动区、骨架、错误与空态 */
 export function StudyTreePanel({
@@ -164,7 +92,7 @@ export function StudyTreeRow({
         <span
           className={cn(
             "min-w-0 flex-1 truncate",
-            depth === 0 ? "text-[0.8125rem] font-semibold" : "text-[0.75rem]",
+            depth === 0 ? "text-sm font-semibold" : "text-xs",
             selected ? "text-primary-strong" : "text-foreground",
             disabled && "text-foreground-tertiary",
           )}
@@ -172,7 +100,7 @@ export function StudyTreeRow({
         >
           {label}
         </span>
-        <span className="shrink-0 text-[0.6875rem] text-foreground-tertiary">
+        <span className="shrink-0 text-xs text-foreground-tertiary">
           {countLabel}
         </span>
       </button>
@@ -281,15 +209,15 @@ export function StudyUnitPanel({
                 key={unit.unitIndex}
                 className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-border-light px-4 py-3.5 transition-colors last:border-b-0 hover:bg-surface-secondary lg:grid-cols-[2rem_minmax(0,1fr)_7.5rem_auto] lg:px-5"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-surface-secondary text-[0.6875rem] font-extrabold text-foreground-tertiary">
+                <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-surface-secondary text-xs font-bold text-foreground-tertiary">
                   {unit.unitIndex + 1}
                 </span>
 
                 <div className="min-w-0">
-                  <h3 className="truncate text-[0.8125rem] font-bold">
+                  <h3 className="truncate text-sm font-bold">
                     {t("learn.unitName", { n: unit.unitIndex + 1 })}
                   </h3>
-                  <p className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
+                  <p className="mt-0.5 truncate text-xs text-foreground-tertiary">
                     {t("learn.unitRange", {
                       start: unit.startIndex + 1,
                       end: unit.endIndex + 1,

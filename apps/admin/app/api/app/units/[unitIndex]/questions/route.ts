@@ -57,6 +57,8 @@ export async function GET(
       options: {
         orderBy: { sortNo: "asc" },
       },
+      // 题目关联的知识点：答题页「本题考点」直接取这里
+      knowledgePoints: { include: { knowledgePoint: true } },
     },
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     skip: unitIndex * unitSize,
@@ -101,6 +103,18 @@ export async function GET(
             wrongCount: p.wrongCount,
           }
         : null,
+      // 多个知识点全部返回，按知识点树内排序（sortOrder）稳定输出
+      knowledgePoints: [...q.knowledgePoints]
+        .sort(
+          (a: any, b: any) =>
+            a.knowledgePoint.sortOrder - b.knowledgePoint.sortOrder ||
+            Number(a.knowledgePoint.id - b.knowledgePoint.id),
+        )
+        .map((item: any) => ({
+          id: item.knowledgePoint.id.toString(),
+          name: item.knowledgePoint.name,
+          parentId: item.knowledgePoint.parentId?.toString() ?? null,
+        })),
     };
   };
 

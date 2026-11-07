@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 type Status = "loading" | "error" | "ready";
 
 const optionBase =
-  "inline-flex min-h-10 items-center gap-1.5 rounded-[10px] border px-3 text-sm font-semibold transition-colors disabled:opacity-60";
+  "inline-flex min-h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition-colors disabled:opacity-60";
 const optionActive = "border-primary bg-primary-light text-primary-strong";
 const optionIdle = "border-border bg-surface text-foreground-secondary hover:border-primary/40";
 

@@ -19,7 +19,7 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const inputClass =
-  "h-10 w-full rounded-[10px] border border-border bg-surface px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "h-10 w-full rounded-md border border-border bg-surface px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 /** 三组表单统一宽度，避免昵称、性别、手机号各占一种宽度 */
 const fieldClass = "sm:max-w-[26rem]";
@@ -186,7 +186,7 @@ export function ProfileForm({
             )}
             {uploading ? t("account.uploading") : t("account.changeAvatar")}
           </Button>
-          <p className="mt-2 max-w-sm text-[0.6875rem] leading-5 text-foreground-tertiary">
+          <p className="mt-2 max-w-sm text-xs leading-5 text-foreground-tertiary">
             {t("account.avatarHint")}
           </p>
           <input
@@ -223,7 +223,7 @@ export function ProfileForm({
                 type="button"
                 onClick={() => setGender(value)}
                 className={cn(
-                  "min-h-10 rounded-[10px] border px-3 text-sm font-semibold transition-colors",
+                  "min-h-10 rounded-md border px-3 text-sm font-semibold transition-colors",
                   gender === value
                     ? "border-primary bg-primary-light text-primary-strong"
                     : "border-border bg-surface text-foreground-secondary hover:border-primary/40",
@@ -234,7 +234,7 @@ export function ProfileForm({
             ))}
           </div>
           {!gender && (
-            <p className="mt-1.5 text-[0.6875rem] text-foreground-tertiary">
+            <p className="mt-1.5 text-xs text-foreground-tertiary">
               {t("account.genderUnset")}
             </p>
           )}

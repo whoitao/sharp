@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
 const SIZE_CLASS = {
-  sm: "h-7 w-7 text-[0.6875rem]",
+  sm: "h-7 w-7 text-xs",
   md: "h-10 w-10 text-sm",
   lg: "h-20 w-20 text-2xl",
 } as const;

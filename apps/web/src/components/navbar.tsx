@@ -64,7 +64,7 @@ function NavLinks({ pathname }: { pathname?: string | null }) {
   const signedIn = useSignedIn();
 
   return (
-    <nav className="flex items-center space-x-3 whitespace-nowrap text-[0.8125rem] font-medium sm:space-x-4 md:space-x-6 md:text-sm">
+    <nav className="flex items-center space-x-3 whitespace-nowrap text-sm font-medium sm:space-x-4 md:space-x-6 md:text-sm">
       {navItems
         .filter((item) => !item.requiresAuth || signedIn)
         .map((item) => (

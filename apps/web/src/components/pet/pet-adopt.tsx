@@ -73,7 +73,7 @@ export function PetAdopt() {
   const handleSubmit = async () => {
     if (submitting) return;
     const name = nickname.trim();
-    if (name.length < 1 || name.length > 8) {
+    if (name.length < 1 || name.length > 12) {
       setErrorKey("nicknameInvalid");
       return;
     }
@@ -177,7 +177,7 @@ export function PetAdopt() {
                       <Check className="h-3 w-3" />
                     </span>
                   )}
-                  <div className="relative mx-auto flex h-24 w-24 items-center justify-center rounded-[10px] bg-primary-light">
+                  <div className="relative mx-auto flex h-24 w-24 items-center justify-center rounded-md bg-primary-light">
                     <span className="text-5xl">{item.icon ?? "🐾"}</span>
                     {cover && (
                       <img
@@ -193,7 +193,7 @@ export function PetAdopt() {
                   <div className="mt-2 text-center">
                     <p className="truncate text-sm font-bold">{item.name}</p>
                     {item.theme && (
-                      <p className="mt-0.5 truncate text-[0.6875rem] text-foreground-tertiary">
+                      <p className="mt-0.5 truncate text-xs text-foreground-tertiary">
                         {item.theme}
                       </p>
                     )}
@@ -221,15 +221,15 @@ export function PetAdopt() {
             <input
               id="pet-nickname"
               value={nickname}
-              maxLength={8}
+              maxLength={12}
               onChange={(event) => {
                 setNickname(event.target.value);
                 setErrorKey(null);
               }}
               placeholder={t("pet.adoptNicknamePlaceholder")}
-              className="mt-2 h-10 w-full rounded-[10px] border border-border bg-surface px-3 text-sm text-foreground outline-none transition-colors placeholder:text-foreground-tertiary hover:border-primary/40 focus:border-primary"
+              className="mt-2 h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none transition-colors placeholder:text-foreground-tertiary hover:border-primary/40 focus:border-primary"
             />
-            <p className="mt-1.5 text-[0.6875rem] text-foreground-tertiary">
+            <p className="mt-1.5 text-xs text-foreground-tertiary">
               {t("pet.adoptNicknamePlaceholder")}
             </p>
 

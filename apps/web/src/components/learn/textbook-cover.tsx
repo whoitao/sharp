@@ -30,7 +30,7 @@ export function TextbookCover({
   return (
     <div
       className={cn(
-        "relative aspect-[3/4] flex-none overflow-hidden rounded-[7px] bg-primary-light text-primary-strong shadow-sm ring-1 ring-border/70",
+        "relative aspect-[3/4] flex-none overflow-hidden rounded-sm bg-primary-light text-primary-strong shadow-sm ring-1 ring-border/70",
         isSmall ? "w-[52px]" : "w-full",
         className,
       )}
@@ -43,7 +43,7 @@ export function TextbookCover({
       >
         <span
           className={cn(
-            "font-extrabold leading-none tracking-tight",
+            "font-bold leading-none tracking-tight",
             isSmall ? "text-lg" : "text-2xl",
           )}
         >

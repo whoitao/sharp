@@ -28,7 +28,6 @@ import {
   Loader2,
   X,
 } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 type SheetState = "correct" | "wrong" | "idle";
@@ -40,6 +39,10 @@ interface QuizRunnerProps {
   questions: QuizQuestion[];
   previous: PreviousStudy | null;
   clientSessionId: string;
+  /** 知识点模式的入口会带上知识点名称：头部先展示知识点，再展示单元 */
+  knowledgePointName?: string | null;
+  /** 章节模式的入口会带上章节名称：头部先展示章节，再展示单元 */
+  chapterName?: string | null;
   onCompleted: (outcome: QuizOutcome) => void;
   onUnauthorized: () => void;
 }
@@ -50,6 +53,8 @@ export function QuizRunner({
   questions,
   previous,
   clientSessionId,
+  knowledgePointName = null,
+  chapterName = null,
   onCompleted,
   onUnauthorized,
 }: QuizRunnerProps) {
@@ -65,6 +70,19 @@ export function QuizRunner({
 
   const startedAtRef = useRef(Date.now());
   const completedRef = useRef(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  // 吸顶页头高度会随标题换行/密度变化：量出来再让侧栏从页头下沿开始吸顶
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const sync = () => setHeaderHeight(el.offsetHeight);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // 计时从进入答题开始，到成功结算为止
   useEffect(() => {
@@ -92,6 +110,17 @@ export function QuizRunner({
       : multiple
         ? t("quiz.multipleChoice")
         : t("quiz.singleChoice");
+
+  // 头部标题上方的上下文：按知识点学显示知识点名，按章节学显示章节名
+  const contextName = knowledgePointName ?? chapterName;
+
+  // 本题考点：优先用题目自带的关联知识点；接口未返回时退回入口知识点，
+  // 保证从「按知识点学」进入的答题页也能看到考点。
+  const pointNames = current.knowledgePoints?.length
+    ? current.knowledgePoints.map((point) => point.name)
+    : knowledgePointName
+      ? [knowledgePointName]
+      : [];
 
   const judge = (keys: string[]) => {
     const isCorrect = isAnswerCorrect(current, keys);
@@ -199,7 +228,7 @@ export function QuizRunner({
   const sheetClass = (question: QuizQuestion, position: number) => {
     const state = sheetState(question);
     return cn(
-      "flex aspect-square w-full items-center justify-center rounded-[7px] border text-[0.6875rem] font-bold transition-colors",
+      "flex aspect-square w-full items-center justify-center rounded-sm border text-xs font-bold transition-colors",
       state === "correct" &&
         "border-primary/30 bg-primary-light text-primary-strong",
       state === "wrong" &&
@@ -215,7 +244,7 @@ export function QuizRunner({
 
   const optionClass = (tone: OptionTone) =>
     cn(
-      "flex w-full items-start gap-3 rounded-[8px] border px-3.5 py-3 text-left transition-colors",
+      "flex w-full items-center gap-3 rounded-sm border px-3.5 py-3 text-left transition-colors",
       tone === "idle" &&
         "border-border bg-surface hover:border-primary/45 hover:bg-surface-secondary",
       tone === "selected" && "border-primary bg-primary-light",
@@ -226,7 +255,7 @@ export function QuizRunner({
 
   const badgeClass = (tone: OptionTone) =>
     cn(
-      "flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px] border text-xs font-extrabold",
+      "flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-sm border text-xs font-bold",
       tone === "idle" || tone === "muted"
         ? "border-border bg-surface text-foreground-secondary"
         : tone === "selected" || tone === "correct"
@@ -236,87 +265,110 @@ export function QuizRunner({
 
   return (
     <div className="pb-6 md:pb-8">
-      {/* 顶部：单元信息 + 题型/计时/结算 */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5">
-        <div className="min-w-0">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.12em] text-primary-strong">
-              {t("quiz.eyebrow")}
-            </p>
-            <Link
-              href="/learn"
-              className="inline-flex shrink-0 items-center gap-1 text-[0.6875rem] font-semibold text-foreground-tertiary transition-colors hover:text-foreground"
-            >
-              <ChevronLeft className="h-3 w-3" />
-              {t("quiz.backToCatalog")}
-            </Link>
+      {/* 吸顶：标题 + 进度 + 翻页（z-index 低于 navbar 的 z-50） */}
+      <div
+        ref={headerRef}
+        className="sticky top-14 z-30 -mx-4 mb-4 bg-background/95 px-4 pb-3 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+      >
+        {/* 顶部：单元信息 + 题型/计时/结算 */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5">
+          <div className="min-w-0">
+            {/* 章节名/知识点名与单元同行展示，如「列强侵略与民族危机：第 1 单元」 */}
+            <h1 className="text-xl font-bold leading-tight tracking-[-0.035em]">
+              {contextName
+                ? `${contextName}：${t("quiz.unitTitle", { n: unitIndex + 1 })}`
+                : t("quiz.unitTitle", { n: unitIndex + 1 })}
+            </h1>
           </div>
-          <h1 className="mt-1 text-2xl font-bold leading-tight tracking-[-0.035em]">
-            {t("quiz.unitTitle", { n: unitIndex + 1 })}
-            <small className="mt-1 block text-xs font-medium tracking-normal text-foreground-secondary">
-              {t("quiz.questionsCount", { n: questions.length })}
-            </small>
-          </h1>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-xs font-semibold text-primary-strong">
+              {typeLabel}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold tabular-nums text-foreground-secondary">
+              <Clock className="h-3.5 w-3.5" />
+              {formatDuration(elapsed)}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-sm hover:bg-surface-secondary hover:text-foreground"
+              onClick={handleSubmit}
+              disabled={submitting || answeredCount === 0}
+            >
+              {submitting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+              {submitting ? t("quiz.submitting") : t("quiz.endRound")}
+            </Button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-[0.6875rem] font-semibold text-primary-strong">
-            {typeLabel}
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold tabular-nums text-foreground-secondary">
-            <Clock className="h-3.5 w-3.5" />
-            {formatDuration(elapsed)}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-[8px] hover:bg-surface-secondary hover:text-foreground"
-            onClick={handleSubmit}
-            disabled={submitting || answeredCount === 0}
-          >
-            {submitting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
-            {submitting ? t("quiz.submitting") : t("quiz.endRound")}
-          </Button>
-        </div>
-      </div>
-
-      {/* 进度 */}
-      <div className="mb-[18px] mt-4">
-        <div className="mb-[7px] flex items-center justify-between gap-3 text-[0.6875rem] text-foreground-tertiary">
-          <span>
-            {t("quiz.stepOf", { current: index + 1, total: questions.length })}
-          </span>
-          <span>
-            {t("quiz.answered", {
-              answered: answeredCount,
-              total: questions.length,
-            })}
-          </span>
-        </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-border-light">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${percent}%` }}
-          />
+        {/* 进度 + 翻页：翻页固定在页头，不随解析长短移动 */}
+        <div className="mt-[0.45rem]">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-xs text-foreground-tertiary">
+            <span className="flex items-center gap-2">
+              <span>
+                {t("quiz.stepOf", { current: index + 1, total: questions.length })}
+              </span>
+              <span aria-hidden className="text-foreground-tertiary/40">
+                ·
+              </span>
+              <span>
+                {t("quiz.answered", {
+                  answered: answeredCount,
+                  total: questions.length,
+                })}
+              </span>
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 rounded-sm px-2 hover:bg-surface-secondary hover:text-foreground"
+                onClick={() => setIndex((value) => Math.max(0, value - 1))}
+                disabled={index === 0}
+                aria-label={t("quiz.prev")}
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                <span className="ml-0.5 hidden sm:inline">{t("quiz.prev")}</span>
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 rounded-sm px-2.5"
+                onClick={() =>
+                  setIndex((value) => Math.min(questions.length - 1, value + 1))
+                }
+                disabled={index === questions.length - 1}
+              >
+                {t("quiz.next")}
+                <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-border-light">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
         </div>
       </div>
 
       {submitError && (
-        <p className="mb-3 rounded-[8px] border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
+        <p className="mb-3 rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
           {t("quiz.submitError")}
         </p>
       )}
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_286px]">
-        <section className="min-w-0 rounded-xl border border-border bg-surface px-5 py-5 card-shadow sm:px-7 sm:py-[26px]">
+        <section className="min-w-0 rounded-xl border border-border bg-surface px-5 py-5 card-shadow sm:px-7 sm:py-6">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-xs font-extrabold uppercase tracking-[0.08em] text-foreground-tertiary">
+            <div className="text-xs font-bold uppercase tracking-[0.08em] text-foreground-tertiary">
               Question{" "}
-              <b className="text-[0.9375rem] font-extrabold tracking-normal text-foreground">
+              <b className="text-base font-bold tracking-normal text-foreground">
                 {String(index + 1).padStart(2, "0")}
               </b>
             </div>
-            <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[0.6875rem] font-semibold text-foreground-secondary">
+            <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs font-semibold text-foreground-secondary">
               {current.score > 0
                 ? t("quiz.scoreType", { score: current.score, type: typeLabel })
                 : typeLabel}
@@ -325,11 +377,11 @@ export function QuizRunner({
 
           <RichText
             html={current.content}
-            className="quiz-richtext mt-[18px] text-[0.9375rem] leading-[1.85]"
+            className="quiz-richtext mt-4 text-base leading-[1.85]"
             style={{ fontSize: 15, lineHeight: 1.85 }}
           />
 
-          <div className="mt-5 flex flex-col gap-[9px]">
+          <div className="mt-5 flex flex-col gap-2">
             {current.options.map((option) => {
               const tone = optionTone(option);
               const missed =
@@ -352,7 +404,7 @@ export function QuizRunner({
                     className="quiz-richtext min-w-0 flex-1 break-words text-sm [&_p]:my-0"
                     style={{ fontSize: 14, lineHeight: 1.6 }}
                   />
-                  <span className="flex shrink-0 items-center gap-1.5 pt-0.5">
+                  <span className="flex shrink-0 items-center gap-1.5">
                     {missed && (
                       <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[0.625rem] font-semibold text-destructive">
                         {t("quiz.missed")}
@@ -373,7 +425,7 @@ export function QuizRunner({
           {currentJudged && (
             <div
               className={cn(
-                "mt-[18px] rounded-[8px] border px-4 py-3.5",
+                "mt-4 rounded-sm border px-4 py-3.5",
                 currentCorrect
                   ? "border-primary/35 bg-primary-light"
                   : "border-destructive/30 bg-destructive/10",
@@ -381,7 +433,7 @@ export function QuizRunner({
             >
               <div
                 className={cn(
-                  "flex flex-wrap items-center gap-1.5 text-[0.8125rem] font-extrabold",
+                  "flex flex-wrap items-center gap-1.5 text-sm font-bold",
                   currentCorrect ? "text-primary-strong" : "text-destructive",
                 )}
               >
@@ -414,57 +466,42 @@ export function QuizRunner({
             </div>
           )}
 
-          <div className="mt-[22px] flex items-center justify-between gap-3 border-t border-border-light pt-4">
-            <span className="hidden text-[0.6875rem] text-foreground-tertiary sm:inline">
-              {multiple ? t("quiz.ruleMultiple") : t("quiz.ruleSingle")}
-            </span>
-            <div className="ml-auto flex items-center gap-2">
+          <p className="mt-3 hidden text-xs text-foreground-tertiary sm:block">
+            {multiple ? t("quiz.ruleMultiple") : t("quiz.ruleSingle")}
+          </p>
+
+          {/* 多选未判分：确认按钮贴近选项；翻页已固定在页头 */}
+          {multiple && !currentJudged && (
+            <div className="mt-4 flex justify-end">
               <Button
-                variant="ghost"
                 size="sm"
-                className="rounded-[8px] hover:bg-surface-secondary hover:text-foreground"
-                onClick={() => setIndex((value) => Math.max(0, value - 1))}
-                disabled={index === 0}
+                className="rounded-sm"
+                onClick={handleConfirm}
+                disabled={currentSelected.length === 0 || submitting}
               >
-                {t("quiz.prev")}
+                {t("quiz.confirmAnswer")}
               </Button>
-              {multiple && !currentJudged ? (
-                <Button
-                  size="sm"
-                  className="rounded-[8px]"
-                  onClick={handleConfirm}
-                  disabled={currentSelected.length === 0 || submitting}
-                >
-                  {t("quiz.confirmAnswer")}
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  className="rounded-[8px]"
-                  onClick={() =>
-                    setIndex((value) =>
-                      Math.min(questions.length - 1, value + 1),
-                    )
-                  }
-                  disabled={index === questions.length - 1}
-                >
-                  {t("quiz.next")}
-                  <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
-                </Button>
-              )}
             </div>
-          </div>
+          )}
         </section>
 
-        <aside className="grid gap-3.5 sm:grid-cols-2 lg:sticky lg:top-20 lg:grid-cols-1">
-          <div className="rounded-xl border border-border bg-surface p-[17px] card-shadow sm:col-span-2 lg:col-span-1">
-            <div className="mb-[11px] flex items-center justify-between gap-3">
-              <h2 className="text-[0.8125rem] font-extrabold">{t("quiz.answerSheet")}</h2>
+        <aside
+          className="grid gap-3.5 sm:grid-cols-2 lg:sticky lg:grid-cols-1"
+          style={
+            headerHeight
+              ? { top: `calc(3.5rem + ${headerHeight}px + 1rem)` }
+              : undefined
+          }
+        >
+          <div className="rounded-xl border border-border bg-surface p-4 card-shadow sm:col-span-2 lg:col-span-1">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-bold">{t("quiz.answerSheet")}</h2>
               <span className="text-[0.625rem] text-foreground-tertiary">
                 {t("quiz.questionsCount", { n: questions.length })}
               </span>
             </div>
-            <div className="grid grid-cols-5 gap-1.5">
+            {/* pad 宽度下答题卡占满整行，每行 10 个；手机 5 个、桌面侧栏 5 个 */}
+            <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10 lg:grid-cols-5">
               {questions.map((question, position) => (
                 <button
                   key={question.id}
@@ -478,7 +515,7 @@ export function QuizRunner({
                 </button>
               ))}
             </div>
-            <div className="mt-[11px] flex flex-wrap gap-x-3 gap-y-1 text-[0.625rem] text-foreground-tertiary">
+            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[0.625rem] text-foreground-tertiary">
               <span className="inline-flex items-center gap-1">
                 <i className="inline-block h-[7px] w-[7px] rounded-[2px] bg-border" />
                 {t("quiz.legendUnanswered")}
@@ -494,28 +531,51 @@ export function QuizRunner({
             </div>
           </div>
 
+          {pointNames.length > 0 && (
+            <div className="rounded-xl border border-border bg-surface p-4 card-shadow">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-sm font-bold">
+                  {t("quiz.pointTitle")}
+                </h2>
+                <span className="text-[0.625rem] text-foreground-tertiary">
+                  {t("quiz.unitTitle", { n: unitIndex + 1 })}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {pointNames.map((name) => (
+                  <span
+                    key={name}
+                    className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-xs font-semibold text-primary-strong"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div
-            className="rounded-xl border border-primary/25 p-[17px] card-shadow"
+            className="rounded-xl border border-primary/25 p-4 card-shadow"
             style={{
               background:
                 "linear-gradient(120deg, hsl(var(--primary-light)), hsl(var(--surface)))",
             }}
           >
-            <div className="mb-[11px] flex items-center justify-between gap-3">
-              <h2 className="text-[0.8125rem] font-extrabold">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-bold">
                 {t("quiz.roundProgress")}
               </h2>
               <span className="text-[0.625rem] text-foreground-tertiary">
                 {t("quiz.roundLive")}
               </span>
             </div>
-            <div className="flex flex-col gap-[7px] text-xs text-foreground-secondary">
+            <div className="flex flex-col gap-2 text-xs text-foreground-secondary">
               <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-2">
                   <Check className="h-3.5 w-3.5 text-primary-strong" />
                   {t("quiz.correctCount")}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[0.6875rem] font-bold text-primary-strong">
+                <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-xs font-bold text-primary-strong">
                   {correctAnswered}
                 </span>
               </div>
@@ -524,7 +584,7 @@ export function QuizRunner({
                   <X className="h-3.5 w-3.5 text-destructive" />
                   {t("quiz.wrongCount")}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[0.6875rem] font-bold text-destructive">
+                <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-xs font-bold text-destructive">
                   {wrongAnswered}
                 </span>
               </div>
@@ -533,7 +593,7 @@ export function QuizRunner({
                   <Circle className="h-3.5 w-3.5 text-foreground-tertiary" />
                   {t("quiz.legendUnanswered")}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[0.6875rem] font-bold text-foreground-secondary">
+                <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-xs font-bold text-foreground-secondary">
                   {unansweredCount}
                 </span>
               </div>
@@ -541,13 +601,13 @@ export function QuizRunner({
           </div>
 
           {previous && (
-            <div className="rounded-xl border border-border bg-surface p-[17px] card-shadow">
-              <div className="mb-[11px] flex items-center justify-between gap-3">
-                <h2 className="text-[0.8125rem] font-extrabold">
+            <div className="rounded-xl border border-border bg-surface p-4 card-shadow">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-sm font-bold">
                   {t("quiz.previousTitle")}
                 </h2>
               </div>
-              <p className="text-[0.6875rem] leading-5 text-foreground-secondary">
+              <p className="text-xs leading-5 text-foreground-secondary">
                 {t("quiz.previousSummary", {
                   correct: previous.correctCount,
                   total: previous.totalQuestions,

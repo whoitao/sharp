@@ -22,6 +22,8 @@ export interface QuizQuestion {
   sortOrder: number;
   options: QuizOption[];
   progress: { status: string; correctCount: number; wrongCount: number } | null;
+  /** 本题关联的知识点；接口未返回时为空，答题页据此决定是否展示「本题考点」 */
+  knowledgePoints?: { id: string; name: string; parentId: string | null }[];
 }
 
 export interface PreviousStudy {

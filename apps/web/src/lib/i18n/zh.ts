@@ -209,6 +209,7 @@ export const zh: Messages = {
     next: "下一题",
     answered: "已答 {answered}/{total}",
     answerSheet: "答题卡",
+    pointTitle: "本题考点",
     legendAnswered: "已答",
     legendUnanswered: "未答",
     legendCurrent: "当前",

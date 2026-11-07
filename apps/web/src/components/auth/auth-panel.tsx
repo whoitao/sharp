@@ -268,7 +268,7 @@ export function AuthPanel() {
               aria-selected={mode === item}
               onClick={() => switchMode(item)}
               className={cn(
-                "flex-1 rounded-[6px] px-3 py-1.5 text-sm font-medium transition-colors",
+                "flex-1 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors",
                 mode === item
                   ? "bg-surface text-foreground shadow-sm"
                   : "text-foreground-secondary hover:text-foreground",

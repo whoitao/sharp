@@ -68,6 +68,10 @@ function QuizPageInner() {
   const gradeId = digits(searchParams.get("gradeId"));
   const publisherId = digits(searchParams.get("publisherId"));
   const unitIndexParam = digits(searchParams.get("unitIndex"));
+  // 知识点名称只用于头部展示，来自上页链接，缺失时头部只展示单元
+  const knowledgePointName = searchParams.get("knowledgePointName");
+  // 章节模式同理：章节名称用于头部展示，不参与接口过滤
+  const chapterName = searchParams.get("chapterName");
   const paramsValid = Boolean(unitIndexParam && (chapterId || subjectId));
   const unitIndex = unitIndexParam ? Number(unitIndexParam) : 0;
   const scope = useMemo<QuizScope>(
@@ -219,6 +223,8 @@ function QuizPageInner() {
       questions={questions}
       previous={previous}
       clientSessionId={clientSessionId}
+      knowledgePointName={knowledgePointName}
+      chapterName={chapterName}
       onCompleted={setOutcome}
       onUnauthorized={goLogin}
     />

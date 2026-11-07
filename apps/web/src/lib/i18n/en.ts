@@ -209,6 +209,7 @@ export const en = {
     next: "Next",
     answered: "{answered}/{total} answered",
     answerSheet: "Answer sheet",
+    pointTitle: "Key points",
     legendAnswered: "Answered",
     legendUnanswered: "Unanswered",
     legendCurrent: "Current",

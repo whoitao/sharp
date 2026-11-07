@@ -82,7 +82,7 @@ function StateChip({ state }: { state: PetDetail["state"] }) {
   return (
     <span
       className={cn(
-        "shrink-0 rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold",
+        "shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold",
         config.className,
       )}
     >
@@ -314,6 +314,9 @@ export function PetHome() {
       } else {
         void refreshHome();
       }
+
+      // Auto-close feed drawer after brief result display
+      window.setTimeout(closeFeed, 1200);
     } catch (error) {
       const code = error instanceof PetApiError ? error.code : null;
       setFeedError(
@@ -407,7 +410,7 @@ export function PetHome() {
                   </p>
 
                   <div className="mt-4">
-                    <div className="flex items-center justify-between gap-3 text-[0.6875rem] text-foreground-secondary">
+                    <div className="flex items-center justify-between gap-3 text-xs text-foreground-secondary">
                       <span className="truncate">
                         {isMaxLevel
                           ? t("pet.maxLevel")
@@ -431,7 +434,7 @@ export function PetHome() {
                   </div>
 
                   <div className="mt-3">
-                    <div className="flex items-center justify-between gap-3 text-[0.6875rem] text-foreground-secondary">
+                    <div className="flex items-center justify-between gap-3 text-xs text-foreground-secondary">
                       <span>{t("pet.satiety")}</span>
                       <span className="shrink-0 tabular-nums text-foreground-tertiary">
                         {t("pet.satietyValue", {
@@ -447,7 +450,7 @@ export function PetHome() {
                         pet.satietyMax > 0 ? pet.satiety / pet.satietyMax : 0
                       }
                     />
-                    <p className="mt-1 text-[0.6875rem] text-foreground-tertiary">
+                    <p className="mt-1 text-xs text-foreground-tertiary">
                       {t("pet.satietyHint", { max: pet.satietyMax })}
                     </p>
                   </div>
@@ -473,7 +476,7 @@ export function PetHome() {
                     </Button>
                   </div>
                   {!hasFood && (
-                    <p className="mt-2 text-center text-[0.6875rem] text-foreground-tertiary">
+                    <p className="mt-2 text-center text-xs text-foreground-tertiary">
                       {t("pet.backpackEmpty")}
                     </p>
                   )}
@@ -500,7 +503,7 @@ export function PetHome() {
                       : 0
                   }
                 />
-                <p className="mt-1.5 text-[0.6875rem] text-foreground-tertiary">
+                <p className="mt-1.5 text-xs text-foreground-tertiary">
                   {t("pet.remainingExp", { n: home?.today.remainingExp ?? 0 })}
                 </p>
               </section>
@@ -651,7 +654,7 @@ export function PetHome() {
                                   exp: record.expGain,
                                 })}
                               </span>
-                              <span className="mt-0.5 block text-[0.6875rem] text-foreground-tertiary">
+                              <span className="mt-0.5 block text-xs text-foreground-tertiary">
                                 {record.dateLabel} · ×{record.quantity}
                               </span>
                             </span>
@@ -691,7 +694,7 @@ export function PetHome() {
               { title: t("pet.rule4Title"), body: t("pet.rule4Body") },
             ].map((item, index) => (
               <li key={item.title} className="flex gap-2.5">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-light text-[0.6875rem] font-bold text-primary-strong">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary-strong">
                   {index + 1}
                 </span>
                 <div className="min-w-0">
@@ -761,7 +764,7 @@ export function PetHome() {
                         <span className="block truncate text-sm font-semibold">
                           {item.name}
                         </span>
-                        <span className="mt-0.5 block truncate text-[0.6875rem] text-foreground-secondary">
+                        <span className="mt-0.5 block truncate text-xs text-foreground-secondary">
                           {t("pet.gain", {
                             satiety: item.satiety,
                             exp: item.exp,
@@ -844,12 +847,12 @@ export function PetHome() {
                     </p>
                   )}
                   {feedResult.capped.satiety && (
-                    <p className="mt-0.5 text-[0.6875rem] text-foreground-tertiary">
+                    <p className="mt-0.5 text-xs text-foreground-tertiary">
                       {t("pet.cappedSatiety", { n: feedResult.satietyGain })}
                     </p>
                   )}
                   {feedResult.capped.exp && (
-                    <p className="mt-0.5 text-[0.6875rem] text-foreground-tertiary">
+                    <p className="mt-0.5 text-xs text-foreground-tertiary">
                       {t("pet.cappedExp")}
                     </p>
                   )}

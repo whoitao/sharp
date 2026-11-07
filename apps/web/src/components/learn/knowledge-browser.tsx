@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  StudyBreadcrumb,
-  StudyHeaderCard,
   StudyTreePanel,
   StudyTreeRow,
   StudyUnitPanel,
@@ -77,10 +75,8 @@ function KnowledgeTree({
  */
 export function KnowledgeBrowser({
   textbook,
-  onBack,
 }: {
   textbook: TextbookDto;
-  onBack: () => void;
 }) {
   const { t } = useLocale();
 
@@ -166,19 +162,7 @@ export function KnowledgeBrowser({
 
   return (
     <div>
-      <StudyBreadcrumb
-        onBack={onBack}
-        backLabel={t("learn.backToStudy")}
-        items={
-          activeKp
-            ? [textbook.name, t("learn.studyByKnowledge"), activeKp.name]
-            : [textbook.name, t("learn.studyByKnowledge")]
-        }
-      />
-
-      <StudyHeaderCard textbook={textbook} />
-
-      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[21rem_minmax(0,1fr)]">
+      <div className="grid items-start gap-5 lg:grid-cols-[21rem_minmax(0,1fr)]">
         <StudyTreePanel
           status={treeStatus}
           empty={(tree?.length ?? 0) === 0}
@@ -215,6 +199,7 @@ export function KnowledgeBrowser({
               gradeId: textbook.gradeId,
               publisherId: textbook.publisherId,
               knowledgePointId: activeKpId!,
+              knowledgePointName: activeKp?.name ?? null,
               unitIndex: unit.unitIndex,
             })
           }

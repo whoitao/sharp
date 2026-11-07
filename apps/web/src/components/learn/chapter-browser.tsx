@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  StudyBreadcrumb,
-  StudyHeaderCard,
   StudyTreePanel,
   StudyTreeRow,
   StudyUnitPanel,
@@ -66,13 +64,8 @@ function TreeItems({
 /** 二级视图：章节树 + 单元列表（单元即答题入口） */
 export function ChapterBrowser({
   textbook,
-  onBack,
-  backLabel,
 }: {
   textbook: TextbookDto;
-  onBack: () => void;
-  /** 返回入口文案：默认「教材目录」，从学习首页进入时传「学习」 */
-  backLabel?: string;
 }) {
   const { t } = useLocale();
 
@@ -144,15 +137,7 @@ export function ChapterBrowser({
 
   return (
     <div>
-      <StudyBreadcrumb
-        onBack={onBack}
-        backLabel={backLabel ?? t("learn.backToCatalog")}
-        items={activeChapter ? [textbook.name, activeChapter.name] : [textbook.name]}
-      />
-
-      <StudyHeaderCard textbook={textbook} />
-
-      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[21rem_minmax(0,1fr)]">
+      <div className="grid items-start gap-5 lg:grid-cols-[21rem_minmax(0,1fr)]">
         <StudyTreePanel
           status={treeStatus}
           empty={(tree?.length ?? 0) === 0}
@@ -182,7 +167,9 @@ export function ChapterBrowser({
           units={units}
           lastByUnit={lastByUnit}
           timeFormatter={timeFormatter}
-          hrefFor={(unit) => quizHref(activeChapterId!, unit.unitIndex)}
+          hrefFor={(unit) =>
+            quizHref(activeChapterId!, unit.unitIndex, activeChapter?.name)
+          }
           emptyTitle={t("learn.unitsEmptyTitle")}
           emptyBody={t("learn.unitsEmptyBody")}
           onRetry={() => setUnitsReload((k) => k + 1)}
