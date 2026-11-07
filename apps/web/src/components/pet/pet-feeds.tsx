@@ -85,7 +85,7 @@ export function PetFeeds() {
   return (
     <div className="pb-6 md:pb-8">
       <Link
-        href="/pet"
+        href="/account/pet"
         className="inline-flex items-center gap-1 text-xs font-semibold text-foreground-secondary transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -115,7 +115,7 @@ export function PetFeeds() {
             </p>
             {unauthorized ? (
               <Button asChild size="sm" className="mt-4">
-                <Link href="/login?next=/pet/feeds">{t("pet.loginCta")}</Link>
+                <Link href="/login?next=/account/pet/feeds">{t("pet.loginCta")}</Link>
               </Button>
             ) : (
               <Button

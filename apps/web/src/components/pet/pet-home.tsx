@@ -330,21 +330,13 @@ export function PetHome() {
 
   return (
     <div className="pb-6 md:pb-8">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="min-w-0 text-2xl font-bold tracking-tight">{t("pet.title")}</h1>
-        <Button variant="outline" size="sm" onClick={() => setRulesOpen(true)}>
-          <BookOpen className="mr-1.5 h-4 w-4" />
-          {t("pet.rulesOpen")}
-        </Button>
-      </header>
-
       {status === "loading" ? (
-        <div className="mt-6 flex items-center justify-center gap-2 py-16 text-sm text-foreground-secondary">
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-foreground-secondary">
           <Loader2 className="h-4 w-4 animate-spin" />
           {t("pet.loading")}
         </div>
       ) : status === "error" ? (
-        <div className="mt-6 rounded-lg border border-border bg-surface p-6 text-center card-shadow">
+        <div className="rounded-lg border border-border bg-surface p-6 text-center card-shadow">
           <p className="text-sm font-bold">
             {unauthorized ? t("pet.loginTitle") : t("pet.loadErrorTitle")}
           </p>
@@ -353,7 +345,7 @@ export function PetHome() {
           </p>
           {unauthorized ? (
             <Button asChild size="sm" className="mt-4">
-              <Link href="/login?next=/pet">{t("pet.loginCta")}</Link>
+              <Link href="/login?next=/account/pet">{t("pet.loginCta")}</Link>
             </Button>
           ) : (
             <Button
@@ -367,14 +359,14 @@ export function PetHome() {
           )}
         </div>
       ) : !pet ? (
-        <div className="mt-6 rounded-lg border border-border bg-surface px-4 py-12 text-center card-shadow">
+        <div className="rounded-lg border border-border bg-surface px-4 py-12 text-center card-shadow">
           <PawPrint className="mx-auto h-10 w-10 text-primary" />
           <p className="mt-3 text-base font-bold">{t("pet.emptyTitle")}</p>
           <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-foreground-secondary">
             {t("pet.emptyBody")}
           </p>
           <Button asChild size="sm" className="mt-5">
-            <Link href="/pet/adopt">
+            <Link href="/account/pet/adopt">
               {t("pet.emptyCta")}
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
@@ -383,7 +375,7 @@ export function PetHome() {
       ) : (
         <>
           {/* 宽屏两栏：左栏是宠物舞台与今日经验（吸顶），右栏是统计、进化与记录 */}
-          <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-5">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-5">
             <div className="space-y-3 lg:sticky lg:top-[76px]">
               <section className="rounded-xl border border-border bg-surface p-4 card-shadow sm:p-5">
                 <div className="relative mx-auto w-full max-w-[280px]">
@@ -545,7 +537,18 @@ export function PetHome() {
               </div>
 
               <section>
-                <h2 className="text-base font-bold">{t("pet.routeTitle")}</h2>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="min-w-0 text-base font-bold">{t("pet.routeTitle")}</h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => setRulesOpen(true)}
+                  >
+                    <BookOpen className="mr-1.5 h-4 w-4" />
+                    {t("pet.rulesOpen")}
+                  </Button>
+                </div>
                 <div className="mt-2.5 grid grid-cols-3 gap-2 sm:gap-3">
                   {pet.route.map((stage) => {
                     const active = stage.stageKey === pet.growthStage.key;
@@ -616,7 +619,7 @@ export function PetHome() {
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-base font-bold">{t("pet.recentFeeds")}</h2>
                   <Link
-                    href="/pet/feeds"
+                    href="/account/pet/feeds"
                     className="shrink-0 text-xs font-semibold text-primary-strong transition-colors hover:text-primary"
                   >
                     {t("pet.viewAll")}

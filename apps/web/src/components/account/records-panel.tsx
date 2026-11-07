@@ -5,21 +5,18 @@ import { useLocale } from "@/lib/i18n";
 import {
   fetchCatalog,
   fetchChapterStats,
-  fetchGrades,
   fetchKnowledgePointStats,
   fetchStudyRecords,
   fetchStudyStats,
-  fetchSubjects,
   knowledgeQuizHref,
   quizHref,
   type ChapterStatDto,
-  type GradeDto,
   type KnowledgePointStatDto,
   type StudyRecordDto,
   type StudyStatsDto,
-  type SubjectDto,
 } from "@/lib/learn/api";
 import { formatDuration } from "@/lib/learn/quiz";
+import { useStudyScope } from "@/lib/study-scope";
 import { cn } from "@/lib/utils";
 import { ArrowRight, BarChart3, BookOpen, Flame, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -46,10 +43,8 @@ export function RecordsPanel() {
   const [statsStatus, setStatsStatus] = useState<LoadStatus>("loading");
 
   const [tab, setTab] = useState<TabKey>("time");
-  const [grades, setGrades] = useState<GradeDto[]>([]);
-  const [subjects, setSubjects] = useState<SubjectDto[]>([]);
-  const [gradeId, setGradeId] = useState("");
-  const [subjectId, setSubjectId] = useState("");
+  // 年级 / 科目统一取自导航栏的全局学习范围
+  const { ready: scopeReady, gradeId, subjectId, grades } = useStudyScope();
 
   const [records, setRecords] = useState<StudyRecordDto[]>([]);
   const [recordsStatus, setRecordsStatus] = useState<LoadStatus>("loading");
@@ -63,23 +58,6 @@ export function RecordsPanel() {
 
   const [kpStats, setKpStats] = useState<KnowledgePointStatDto[]>([]);
   const [kpStatus, setKpStatus] = useState<LoadStatus>("loading");
-
-  // 年级 / 科目字典只拉一次
-  useEffect(() => {
-    let alive = true;
-    Promise.all([fetchGrades(), fetchSubjects()])
-      .then(([gradeList, subjectList]) => {
-        if (!alive) return;
-        setGrades(gradeList);
-        setSubjects(subjectList);
-      })
-      .catch(() => {
-        /* 字典失败不阻塞记录展示 */
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   const loadStats = useCallback(async () => {
     setStatsStatus("loading");
@@ -97,6 +75,7 @@ export function RecordsPanel() {
 
   const loadRecords = useCallback(
     async (targetPage: number, append: boolean) => {
+      if (!scopeReady) return;
       if (append) setLoadingMore(true);
       else setRecordsStatus("loading");
       try {
@@ -116,12 +95,13 @@ export function RecordsPanel() {
         setLoadingMore(false);
       }
     },
-    [gradeId, subjectId],
+    [scopeReady, gradeId, subjectId],
   );
 
   useEffect(() => {
+    if (!scopeReady) return;
     void loadRecords(1, false);
-  }, [loadRecords]);
+  }, [scopeReady, loadRecords]);
 
   // 当前教材用于「按章节」统计
   useEffect(() => {
@@ -168,7 +148,7 @@ export function RecordsPanel() {
   const stageId = selectedGrade?.stageId ?? null;
 
   useEffect(() => {
-    if (tab !== "knowledge") return;
+    if (tab !== "knowledge" || !scopeReady) return;
     let alive = true;
     setKpStatus("loading");
     fetchKnowledgePointStats({ stageId, subjectId: subjectId || null })
@@ -183,7 +163,7 @@ export function RecordsPanel() {
     return () => {
       alive = false;
     };
-  }, [tab, stageId, subjectId]);
+  }, [tab, scopeReady, stageId, subjectId]);
 
   const dateFormatter = useMemo(
     () =>
@@ -347,36 +327,6 @@ export function RecordsPanel() {
             </button>
           );
         })}
-      </div>
-
-      {/* 年级 / 科目筛选：时间线与知识点统计共用 */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select
-          value={gradeId}
-          onChange={(event) => setGradeId(event.target.value)}
-          aria-label={t("records.filterGrade")}
-          className="h-9 min-w-0 flex-1 rounded-[10px] border border-border bg-surface px-2.5 text-sm text-foreground outline-none transition-colors hover:border-primary/40 focus:border-primary sm:max-w-[160px]"
-        >
-          <option value="">{t("records.allGrades")}</option>
-          {grades.map((grade) => (
-            <option key={grade.id} value={grade.id}>
-              {grade.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={subjectId}
-          onChange={(event) => setSubjectId(event.target.value)}
-          aria-label={t("records.filterSubject")}
-          className="h-9 min-w-0 flex-1 rounded-[10px] border border-border bg-surface px-2.5 text-sm text-foreground outline-none transition-colors hover:border-primary/40 focus:border-primary sm:max-w-[160px]"
-        >
-          <option value="">{t("records.allSubjects")}</option>
-          {subjects.map((subject) => (
-            <option key={subject.id} value={subject.id}>
-              {subject.name}
-            </option>
-          ))}
-        </select>
       </div>
 
       {tab === "time" && (

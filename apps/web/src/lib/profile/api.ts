@@ -19,6 +19,9 @@ export interface AppSettings {
   theme: ThemeMode;
   language: "zh" | "en";
   density: Density;
+  /** 全局学习范围：年级 / 科目，选中教材时会由服务端同步覆盖 */
+  gradeId: string | null;
+  subjectId: string | null;
 }
 
 export class ProfileApiError extends Error {
@@ -85,6 +88,8 @@ export async function fetchSettings(): Promise<AppSettings> {
     theme: data.theme ?? "system",
     language: data.language ?? "zh",
     density: data.density ?? "comfortable",
+    gradeId: data.gradeId ?? null,
+    subjectId: data.subjectId ?? null,
   };
 }
 
@@ -103,5 +108,7 @@ export async function updateSettings(
     theme: data.theme ?? payload.theme ?? "system",
     language: data.language ?? payload.language ?? "zh",
     density: data.density ?? payload.density ?? "comfortable",
+    gradeId: data.gradeId ?? payload.gradeId ?? null,
+    subjectId: data.subjectId ?? payload.subjectId ?? null,
   };
 }

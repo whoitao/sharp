@@ -256,6 +256,54 @@
 }
 
 /*
+ * 错题本富文本：RichText 默认 1rem/1.8，列表与解析区按站点正文标准压到
+ * 0.875rem / 1.5rem，宽公式在容器内横向滚动，避免撑破卡片。
+ */
+.article-content.prose-compact {
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.article-content.prose-compact p {
+  margin: 0;
+}
+
+.article-content.prose-compact .katex-display {
+  margin: 0.25rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* 折叠题干用次要文字色，与展开后的正文区分 */
+.article-content.wrong-stem {
+  color: hsl(var(--foreground-secondary));
+}
+
+/* 解析段落保留段间距，但首尾贴边，避免解析块上下留白过大 */
+.article-content.analysis-body {
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.article-content.analysis-body p {
+  margin: 0.5rem 0;
+}
+
+.article-content.analysis-body > :first-child {
+  margin-top: 0;
+}
+
+.article-content.analysis-body > :last-child {
+  margin-bottom: 0;
+}
+
+.article-content.analysis-body .katex-display {
+  margin: 0.5rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/*
  * 答题富文本：与设计稿的 math-block / figure 对齐。
  * 宽公式在容器内横向滚动，避免长公式把卡片撑出横向溢出。
  */

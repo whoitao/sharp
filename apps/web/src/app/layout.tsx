@@ -2,6 +2,7 @@ import { ClientStoreProvider } from "@/components/client-store-provider";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { LocaleProvider } from "@/lib/i18n";
+import { StudyScopeProvider } from "@/lib/study-scope";
 import { ThemeProvider } from "@/lib/theme";
 import { themeInitScript } from "@/lib/theme-init";
 import type { Metadata } from "next";
@@ -26,13 +27,15 @@ export default function RootLayout({
         <ClientStoreProvider>
           <ThemeProvider>
             <LocaleProvider>
-              <div className="flex min-h-screen flex-col">
-                <Navbar />
-                <main className="container mx-auto w-full max-w-[1200px] flex-1 px-4">
-                  {children}
-                </main>
-                <Footer />
-              </div>
+              <StudyScopeProvider>
+                <div className="flex min-h-screen flex-col">
+                  <Navbar />
+                  <main className="container mx-auto w-full max-w-[1200px] flex-1 px-4">
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
+              </StudyScopeProvider>
             </LocaleProvider>
           </ThemeProvider>
         </ClientStoreProvider>

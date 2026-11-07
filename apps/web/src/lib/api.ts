@@ -1,8 +1,10 @@
 /** 文章前端接口（公开），Web 端服务端渲染时直接请求后台 API */
 
-// 与 apps/mobile/src/services/api.ts 一致：生产环境硬编码兜底，避免构建时环境变量未注入
+// 与 BFF 共用同一套配置（ADMIN_API_BASE 优先），生产环境硬编码兜底
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE ?? "https://admin.sharp.whoitao.top/"
+  process.env.ADMIN_API_BASE ??
+  process.env.NEXT_PUBLIC_API_BASE ??
+  "https://admin.sharp.whoitao.top/"
 ).replace(/\/+$/, "");
 
 export interface ArticleListItem {

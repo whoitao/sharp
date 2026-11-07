@@ -35,21 +35,25 @@ export default function About() {
       <div className="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Mission */}
         <div className="rounded-lg border border-border bg-surface p-6 card-shadow">
-          <h2 className="mb-4 text-2xl font-bold">{t("about.missionTitle")}</h2>
-          <p className="leading-relaxed text-foreground-secondary">
+          <h2 className="mb-4 text-xl font-bold tracking-tight">{t("about.missionTitle")}</h2>
+          <p className="text-sm leading-6 text-foreground-secondary">
             {t("about.missionText")}
           </p>
         </div>
 
         {/* Features Highlight */}
         <div className="rounded-lg border border-border bg-surface p-6 card-shadow">
-          <h2 className="mb-4 text-2xl font-bold">{t("about.whyTitle")}</h2>
-          <ul className="space-y-2 text-sm text-foreground-secondary">
+          <h2 className="mb-4 text-xl font-bold tracking-tight">{t("about.whyTitle")}</h2>
+          <ul className="space-y-2.5 text-sm leading-6">
             {dict.about.whyItems.map((item) => (
-              <li key={item.label} className="flex items-start gap-2">
-                <span className="shrink-0 font-bold text-primary-strong">•</span>
-                <span>
-                  <strong>{item.label}</strong> {item.text}
+              <li key={item.label} className="flex items-start gap-2.5">
+                <span
+                  aria-hidden="true"
+                  className="mt-[0.5rem] h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+                />
+                <span className="min-w-0">
+                  <strong className="font-semibold text-foreground">{item.label}</strong>{" "}
+                  <span className="text-foreground-secondary">{item.text}</span>
                 </span>
               </li>
             ))}
@@ -58,8 +62,10 @@ export default function About() {
 
         {/* Contact */}
         <div className="rounded-lg border border-border bg-surface p-6 card-shadow text-center">
-          <h2 className="mb-4 text-2xl font-bold">{t("about.contactTitle")}</h2>
-          <p className="mb-5 text-sm text-foreground-secondary">{t("about.contactText")}</p>
+          <h2 className="mb-4 text-xl font-bold tracking-tight">{t("about.contactTitle")}</h2>
+          <p className="mb-5 text-sm leading-6 text-foreground-secondary">
+            {t("about.contactText")}
+          </p>
           <div className="flex flex-col gap-2">
             <Button variant="outline" size="lg" asChild>
               <a

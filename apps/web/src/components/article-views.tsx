@@ -52,10 +52,12 @@ export function ArticleList({
   const { t } = useLocale();
 
   return (
-    <div className="py-8 md:py-12">
-      <header className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{t("articles.title")}</h1>
-        <p className="text-foreground-secondary">{t("articles.subtitle")}</p>
+    <div className="py-8 md:py-12 lg:py-18">
+      <header className="mx-auto flex max-w-[58rem] flex-col items-center gap-4 text-center">
+        <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl">
+          {t("articles.title")}
+        </h1>
+        <p className="text-lg text-foreground-secondary">{t("articles.subtitle")}</p>
       </header>
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[180px_1fr] lg:items-start lg:gap-12">

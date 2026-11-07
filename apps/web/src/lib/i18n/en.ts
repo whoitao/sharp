@@ -15,7 +15,10 @@ export const en = {
     title: "Account",
     menu: "Account",
     profile: "Profile",
-    records: "Study records",
+    myTextbook: "My textbooks",
+    myTextbookEmpty: "No textbook selected yet",
+    myTextbookChange: "Choose",
+    records: "Learning analytics",
     wrongQuestions: "Wrong answers",
     settings: "Settings",
     loading: "Loading…",
@@ -61,10 +64,16 @@ export const en = {
     densityComfortable: "Standard",
     densitySpacious: "Spacious",
     unitSize: "Questions per unit",
-    unitSizeDesc: "How many questions each practice unit contains (5–100).",
+    unitSizeDesc: "How many questions each practice unit contains.",
     unitSizeInvalid: "Enter a whole number between 5 and 100.",
     unitSizeUnit: "questions",
     syncFailed: "Applied on this device, but syncing to your account failed.",
+  },
+  scope: {
+    title: "Study scope",
+    placeholder: "Grade · subject",
+    done: "Done",
+    close: "Close",
   },
   auth: {
     brandTag: "STUDENT WEB",
@@ -78,6 +87,8 @@ export const en = {
     passwordPlaceholder: "At least 6 characters",
     confirmPassword: "Confirm password",
     confirmPlaceholder: "Enter the password again",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     submitLogin: "Sign in",
     submitRegister: "Create account",
     submittingLogin: "Signing in…",
@@ -162,7 +173,7 @@ export const en = {
     studyByChapter: "Learn by chapter",
     studyByChapterBody: "Follow your textbook chapter by chapter, one unit at a time.",
     studyByKnowledge: "Learn by knowledge point",
-    studyByKnowledgeBody: "Drill into a single knowledge point and fix what's weak.",
+    studyByKnowledgeBody: "Drill into a single knowledge point.",
     enterStudy: "Start",
     switchTextbook: "Switch textbook",
     selectTextbookTitle: "Choose a textbook first",
@@ -386,7 +397,7 @@ export const en = {
     backHome: "Back to Home",
   },
   home: {
-    heroPrefix: "Learn by unit or knowledge point,",
+    heroPrefix: "Learn by unit or knowledge point, ",
     heroHighlight: "master",
     heroSuffix: "every lesson",
     heroSubtitle:
@@ -425,7 +436,7 @@ export const en = {
       {
         title: "Rich Figures & Formulas",
         description:
-          "Number lines, charts, and math formulas render clearly in questions and explanations.",
+          "Number lines, charts, and math formulas render clearly.",
       },
       {
         title: "All Stages Covered",
@@ -437,7 +448,7 @@ export const en = {
       },
       {
         title: "Learn Anywhere",
-        description: "Practice on mobile, manage on web, synced in real time.",
+        description: "Practice on both mobile and web, synced in real time.",
       },
     ],
     ctaTitle: "Start with Your First Question Today",
@@ -454,24 +465,24 @@ export const en = {
     whyTitle: "Why Sharp?",
     whyItems: [
       {
-        label: "Structured Content:",
-        text: "Organized categories and units for systematic learning",
+        label: "Textbook-aligned:",
+        text: "Choose your stage, grade, subject and edition; chapters and knowledge points follow your textbook",
       },
       {
-        label: "Progress Tracking:",
-        text: "Detailed statistics and streak tracking to keep you motivated",
+        label: "Two learning paths:",
+        text: "Practice unit by unit along the textbook, or focus on a single knowledge point",
       },
       {
-        label: "Smart Practice:",
-        text: "Focus on weak areas with adaptive quizzes",
+        label: "Instant feedback & mistakes:",
+        text: "Get graded with explanations right away; wrong answers are archived for review",
       },
       {
-        label: "Cross-Platform:",
-        text: "Seamless experience across web and mobile",
+        label: "Visible progress:",
+        text: "Unit completion, accuracy and study streaks at a glance",
       },
       {
-        label: "Open Source:",
-        text: "Built with modern technologies, fully customizable",
+        label: "Cross-platform:",
+        text: "A consistent experience on web and mobile, with progress synced",
       },
     ],
     contactTitle: "Get in Touch",

@@ -39,7 +39,7 @@ export function PetAdopt() {
         const home = await getPetHome();
         if (!alive) return;
         if (home.pet) {
-          router.replace("/pet");
+          router.replace("/account/pet");
           return;
         }
       } catch (error) {
@@ -83,11 +83,11 @@ export function PetAdopt() {
     setErrorKey(null);
     try {
       await adoptPet(selectedId, name);
-      router.push("/pet");
+      router.push("/account/pet");
     } catch (error) {
       const code = error instanceof PetApiError ? error.code : null;
       if (code === "PET_ALREADY_ADOPTED") {
-        router.replace("/pet");
+        router.replace("/account/pet");
         return;
       }
       setErrorKey(
@@ -104,7 +104,7 @@ export function PetAdopt() {
   return (
     <div className="pb-6 md:pb-8">
       <Link
-        href="/pet"
+        href="/account/pet"
         className="inline-flex items-center gap-1 text-xs font-semibold text-foreground-secondary transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -133,7 +133,7 @@ export function PetAdopt() {
           </p>
           {unauthorized ? (
             <Button asChild size="sm" className="mt-4">
-              <Link href="/login?next=/pet/adopt">{t("pet.loginCta")}</Link>
+              <Link href="/login?next=/account/pet/adopt">{t("pet.loginCta")}</Link>
             </Button>
           ) : (
             <Button

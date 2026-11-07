@@ -17,7 +17,7 @@ export default function Home() {
       <section className="flex flex-col items-center justify-center gap-4 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">
         <div className="flex max-w-[980px] flex-col items-center gap-4 text-center">
           <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-6xl lg:leading-[1.1]">
-            {t("home.heroPrefix")}{" "}
+            {t("home.heroPrefix")}
             <span className="text-primary">{t("home.heroHighlight")}</span>
             {t("home.heroSuffix") ? ` ${t("home.heroSuffix")}` : ""}
           </h1>

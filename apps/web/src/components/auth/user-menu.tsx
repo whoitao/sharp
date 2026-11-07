@@ -103,17 +103,17 @@ export function UserMenu() {
         <DropdownMenuItem asChild>
           <Link href="/account">
             <UserRound className="mr-2 h-4 w-4" />
-            {t("nav.account")}
+            {t("account.profile")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/learn">
+          <Link href="/account/textbook">
             <BookOpen className="mr-2 h-4 w-4" />
             {t("nav.textbooks")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/pet">
+          <Link href="/account/pet">
             <PawPrint className="mr-2 h-4 w-4" />
             {t("pet.myPet")}
           </Link>

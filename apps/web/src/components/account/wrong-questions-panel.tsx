@@ -4,13 +4,10 @@ import { RichText } from "@/components/learn/rich-text";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
 import {
-  fetchGrades,
-  fetchSubjects,
   fetchWrongQuestions,
-  type GradeDto,
-  type SubjectDto,
   type WrongQuestionDto,
 } from "@/lib/learn/api";
+import { useStudyScope } from "@/lib/study-scope";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -23,27 +20,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 type LoadStatus = "loading" | "ready" | "error";
 
-/** 折叠态题干：去掉富文本标签，保留可读文字 */
-function plainText(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** 错题本：按年级/科目筛选，卡片展开查看选项与解析 */
+/** 错题本：按导航栏的全局学习范围过滤，卡片展开查看选项与解析 */
 export function WrongQuestionsPanel() {
   const { t, locale } = useLocale();
-
-  const [grades, setGrades] = useState<GradeDto[]>([]);
-  const [subjects, setSubjects] = useState<SubjectDto[]>([]);
-  const [gradeId, setGradeId] = useState("");
-  const [subjectId, setSubjectId] = useState("");
+  // 年级 / 科目统一取自导航栏的全局学习范围
+  const { ready: scopeReady, gradeId, subjectId } = useStudyScope();
 
   const [items, setItems] = useState<WrongQuestionDto[]>([]);
   const [status, setStatus] = useState<LoadStatus>("loading");
@@ -52,24 +33,9 @@ export function WrongQuestionsPanel() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    let alive = true;
-    Promise.all([fetchGrades(), fetchSubjects()])
-      .then(([gradeList, subjectList]) => {
-        if (!alive) return;
-        setGrades(gradeList);
-        setSubjects(subjectList);
-      })
-      .catch(() => {
-        /* 字典失败不阻塞错题展示 */
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   const load = useCallback(
     async (targetPage: number, append: boolean) => {
+      if (!scopeReady) return;
       if (append) setLoadingMore(true);
       else setStatus("loading");
       try {
@@ -92,13 +58,14 @@ export function WrongQuestionsPanel() {
         setLoadingMore(false);
       }
     },
-    [gradeId, subjectId],
+    [scopeReady, gradeId, subjectId],
   );
 
   useEffect(() => {
+    if (!scopeReady) return;
     setExpandedIds({});
     void load(1, false);
-  }, [load]);
+  }, [scopeReady, load]);
 
   const dateFormatter = useMemo(
     () =>
@@ -115,37 +82,7 @@ export function WrongQuestionsPanel() {
 
   return (
     <div className="min-w-0 pb-2">
-      {/* 年级 / 科目筛选：与移动端全局范围选择器同一批参数 */}
-      <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={gradeId}
-          onChange={(event) => setGradeId(event.target.value)}
-          aria-label={t("wrong.filterGrade")}
-          className="h-9 min-w-0 flex-1 rounded-[10px] border border-border bg-surface px-2.5 text-sm text-foreground outline-none transition-colors hover:border-primary/40 focus:border-primary sm:max-w-[160px]"
-        >
-          <option value="">{t("wrong.allGrades")}</option>
-          {grades.map((grade) => (
-            <option key={grade.id} value={grade.id}>
-              {grade.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={subjectId}
-          onChange={(event) => setSubjectId(event.target.value)}
-          aria-label={t("wrong.filterSubject")}
-          className="h-9 min-w-0 flex-1 rounded-[10px] border border-border bg-surface px-2.5 text-sm text-foreground outline-none transition-colors hover:border-primary/40 focus:border-primary sm:max-w-[160px]"
-        >
-          <option value="">{t("wrong.allSubjects")}</option>
-          {subjects.map((subject) => (
-            <option key={subject.id} value={subject.id}>
-              {subject.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="mt-3">
+      <div>
         {status === "loading" ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-foreground-secondary">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -198,9 +135,10 @@ export function WrongQuestionsPanel() {
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-xs font-semibold tabular-nums text-destructive">
                         {index + 1}
                       </span>
-                      <span className="line-clamp-2 min-w-0 flex-1 text-sm leading-6 text-foreground-secondary">
-                        {plainText(question.content)}
-                      </span>
+                      <RichText
+                        html={question.content}
+                        className="wrong-stem prose-compact line-clamp-2 min-w-0 flex-1"
+                      />
                       {expanded ? (
                         <ChevronUp className="mt-1 h-4 w-4 shrink-0 text-foreground-tertiary" />
                       ) : (
@@ -230,7 +168,7 @@ export function WrongQuestionsPanel() {
                             <div
                               key={option.id}
                               className={cn(
-                                "flex items-start gap-2.5 rounded-lg border px-2.5 py-2",
+                                "flex items-center gap-2.5 rounded-lg border px-2.5 py-2",
                                 option.isCorrect
                                   ? "border-primary bg-primary-light"
                                   : "border-border-light bg-surface-secondary/60",
@@ -238,7 +176,7 @@ export function WrongQuestionsPanel() {
                             >
                               <span
                                 className={cn(
-                                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-[0.625rem] font-extrabold",
+                                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] text-[0.625rem] font-extrabold",
                                   option.isCorrect
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-surface-secondary text-foreground-tertiary",
@@ -249,12 +187,12 @@ export function WrongQuestionsPanel() {
                               <RichText
                                 html={option.content}
                                 className={cn(
-                                  "min-w-0 flex-1 text-sm [&_p]:my-0",
+                                  "prose-compact min-w-0 flex-1",
                                   option.isCorrect && "font-medium",
                                 )}
                               />
                               {option.isCorrect && (
-                                <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary-strong" />
+                                <Check className="h-4 w-4 shrink-0 text-primary-strong" />
                               )}
                             </div>
                           ))}
@@ -267,7 +205,7 @@ export function WrongQuestionsPanel() {
                             </p>
                             <RichText
                               html={question.analysis}
-                              className="mt-1 text-sm leading-6"
+                              className="analysis-body mt-1"
                             />
                           </div>
                         )}

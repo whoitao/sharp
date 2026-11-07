@@ -4,10 +4,24 @@ import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
 import { notifySessionChanged, subscribeSession } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Loader2, LogOut, ShieldCheck } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Loader2,
+  LogOut,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { AuthVisual } from "./auth-visual";
 
 interface AppUser {
@@ -308,17 +322,18 @@ export function AuthPanel() {
             <label htmlFor="password" className="text-sm font-medium">
               {t("auth.password")}
             </label>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               autoComplete={isRegister ? "new-password" : "current-password"}
-              className={inputClass}
+              inputClassName={inputClass}
               placeholder={t("auth.passwordPlaceholder")}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               disabled={loading}
-              aria-invalid={Boolean(error)}
+              invalid={Boolean(error)}
+              showLabel={t("auth.showPassword")}
+              hideLabel={t("auth.hidePassword")}
             />
           </div>
 
@@ -327,17 +342,18 @@ export function AuthPanel() {
               <label htmlFor="confirm" className="text-sm font-medium">
                 {t("auth.confirmPassword")}
               </label>
-              <input
+              <PasswordInput
                 id="confirm"
                 name="confirm"
-                type="password"
                 autoComplete="new-password"
-                className={inputClass}
+                inputClassName={inputClass}
                 placeholder={t("auth.confirmPlaceholder")}
                 value={confirm}
                 onChange={(event) => setConfirm(event.target.value)}
                 disabled={loading}
-                aria-invalid={Boolean(error)}
+                invalid={Boolean(error)}
+                showLabel={t("auth.showPassword")}
+                hideLabel={t("auth.hidePassword")}
               />
             </div>
           )}
@@ -370,6 +386,65 @@ export function AuthPanel() {
         </div>
       </div>
     </AuthLayout>
+  );
+}
+
+interface PasswordInputProps {
+  id: string;
+  name: string;
+  autoComplete: string;
+  inputClassName: string;
+  placeholder: string;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
+  invalid?: boolean;
+  showLabel: string;
+  hideLabel: string;
+}
+
+/** 密码输入框 + 眼睛按钮：仅切换展示方式，取值与校验逻辑不变 */
+function PasswordInput({
+  id,
+  name,
+  autoComplete,
+  inputClassName,
+  placeholder,
+  value,
+  onChange,
+  disabled,
+  invalid,
+  showLabel,
+  hideLabel,
+}: PasswordInputProps) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        name={name}
+        type={visible ? "text" : "password"}
+        autoComplete={autoComplete}
+        className={cn(inputClassName, "pr-10")}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        aria-invalid={invalid}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((current) => !current)}
+        disabled={disabled}
+        aria-label={visible ? hideLabel : showLabel}
+        aria-pressed={visible}
+        aria-controls={id}
+        className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-foreground-tertiary transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-60"
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
   );
 }
 

@@ -5,7 +5,7 @@ import { useLocale } from "@/lib/i18n";
 import { fetchSettings, updateSettings, type AppSettings } from "@/lib/profile/api";
 import { useTheme, type Density, type ThemeMode } from "@/lib/theme";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Monitor, Moon, Save, Sun } from "lucide-react";
+import { Loader2, Monitor, Moon, Sun } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 type Status = "loading" | "error" | "ready";
@@ -25,17 +25,14 @@ export function SettingsForm() {
   const { theme, density, setTheme, setDensity } = useTheme();
 
   const [status, setStatus] = useState<Status>("loading");
-  const [unitSize, setUnitSize] = useState("20");
-  const [savingUnitSize, setSavingUnitSize] = useState(false);
-  const [feedback, setFeedback] = useState<{ tone: "ok" | "error"; text: string } | null>(
-    null,
-  );
+  const [unitSize, setUnitSize] = useState(20);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setStatus("loading");
     fetchSettings()
       .then((settings) => {
-        setUnitSize(String(settings.unitSize));
+        setUnitSize(settings.unitSize);
         setStatus("ready");
       })
       .catch(() => setStatus("error"));
@@ -49,9 +46,8 @@ export function SettingsForm() {
     setFeedback(null);
     try {
       await updateSettings(payload);
-      setFeedback({ tone: "ok", text: t("account.saved") });
     } catch {
-      setFeedback({ tone: "error", text: t("account.syncFailed") });
+      setFeedback(t("account.syncFailed"));
     }
   }
 
@@ -70,15 +66,9 @@ export function SettingsForm() {
     void sync({ language: next });
   }
 
-  async function handleUnitSizeSave() {
-    const next = Number(unitSize);
-    if (!Number.isInteger(next) || next < 5 || next > 100) {
-      setFeedback({ tone: "error", text: t("account.unitSizeInvalid") });
-      return;
-    }
-    setSavingUnitSize(true);
-    await sync({ unitSize: next });
-    setSavingUnitSize(false);
+  function handleUnitSize(next: number) {
+    setUnitSize(next);
+    void sync({ unitSize: next });
   }
 
   if (status === "loading") {
@@ -127,7 +117,6 @@ export function SettingsForm() {
                     locale === value ? optionActive : optionIdle,
                   )}
                 >
-                  {locale === value && <Check className="h-3.5 w-3.5" />}
                   {value === "zh"
                     ? t("account.languageZh")
                     : t("account.languageEn")}
@@ -171,7 +160,7 @@ export function SettingsForm() {
           </div>
         </div>
 
-        <div className="px-5 py-5 md:px-6">
+        <div className="border-b border-border-light px-5 py-5 md:px-6">
           <div className="sm:flex sm:items-start sm:justify-between sm:gap-6">
             <div>
               <h2 className="text-sm font-bold">{t("account.density")}</h2>
@@ -203,57 +192,39 @@ export function SettingsForm() {
             </div>
           </div>
         </div>
-      </section>
 
-      <section className="rounded-lg border border-border bg-surface p-5 card-shadow md:p-6">
-        <h2 className="text-sm font-bold">{t("account.unitSize")}</h2>
-        <p className="mt-1 text-xs text-foreground-secondary">
-          {t("account.unitSizeDesc")}
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <input
-              id="settings-unit-size"
-              value={unitSize}
-              inputMode="numeric"
-              onChange={(event) =>
-                setUnitSize(event.target.value.replace(/[^\d]/g, "").slice(0, 3))
-              }
-              onKeyDown={(event) => {
-                if (event.key === "Enter") void handleUnitSizeSave();
-              }}
-              className="h-10 w-24 rounded-[10px] border border-border bg-surface px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-            <span className="text-sm text-foreground-secondary">
-              {t("account.unitSizeUnit")}
-            </span>
+        <div className="px-5 py-5 md:px-6">
+          <div className="sm:flex sm:items-start sm:justify-between sm:gap-6">
+            <div>
+              <h2 className="text-sm font-bold">{t("account.unitSize")}</h2>
+              <p className="mt-1 text-xs text-foreground-secondary">
+                {t("account.unitSizeDesc")}
+              </p>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 sm:mt-0">
+              {[20, 30, 50, 100].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={unitSize === value}
+                  onClick={() => handleUnitSize(value)}
+                  className={cn(
+                    optionBase,
+                    "min-w-12 justify-center",
+                    unitSize === value ? optionActive : optionIdle,
+                  )}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={savingUnitSize}
-            onClick={handleUnitSizeSave}
-          >
-            {savingUnitSize ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Save className="h-3.5 w-3.5" />
-            )}
-            {savingUnitSize ? t("account.saving") : t("account.save")}
-          </Button>
         </div>
       </section>
 
       {feedback && (
-        <p
-          className={cn(
-            "text-xs font-semibold",
-            feedback.tone === "ok" ? "text-primary-strong" : "text-destructive",
-          )}
-          role="status"
-        >
-          {feedback.text}
+        <p className="text-xs font-semibold text-destructive" role="status">
+          {feedback}
         </p>
       )}
     </div>

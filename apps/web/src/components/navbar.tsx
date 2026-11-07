@@ -2,6 +2,7 @@
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/auth/user-menu";
+import { ScopeSelector } from "@/components/scope/scope-selector";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -20,7 +21,6 @@ import { Suspense, useEffect, useState } from "react";
 const navItems = [
   { href: "/", labelKey: "nav.home" },
   { href: "/learn", labelKey: "nav.learn", requiresAuth: true },
-  { href: "/pet", labelKey: "nav.pet", requiresAuth: true },
   { href: "/articles", labelKey: "nav.articles" },
   { href: "/docs", labelKey: "nav.docs" },
   { href: "/about", labelKey: "nav.about" },
@@ -113,6 +113,7 @@ export function Navbar() {
           </div>
         </div>
         <div className="flex flex-1 shrink-0 items-center justify-end space-x-1 pl-2">
+          <ScopeSelector />
           <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

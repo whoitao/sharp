@@ -12,14 +12,17 @@ import {
   type SessionProfile,
 } from "@/lib/profile/api";
 import { cn } from "@/lib/utils";
-import { Camera, Check, Loader2 } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const inputClass =
-  "h-11 w-full rounded-[10px] border border-border bg-surface px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "h-10 w-full rounded-[10px] border border-border bg-surface px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
+
+/** 三组表单统一宽度，避免昵称、性别、手机号各占一种宽度 */
+const fieldClass = "sm:max-w-[26rem]";
 
 /** 与移动端一致：上传前缩到 512px 以内的 JPEG，避免原图过大 */
 async function compressAvatar(file: File): Promise<File> {
@@ -207,20 +210,20 @@ export function ProfileForm({
             maxLength={24}
             placeholder={t("account.nicknamePlaceholder")}
             onChange={(event) => setNickname(event.target.value)}
-            className={cn(inputClass, "mt-2 sm:max-w-[480px]")}
+            className={cn(inputClass, fieldClass, "mt-2")}
           />
         </div>
 
         <div>
           <span className="block text-sm font-bold">{t("account.gender")}</span>
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:max-w-[280px]">
+          <div className={cn("mt-2 grid grid-cols-2 gap-2", fieldClass)}>
             {(["male", "female"] as const).map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setGender(value)}
                 className={cn(
-                  "min-h-11 rounded-[10px] border px-3 text-sm font-semibold transition-colors",
+                  "min-h-10 rounded-[10px] border px-3 text-sm font-semibold transition-colors",
                   gender === value
                     ? "border-primary bg-primary-light text-primary-strong"
                     : "border-border bg-surface text-foreground-secondary hover:border-primary/40",
@@ -247,18 +250,14 @@ export function ProfileForm({
             inputMode="numeric"
             placeholder={t("account.phonePlaceholder")}
             onChange={(event) => setPhone(event.target.value.replace(/[^\d]/g, "").slice(0, 11))}
-            className={cn(inputClass, "mt-2 sm:max-w-[280px]")}
+            className={cn(inputClass, fieldClass, "mt-2")}
           />
         </div>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border-light pt-5">
         <Button type="button" onClick={handleSave} disabled={saving}>
-          {saving ? (
-            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-          ) : (
-            <Check className="mr-1.5 h-4 w-4" />
-          )}
+          {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
           {saving ? t("account.saving") : t("account.save")}
         </Button>
         {feedback && (
