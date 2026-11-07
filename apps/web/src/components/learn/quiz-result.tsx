@@ -280,6 +280,59 @@ export function QuizResult({
                         style={{ fontSize: 13, lineHeight: 1.7 }}
                       />
 
+                      {/* 选项与答题页一致：全部展示，标出正确项与误选项 */}
+                      <div className="mt-3 flex flex-col gap-2">
+                        {question.options.map((option) => {
+                          const isCorrectOption = option.isCorrect;
+                          const isWrongPick =
+                            !isCorrectOption && selected.includes(option.optionKey);
+
+                          return (
+                            <div
+                              key={option.id}
+                              className={cn(
+                                "flex w-full items-center gap-3 rounded-sm border px-3.5 py-3 text-left",
+                                isCorrectOption &&
+                                  "border-primary bg-primary-light",
+                                isWrongPick &&
+                                  "border-destructive bg-destructive/10",
+                                !isCorrectOption &&
+                                  !isWrongPick &&
+                                  "border-border-light bg-surface-secondary/60 opacity-80",
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  "flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-sm border text-xs font-bold",
+                                  isCorrectOption &&
+                                    "border-primary bg-primary text-primary-foreground",
+                                  isWrongPick &&
+                                    "border-destructive bg-destructive text-destructive-foreground",
+                                  !isCorrectOption &&
+                                    !isWrongPick &&
+                                    "border-border bg-surface text-foreground-secondary",
+                                )}
+                              >
+                                {option.optionKey}
+                              </span>
+                              <RichText
+                                html={option.content}
+                                className="quiz-richtext min-w-0 flex-1 break-words text-sm [&_p]:my-0"
+                                style={{ fontSize: 14, lineHeight: 1.6 }}
+                              />
+                              <span className="flex shrink-0 items-center gap-1.5">
+                                {isCorrectOption && (
+                                  <Check className="h-[18px] w-[18px] text-primary-strong" />
+                                )}
+                                {isWrongPick && (
+                                  <X className="h-[18px] w-[18px] text-destructive" />
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
                       {question.analysis && (
                         <div className="mt-2">
                           <p className="text-xs font-bold text-foreground-tertiary">
@@ -339,12 +392,14 @@ export function QuizResult({
             >
               <Link href={retryHref}>{t("quiz.retryRound")}</Link>
             </Button>
-            <Link
-              href="/learn"
-              className="mt-2 flex items-center justify-center gap-1.5 rounded-sm px-2.5 py-2 text-xs font-semibold text-foreground-secondary transition-colors hover:text-foreground"
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="mt-2 w-full rounded-sm"
             >
-              {t("quiz.backToCatalog")}
-            </Link>
+              <Link href="/learn">{t("quiz.backToCatalog")}</Link>
+            </Button>
           </div>
         </div>
       </div>

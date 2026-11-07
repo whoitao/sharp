@@ -40,7 +40,7 @@ export const zh = {
 
   // Profile
   studyRecords: '学习记录',
-  studyStats: '学习统计',
+  studyStats: '学情分析',
   wrongQuestions: '错题本',
 
   // Home

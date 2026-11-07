@@ -40,7 +40,7 @@ export const en: TranslationKeys = {
 
   // Profile
   studyRecords: 'Study Records',
-  studyStats: 'Learning Stats',
+  studyStats: 'Learning analytics',
   wrongQuestions: 'Wrong Questions',
 
   // Home

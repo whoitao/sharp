@@ -13,7 +13,7 @@ import {
 import { useLocale, type Locale } from "@/lib/i18n";
 import { subscribeSession } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
-import { Check, Globe } from "lucide-react";
+import { Check, Globe, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -87,10 +87,51 @@ function NavLinks({ pathname }: { pathname?: string | null }) {
   );
 }
 
+/** 窄屏折叠菜单：宽度不足以并排展示导航链接时收进下拉 */
+function NavMenu({ pathname }: { pathname?: string | null }) {
+  const { t } = useLocale();
+  const signedIn = useSignedIn();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" aria-label={t("nav.menu")}>
+          <Menu className="h-4 w-4" />
+          <span className="hidden sm:inline">{t("nav.menu")}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {navItems
+          .filter((item) => !item.requiresAuth || signedIn)
+          .map((item) => (
+            <DropdownMenuItem key={item.href} asChild>
+              <Link
+                href={item.href}
+                className={cn(
+                  pathname === item.href ||
+                    (item.href !== "/" && pathname?.startsWith(`${item.href}/`))
+                    ? "font-semibold text-foreground"
+                    : "text-foreground-secondary"
+                )}
+              >
+                {t(item.labelKey)}
+              </Link>
+            </DropdownMenuItem>
+          ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 /** usePathname 属于运行时数据，cacheComponents 下需包在 Suspense 内 */
 function ActiveNavLinks() {
   const pathname = usePathname();
   return <NavLinks pathname={pathname} />;
+}
+
+function ActiveNavMenu() {
+  const pathname = usePathname();
+  return <NavMenu pathname={pathname} />;
 }
 
 export function Navbar() {
@@ -106,9 +147,15 @@ export function Navbar() {
             </span>
             <span className="hidden text-xl font-bold text-primary sm:inline">Sharp</span>
           </Link>
-          <div className="min-w-0 overflow-x-auto">
+          {/* 断点与答题页答题卡一致（lg）：答题卡并排时完整展示，换行后收进下拉 */}
+          <div className="hidden lg:block">
             <Suspense fallback={<NavLinks />}>
               <ActiveNavLinks />
+            </Suspense>
+          </div>
+          <div className="lg:hidden">
+            <Suspense fallback={<NavMenu />}>
+              <ActiveNavMenu />
             </Suspense>
           </div>
         </div>

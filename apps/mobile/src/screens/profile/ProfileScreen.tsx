@@ -97,6 +97,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       onPress: () => navigation.navigate('Textbook'),
     },
     {
+      label: t.petTitle,
+      icon: 'paw-outline',
+      onPress: () => navigation.navigate('Pet'),
+    },
+    {
       label: t.studyStats,
       icon: 'time-outline',
       onPress: () => navigation.navigate('Records'),

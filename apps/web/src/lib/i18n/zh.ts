@@ -3,6 +3,7 @@ import type { Messages } from "./en";
 export const zh: Messages = {
   nav: {
     home: "首页",
+    menu: "菜单",
     learn: "学习",
     pet: "宠物",
     docs: "使用指南",

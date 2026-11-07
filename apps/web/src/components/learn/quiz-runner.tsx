@@ -282,9 +282,6 @@ export function QuizRunner({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-xs font-semibold text-primary-strong">
-              {typeLabel}
-            </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold tabular-nums text-foreground-secondary">
               <Clock className="h-3.5 w-3.5" />
               {formatDuration(elapsed)}
@@ -321,26 +318,26 @@ export function QuizRunner({
             </span>
             <div className="flex items-center gap-1.5">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="h-7 rounded-sm px-2 hover:bg-surface-secondary hover:text-foreground"
+                className="h-7 rounded-sm border-border bg-surface px-2.5 font-semibold text-foreground-secondary hover:border-primary/40 hover:bg-surface hover:text-foreground"
                 onClick={() => setIndex((value) => Math.max(0, value - 1))}
                 disabled={index === 0}
                 aria-label={t("quiz.prev")}
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
-                <span className="ml-0.5 hidden sm:inline">{t("quiz.prev")}</span>
               </Button>
               <Button
+                variant="outline"
                 size="sm"
-                className="h-7 rounded-sm px-2.5"
+                className="h-7 rounded-sm border-primary/40 bg-surface px-2.5 font-semibold text-primary-strong hover:border-primary/60 hover:bg-surface hover:text-primary-strong"
                 onClick={() =>
                   setIndex((value) => Math.min(questions.length - 1, value + 1))
                 }
                 disabled={index === questions.length - 1}
+                aria-label={t("quiz.next")}
               >
-                {t("quiz.next")}
-                <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>

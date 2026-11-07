@@ -160,6 +160,10 @@ export type ProfileStackParamList = {
   Records: undefined;
   WrongQuestions: undefined;
   CrashLog: undefined;
+  // 电子宠物：从「我的」入口进入，复用首页同一套宠物页面
+  Pet: undefined;
+  PetAdopt: undefined;
+  PetFeeds: undefined;
   // 从学习记录进入时：在 ProfileTab 内展示练习结果，不跨 Tab 切换，保持底部高亮在"我的"
   QuizResult: QuizResultParams;
 };
@@ -460,6 +464,22 @@ const ProfileStackNavigator: React.FC = () => {
       name="CrashLog"
       component={withGradient(CrashLogScreen)}
       options={{ title: t.crashLogTitle }}
+    />
+    {/* 电子宠物：与首页同一套屏幕，在 ProfileTab 内打开 */}
+    <ProfileStack.Screen
+      name="Pet"
+      component={withGradient(PetScreen)}
+      options={{ title: t.petTitle }}
+    />
+    <ProfileStack.Screen
+      name="PetAdopt"
+      component={withGradient(PetAdoptScreen)}
+      options={{ title: t.petAdoptTitle }}
+    />
+    <ProfileStack.Screen
+      name="PetFeeds"
+      component={withGradient(PetFeedsScreen)}
+      options={{ title: t.petFeedsTitle }}
     />
     {/* 从学习记录跳转进来的练习结果，在 ProfileTab 内部展示 */}
     <ProfileStack.Screen
