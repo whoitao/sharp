@@ -334,13 +334,11 @@ export default function DashboardPage() {
         ) : (
           <div
             style={{
-              // KPI 卡片始终单行展示：空间不足时横向滚动，而不是折成两排。
-              display: "flex",
-              flexWrap: "nowrap",
+              // KPI 卡片按可用宽度自适应列数：宽屏一行六张，窄屏自动换行，不产生横向溢出
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(min(168px, 100%), 1fr))",
               gap: 12,
-              overflowX: "auto",
               paddingBottom: 4,
-              scrollbarWidth: "thin",
             }}
           >
             {kpis.map((kpi) => (
@@ -350,7 +348,7 @@ export default function DashboardPage() {
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
-                  flex: "1 0 168px",
+                  minWidth: 0,
                   paddingTop: 14,
                   paddingBottom: 14,
                   paddingLeft: 16,
