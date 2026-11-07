@@ -120,7 +120,7 @@ export function FavoritesPanel() {
   const emptyFiltered = filtered;
 
   return (
-    <div className="min-w-0 pb-2 md:grid md:pb-0">
+    <div className="min-w-0 pb-2 md:grid md:content-start md:pb-0">
       <div className="md:contents">
         {status === "loading" ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-foreground-secondary">

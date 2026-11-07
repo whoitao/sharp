@@ -67,6 +67,23 @@ export const questionsQuerySchema = z.object({
   search: optionalText,
 });
 
+export const favoritesQuerySchema = z.object({
+  page: pageSchema,
+  pageSize: pageSizeSchema(10),
+  userSearch: optionalText,
+  questionSearch: optionalText,
+  gradeId: OPTIONAL_BIGINT,
+  subjectId: OPTIONAL_BIGINT,
+  startDate: z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? undefined : value),
+    z.coerce.date().optional().catch(undefined),
+  ),
+  endDate: z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? undefined : value),
+    z.coerce.date().optional().catch(undefined),
+  ),
+});
+
 export const textbooksQuerySchema = z.object({
   stageId: OPTIONAL_BIGINT,
   subjectId: OPTIONAL_BIGINT,

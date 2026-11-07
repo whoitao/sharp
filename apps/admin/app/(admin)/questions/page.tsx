@@ -7,8 +7,9 @@ import { useMemo, useState } from "react";
 import KnowledgePointsPanel from "./KnowledgePointsPanel";
 import QuestionsPanel from "./QuestionsPanel";
 import TagsPanel from "./TagsPanel";
+import FavoritesPanel from "./FavoritesPanel";
 
-type TabKey = "questions" | "knowledgePoints" | "tags";
+type TabKey = "questions" | "knowledgePoints" | "tags" | "favorites";
 
 export default function QuestionsPage() {
   const { t } = useLocale();
@@ -18,6 +19,7 @@ export default function QuestionsPage() {
     { key: "questions", label: t("questions.title") },
     { key: "knowledgePoints", label: t("knowledgePoints.title") },
     { key: "tags", label: t("nav.tags") },
+    { key: "favorites", label: t("favorites.title") },
   ];
 
   const headerTabs = useMemo(
@@ -30,5 +32,6 @@ export default function QuestionsPage() {
 
   if (activeKey === "knowledgePoints") return <KnowledgePointsPanel />;
   if (activeKey === "tags") return <TagsPanel />;
+  if (activeKey === "favorites") return <FavoritesPanel />;
   return <QuestionsPanel />;
 }
