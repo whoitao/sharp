@@ -210,6 +210,40 @@ export interface WrongQuestionsResponse {
   totalPages: number;
 }
 
+export interface FavoriteQuestionDto {
+  id: string;
+  gradeId: string | null;
+  subjectId: string | null;
+  chapterId: string | null;
+  type: number;
+  content: string;
+  analysis: string | null;
+  difficulty: number;
+  score?: number;
+  chapter: {
+    id: string;
+    name: string;
+    textbookId: string;
+    textbookName: string | null;
+  } | null;
+  options: WrongQuestionOptionDto[];
+}
+
+export interface FavoriteItemDto {
+  questionId: string;
+  createdAt: string;
+  note: string | null;
+  question: FavoriteQuestionDto;
+}
+
+export interface FavoritesResponse {
+  data: FavoriteItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export class AppApiError extends Error {
   constructor(readonly status: number) {
     super(`Request failed with ${status}`);
@@ -277,6 +311,34 @@ export function fetchStudyRecords(
 /** 学习总览：今日指标、累计天数/题量/正确率与连续学习天数 */
 export function fetchStudyStats(days = 7): Promise<StudyStatsDto> {
   return getJson<StudyStatsDto>(`/study/stats?days=${days}`);
+}
+
+/** 我的收藏：分页 + 年级/科目/教材筛选，口径与 Web 端范围一致 */
+export function fetchFavorites(
+  params: {
+    page?: number;
+    pageSize?: number;
+    gradeId?: string | null;
+    subjectId?: string | null;
+    textbookId?: string | null;
+  } = {},
+): Promise<FavoritesResponse> {
+  const query = new URLSearchParams({
+    page: String(params.page ?? 1),
+    pageSize: String(params.pageSize ?? 20),
+  });
+  if (params.gradeId) query.set("gradeId", params.gradeId);
+  if (params.subjectId) query.set("subjectId", params.subjectId);
+  if (params.textbookId) query.set("textbookId", params.textbookId);
+  return getJson<FavoritesResponse>(`/favorites?${query.toString()}`);
+}
+
+/** 取消收藏：接口幂等，未收藏也返回成功 */
+export async function removeFavorite(questionId: string): Promise<void> {
+  const res = await fetch(`/api/app/favorites/${encodeURIComponent(questionId)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new AppApiError(res.status);
 }
 
 /** 按章节统计：需要当前教材 */

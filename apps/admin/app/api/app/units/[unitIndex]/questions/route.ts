@@ -66,13 +66,24 @@ export async function GET(
   });
 
   const questionIds = questions.map((q) => q.id);
-  const progress = await prisma.userQuestionProgress.findMany({
-    where: {
-      userId: appUser.id,
-      questionId: { in: questionIds },
-    },
-  });
+  const [progress, favorites] = await Promise.all([
+    prisma.userQuestionProgress.findMany({
+      where: {
+        userId: appUser.id,
+        questionId: { in: questionIds },
+      },
+    }),
+    // 一次批量查出本页已收藏的题目，避免逐题查询
+    prisma.userQuestionFavorite.findMany({
+      where: {
+        userId: appUser.id,
+        questionId: { in: questionIds },
+      },
+      select: { questionId: true },
+    }),
+  ]);
   const progressMap = new Map(progress.map((p) => [p.questionId.toString(), p]));
+  const favoriteSet = new Set(favorites.map((f) => f.questionId.toString()));
 
   const serialize = (q: any) => {
     const p = progressMap.get(q.id.toString()) as any;
@@ -88,6 +99,7 @@ export async function GET(
       difficulty: q.difficulty,
       score: q.score,
       sortOrder: q.sortOrder,
+      isFavorited: favoriteSet.has(q.id.toString()),
       options: q.options.map((o: any) => ({
         id: o.id.toString(),
         questionId: o.questionId.toString(),

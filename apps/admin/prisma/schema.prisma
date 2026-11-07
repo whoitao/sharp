@@ -22,6 +22,7 @@ model User {
 
   studyAttempts    StudyAttempt[]
   questionProgress UserQuestionProgress[]
+  questionFavorites UserQuestionFavorite[]
   dailyStats       UserDailyStat[]
   settings         UserSettings?
 
@@ -162,6 +163,7 @@ model Question {
 
   options         QuestionOption[]
   progress        UserQuestionProgress[]
+  favorites       UserQuestionFavorite[]
   knowledgePoints QuestionKnowledgePoint[]
   tags            QuestionTagLink[]
   attemptItems    StudyAttemptItem[]
@@ -277,6 +279,22 @@ model UserQuestionProgress {
   @@id([userId, questionId])
   @@index([subjectId])
   @@index([knowledgePointId])
+}
+
+// 学员收藏的题目：复合主键保证「同一用户同一题」唯一，天然幂等
+model UserQuestionFavorite {
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId BigInt
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  // 收藏备注（本期只落库，收藏页只读展示）
+  note       String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@id([userId, questionId])
+  @@index([userId, createdAt])
+  @@index([questionId])
 }
 
 model UserDailyStat {

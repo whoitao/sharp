@@ -43,6 +43,7 @@ import TextbookScreen from '../screens/textbook/TextbookScreen';
 // Profile screens
 import type { SettingKey } from '../constants/settings';
 import CrashLogScreen from '../screens/profile/CrashLogScreen';
+import FavoritesScreen from '../screens/profile/FavoritesScreen';
 import ProfileInfoScreen from '../screens/profile/ProfileInfoScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import RecordsScreen from '../screens/profile/RecordsScreen';
@@ -159,6 +160,7 @@ export type ProfileStackParamList = {
   Quiz: QuizParams;
   Records: undefined;
   WrongQuestions: undefined;
+  Favorites: undefined;
   CrashLog: undefined;
   // 电子宠物：从「我的」入口进入，复用首页同一套宠物页面
   Pet: undefined;
@@ -459,6 +461,11 @@ const ProfileStackNavigator: React.FC = () => {
       name="WrongQuestions"
       component={withGradient(WrongQuestionsScreen)}
       options={{ title: t.wrongQuestions }}
+    />
+    <ProfileStack.Screen
+      name="Favorites"
+      component={withGradient(FavoritesScreen)}
+      options={{ title: t.favorites }}
     />
     <ProfileStack.Screen
       name="CrashLog"

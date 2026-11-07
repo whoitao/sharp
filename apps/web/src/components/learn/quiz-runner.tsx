@@ -26,6 +26,7 @@ import {
   Circle,
   Clock,
   Loader2,
+  Star,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -110,6 +111,59 @@ export function QuizRunner({
       : multiple
         ? t("quiz.multipleChoice")
         : t("quiz.singleChoice");
+
+  // 收藏状态：以接口返回的 isFavorited 为准，本地覆盖用于乐观更新与失败回滚
+  const [favOverrides, setFavOverrides] = useState<Record<string, boolean>>({});
+  const [favPending, setFavPending] = useState<Record<string, boolean>>({});
+  const [favError, setFavError] = useState(false);
+  const aliveRef = useRef(true);
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
+
+  const currentFavorited = favOverrides[current.id] ?? Boolean(current.isFavorited);
+  const currentFavPending = Boolean(favPending[current.id]);
+
+  async function handleToggleFavorite() {
+    if (currentFavPending) return;
+    const next = !currentFavorited;
+    setFavError(false);
+    setFavOverrides((map) => ({ ...map, [current.id]: next }));
+    setFavPending((map) => ({ ...map, [current.id]: true }));
+    try {
+      const response = next
+        ? await fetch("/api/app/favorites", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ questionId: current.id }),
+          })
+        : await fetch(`/api/app/favorites/${current.id}`, { method: "DELETE" });
+      if (response.status === 401) {
+        onUnauthorized();
+        throw new Error("unauthorized");
+      }
+      if (!response.ok) throw new Error("favorite failed");
+    } catch {
+      if (!aliveRef.current) return;
+      setFavOverrides((map) => ({ ...map, [current.id]: !next }));
+      setFavError(true);
+      window.setTimeout(() => {
+        if (aliveRef.current) setFavError(false);
+      }, 2400);
+    } finally {
+      if (aliveRef.current) {
+        setFavPending((map) => {
+          const rest = { ...map };
+          delete rest[current.id];
+          return rest;
+        });
+      }
+    }
+  }
 
   // 头部标题上方的上下文：按知识点学显示知识点名，按章节学显示章节名
   const contextName = knowledgePointName ?? chapterName;
@@ -365,12 +419,38 @@ export function QuizRunner({
                 {String(index + 1).padStart(2, "0")}
               </b>
             </div>
-            <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs font-semibold text-foreground-secondary">
-              {current.score > 0
-                ? t("quiz.scoreType", { score: current.score, type: typeLabel })
-                : typeLabel}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs font-semibold text-foreground-secondary">
+                {current.score > 0
+                  ? t("quiz.scoreType", { score: current.score, type: typeLabel })
+                  : typeLabel}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-pressed={currentFavorited}
+                aria-label={currentFavorited ? t("quiz.favorited") : t("quiz.favorite")}
+                title={currentFavorited ? t("quiz.favorited") : t("quiz.favorite")}
+                disabled={currentFavPending}
+                onClick={handleToggleFavorite}
+                className={cn(
+                  "h-8 w-8 rounded-full text-foreground-tertiary hover:bg-primary-light hover:text-primary-strong",
+                  currentFavorited && "bg-primary-light text-primary-strong",
+                )}
+              >
+                {currentFavPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Star className={cn("h-4 w-4", currentFavorited && "fill-current")} />
+                )}
+              </Button>
+            </div>
           </div>
+
+          {favError && (
+            <p className="mt-1 text-right text-xs text-destructive">{t("quiz.favoriteFailed")}</p>
+          )}
 
           <RichText
             html={current.content}

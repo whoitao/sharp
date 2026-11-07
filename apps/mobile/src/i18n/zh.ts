@@ -42,6 +42,7 @@ export const zh = {
   studyRecords: '学习记录',
   studyStats: '学情分析',
   wrongQuestions: '错题本',
+  favorites: '我的收藏',
 
   // Home
   startLearning: '开始学习',
@@ -137,6 +138,23 @@ export const zh = {
   difficultyLabel: '难度：',
   singleChoice: '单选题',
   multipleChoice: '多选题',
+  judgement: '判断题',
+
+  // Favorites
+  favoritesEmpty: '暂无收藏',
+  favoritesEmptySub: '收藏的题目会显示在这里',
+  favoritesEmptyFiltered: '当前范围内暂无收藏',
+  favoritesEmptyFilteredSub: '可以切换到「全部收藏」看看',
+  favoritesScopeCurrent: '当前范围',
+  favoritesScopeAll: '全部收藏',
+  favoritesCount: (num: number) => `${formatCount(num)} 道题`,
+  favoritesFavoritedAt: (date: string) => `收藏于 ${date}`,
+  favoritesNote: '备注',
+  favoritesLoadFailed: '收藏加载失败',
+  favoritesLoadFailedSub: '请检查网络后重试',
+  favoritesRetry: '重试',
+  favoritesLoadMore: '加载更多',
+  favoritesRemoveFailed: '取消收藏失败，请重试',
 
   // Quiz
   quit: '退出',
@@ -157,6 +175,9 @@ export const zh = {
   previousStudy: '上次学习',
   previousStudyScore: (correct: number, total: number) => `正确 ${correct}/${total}`,
   previousStudyDuration: (duration: string) => `用时 ${duration}`,
+  favoriteAdd: '收藏本题',
+  favoriteRemove: '取消收藏',
+  favoriteFailed: '收藏状态更新失败，请重试',
 
   // Quiz result
   noResultData: '暂无结果数据',

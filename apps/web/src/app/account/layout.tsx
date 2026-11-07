@@ -3,7 +3,7 @@
 import { RequireAuth } from "@/components/auth/require-auth";
 import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { BarChart3, BookOpen, NotebookPen, PawPrint, Settings, UserRound } from "lucide-react";
+import { BarChart3, BookOpen, NotebookPen, PawPrint, Settings, Star, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -21,11 +21,12 @@ export default function AccountLayout({
 
   const onRecords = pathname.startsWith("/account/records");
   const onWrongQuestions = pathname.startsWith("/account/wrong-questions");
+  const onFavorites = pathname.startsWith("/account/favorites");
   const onSettings = pathname.startsWith("/account/settings");
   const onTextbook = pathname.startsWith("/account/textbook");
   const onPet = pathname.startsWith("/account/pet");
   const onProfile =
-    !onRecords && !onWrongQuestions && !onSettings && !onTextbook && !onPet;
+    !onRecords && !onWrongQuestions && !onFavorites && !onSettings && !onTextbook && !onPet;
 
   const tabs = [
     {
@@ -51,6 +52,12 @@ export default function AccountLayout({
       label: t("account.records"),
       icon: BarChart3,
       active: onRecords,
+    },
+    {
+      href: "/account/favorites",
+      label: t("account.favorites"),
+      icon: Star,
+      active: onFavorites,
     },
     {
       href: "/account/wrong-questions",

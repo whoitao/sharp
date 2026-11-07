@@ -17,6 +17,7 @@ import {
   NotebookPen,
   PawPrint,
   Settings,
+  Star,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -122,6 +123,12 @@ export function UserMenu() {
           <Link href="/account/records">
             <BarChart3 className="mr-2 h-4 w-4" />
             {t("account.records")}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/account/favorites">
+            <Star className="mr-2 h-4 w-4" />
+            {t("account.favorites")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

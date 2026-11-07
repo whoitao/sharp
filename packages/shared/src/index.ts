@@ -52,6 +52,43 @@ export interface Question {
   options: QuestionOption[];
   knowledgePoints?: { id: string; name: string; parentId: string | null }[];
   tags?: { id: string; name: string; type: string }[];
+  /** 当前学员是否已收藏；列表接口未返回时为 undefined */
+  isFavorited?: boolean;
+}
+
+/** 收藏列表中的题目：只带列表展示需要的字段 */
+export interface FavoriteQuestion {
+  id: string;
+  gradeId: string | null;
+  subjectId: string | null;
+  chapterId: string | null;
+  type: QuestionType;
+  content: string;
+  analysis: string | null;
+  difficulty: number;
+  score: number;
+  chapter: {
+    id: string;
+    name: string;
+    textbookId: string;
+    textbookName: string | null;
+  } | null;
+  options: QuestionOption[];
+}
+
+export interface FavoriteItem {
+  questionId: string;
+  createdAt: string;
+  note: string | null;
+  question: FavoriteQuestion;
+}
+
+export interface FavoriteListResponse {
+  data: FavoriteItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface QuestionOption {

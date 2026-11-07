@@ -107,6 +107,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       onPress: () => navigation.navigate('Records'),
     },
     {
+      label: t.favorites,
+      icon: 'star-outline',
+      onPress: () => navigation.navigate('Favorites'),
+    },
+    {
       label: t.wrongQuestions,
       icon: 'alert-circle-outline',
       onPress: () => navigation.navigate('WrongQuestions'),

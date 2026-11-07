@@ -5,6 +5,7 @@ import type {
   Chapter,
   ChapterStudyStat,
   Density,
+  FavoriteListResponse,
   Grade,
   KnowledgePoint,
   KnowledgePointStudyStat,
@@ -784,6 +785,37 @@ export const api = {
     } catch {
       return generateMockQuestions(0, 5);
     }
+  },
+
+  // Favorites
+  /** 收藏列表：默认按收藏时间倒序，可按年级/科目/教材过滤 */
+  async getFavorites(params: {
+    page?: number;
+    pageSize?: number;
+    gradeId?: string | null;
+    subjectId?: string | null;
+    textbookId?: string | null;
+  } = {}): Promise<FavoriteListResponse> {
+    const { page = 1, pageSize = 20, gradeId, subjectId, textbookId } = params;
+    const query: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
+    if (gradeId) query.gradeId = gradeId;
+    if (subjectId) query.subjectId = subjectId;
+    if (textbookId) query.textbookId = textbookId;
+    // 失败向上抛：列表页需要区分「没有收藏」与「加载失败」
+    const response = await apiClient.get<FavoriteListResponse>('/api/app/favorites', {
+      params: query,
+    });
+    return response.data;
+  },
+
+  /** 收藏题目：服务端幂等，重复收藏返回同一条记录 */
+  async addFavorite(questionId: string): Promise<void> {
+    await apiClient.post('/api/app/favorites', { questionId });
+  },
+
+  /** 取消收藏：未收藏时服务端同样返回成功 */
+  async removeFavorite(questionId: string): Promise<void> {
+    await apiClient.delete(`/api/app/favorites/${questionId}`);
   },
 
   // Settings

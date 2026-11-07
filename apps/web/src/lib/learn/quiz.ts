@@ -20,6 +20,8 @@ export interface QuizQuestion {
   difficulty: number;
   score: number;
   sortOrder: number;
+  /** 当前学员是否已收藏；旧接口未返回时视为未收藏 */
+  isFavorited?: boolean;
   options: QuizOption[];
   progress: { status: string; correctCount: number; wrongCount: number } | null;
   /** 本题关联的知识点；接口未返回时为空，答题页据此决定是否展示「本题考点」 */

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -77,6 +78,11 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   // 再学一次：确认弹窗；attempt 用作计时器的 key，变化即从 00:00 重新计时
   const [restartConfirmVisible, setRestartConfirmVisible] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // 收藏状态：以题目自带 isFavorited 为初始值，点击后本地先翻转，失败再回滚
+  const [favoriteOverrides, setFavoriteOverrides] = useState<Record<string, boolean>>({});
+  const [favoritePending, setFavoritePending] = useState(false);
+  const [favoriteError, setFavoriteError] = useState(false);
+  const favoriteErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 上次已完成的学习记录（由 StudyScreen 进入时带上，仅用于展示摘要与「再学一次」）
   const previous = route.params.previousRecord ?? null;
@@ -86,6 +92,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const isLastQuestion = currentIndex >= totalQuestions - 1;
   // QuestionType.MULTIPLE_CHOICE = 2
   const isMultipleChoice = currentQuestion?.type === 2;
+  const isFavorited = currentQuestion
+    ? favoriteOverrides[currentQuestion.id] ?? Boolean(currentQuestion.isFavorited)
+    : false;
 
   // 上次学习摘要的日期 / 用时格式，与学习记录列表保持一致
   const formatRecordDate = (iso: string): string => {
@@ -107,6 +116,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     return () => {
       isMountedRef.current = false;
       if (pendingNextRef.current) clearTimeout(pendingNextRef.current);
+      if (favoriteErrorTimerRef.current) clearTimeout(favoriteErrorTimerRef.current);
     };
   }, []);
 
@@ -432,6 +442,31 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
     }
   }, [answered, currentQuestion, selectedKeys, scheduleNext, dispatch]);
 
+  const handleToggleFavorite = useCallback(() => {
+    if (!currentQuestion || favoritePending) return;
+    const questionId = currentQuestion.id;
+    const next = !(favoriteOverrides[questionId] ?? Boolean(currentQuestion.isFavorited));
+
+    setFavoriteOverrides((prev) => ({ ...prev, [questionId]: next }));
+    setFavoritePending(true);
+    setFavoriteError(false);
+
+    const request = next ? api.addFavorite(questionId) : api.removeFavorite(questionId);
+    request
+      .catch(() => {
+        if (!isMountedRef.current) return;
+        setFavoriteOverrides((prev) => ({ ...prev, [questionId]: !next }));
+        setFavoriteError(true);
+        if (favoriteErrorTimerRef.current) clearTimeout(favoriteErrorTimerRef.current);
+        favoriteErrorTimerRef.current = setTimeout(() => {
+          if (isMountedRef.current) setFavoriteError(false);
+        }, 2400);
+      })
+      .finally(() => {
+        if (isMountedRef.current) setFavoritePending(false);
+      });
+  }, [currentQuestion, favoriteOverrides, favoritePending]);
+
   const handleQuit = () => {
     if (pendingNextRef.current) {
       clearTimeout(pendingNextRef.current);
@@ -596,10 +631,31 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
               </Text>
             ))}
           </View>
-          <Text style={[styles.questionType, { color: colors.textTertiary, fontSize: 12 * font }]}>
-            {isMultipleChoice ? t.multipleChoice : t.singleChoice}
-          </Text>
+          <View style={styles.questionMetaRight}>
+            <Text style={[styles.questionType, { color: colors.textTertiary, fontSize: 12 * font, marginRight: 8 * spacing }]}>
+              {isMultipleChoice ? t.multipleChoice : t.singleChoice}
+            </Text>
+            <TouchableOpacity
+              onPress={handleToggleFavorite}
+              disabled={favoritePending}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={isFavorited ? t.favoriteRemove : t.favoriteAdd}
+              style={[styles.favoriteButton, { padding: 4 * spacing, opacity: favoritePending ? 0.5 : 1 }]}
+            >
+              <Ionicons
+                name={isFavorited ? 'star' : 'star-outline'}
+                size={20 * font}
+                color={isFavorited ? colors.accentStrong : colors.textTertiary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
+        {favoriteError && (
+          <Text style={{ color: colors.error, fontSize: 12 * font, marginBottom: 8 * spacing }}>
+            {t.favoriteFailed}
+          </Text>
+        )}
         <RichTextView
           html={currentQuestion.content}
           fontSize={16 * font}
@@ -865,6 +921,14 @@ const styles = StyleSheet.create({
   },
   questionMetaLeft: {
     flexDirection: 'row',
+    alignItems: 'center',
+  },
+  questionMetaRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  favoriteButton: {
+    justifyContent: 'center',
     alignItems: 'center',
   },
   questionMetaLabel: {

@@ -42,6 +42,7 @@ export const en: TranslationKeys = {
   studyRecords: 'Study Records',
   studyStats: 'Learning analytics',
   wrongQuestions: 'Wrong Questions',
+  favorites: 'Favorites',
 
   // Home
   startLearning: 'Start Learning',
@@ -137,6 +138,23 @@ export const en: TranslationKeys = {
   difficultyLabel: 'Difficulty: ',
   singleChoice: 'Single choice',
   multipleChoice: 'Multiple choice',
+  judgement: 'True / false',
+
+  // Favorites
+  favoritesEmpty: 'No favorites yet',
+  favoritesEmptySub: 'Questions you favorite will show here',
+  favoritesEmptyFiltered: 'No favorites in this scope',
+  favoritesEmptyFilteredSub: 'Try switching to All favorites',
+  favoritesScopeCurrent: 'Current scope',
+  favoritesScopeAll: 'All favorites',
+  favoritesCount: (num: number) => `${formatCount(num)} questions`,
+  favoritesFavoritedAt: (date: string) => `Favorited on ${date}`,
+  favoritesNote: 'Note',
+  favoritesLoadFailed: 'Failed to load favorites',
+  favoritesLoadFailedSub: 'Check your network and try again',
+  favoritesRetry: 'Retry',
+  favoritesLoadMore: 'Load more',
+  favoritesRemoveFailed: 'Failed to remove favorite, please retry',
 
   // Quiz
   quit: 'Quit',
@@ -157,6 +175,9 @@ export const en: TranslationKeys = {
   previousStudy: 'Last attempt',
   previousStudyScore: (correct: number, total: number) => `${correct}/${total} correct`,
   previousStudyDuration: (duration: string) => `${duration} spent`,
+  favoriteAdd: 'Favorite this question',
+  favoriteRemove: 'Remove favorite',
+  favoriteFailed: 'Failed to update favorite, please retry',
 
   // Quiz result
   noResultData: 'No result data',
