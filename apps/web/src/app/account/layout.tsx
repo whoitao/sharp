@@ -94,7 +94,8 @@ export default function AccountLayout({
             </nav>
           </aside>
 
-          <div className="min-w-0">{children}</div>
+          {/* 桌面双栏下让内容区撑满行高，页面内的卡片再按需 h-full */}
+          <div className="min-w-0 md:grid">{children}</div>
         </div>
       </div>
     </RequireAuth>

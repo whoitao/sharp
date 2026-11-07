@@ -332,14 +332,14 @@ export function PetHome() {
   };
 
   return (
-    <div className="pb-6 md:pb-8">
+    <div className="pb-6 md:grid md:pb-0">
       {status === "loading" ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-foreground-secondary">
           <Loader2 className="h-4 w-4 animate-spin" />
           {t("pet.loading")}
         </div>
       ) : status === "error" ? (
-        <div className="rounded-lg border border-border bg-surface p-6 text-center card-shadow">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface p-6 text-center card-shadow md:h-full">
           <p className="text-sm font-bold">
             {unauthorized ? t("pet.loginTitle") : t("pet.loadErrorTitle")}
           </p>
@@ -362,7 +362,7 @@ export function PetHome() {
           )}
         </div>
       ) : !pet ? (
-        <div className="rounded-lg border border-border bg-surface px-4 py-12 text-center card-shadow">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface px-4 py-12 text-center card-shadow md:h-full">
           <PawPrint className="mx-auto h-10 w-10 text-primary" />
           <p className="mt-3 text-base font-bold">{t("pet.emptyTitle")}</p>
           <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-foreground-secondary">

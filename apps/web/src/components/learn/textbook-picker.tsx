@@ -29,6 +29,8 @@ export function TextbookPicker({
   const { t } = useLocale();
   // 年级 / 科目来自导航栏的全局学习范围，不在列表里单独筛选
   const { gradeId, subjectId, clear: clearScope, syncFromTextbook } = useStudyScope();
+  // 还没选年级或科目时只给提示，不把全部教材倒出来
+  const scopeMissing = !gradeId || !subjectId;
 
   const [catalog, setCatalog] = useState<CatalogResponse | null>(null);
   const [status, setStatus] = useState<Status>("loading");
@@ -133,7 +135,16 @@ export function TextbookPicker({
         </div>
       )}
 
-      {status === "ready" && totalTextbooks > 0 && (
+      {status === "ready" && scopeMissing && (
+        <div className="rounded-lg border border-border bg-surface p-8 text-center card-shadow">
+          <p className="font-bold">{t("learn.scopeRequiredTitle")}</p>
+          <p className="mt-1.5 text-sm text-foreground-secondary">
+            {t("learn.scopeRequiredBody")}
+          </p>
+        </div>
+      )}
+
+      {status === "ready" && !scopeMissing && totalTextbooks > 0 && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-base font-bold">

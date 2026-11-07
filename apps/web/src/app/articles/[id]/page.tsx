@@ -37,7 +37,7 @@ async function ArticleDetail({ params }: PageProps) {
       <title>{`${article.title} | Sharp`}</title>
       {article.summary ? <meta name="description" content={article.summary} /> : null}
 
-      <div className="grid gap-8 lg:grid-cols-[180px_1fr] lg:items-start lg:gap-12">
+      <div className="grid gap-8 lg:grid-cols-[180px_1fr] lg:items-start lg:gap-6">
         <aside className="lg:sticky lg:top-24">
           <CategoryNav categories={categories} activeCategory={article.categoryName} />
         </aside>

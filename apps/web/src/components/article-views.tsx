@@ -3,6 +3,7 @@
 import type { ArticleListItem } from "@/lib/api";
 import { formatArticleDate } from "@/lib/article-format";
 import { useLocale } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 /** 分类导航：列表页与详情页共用（不放「分类」标题，只保留筛选项） */
@@ -16,21 +17,27 @@ export function CategoryNav({
   const { t } = useLocale();
 
   const itemClass = (active: boolean) =>
-    `text-sm transition-colors ${
+    cn(
+      "inline-flex shrink-0 items-center rounded-md px-3 py-2.5 text-sm font-semibold transition-colors lg:w-full",
       active
-        ? "font-semibold text-primary-strong"
-        : "text-foreground-secondary hover:text-primary-strong"
-    }`;
+        ? "bg-primary-light text-primary-strong"
+        : "bg-surface text-foreground-secondary hover:bg-accent hover:text-foreground",
+    );
 
   return (
-    <nav className="flex flex-wrap gap-x-5 gap-y-2 lg:flex-col lg:gap-2">
-      <Link href="/articles" className={itemClass(activeCategory === null)}>
+    <nav className="flex flex-wrap gap-2 lg:flex-col lg:gap-1">
+      <Link
+        href="/articles"
+        aria-current={activeCategory === null ? "page" : undefined}
+        className={itemClass(activeCategory === null)}
+      >
         {t("articles.all")}
       </Link>
       {categories.map((name) => (
         <Link
           key={name}
           href={`/articles?category=${encodeURIComponent(name)}`}
+          aria-current={activeCategory === name ? "page" : undefined}
           className={itemClass(activeCategory === name)}
         >
           {name}
@@ -60,7 +67,7 @@ export function ArticleList({
         <p className="text-lg text-foreground-secondary">{t("articles.subtitle")}</p>
       </header>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[180px_1fr] lg:items-start lg:gap-12">
+      <div className="mt-10 grid gap-8 lg:grid-cols-[180px_1fr] lg:items-start lg:gap-6">
         <aside className="lg:sticky lg:top-24">
           <CategoryNav categories={categories} activeCategory={activeCategory} />
         </aside>

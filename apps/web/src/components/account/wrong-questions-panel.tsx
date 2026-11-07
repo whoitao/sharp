@@ -81,15 +81,15 @@ export function WrongQuestionsPanel() {
   };
 
   return (
-    <div className="min-w-0 pb-2">
-      <div>
+    <div className="min-w-0 pb-2 md:grid md:pb-0">
+      <div className="md:contents">
         {status === "loading" ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-foreground-secondary">
             <Loader2 className="h-4 w-4 animate-spin" />
             {t("wrong.loading")}
           </div>
         ) : status === "error" ? (
-          <div className="rounded-lg border border-border bg-surface p-6 text-center card-shadow">
+          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface p-6 text-center card-shadow md:h-full">
             <p className="text-sm font-semibold">{t("wrong.loadErrorTitle")}</p>
             <p className="mt-1 text-xs text-foreground-secondary">
               {t("wrong.loadErrorBody")}
@@ -104,7 +104,7 @@ export function WrongQuestionsPanel() {
             </Button>
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-lg border border-border bg-surface px-4 py-12 text-center card-shadow">
+          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface px-4 py-12 text-center card-shadow md:h-full">
             <PartyPopper className="mx-auto h-9 w-9 text-primary" />
             <p className="mt-3 text-sm font-semibold">{t("wrong.emptyTitle")}</p>
             <p className="mt-1 text-xs text-foreground-secondary">
