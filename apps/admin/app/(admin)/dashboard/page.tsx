@@ -332,23 +332,16 @@ export default function DashboardPage() {
             <Empty description={t("stats.empty")} />
           </SectionCard>
         ) : (
-          <div
-            style={{
-              // KPI 卡片按可用宽度自适应列数：宽屏一行六张，窄屏自动换行，不产生横向溢出
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(min(168px, 100%), 1fr))",
-              gap: 12,
-              paddingBottom: 4,
-            }}
-          >
+          <Row gutter={[12, 12]}>
             {kpis.map((kpi) => (
-              <div
-                key={kpi.label}
+              <Col key={kpi.label} xs={24} sm={12} lg={8} xl={4}>
+                <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
                   minWidth: 0,
+                  height: "100%",
                   paddingTop: 14,
                   paddingBottom: 14,
                   paddingLeft: 16,
@@ -405,8 +398,9 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+              </Col>
             ))}
-          </div>
+          </Row>
         )}
 
         {data && (
