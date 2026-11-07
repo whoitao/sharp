@@ -48,7 +48,7 @@ export const zh: Messages = {
     textbookManagement: "教材管理",
     gradeManagement: "年级管理",
     tags: "标签",
-    articles: "文章管理",
+    articles: "文档管理",
     petManagement: "宠物管理",
   },
   settings: {
@@ -182,7 +182,7 @@ export const zh: Messages = {
     tags: "标签管理",
     textbooks: "教材管理",
     grades: "年级管理",
-    articles: "文章管理",
+    articles: "文档管理",
     pets: "宠物管理",
     studyRecords: "学习记录",
     users: "学员管理",

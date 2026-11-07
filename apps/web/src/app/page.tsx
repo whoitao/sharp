@@ -26,7 +26,7 @@ export default function Home() {
           </p>
         </div>
         <div className="flex gap-4">
-          <Link href="/docs">
+          <Link href="/wiki">
             <Button size="lg">{t("home.getStarted")}</Button>
           </Link>
           <Link href="#paths">
@@ -108,7 +108,7 @@ export default function Home() {
           <p className="max-w-[85%] leading-normal text-foreground-secondary sm:text-lg sm:leading-7">
             {t("home.ctaSubtitle")}
           </p>
-          <Link href="/docs">
+          <Link href="/wiki">
             <Button size="lg" className="mt-4">
               {t("home.ctaButton")}
             </Button>

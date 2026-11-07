@@ -22,7 +22,7 @@ const navItems = [
   { href: "/", labelKey: "nav.home" },
   { href: "/learn", labelKey: "nav.learn", requiresAuth: true },
   { href: "/articles", labelKey: "nav.articles" },
-  { href: "/docs", labelKey: "nav.docs" },
+  { href: "/wiki", labelKey: "nav.wiki" },
   { href: "/about", labelKey: "nav.about" },
 ];
 

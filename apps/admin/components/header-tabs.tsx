@@ -8,7 +8,7 @@ export type HeaderTabItem<K extends string = string> = {
   label: ReactNode;
 };
 
-// 顶栏 Tab 栏：与「文章管理」一致，用于替代页面标题
+// 顶栏 Tab 栏：与「文档管理」一致，用于替代页面标题
 export function HeaderTabs<K extends string>({
   items,
   activeKey,

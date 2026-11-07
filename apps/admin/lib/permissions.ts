@@ -37,7 +37,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   { key: "tags", label: "标签管理", writable: true },
   { key: "textbooks", label: "教材管理", writable: true },
   { key: "grades", label: "年级管理", writable: true },
-  { key: "articles", label: "文章管理", writable: true },
+  { key: "articles", label: "文档管理", writable: true },
   { key: "pets", label: "宠物管理", writable: true },
   { key: "study-records", label: "学习记录", writable: false },
   { key: "users", label: "学员管理", writable: true },

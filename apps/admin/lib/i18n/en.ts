@@ -46,7 +46,7 @@ export const en = {
     textbookManagement: "Textbook Management",
     gradeManagement: "Grade Management",
     tags: "Tags",
-    articles: "Article Management",
+    articles: "Document Management",
     petManagement: "Pet Management",
   },
   settings: {
@@ -181,7 +181,7 @@ export const en = {
     tags: "Tags",
     textbooks: "Textbooks",
     grades: "Grades",
-    articles: "Articles",
+    articles: "Documents",
     pets: "Pets",
     studyRecords: "Study Records",
     users: "Users",

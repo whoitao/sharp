@@ -4,7 +4,7 @@ export const en = {
     menu: "Menu",
     learn: "Learn",
     pet: "Pet",
-    docs: "Docs",
+    wiki: "Wiki",
     about: "About",
     github: "GitHub",
     articles: "News",

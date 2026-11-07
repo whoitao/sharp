@@ -141,17 +141,14 @@ export function WikiBrowser({
         {mobileOpen ? t("wiki.hideToc") : t("wiki.toc")}
       </button>
 
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+      <div className="grid items-start gap-5 lg:grid-cols-[21rem_minmax(0,1fr)]">
         <aside
           className={cn(
-            "overflow-hidden rounded-lg border border-border bg-surface card-shadow lg:sticky lg:top-20 lg:block",
+            "overflow-hidden lg:block",
             mobileOpen ? "block" : "hidden",
           )}
         >
-          <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-foreground-tertiary">
-            {t("wiki.title")}
-          </div>
-          <div className="max-h-[60vh] overflow-y-auto lg:max-h-[calc(100vh-12rem)]">
+          <div className="max-h-[46vh] overflow-y-auto lg:max-h-[calc(100vh-10rem)]">
             {tree.length === 0 ? (
               <p className="px-3 py-8 text-center text-xs text-foreground-tertiary">
                 {t("wiki.empty")}

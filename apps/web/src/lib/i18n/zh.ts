@@ -6,7 +6,7 @@ export const zh: Messages = {
     menu: "菜单",
     learn: "学习",
     pet: "宠物",
-    docs: "文档",
+    wiki: "Wiki",
     about: "关于",
     github: "GitHub",
     articles: "新闻",
