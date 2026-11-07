@@ -206,9 +206,6 @@ export function AuthPanel() {
             <p className="mt-1 text-sm text-foreground-secondary">
               {user.nickname || user.username}
             </p>
-            <p className="mt-3 text-xs leading-5 text-foreground-tertiary">
-              {t("auth.signedInBody")}
-            </p>
           </div>
 
           <div className="mt-6 space-y-2">
@@ -231,10 +228,6 @@ export function AuthPanel() {
               {t("auth.signOut")}
             </Button>
           </div>
-
-          <p className="mt-5 border-t border-border-light pt-4 text-xs leading-5 text-foreground-tertiary">
-            {t("auth.comingSoon")}
-          </p>
         </div>
       </AuthLayout>
     );
