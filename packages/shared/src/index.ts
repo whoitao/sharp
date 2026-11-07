@@ -536,3 +536,4 @@ export function buildAvatarUrl(
 }
 
 export * from './pet';
+export * from './wiki';

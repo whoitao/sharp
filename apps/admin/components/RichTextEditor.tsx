@@ -40,6 +40,8 @@ interface RichTextEditorProps {
   compact?: boolean;
   disabled?: boolean;
   style?: React.CSSProperties;
+  /** 图片上传接口，默认题目图片；Wiki 等模块可传自己的端点 */
+  imageUploadEndpoint?: string;
 }
 
 /** 把富文本 HTML 转成纯文本，供表格/弹层等场景展示 */
@@ -130,12 +132,15 @@ async function compressImage(file: File): Promise<Blob> {
   }
 }
 
-async function uploadImageFile(file: File): Promise<string> {
+async function uploadImageFile(
+  file: File,
+  endpoint: string = IMAGE_UPLOAD_ENDPOINT,
+): Promise<string> {
   const blob = await compressImage(file);
   const form = new FormData();
   form.append("file", blob, file.name || "question-image");
   const token = localStorage.getItem("admin_token");
-  const res = await fetch(IMAGE_UPLOAD_ENDPOINT, {
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: form,
@@ -156,6 +161,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   compact = false,
   disabled = false,
   style,
+  imageUploadEndpoint = IMAGE_UPLOAD_ENDPOINT,
 }) => {
   const { t } = useLocale();
   const { token } = antdTheme.useToken();
@@ -242,7 +248,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
     uploadingCountRef.current += 1;
     setUploading(true);
-    uploadImageFile(file)
+    uploadImageFile(file, imageUploadEndpoint)
       .then((url) => {
         const instance = editorRef.current;
         if (!instance) return;

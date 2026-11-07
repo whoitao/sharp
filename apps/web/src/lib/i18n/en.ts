@@ -584,6 +584,15 @@ export const en = {
       },
     ],
   },
+  wiki: {
+    title: "Wiki",
+    toc: "Contents",
+    hideToc: "Hide contents",
+    empty: "No wiki pages available yet.",
+    emptyContent: "This page has no content yet.",
+    notFound: "Page not found",
+    updatedAt: "Updated {date}",
+  },
   notFound: {
     title: "404",
     description: "The page you are looking for does not exist or has been moved.",

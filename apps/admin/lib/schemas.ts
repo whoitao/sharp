@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { WIKI_SLUG_PATTERN } from "./wiki";
 
 /** 空字符串 / null 视为未传，避免 z.coerce 把 "" 变成 0 或报错。 */
 const OPTIONAL_BIGINT = z.preprocess(
@@ -182,4 +183,41 @@ export const chapterCreateSchema = z.object({
 export const chapterUpdateSchema = z.object({
   name: z.string().trim().min(1).optional(),
   sortOrder: z.coerce.number().int().nullish(),
+});
+
+/* ===== Wiki ===== */
+
+const wikiSlugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(80)
+  .transform((value) => value.toLowerCase())
+  .refine((value) => WIKI_SLUG_PATTERN.test(value), "slug 只能包含小写字母、数字和连字符");
+
+export const wikiPageCreateSchema = z.object({
+  parentId: OPTIONAL_BIGINT,
+  title: z.string().trim().min(1).max(200),
+  slug: wikiSlugSchema,
+  summary: z.string().trim().max(500).nullish(),
+  content: z.string().nullish(),
+  status: z.enum(["draft", "published"]).optional(),
+  visibility: z.enum(["public", "private"]).optional(),
+  sortOrder: z.coerce.number().int().nullish(),
+});
+
+export const wikiPageUpdateSchema = z.object({
+  title: z.string().trim().min(1).max(200).optional(),
+  slug: wikiSlugSchema.optional(),
+  summary: z.string().trim().max(500).nullish(),
+  content: z.string().nullish(),
+  status: z.enum(["draft", "published"]).optional(),
+  visibility: z.enum(["public", "private"]).optional(),
+  sortOrder: z.coerce.number().int().optional(),
+});
+
+/** 移动 / 排序：parentId 为 null 表示移到根，beforeId 为 null 表示放到末尾 */
+export const wikiMoveSchema = z.object({
+  parentId: NULLABLE_BIGINT,
+  beforeId: NULLABLE_BIGINT,
 });

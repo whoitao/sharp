@@ -578,6 +578,15 @@ export const zh: Messages = {
       },
     ],
   },
+  wiki: {
+    title: "Wiki",
+    toc: "目录",
+    hideToc: "收起目录",
+    empty: "暂无可显示的 Wiki 页面。",
+    emptyContent: "该页面还没有正文内容。",
+    notFound: "页面不存在",
+    updatedAt: "更新于 {date}",
+  },
   notFound: {
     title: "404",
     description: "您访问的页面不存在或已被移动。",

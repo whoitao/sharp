@@ -441,6 +441,47 @@ model Article {
   @@index([categoryId])
 }
 
+// ===== Wiki 模块 =====
+// 独立内容树：parentId 邻接表 + 派生 path（用于公开 URL 与唯一约束）
+model WikiPage {
+  id       BigInt     @id @default(autoincrement())
+  parentId BigInt?
+  parent   WikiPage?  @relation("WikiTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children WikiPage[] @relation("WikiTree")
+
+  title String @db.VarChar(200)
+  slug  String @db.VarChar(80)
+  // 层级路径，如 getting-started/install；根节点等于 slug
+  path  String @db.VarChar(500)
+  // 0 = 根节点，用于 UI 缩进与深度限制
+  level Int    @default(0)
+
+  sortOrder Int @default(0)
+
+  summary String? @db.VarChar(500)
+  content String? @db.Text
+
+  // draft | published
+  status String @default("draft")
+  // public | private
+  visibility  String    @default("public")
+  publishedAt DateTime?
+
+  // 审计字段：存 Admin.id 字符串，不做外键，避免删管理员时牵连文档
+  createdBy String?
+  updatedBy String?
+
+  // 迁移追溯：便于从 Article 幂等导入
+  legacyArticleId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([path])
+  @@index([parentId, sortOrder])
+  @@index([status, visibility])
+}
+
 // ===== 电子宠物模块 =====
 // 宠物是学习闭环的反馈层：练习结算发放经验与食物，学生手动喂养后成长、进化。
 // 本模块只做后台配置与数据查看，移动端接口另实现。

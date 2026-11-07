@@ -6,8 +6,9 @@ import { theme } from "antd";
 import { useMemo, useState } from "react";
 import ArticlesPanel from "./ArticlesPanel";
 import CategoriesPanel from "./CategoriesPanel";
+import WikiPanel from "./WikiPanel";
 
-type TabKey = "articles" | "categories";
+type TabKey = "articles" | "categories" | "wiki";
 
 export default function ArticlesPage() {
   const { t } = useLocale();
@@ -17,6 +18,7 @@ export default function ArticlesPage() {
   const tabs: { key: TabKey; label: string }[] = [
     { key: "articles", label: t("articles.title") },
     { key: "categories", label: t("articleCategories.title") },
+    { key: "wiki", label: t("wiki.title") },
   ];
 
   const headerTabs = useMemo(
@@ -64,5 +66,11 @@ export default function ArticlesPage() {
 
   usePageTitle(headerTabs);
 
-  return activeKey === "articles" ? <ArticlesPanel /> : <CategoriesPanel />;
+  return activeKey === "articles" ? (
+    <ArticlesPanel />
+  ) : activeKey === "categories" ? (
+    <CategoriesPanel />
+  ) : (
+    <WikiPanel />
+  );
 }

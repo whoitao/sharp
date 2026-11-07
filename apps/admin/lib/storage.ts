@@ -164,6 +164,27 @@ export async function uploadQuestionImage(
   return { objectPath: path, url: questionImagePublicUrl(path) };
 }
 
+/** Wiki 正文图片：wiki/{随机UUID}.{ext} */
+export function wikiImagePath(contentType: ImageContentType): string {
+  return `wiki/${randomId()}.${CONTENT_TYPE_TO_EXT[contentType]}`;
+}
+
+/** Wiki 正文图片的完整 URL */
+export function wikiImagePublicUrl(path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+}
+
+/** 上传 Wiki 正文图片，返回相对路径与完整 URL */
+export async function uploadWikiImage(
+  bytes: Uint8Array,
+  contentType: ImageContentType,
+): Promise<{ objectPath: string; url: string }> {
+  const path = wikiImagePath(contentType);
+  await putObject(path, bytes, contentType);
+  return { objectPath: path, url: wikiImagePublicUrl(path) };
+}
+
 /** 教材封面：textbooks/covers/{随机UUID}.{ext} */
 export function textbookCoverPath(contentType: ImageContentType): string {
   return `textbooks/covers/${randomId()}.${CONTENT_TYPE_TO_EXT[contentType]}`;
