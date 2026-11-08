@@ -234,6 +234,7 @@ export default function WikiEditor({
         form={form}
         layout="vertical"
         disabled={!canWrite}
+        className="wiki-form"
         onValuesChange={() => onDirtyChange(true)}
       >
         {/* 标题 / Slug / 可见性：宽屏一行三等分，md 起两列，窄屏单列 */}
@@ -252,7 +253,7 @@ export default function WikiEditor({
             <Form.Item
               name="slug"
               label={t("wiki.slugLabel")}
-              extra={t("wiki.slugHint")}
+              tooltip={t("wiki.slugHint")}
               rules={[
                 { required: true, message: t("wiki.slugRequired") },
                 { pattern: SLUG_PATTERN, message: t("wiki.slugInvalid") },

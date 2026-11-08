@@ -2,7 +2,7 @@
 
 import { useThemeMode } from "@/components/antd-providers";
 import GroupedGradeSelect from "@/components/GroupedGradeSelect";
-import IonIcon from "@/components/IonIcon";
+import SubjectSelect from "@/components/SubjectSelect";
 import TrendChart, { type TrendChartType } from "@/components/TrendChart";
 import { formatDateTime } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
@@ -24,7 +24,6 @@ import {
   Empty,
   Row,
   Segmented,
-  Select,
   Spin,
   Table,
   type TableProps,
@@ -300,30 +299,15 @@ export default function DashboardPage() {
             onChange={(value) => setGradeId((value as string) ?? null)}
             grades={grades}
           />
-          <Select
+          <SubjectSelect
             allowClear
             style={{ width: 170 }}
+            iconColor={palette.accentStrong}
             prefix={<BookOutlined style={{ color: palette.textTertiary }} />}
             placeholder={t("stats.allSubjects")}
-            value={subjectId}
+            value={subjectId ?? undefined}
             onChange={(value) => setSubjectId(value ?? null)}
-            options={subjects.map((subject) => ({
-              value: subject.id,
-              label: subject.name,
-              icon: subject.icon,
-            }))}
-            optionRender={(opt: any) => (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <IonIcon name={opt.data?.icon} size={18} color={palette.accentStrong} />
-                {opt.label}
-              </span>
-            )}
-            labelRender={(opt: any) => (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <IonIcon name={opt.icon} size={16} color={palette.accentStrong} />
-                {opt.label}
-              </span>
-            )}
+            subjects={subjects}
           />
         </div>
 

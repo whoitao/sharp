@@ -3,6 +3,7 @@
 import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
 
 import SubjectSelect from "@/components/SubjectSelect";
+import GroupedGradeSelect from "@/components/GroupedGradeSelect";
 import { usePageSize } from "@/components/antd-providers";
 import { usePermissions } from "@/components/permissions";
 import { usePageActions } from "@/components/page-actions";
@@ -56,7 +57,8 @@ type Textbook = {
 
 type StageOption = { id: string; name: string };
 type SubjectOption = { id: string; name: string; icon: string | null };
-type GradeOption = { id: string; name: string; stageId: string };
+// stage 为学段名称，供 GroupedGradeSelect 按学段分组
+type GradeOption = { id: string; name: string; stageId: string; stage?: string | null };
 type PublisherOption = { id: string; name: string };
 
 // semester 是数据库存储值，仅 label 按语言渲染
@@ -90,7 +92,7 @@ export default function TextbooksPanel() {
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
   const [grades, setGrades] = useState<GradeOption[]>([]);
   const [publishers, setPublishers] = useState<PublisherOption[]>([]);
-  const [filterStageId, setFilterStageId] = useState<string>();
+  const [filterGradeId, setFilterGradeId] = useState<string>();
   const [filterSubjectId, setFilterSubjectId] = useState<string>();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -112,7 +114,7 @@ export default function TextbooksPanel() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filterStageId) params.set("stageId", filterStageId);
+      if (filterGradeId) params.set("gradeId", filterGradeId);
       if (filterSubjectId) params.set("subjectId", filterSubjectId);
       const r = await fetch(`/api/admin/textbooks?${params}`, { headers: authHeaders() });
       if (!r.ok) throw new Error(await r.text());
@@ -156,7 +158,7 @@ export default function TextbooksPanel() {
   useEffect(() => {
     loadData().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStageId, filterSubjectId]);
+  }, [filterGradeId, filterSubjectId]);
 
   const openCreate = () => {
     setEditing(null);
@@ -425,13 +427,15 @@ export default function TextbooksPanel() {
   return (
     <div>
       <div style={{ marginBottom: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <Select
-          placeholder={t("textbooks.filterAllStages")}
+        <GroupedGradeSelect
+          showSearch
           allowClear
-          style={{ width: 160 }}
-          value={filterStageId}
-          options={stages.map((s) => ({ value: s.id, label: s.name }))}
-          onChange={setFilterStageId}
+          style={{ width: 180 }}
+          iconColor={token.colorTextTertiary}
+          placeholder={t("stats.allGrades")}
+          value={filterGradeId}
+          onChange={(value) => setFilterGradeId(value as string | undefined)}
+          grades={grades}
         />
         <SubjectSelect
           placeholder={t("textbooks.filterAllSubjects")}

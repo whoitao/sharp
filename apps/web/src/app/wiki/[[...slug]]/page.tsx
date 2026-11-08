@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { WikiBrowser } from "@/components/wiki/wiki-browser";
 import {
   fetchWikiPage,
@@ -46,7 +47,14 @@ export default function WikiPage({
 }) {
   // cacheComponents 下 params 与远程数据读取需要 Suspense 边界
   return (
-    <Suspense fallback={<div className="py-16" />}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-foreground-secondary">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          加载中
+        </div>
+      }
+    >
       <WikiContent params={params} />
     </Suspense>
   );

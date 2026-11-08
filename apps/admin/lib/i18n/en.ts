@@ -291,7 +291,6 @@ export const en = {
     upload: "Upload",
     fetch: "Fetch",
     remove: "Remove",
-    filterAllStages: "All Stages",
     filterAllSubjects: "All Subjects",
   },
   publishers: {

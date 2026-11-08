@@ -290,7 +290,6 @@ export const zh: Messages = {
     upload: "上传",
     fetch: "抓取",
     remove: "移除",
-    filterAllStages: "全部学段",
     filterAllSubjects: "全部科目",
   },
   publishers: {

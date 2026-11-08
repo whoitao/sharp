@@ -38,11 +38,18 @@ export default function WikiTree({
               alignItems: "center",
               gap: 6,
               maxWidth: "100%",
+              minWidth: 0,
             }}
           >
             <span
               title={node.title}
-              style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              style={{
+                flex: "0 1 auto",
+                minWidth: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
             >
               {node.title}
             </span>

@@ -362,6 +362,23 @@ html[data-theme='dark'] .sharp-rich-text blockquote {
   margin-bottom: 8px !important;
 }
 
+/* Wiki 表单：必填星号是 label 的 ::before，排到标签文字之后、问号提示之前 */
+.wiki-form .ant-form-item-label > label.ant-form-item-required::before {
+  order: 1;
+  margin-inline-start: 2px;
+  margin-inline-end: 0;
+}
+
+/* 标签右侧问号提示：order 置于星号之后，命中区域 16px，颜色沿用 antd 令牌 */
+.wiki-form .ant-form-item-tooltip {
+  order: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
 /* scroll.x = max-content 只按列宽总和撑开表格；
    宽屏下列宽总和小于容器时，剩余空间会落在固定「操作」列左侧。
    这里让内层 table 至少铺满容器：宽屏时填满，溢出时仍按内容宽度横向滚动。 */

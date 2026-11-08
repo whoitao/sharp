@@ -160,7 +160,7 @@ export function WikiBrowser({
   };
 
   return (
-    <div className="pt-[0.25rem]">
+    <div className="pt-1">
       {/* 窄屏：sticky 目录条 + 展开卡片 */}
       <div className="sticky top-14 z-30 -mx-4 mb-4 border-b border-border-light bg-background/90 px-4 py-2 backdrop-blur-md lg:hidden">
         <button
@@ -168,7 +168,7 @@ export function WikiBrowser({
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen((open) => !open)}
           className={cn(
-            "flex h-[2.2rem] w-full items-center gap-2 rounded-sm border px-3 text-sm transition-colors card-shadow",
+            "flex h-9 w-full items-center gap-2 rounded-sm border px-3 text-sm transition-colors card-shadow",
             mobileOpen
               ? "border-primary bg-primary-light text-primary-strong"
               : "border-border bg-surface text-foreground-secondary",
@@ -184,10 +184,15 @@ export function WikiBrowser({
         </button>
 
         {mobileOpen && (
-          <div className="mt-2 max-h-[46vh] overflow-y-auto rounded-lg border border-border bg-surface card-shadow">
-            <div className="border-b border-border-light px-4 py-3 text-xs font-bold tracking-wide text-foreground">
-              {t("wiki.toc")}
-            </div>
+          <>
+            <div
+              className="fixed inset-0 z-[-1]"
+              onClick={() => setMobileOpen(false)}
+            />
+            <div className="mt-2 max-h-[46vh] overflow-y-auto rounded-lg border border-border bg-surface card-shadow">
+              <div className="border-b border-border-light px-4 pb-3 pt-4 text-xs font-bold tracking-wide text-foreground">
+                {t("wiki.toc")}
+              </div>
             <div className="py-2">
               {tree.length === 0 ? (
                 <p className="px-3 py-6 text-center text-xs text-foreground-tertiary">
@@ -203,7 +208,8 @@ export function WikiBrowser({
                 />
               )}
             </div>
-          </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -232,7 +238,7 @@ export function WikiBrowser({
           </div>
         </aside>
 
-        <article className="min-w-0 rounded-lg border border-border bg-surface p-4 card-shadow">
+        <article className="min-w-0 rounded-lg border border-border bg-surface p-5 card-shadow sm:p-6">
           {detail ? (
             <>
               <nav
@@ -244,7 +250,7 @@ export function WikiBrowser({
                 </Link>
                 {crumbs.map((crumb, index) => (
                   <span key={crumb.path} className="flex items-center gap-2">
-                    <span className="text-border">/</span>
+                    <span className="text-foreground-tertiary">/</span>
                     {index === crumbs.length - 1 ? (
                       <span className="text-foreground-secondary">{crumb.title}</span>
                     ) : (
@@ -259,7 +265,7 @@ export function WikiBrowser({
                 ))}
               </nav>
 
-              <h1 className="mt-3 text-[1.35rem] font-bold leading-tight tracking-tight md:text-3xl">
+              <h1 className="mt-3 text-xl font-bold leading-tight tracking-tight md:text-3xl">
                 {detail.title}
               </h1>
               {detail.summary && (
@@ -273,9 +279,9 @@ export function WikiBrowser({
                 })}
               </p>
 
-              <div className="mt-[1.5rem] border-t border-border-light" />
+              <div className="mt-6 border-t border-border-light" />
 
-              <div className="mt-[1.25rem]">
+              <div className="mt-5">
                 {detail.content ? (
                   <RichText html={detail.content} className="[&>*:first-child]:!mt-0" />
                 ) : (
@@ -286,12 +292,12 @@ export function WikiBrowser({
               {(neighbors.prev || neighbors.next) && (
                 <nav
                   aria-label={`${t("wiki.prev")} / ${t("wiki.next")}`}
-                  className="mt-[2.2rem] grid gap-4 border-t border-border-light pt-[1.5rem] md:grid-cols-2"
+                  className="mt-9 grid gap-4 border-t border-border-light pt-6 md:grid-cols-2"
                 >
                   {neighbors.prev ? (
                     <Link
                       href={`/wiki/${neighbors.prev.path}`}
-                      className="flex flex-col gap-1 rounded-sm border border-border bg-surface px-4 py-4 transition-colors hover:border-primary hover:bg-surface-secondary"
+                      className="flex flex-col gap-1 rounded-sm bg-surface-secondary px-4 py-4 transition-colors hover:bg-primary-light"
                     >
                       <span className="flex items-center gap-1 text-xs text-foreground-tertiary">
                         <ArrowLeft className="h-3.5 w-3.5" />
@@ -307,7 +313,7 @@ export function WikiBrowser({
                   {neighbors.next ? (
                     <Link
                       href={`/wiki/${neighbors.next.path}`}
-                      className="flex flex-col gap-1 rounded-sm border border-border bg-surface px-4 py-4 transition-colors hover:border-primary hover:bg-surface-secondary md:items-end md:text-right"
+                      className="flex flex-col gap-1 rounded-sm bg-surface-secondary px-4 py-4 transition-colors hover:bg-primary-light md:items-end md:text-right"
                     >
                       <span className="flex items-center gap-1 text-xs text-foreground-tertiary">
                         {t("wiki.next")}

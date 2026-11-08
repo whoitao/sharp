@@ -323,7 +323,7 @@ export default function WikiPanel() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "320px minmax(0, 1fr)",
+          gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "280px minmax(0, 1fr)",
           gap: 16,
           alignItems: "start",
         }}
@@ -391,7 +391,7 @@ export default function WikiPanel() {
         okText={t("common.create")}
         destroyOnHidden
       >
-        <Form form={createForm} layout="vertical" preserve={false}>
+        <Form form={createForm} layout="vertical" preserve={false} className="wiki-form">
           <Form.Item
             name="title"
             label={t("wiki.titleLabel")}
@@ -402,7 +402,7 @@ export default function WikiPanel() {
           <Form.Item
             name="slug"
             label={t("wiki.slugLabel")}
-            extra={t("wiki.slugHint")}
+            tooltip={t("wiki.slugHint")}
             rules={[
               { required: true, message: t("wiki.slugRequired") },
               { pattern: SLUG_PATTERN, message: t("wiki.slugInvalid") },
@@ -422,7 +422,7 @@ export default function WikiPanel() {
         okText={t("common.save")}
         destroyOnHidden
       >
-        <Form form={renameForm} layout="vertical" preserve={false}>
+        <Form form={renameForm} layout="vertical" preserve={false} className="wiki-form">
           <Form.Item
             name="title"
             label={t("wiki.titleLabel")}
@@ -433,7 +433,7 @@ export default function WikiPanel() {
           <Form.Item
             name="slug"
             label={t("wiki.slugLabel")}
-            extra={t("wiki.slugHint")}
+            tooltip={t("wiki.slugHint")}
             rules={[
               { required: true, message: t("wiki.slugRequired") },
               { pattern: SLUG_PATTERN, message: t("wiki.slugInvalid") },
