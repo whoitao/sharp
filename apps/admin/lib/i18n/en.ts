@@ -283,7 +283,6 @@ export const en = {
     publisher: "Publisher",
     publisherPlaceholder: "Publisher",
     publisherRequired: "Please select a publisher",
-    isbn: "ISBN",
     description: "Description",
     sortOrder: "Sort Order",
     coverSection: "Cover (3:4 portrait)",

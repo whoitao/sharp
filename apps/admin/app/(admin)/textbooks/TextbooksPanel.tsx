@@ -48,7 +48,6 @@ type Textbook = {
   semester: number;
   semesterLabel: string;
   coverUrl: string | null;
-  isbn: string | null;
   description: string | null;
   sortOrder: number;
   chapterCount: number;
@@ -180,7 +179,6 @@ export default function TextbooksPanel() {
       gradeId: row.gradeId,
       publisherId: row.publisherId,
       semester: row.semester,
-      isbn: row.isbn,
       description: row.description,
       sortOrder: row.sortOrder,
     });
@@ -258,7 +256,6 @@ export default function TextbooksPanel() {
         gradeId: v.gradeId,
         publisherId: v.publisherId,
         semester: v.semester,
-        isbn: v.isbn,
         description: v.description,
         sortOrder: v.sortOrder ?? 0,
       };
@@ -368,11 +365,8 @@ export default function TextbooksPanel() {
       title: t("textbooks.colTextbook"),
       dataIndex: "name",
       width: 260,
-      render: (value: string, row) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{value}</div>
-          {row.isbn && <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>ISBN {row.isbn}</div>}
-        </div>
+      render: (value: string) => (
+        <div style={{ fontWeight: 500 }}>{value}</div>
       ),
     },
     {
@@ -463,7 +457,7 @@ export default function TextbooksPanel() {
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
         confirmLoading={saving}
-        okText={t("common.create")}
+        okText={editing ? t("common.save") : t("common.create")}
         cancelText={t("common.cancel")}
         forceRender={formReady}
         width={720}
@@ -544,9 +538,6 @@ export default function TextbooksPanel() {
                   </Form.Item>
                 </Col>
               </Row>
-              <Form.Item name="isbn" label={t("textbooks.isbn")}>
-                <Input placeholder={t("common.optional")} maxLength={32} />
-              </Form.Item>
               <Form.Item name="description" label={t("textbooks.description")}>
                 <Input.TextArea rows={2} placeholder={t("common.optional")} maxLength={200} />
               </Form.Item>

@@ -67,7 +67,6 @@ function serialize(t: any) {
     semester: t.semester,
     semesterLabel: SEMESTER_LABEL[t.semester] ?? "",
     coverUrl: t.coverUrl ? textbookCoverPublicUrl(t.coverUrl) : null,
-    isbn: t.isbn ?? null,
     description: t.description ?? null,
     sortOrder: t.sortOrder,
     chapterCount: t.chapterCount ?? 0,
@@ -119,7 +118,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = textbookCreateSchema.parse(await request.json().catch(() => ({})));
-    const { subjectId, gradeId, publisherId, semester, coverUrl, isbn, description, sortOrder } = body;
+    const { subjectId, gradeId, publisherId, semester, coverUrl, description, sortOrder } = body;
 
     const [subject, grade, publisher] = await Promise.all([
       prisma.subject.findUnique({ where: { id: subjectId }, select: { id: true, name: true } }),
@@ -147,7 +146,6 @@ export async function POST(request: NextRequest) {
         publisherId: publisher.id,
         semester,
         coverUrl: coverUrl || null,
-        isbn: isbn?.trim() || null,
         description: description?.trim() || null,
         sortOrder: sortOrder ?? 0,
       },
@@ -193,7 +191,6 @@ export async function PATCH(request: NextRequest) {
       data.stageId = grade.stageId;
     }
     if (body.coverUrl !== undefined) data.coverUrl = body.coverUrl || null;
-    if (body.isbn !== undefined) data.isbn = body.isbn?.trim() || null;
     if (body.description !== undefined) data.description = body.description?.trim() || null;
     if (body.sortOrder != null) data.sortOrder = body.sortOrder;
 

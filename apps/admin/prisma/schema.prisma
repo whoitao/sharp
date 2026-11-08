@@ -372,7 +372,6 @@ model Textbook {
   grade       Grade     @relation(fields: [gradeId], references: [id])
   semester    Int       @default(1) // 1=上册 2=下册 0=全一册
   coverUrl    String? // 封面图（Supabase Storage 相对路径）
-  isbn        String?
   description String?
   sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())

@@ -156,7 +156,6 @@ export const textbookCreateSchema = z.object({
   publisherId: z.coerce.bigint(),
   semester: z.coerce.number().int().min(0).max(2),
   coverUrl: z.string().nullish(),
-  isbn: z.string().nullish(),
   description: z.string().nullish(),
   sortOrder: z.coerce.number().int().nullish(),
 });
@@ -168,7 +167,6 @@ export const textbookUpdateSchema = z.object({
   gradeId: OPTIONAL_BIGINT,
   semester: z.coerce.number().int().min(0).max(2).optional(),
   coverUrl: z.string().nullish(),
-  isbn: z.string().nullish(),
   description: z.string().nullish(),
   sortOrder: z.coerce.number().int().nullish(),
 });

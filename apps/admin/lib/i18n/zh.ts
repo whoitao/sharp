@@ -282,7 +282,6 @@ export const zh: Messages = {
     publisher: "版本",
     publisherPlaceholder: "版本",
     publisherRequired: "请选择版本",
-    isbn: "ISBN",
     description: "描述",
     sortOrder: "排序",
     coverSection: "封面（竖版 3:4）",
