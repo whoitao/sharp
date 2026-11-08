@@ -32,7 +32,7 @@ import {
   theme,
   type TableProps,
 } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Textbook = {
   id: string;
@@ -108,19 +108,27 @@ export default function TextbooksPanel() {
   const [formReady, setFormReady] = useState(false);
   const [form] = Form.useForm();
   const formStageId = Form.useWatch("stageId", form);
+  // 请求序号：列表接口较慢，快速切换筛选时只允许最新一次请求写入结果
+  const requestSeq = useRef(0);
 
-  const loadData = async () => {
+  const loadData = async (signal?: AbortSignal) => {
+    const seq = ++requestSeq.current;
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (filterGradeId) params.set("gradeId", filterGradeId);
       if (filterSubjectId) params.set("subjectId", filterSubjectId);
-      const r = await fetch(`/api/admin/textbooks?${params}`, { headers: authHeaders() });
+      const r = await fetch(`/api/admin/textbooks?${params}`, { headers: authHeaders(), signal });
       if (!r.ok) throw new Error(await r.text());
       const json = await r.json();
+      // 已有更新的请求发出，丢弃本次（可能已过期的）结果
+      if (seq !== requestSeq.current) return;
       setData(Array.isArray(json) ? json : []);
+    } catch (err) {
+      if ((err as Error)?.name === "AbortError") return;
+      throw err;
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   };
 
@@ -155,7 +163,10 @@ export default function TextbooksPanel() {
   }, []);
 
   useEffect(() => {
-    loadData().catch(() => {});
+    // 取消上一次仍在途的请求，避免慢响应覆盖新筛选结果
+    const controller = new AbortController();
+    loadData(controller.signal).catch(() => {});
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterGradeId, filterSubjectId]);
 
