@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sharp · Wiki 详情页重设计（v1）</title>
+<style>
+:root {
+  --border: #dde7e1;
+  --border-light: #edf3f0;
+  --background: #f2f8f5;
+  --surface: #ffffff;
+  --surface-secondary: #f7fbf9;
+  --foreground: #10231a;
+  --foreground-secondary: #4f6b5e;
+  --foreground-tertiary: #5c7268;
+  --primary: #10b981;
+  --primary-light: #ddf6ea;
+  --primary-strong: #0b7f58;
+  --primary-foreground: #ffffff;
+  --destructive: #cf2121;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --card-shadow: 0 1px 2px rgba(16, 35, 26, .04), 0 4px 12px rgba(16, 35, 26, .04);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+svg { flex: none; }
+
+/* ── 文档控制条（不属于产品界面） ── */
+.proto-bar {
+  position: sticky; top: 0; z-index: 120;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+}
+.proto-inner {
+  max-width: 1520px; margin: 0 auto; padding: 10px 24px;
+  display: flex; align-items: center; gap: 16px;
+}
+.proto-title { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.proto-title span {
+  margin-left: 8px; padding: 2px 7px; border-radius: 999px;
+  background: var(--primary-light); color: var(--primary-strong);
+  font-size: 11px; font-weight: 600;
+}
+.proto-nav { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.proto-nav a {
+  padding: 5px 10px; border-radius: 7px;
+  font-size: 12.5px; color: var(--foreground-secondary);
+}
+.proto-nav a:hover { background: var(--surface-secondary); color: var(--foreground); }
+.proto-note { font-size: 12px; color: var(--foreground-tertiary); white-space: nowrap; }
+
+/* ── 文档骨架 ── */
+.doc { max-width: 1520px; margin: 0 auto; padding: 40px 24px 96px; }
+.hero { margin-bottom: 48px; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--primary-strong);
+}
+.hero h1 {
+  margin: 10px 0 0; font-size: 34px; line-height: 1.25; letter-spacing: -.01em;
+}
+.hero p { margin: 12px 0 0; max-width: 74ch; color: var(--foreground-secondary); font-size: 15px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); font-size: 12.5px; color: var(--foreground-secondary);
+}
+.chip b { color: var(--foreground); font-weight: 600; }
+.chip.is-primary { border-color: color-mix(in srgb, var(--primary) 34%, var(--border)); background: var(--primary-light); color: var(--primary-strong); }
+
+.section { padding-top: 34px; margin-top: 34px; border-top: 1px solid var(--border); }
+.section-head { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+.section-head h2 { margin: 0; font-size: 21px; letter-spacing: -.01em; }
+.section-head p { margin: 0; font-size: 13.5px; color: var(--foreground-tertiary); }
+.section-index {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 8px;
+  background: var(--primary-light); color: var(--primary-strong);
+  font-size: 12px; font-weight: 700;
+}
+
+/* ── 画板外壳 ── */
+.board-scroll { overflow-x: auto; padding: 4px 4px 18px; }
+.board {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(16, 35, 26, .08);
+  overflow: hidden;
+}
+.board-desktop { width: 1440px; }
+.chrome {
+  display: flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 14px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface-secondary);
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); }
+.addr {
+  flex: 1; max-width: 520px; margin: 0 auto 0 10px;
+  height: 22px; line-height: 22px; padding: 0 10px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--foreground-tertiary);
+  font-size: 11.5px; text-align: left;
+}
+.board-legend {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px 22px; margin: 16px 2px 0;
+  list-style: none; padding: 0;
+}
+.board-legend li { display: flex; gap: 9px; font-size: 12.5px; color: var(--foreground-secondary); line-height: 1.6; }
+.board-legend b { color: var(--foreground); font-weight: 600; }
+.num {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; margin-top: 2px; border-radius: 50%;
+  background: var(--primary-strong); color: var(--primary-foreground);
+  font-size: 10.5px; font-weight: 700;
+}
+.pin {
+  position: absolute; z-index: 6;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--primary-strong); color: var(--primary-foreground);
+  border: 2px solid var(--surface);
+  font-size: 10.5px; font-weight: 700; line-height: 1;
+  box-shadow: 0 2px 6px rgba(16, 35, 26, .18);
+}
+
+/* ── 桌面画板：产品界面 ── */
+.screen { background: var(--background); }
+
+.mock-nav {
+  position: sticky; top: 0; z-index: 20;
+  border-bottom: 1px solid var(--border-light);
+  background: color-mix(in srgb, var(--background) 82%, transparent);
+  backdrop-filter: blur(10px);
+}
+.mock-nav-inner {
+  position: relative;
+  max-width: 1200px; margin: 0 auto; height: 56px; padding: 0 20px;
+  display: flex; align-items: center; gap: 24px;
+}
+.mock-brand { display: flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 700; color: var(--primary); }
+.mock-brand i {
+  width: 28px; height: 28px; border-radius: 8px; background: var(--primary);
+  color: var(--primary-foreground); font-style: normal; font-size: 14px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.mock-navlinks { display: flex; align-items: center; gap: 4px; }
+.mock-navlinks a {
+  padding: 7px 12px; border-radius: 8px;
+  font-size: 17.5px; font-weight: 500; color: var(--foreground-secondary);
+}
+.mock-navlinks a.is-active { background: var(--primary-light); color: var(--primary-strong); font-weight: 600; }
+.mock-navactions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.icon-btn {
+  width: 34px; height: 34px; border-radius: 8px; border: 1px solid transparent;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--foreground-secondary); background: transparent; font-size: 15px;
+}
+.icon-btn.is-bordered { border-color: var(--border); background: var(--surface); }
+.mock-btn {
+  height: 34px; padding: 0 14px; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--primary); color: var(--primary-foreground);
+  font-size: 17.5px; font-weight: 600;
+}
+
+.mock-main { max-width: 1200px; margin: 0 auto; padding: 30px 20px 0; }
+.mock-grid {
+  display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 40px;
+  align-items: start;
+}
+
+/* 目录 */
+.toc {
+  position: sticky; top: 86px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+.toc-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 16px 18px 12px; border-bottom: 1px solid var(--border-light);
+  font-size: 15px; font-weight: 700; color: var(--foreground);
+  letter-spacing: .04em;
+}
+.toc-head em {
+  margin-left: auto; font-style: normal; font-weight: 500;
+  font-size: 13px; color: var(--foreground-tertiary);
+}
+.toc-tree { padding: 8px 0 10px; }
+.toc-row {
+  position: relative; display: flex; align-items: center;
+  min-height: 38px; padding-right: 12px;
+}
+.toc-row:hover { background: var(--surface-secondary); }
+.toc-row.is-active { background: var(--primary-light); }
+.toc-row.is-active::before {
+  content: ""; position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 3px; border-radius: 0 3px 3px 0; background: var(--primary);
+}
+.toc-chev {
+  width: 26px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--foreground-tertiary); font-size: 11px; flex: none;
+}
+.toc-label {
+  flex: 1; min-width: 0; padding: 8px 10px 8px 0;
+  font-size: 17.5px; font-weight: 600; color: var(--foreground);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.toc-row.is-active .toc-label { color: var(--primary-strong); }
+.toc-children .toc-row { min-height: 34px; }
+.toc-children .toc-label {
+  font-size: 15px; font-weight: 500; padding-left: 14px;
+  color: var(--foreground-secondary);
+}
+.toc-children .toc-row.is-active .toc-label { color: var(--primary-strong); font-weight: 600; }
+.toc-group + .toc-group { border-top: 1px solid var(--border-light); }
+
+/* 正文卡片 */
+.content {
+  position: relative;
+  padding: 40px 50px 44px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--card-shadow);
+}
+.crumbs {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  font-size: 15px; color: var(--foreground-tertiary);
+}
+.crumbs .sep { color: var(--border); }
+.crumbs .current { color: var(--foreground-secondary); }
+.page-title {
+  margin: 12px 0 0;
+  font-size: 37.5px; line-height: 1.25; letter-spacing: -.015em; font-weight: 700;
+}
+.lede {
+  margin: 14px 0 0; max-width: 62ch;
+  font-size: 17.5px; line-height: 1.7; color: var(--foreground-secondary);
+}
+.meta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 14px; font-size: 15px; color: var(--foreground-tertiary);
+}
+.meta .dot-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--border); }
+.meta-tag {
+  padding: 1px 8px; border-radius: 999px;
+  background: var(--primary-light); color: var(--primary-strong);
+  font-size: 13px; font-weight: 600;
+}
+.divider {
+  height: 1px; margin: 30px 0 0; border: 0;
+  background: var(--border-light);
+}
+
+/* 富文本 */
+.article { margin-top: 24px; font-size: 20px; line-height: 1.9; color: var(--foreground); }
+.article > :first-child { margin-top: 0; }
+.article p { margin: .85em 0; }
+.article h2 { margin: 1.6em 0 .6em; font-size: 27px; line-height: 1.35; font-weight: 700; }
+.article h3 { margin: 1.6em 0 .6em; font-size: 23px; line-height: 1.4; font-weight: 700; }
+.article ul, .article ol { margin: .85em 0; padding-left: 1.2em; }
+.article li { margin: .3em 0; list-style: disc; }
+.article ol li { list-style: decimal; }
+.article strong { font-weight: 700; }
+.article code {
+  padding: .1em .35em; border-radius: 5px;
+  background: var(--surface-secondary); border: 1px solid var(--border-light);
+  font-family: var(--mono); font-size: .85em;
+}
+.two-col { position: relative; width: 100%; margin: 1.25em 0; border-collapse: collapse; table-layout: fixed; }
+.two-col td { padding: 0 12px 0 0; vertical-align: top; }
+.two-col td + td { padding: 0 0 0 12px; }
+.fig-ph {
+  display: grid; place-items: center;
+  aspect-ratio: 16 / 10; width: 100%;
+  border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  background:
+    repeating-linear-gradient(135deg, var(--surface-secondary) 0 10px, var(--surface) 10px 20px);
+  color: var(--foreground-tertiary); font-size: 13px; text-align: center; line-height: 1.5;
+}
+.fig-cap { margin-top: 8px; font-size: 13px; color: var(--foreground-tertiary); }
+.quote {
+  margin: 1.25em 0; padding: 16px 20px;
+  border-left: 3px solid var(--primary); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--primary-light); color: var(--foreground); font-size: 18px; line-height: 1.75;
+}
+.quote b { color: var(--primary-strong); }
+.code {
+  margin: 1.25em 0; padding: 16px 18px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-secondary);
+  font-family: var(--mono); font-size: 15px; line-height: 1.8;
+  color: var(--foreground-secondary);
+}
+.code .k { color: var(--primary-strong); }
+.code .n { color: var(--foreground); }
+.code .c { color: var(--foreground-tertiary); }
+
+/* 上下篇 */
+.pager {
+  position: relative;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 44px; padding-top: 30px; border-top: 1px solid var(--border-light);
+}
+.pager-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); transition: border-color .15s, background .15s;
+}
+.pager-card:hover { border-color: var(--primary); background: var(--surface-secondary); }
+.pager-card .dir { font-size: 13px; color: var(--foreground-tertiary); }
+.pager-card .title { font-size: 17.5px; font-weight: 600; color: var(--foreground); }
+.pager-card.is-next { text-align: right; align-items: flex-end; }
+
+/* 页脚 */
+.mock-footer {
+  position: relative;
+  margin-top: 56px; border-top: 1px solid var(--border-light);
+  background: var(--surface);
+}
+.mock-footer-inner {
+  max-width: 1200px; margin: 0 auto; padding: 36px 20px 26px;
+  display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 28px;
+}
+.mock-footer h4 { margin: 0 0 10px; font-size: 15px; font-weight: 700; }
+.mock-footer .brandline { font-size: 15px; color: var(--foreground-secondary); max-width: 30ch; }
+.mock-footer li { font-size: 14px; color: var(--foreground-secondary); padding: 3px 0; }
+.mock-footer-bottom {
+  border-top: 1px solid var(--border-light);
+  max-width: 1200px; margin: 0 auto; padding: 14px 20px 22px;
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: 13px; color: var(--foreground-tertiary);
+}
+
+/* ── 移动画板 ── */
+.phones { display: flex; gap: 56px; align-items: flex-start; flex-wrap: wrap; }
+.phone-wrap { width: 375px; }
+.phone {
+  width: 375px; border: 10px solid #16211c; border-radius: 34px;
+  background: var(--background); overflow: hidden;
+  box-shadow: 0 18px 40px rgba(16, 35, 26, .16);
+}
+.phone-status {
+  height: 26px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between;
+  background: var(--background); font-size: 10px; color: var(--foreground-tertiary);
+}
+.phone-caption { margin: 12px 2px 0; font-size: 12.5px; color: var(--foreground-tertiary); }
+.phone-caption b { color: var(--foreground); font-weight: 600; }
+
+.m-nav {
+  height: 52px; padding: 0 16px; display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border-light);
+  background: color-mix(in srgb, var(--background) 84%, transparent);
+}
+.m-nav .mock-brand { font-size: 17px; }
+.m-nav .mock-brand i { width: 24px; height: 24px; border-radius: 7px; font-size: 12px; }
+.m-nav .mock-navactions { gap: 2px; }
+.m-nav .icon-btn { width: 30px; height: 30px; font-size: 14px; }
+.m-body { position: relative; padding: 12px 16px 26px; }
+.m-tocbar {
+  position: relative;
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; height: 44px; padding: 0 12px; margin-bottom: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); box-shadow: var(--card-shadow);
+  font-size: 14px; color: var(--foreground-secondary);
+}
+.m-tocbar .cur {
+  min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  color: var(--foreground); font-weight: 600;
+}
+.m-tocbar .chev { color: var(--foreground-tertiary); font-size: 10px; }
+.m-toc-card {
+  position: relative;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--card-shadow);
+  overflow: hidden; margin-bottom: 12px;
+}
+.m-card {
+  position: relative;
+  padding: 18px 20px 22px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--card-shadow);
+}
+.is-mobile .page-title { margin-top: 8px; font-size: 27px; line-height: 1.3; }
+.is-mobile .lede {
+  margin-top: 10px; font-size: 15px; line-height: 1.6;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.is-mobile .crumbs { font-size: 13px; gap: 5px; }
+.is-mobile .meta { margin-top: 10px; font-size: 13px; }
+.is-mobile .divider { margin-top: 18px; }
+.is-mobile .article { margin-top: 16px; font-size: 17px; line-height: 1.8; }
+.is-mobile .article h2 { font-size: 22px; }
+.is-mobile .article h3 { font-size: 19px; }
+.is-mobile .two-col,
+.is-mobile .two-col tbody,
+.is-mobile .two-col tr,
+.is-mobile .two-col td { display: block; width: 100% !important; }
+.is-mobile .two-col td { padding: 0 0 14px; }
+.is-mobile .two-col td + td { padding: 0 0 6px; }
+.is-mobile .quote { font-size: 15px; padding: 12px 14px; }
+.is-mobile .code { font-size: 12.5px; padding: 12px 14px; }
+.is-mobile .pager { grid-template-columns: 1fr; gap: 10px; margin-top: 28px; padding-top: 20px; }
+.is-mobile .pager-card { padding: 13px 14px; }
+.is-mobile .pager-card .title { font-size: 15px; }
+.is-mobile .pager-card.is-next { text-align: left; align-items: flex-start; }
+.is-mobile .m-footer {
+  margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--border-light);
+  font-size: 12px; color: var(--foreground-tertiary);
+}
+
+/* ── 状态卡 / 局部 ── */
+.state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 22px; align-items: start; }
+.spec-card {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+.spec-card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 13px 18px; border-bottom: 1px solid var(--border-light);
+  background: var(--surface-secondary);
+  font-size: 13.5px; font-weight: 600;
+}
+.spec-card-head span { font-weight: 500; color: var(--foreground-tertiary); font-size: 12px; }
+.spec-card-body { padding: 18px; }
+.toc-mini { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.long-title-row { display: flex; gap: 10px; justify-content: space-between; font-size: 12.5px; color: var(--foreground-tertiary); margin-top: 12px; }
+.state-note { margin: 10px 0 0; font-size: 12.5px; color: var(--foreground-tertiary); line-height: 1.6; }
+.state-note b { color: var(--foreground-secondary); }
+
+/* ── 规范表 ── */
+.spec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 22px; align-items: start; }
+table.data {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+table.data th, table.data td {
+  padding: 9px 12px; border-bottom: 1px solid var(--border-light); text-align: left; vertical-align: top;
+}
+table.data th {
+  background: var(--surface-secondary); font-weight: 600; color: var(--foreground-secondary);
+  font-size: 12px; letter-spacing: .02em;
+}
+table.data td { color: var(--foreground-secondary); }
+table.data td b { color: var(--foreground); font-weight: 600; }
+table.data tr:last-child td { border-bottom: 0; }
+.mono { font-family: var(--mono); font-size: 12px; color: var(--foreground); }
+
+.swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.swatch { border: 1px solid var(--border); border-radius: 9px; overflow: hidden; background: var(--surface); }
+.swatch i { display: block; height: 42px; border-bottom: 1px solid var(--border-light); }
+.swatch div { padding: 7px 9px; font-size: 11.5px; line-height: 1.5; }
+.swatch code { font-family: var(--mono); font-size: 10.5px; color: var(--foreground-tertiary); display: block; }
+
+.ruler { margin-top: 6px; }
+.ruler-bar {
+  display: flex; height: 36px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden;
+  font-size: 11px; color: var(--foreground-secondary); background: var(--surface);
+}
+.ruler-bar span { display: flex; align-items: center; justify-content: center; white-space: nowrap; }
+.ruler-bar .seg-main { background: var(--primary-light); color: var(--primary-strong); font-weight: 600; }
+.ruler-bar .seg-toc { background: var(--surface-secondary); }
+.ruler-bar .seg-gap { background: repeating-linear-gradient(45deg, var(--border-light) 0 4px, var(--surface) 4px 8px); color: var(--foreground-tertiary); }
+.ruler-caption { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--foreground-tertiary); }
+
+.callout {
+  margin-top: 18px; padding: 15px 18px;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  border-radius: var(--radius-sm);
+  background: var(--surface-secondary);
+  font-size: 13px; line-height: 1.7; color: var(--foreground-secondary);
+}
+.callout b { color: var(--primary-strong); }
+.callout ul { margin-top: 6px; padding-left: 1.1em; }
+.callout li { list-style: disc; margin: 4px 0; }
+.callout li::marker { color: var(--primary); }
+
+.footer-note {
+  margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--foreground-tertiary); line-height: 1.8;
+}
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <div class="proto-inner">
+    <div class="proto-title">Wiki 详情页 · 重设计 v1 <span>仅设计稿</span></div>
+    <nav class="proto-nav">
+      <a href="#desktop">桌面 1440</a>
+      <a href="#mobile">移动 375</a>
+      <a href="#states">状态 / 局部</a>
+      <a href="#specs">设计规范</a>
+      <a href="#changes">改了什么</a>
+    </nav>
+    <span class="proto-note">静态文件 · 不读取线上数据</span>
+  </div>
+</div>
+
+<div class="doc">
+
+  <header class="hero">
+    <div class="eyebrow">Sharp · Web · Wiki</div>
+    <h1>Wiki 详情页重设计</h1>
+    <p>
+      目标：让「查资料」这件事更快。左侧目录从裸列表升级为可固定的导航卡，标题区建立清晰的层级节奏，
+      正文收进白卡并限制阅读宽度，移动端把目录收成随时可唤出的顶部条，并补齐上下篇导航。
+    </p>
+    <div class="chips">
+      <span class="chip is-primary"><b>只出设计稿</b>，未修改 apps/web 任何代码</span>
+      <span class="chip">画板 <b>1440 × 自适应高度</b> / <b>375 × 812</b></span>
+      <span class="chip">令牌来源 <b>apps/web/src/app/globals.css</b></span>
+      <span class="chip">字体 <b>系统字体栈</b>（与站点一致）</span>
+    </div>
+  </header>
+
+  <!-- ───────────── 桌面 ───────────── -->
+  <section class="section" id="desktop">
+    <div class="section-head">
+      <span class="section-index">01</span>
+      <h2>桌面 1440</h2>
+      <p>栅格：1200 容器 / 300 目录 / 40 列间距 / 820 正文，正文卡内再留 50 内边距</p>
+    </div>
+
+    <div class="board-scroll">
+      <div class="board board-desktop">
+        <div class="chrome">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <div class="addr">sharp.app/wiki/product-handbook/getting-started</div>
+        </div>
+        <div class="screen">
+
+          <div class="mock-nav">
+            <div class="mock-nav-inner">
+              <span class="pin" style="right:-9px; top:19px;">1</span>
+              <div class="mock-brand"><i>S</i>Sharp</div>
+              <nav class="mock-navlinks">
+                <a>学习</a><a>题库</a><a class="is-active">Wiki</a><a>文档</a><a>关于</a>
+              </nav>
+              <div class="mock-navactions">
+                <span class="icon-btn">◐</span>
+                <span class="icon-btn is-bordered">中</span>
+                <span class="mock-btn">登录</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mock-main">
+            <div class="mock-grid">
+
+              <aside class="toc">
+                <span class="pin" style="left:-9px; top:-9px;">2</span>
+                <div class="toc-head">☰ 目录 <em>12 篇</em></div>
+                <div class="toc-tree">
+                  <div class="toc-group">
+                    <div class="toc-row">
+                      <span class="toc-chev">▸</span>
+                      <span class="toc-label">产品概览</span>
+                    </div>
+                  </div>
+                  <div class="toc-group">
+                    <div class="toc-row">
+                      <span class="toc-chev">▾</span>
+                      <span class="toc-label">产品手册</span>
+                    </div>
+                    <div class="toc-children">
+                      <div class="toc-row is-active">
+                        <span class="toc-chev"></span>
+                        <span class="toc-label">快速开始</span>
+                      </div>
+                      <div class="toc-row">
+                        <span class="toc-chev"></span>
+                        <span class="toc-label">账号与偏好设置</span>
+                      </div>
+                      <div class="toc-row">
+                        <span class="toc-chev"></span>
+                        <span class="toc-label">题库与学习路径</span>
+                      </div>
+                      <div class="toc-row">
+                        <span class="toc-chev"></span>
+                        <span class="toc-label">常见问题</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="toc-group">
+                    <div class="toc-row">
+                      <span class="toc-chev">▸</span>
+                      <span class="toc-label">教学与教研</span>
+                    </div>
+                  </div>
+                  <div class="toc-group">
+                    <div class="toc-row">
+                      <span class="toc-chev">▸</span>
+                      <span class="toc-label">开发与接口</span>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+
+              <article class="content">
+                <span class="pin" style="left:-9px; top:34px;">3</span>
+
+                <nav class="crumbs">
+                  <span>Wiki</span><span class="sep">/</span>
+                  <span>产品手册</span><span class="sep">/</span>
+                  <span class="current">快速开始</span>
+                </nav>
+
+                <h1 class="page-title">快速开始</h1>
+                <p class="lede">
+                  用 5 分钟了解 Sharp 的核心概念、账号准备与第一次练习流程。读完这篇，
+                  你就能独立完成一次完整的「学 + 练」闭环。
+                </p>
+
+                <div class="meta">
+                  <span>更新于 2026/11/08</span>
+                  <span class="dot-sep"></span>
+                  <span>约 6 分钟阅读</span>
+                  <span class="dot-sep"></span>
+                  <span class="meta-tag">入门</span>
+                </div>
+
+                <div class="divider"></div>
+                <span class="pin" style="right:-9px; top:196px;">5</span>
+
+                <div class="article">
+                  <table class="two-col">
+                    <tbody>
+                      <tr>
+                        <td style="width:40%">
+                          <div class="fig-ph">配图 16:10<br />随列宽自适应</div>
+                          <div class="fig-cap">图 1 · 学习路径总览</div>
+                        </td>
+                        <td style="width:60%">
+                          <p>
+                            Sharp 把「学」和「练」拆成两条独立路径：<strong>Wiki</strong> 负责把知识讲清楚，
+                            <strong>题库</strong> 负责把记忆留下来。你可以先读一篇，再去做对应练习。
+                          </p>
+                          <p>建议第一次使用时，按下面的顺序走一遍。</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <span class="pin" style="right:-9px; top:252px;">4</span>
+
+                  <h2>第一步：准备账号</h2>
+                  <p>使用邮箱或第三方账号登录即可，学习记录会跟随账号同步，换设备不用重新开始。</p>
+                  <ol>
+                    <li>完成登录，并在「偏好设置」里选择常用语言。</li>
+                    <li>设置每日练习目标（建议从 20 题开始）。</li>
+                    <li>在题库页收藏一个感兴趣的主题。</li>
+                  </ol>
+
+                  <div class="quote">
+                    <b>提示：</b>收藏本页后，可在「我的收藏」里快速回到这份指南。
+                  </div>
+
+                  <h2>第二步：开始第一次练习</h2>
+                  <p>题库按主题组织，每一组练习都会记录正确率与用时，结束后自动生成复习清单。</p>
+
+                  <pre class="code"><code><span class="c">// 练习配置示例</span>
+{
+  <span class="k">"topic"</span>: <span class="n">"vocabulary"</span>,
+  <span class="k">"size"</span>: <span class="n">20</span>,
+  <span class="k">"mode"</span>: <span class="n">"daily"</span>
+}</code></pre>
+
+                  <h3>一个小技巧</h3>
+                  <p>练习时不必追求速度：<code>连续 3 天</code>完成目标，比一次性刷 100 题更容易形成记忆。</p>
+
+                  <div class="pager">
+                    <span class="pin" style="right:-9px; top:-9px;">6</span>
+                    <a class="pager-card">
+                      <span class="dir">← 上一篇</span>
+                      <span class="title">产品概览</span>
+                    </a>
+                    <a class="pager-card is-next">
+                      <span class="dir">下一篇 →</span>
+                      <span class="title">题库与学习路径</span>
+                    </a>
+                  </div>
+                </div>
+              </article>
+
+            </div>
+          </div>
+
+          <footer class="mock-footer">
+            <span class="pin" style="left:calc(50% - 600px); top:-9px;">7</span>
+            <div class="mock-footer-inner">
+              <div>
+                <div class="mock-brand" style="margin-bottom:10px;"><i>S</i>Sharp</div>
+                <p class="brandline">一个把知识讲清楚、把记忆留下来的学习平台。</p>
+              </div>
+              <div>
+                <h4>产品</h4>
+                <ul><li>题库</li><li>学习路径</li><li>Wiki</li></ul>
+              </div>
+              <div>
+                <h4>资源</h4>
+                <ul><li>文档</li><li>更新日志</li><li>常见问题</li></ul>
+              </div>
+              <div>
+                <h4>关于</h4>
+                <ul><li>团队</li><li>隐私政策</li><li>联系我们</li></ul>
+              </div>
+            </div>
+            <div class="mock-footer-bottom">
+              <span>© 2026 Sharp</span>
+              <span>中文 · 浅色</span>
+            </div>
+          </footer>
+
+        </div>
+      </div>
+    </div>
+
+    <ul class="board-legend">
+      <li><span class="num">1</span><span><b>导航 56px。</b>沿用现有高度与毛玻璃背景，当前页用 <code>primary-light</code> 药丸底 + <code>primary-strong</code> 文字标出。</span></li>
+      <li><span class="num">2</span><span><b>目录升级为白卡（300px）。</b>sticky 跟随滚动；当前项左侧 3px 主色竖条 + 浅绿底；父级常显展开箭头。</span></li>
+      <li><span class="num">3</span><span><b>标题区。</b>面包屑 0.75rem → 标题 1.875rem → 摘要 0.875rem（≤62ch）→ 元信息 0.75rem，间距 0.5 / 0.7 / 0.7rem。</span></li>
+      <li><span class="num">4</span><span><b>两栏块。</b>表格 40/60，图随列宽自适应、不浮动；图注 0.65rem 三级文字。</span></li>
+      <li><span class="num">5</span><span><b>分隔线。</b>1px <code>border-light</code>，上下留白 1.5rem / 1.25rem（与当前「紧贴」不同，见待确认项）。</span></li>
+      <li><span class="num">6</span><span><b>新增上下篇。</b>两张卡等宽，右侧右对齐；hover 主色描边。</span></li>
+      <li><span class="num">7</span><span><b>页脚沿用现有结构</b>：品牌 + 三组链接 + 版权行，仅统一字号与间距。</span></li>
+    </ul>
+  </section>
+
+  <!-- ───────────── 移动 ───────────── -->
+  <section class="section" id="mobile">
+    <div class="section-head">
+      <span class="section-index">02</span>
+      <h2>移动 375</h2>
+      <p>目录收成 sticky 顶部条；标题区压缩为 2 行摘要 + 单行元信息；正文卡片内边距 1rem，两栏块自动堆叠</p>
+    </div>
+
+    <div class="phones">
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-status"><span>9:41</span><span>▮▮▮ ⌁ ▰</span></div>
+          <div class="is-mobile">
+            <div class="m-nav">
+              <span class="pin" style="left:-9px; top:17px;">1</span>
+              <div class="mock-brand"><i>S</i>Sharp</div>
+              <div class="mock-navactions">
+                <span class="icon-btn">◐</span>
+                <span class="icon-btn is-bordered">中</span>
+                <span class="icon-btn">☰</span>
+              </div>
+            </div>
+            <div class="m-body">
+              <div class="m-tocbar">
+                <span class="pin" style="left:-9px; top:-9px;">2</span>
+                <span>☰</span>
+                <span class="cur">快速开始</span>
+                <span class="chev">▾</span>
+              </div>
+
+              <div class="m-card">
+                <span class="pin" style="left:-9px; top:-9px;">3</span>
+                <nav class="crumbs">
+                  <span>…</span><span class="sep">/</span><span>产品手册</span><span class="sep">/</span>
+                  <span class="current">快速开始</span>
+                </nav>
+                <h1 class="page-title">快速开始</h1>
+                <p class="lede">
+                  用 5 分钟了解 Sharp 的核心概念、账号准备与第一次练习流程。读完这篇，
+                  你就能独立完成一次完整的「学 + 练」闭环。
+                </p>
+                <div class="meta">
+                  <span>更新于 2026/11/08</span>
+                  <span class="dot-sep"></span>
+                  <span>约 6 分钟</span>
+                </div>
+                <div class="divider"></div>
+
+                <div class="article">
+                  <table class="two-col">
+                    <tbody>
+                      <tr>
+                        <td style="width:40%">
+                          <div class="fig-ph" style="aspect-ratio:16/10;">配图 16:10 · 堆叠后占满宽度</div>
+                          <div class="fig-cap">图 1 · 学习路径总览</div>
+                        </td>
+                        <td style="width:60%">
+                          <p>
+                            Sharp 把「学」和「练」拆成两条独立路径：<strong>Wiki</strong> 负责把知识讲清楚，
+                            <strong>题库</strong> 负责把记忆留下来。
+                          </p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <span class="pin" style="right:-9px; top:210px;">4</span>
+
+                  <h2>第一步：准备账号</h2>
+                  <p>使用邮箱或第三方账号登录即可，学习记录会跟随账号同步。</p>
+
+                  <div class="quote"><b>提示：</b>收藏本页后，可在「我的收藏」里快速回到这份指南。</div>
+
+                  <div class="pager">
+                    <a class="pager-card"><span class="dir">← 上一篇</span><span class="title">产品概览</span></a>
+                    <a class="pager-card is-next"><span class="dir">下一篇 →</span><span class="title">题库与学习路径</span></a>
+                  </div>
+                  <span class="pin" style="right:-9px; top:-9px;">5</span>
+
+                  <div class="m-footer">© 2026 Sharp · 中文 · 浅色</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="phone-caption"><b>默认态：</b>目录收起为顶部条，只显示当前页名；正文卡片 1rem 内边距；两栏块上下堆叠。</p>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-status"><span>9:41</span><span>▮▮▮ ⌁ ▰</span></div>
+          <div class="is-mobile">
+            <div class="m-nav">
+              <div class="mock-brand"><i>S</i>Sharp</div>
+              <div class="mock-navactions">
+                <span class="icon-btn">◐</span>
+                <span class="icon-btn is-bordered">中</span>
+                <span class="icon-btn">☰</span>
+              </div>
+            </div>
+            <div class="m-body">
+              <div class="m-tocbar" style="background:var(--primary-light); border-color:color-mix(in srgb, var(--primary) 32%, var(--border));">
+                <span style="color:var(--primary-strong);">☰</span>
+                <span class="cur" style="color:var(--primary-strong);">收起目录</span>
+                <span class="chev" style="color:var(--primary-strong);">▴</span>
+              </div>
+
+              <div class="m-toc-card">
+                <div class="toc-head" style="padding:12px 14px 10px;">☰ 目录 <em>12 篇</em></div>
+                <div class="toc-tree" style="max-height:300px; overflow:auto; padding:4px 0 8px;">
+                  <div class="toc-group">
+                    <div class="toc-row"><span class="toc-chev">▸</span><span class="toc-label" style="font-size:15px;">产品概览</span></div>
+                  </div>
+                  <div class="toc-group">
+                    <div class="toc-row"><span class="toc-chev">▾</span><span class="toc-label" style="font-size:15px;">产品手册</span></div>
+                    <div class="toc-children">
+                      <div class="toc-row is-active"><span class="toc-chev"></span><span class="toc-label">快速开始</span></div>
+                      <div class="toc-row"><span class="toc-chev"></span><span class="toc-label">账号与偏好设置</span></div>
+                      <div class="toc-row"><span class="toc-chev"></span><span class="toc-label">题库与学习路径</span></div>
+                      <div class="toc-row"><span class="toc-chev"></span><span class="toc-label" title="如何用标签和收藏管理超过两百篇的团队知识库">如何用标签和收藏管理超过两百篇的团队知识库…</span></div>
+                    </div>
+                  </div>
+                  <div class="toc-group">
+                    <div class="toc-row"><span class="toc-chev">▸</span><span class="toc-label" style="font-size:15px;">教学与教研</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="m-card" style="opacity:.55;">
+                <h1 class="page-title" style="font-size:22px;">快速开始</h1>
+                <p class="lede" style="font-size:14px;">正文在目录浮层打开时被压暗并锁定滚动，点击遮罩或再次点击顶部条收起。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="phone-caption"><b>目录展开态：</b>全宽卡片浮层，最大高度 46vh 内部滚动；当前项与父级展开规则与桌面一致。</p>
+      </div>
+    </div>
+
+    <ul class="board-legend">
+      <li><span class="num">1</span><span><b>导航 52px。</b>只保留 Logo、主题、语言与菜单，链接收进抽屉。</span></li>
+      <li><span class="num">2</span><span><b>目录条 44px。</b>sticky 吸顶（top = 导航高度），显示当前页名，超出省略；点击展开浮层。</span></li>
+      <li><span class="num">3</span><span><b>标题区压缩。</b>面包屑只留末两级（前缀省略号）；标题 1.35rem；摘要 2 行截断；元信息合并为「更新于 · 时长」。</span></li>
+      <li><span class="num">4</span><span><b>两栏块堆叠。</b>&lt;640px 时图与文上下排列，图片占满列宽，不出现横向滚动。</span></li>
+      <li><span class="num">5</span><span><b>上下篇改为纵向堆叠</b>，保持 44px 点击高度。</span></li>
+    </ul>
+  </section>
+
+  <!-- ───────────── 状态 / 局部 ───────────── -->
+  <section class="section" id="states">
+    <div class="section-head">
+      <span class="section-index">03</span>
+      <h2>关键状态与局部</h2>
+      <p>目录状态、长标题、正文组件、上下篇，单独放大评审</p>
+    </div>
+
+    <div class="state-grid">
+      <div class="spec-card">
+        <div class="spec-card-head">目录 · 当前项与父级展开 <span>激活态 / 折叠态</span></div>
+        <div class="spec-card-body">
+          <div class="toc-mini">
+            <div class="toc-group">
+              <div class="toc-row"><span class="toc-chev">▾</span><span class="toc-label" style="font-size:15px;">产品手册</span></div>
+              <div class="toc-children">
+                <div class="toc-row is-active"><span class="toc-chev"></span><span class="toc-label">快速开始</span></div>
+                <div class="toc-row"><span class="toc-chev"></span><span class="toc-label">账号与偏好设置</span></div>
+              </div>
+            </div>
+            <div class="toc-group">
+              <div class="toc-row"><span class="toc-chev">▸</span><span class="toc-label" style="font-size:15px;">教学与教研</span></div>
+            </div>
+          </div>
+          <p class="state-note">
+            <b>激活态：</b><code>primary-light</code> 底 + 3px 主色竖条 + <code>primary-strong</code> 文字。
+            父级展开箭头常显（不像现在只在 hover 时出现），折叠时箭头旋转 90°。
+          </p>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">长标题 <span>目录单行截断 / 页标题 2 行</span></div>
+        <div class="spec-card-body">
+          <div class="toc-mini">
+            <div class="toc-row" title="如何用标签和收藏管理超过两百篇的团队知识库">
+              <span class="toc-chev"></span>
+              <span class="toc-label" style="font-size:15px;">如何用标签和收藏管理超过两百篇的团队知识库…</span>
+            </div>
+          </div>
+          <h1 class="page-title" style="font-size:30px; margin-top:16px;">如何用标签和收藏<br />管理超过两百篇的团队知识库</h1>
+          <p class="state-note">
+            <b>规则：</b>目录项 <code>text-overflow: ellipsis</code> 单行截断，悬停显示完整标题；
+            页标题最多 3 行（<code>line-height 1.25</code>），不做截断，保证信息完整。
+          </p>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">正文 · 两栏块与图片 <span>40 / 60，不浮动</span></div>
+        <div class="spec-card-body">
+          <table class="two-col" style="font-size:15px;">
+            <tbody>
+              <tr>
+                <td style="width:40%">
+                  <div class="fig-ph" style="aspect-ratio:4/3; font-size:11px;">图 4:3</div>
+                  <div class="fig-cap">图 2 · 练习结果页</div>
+                </td>
+                <td style="width:60%">
+                  <p style="margin:0; color:var(--foreground-secondary); font-size:15px; line-height:1.75;">
+                    图片自动适应列宽（<code style="font-size:13px;">max-width:100%</code>），在两栏中取消浮动；
+                    文字栏可正常插入列表、引用与代码块。
+                  </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="state-note">宽屏并排，&lt;640px 堆叠；图片比例建议 4:3 或 16:10。</p>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">正文 · 引用与代码 <span>沿用现有令牌</span></div>
+        <div class="spec-card-body">
+          <div class="quote" style="font-size:14px; margin:0 0 12px;">
+            <b>提示：</b>收藏本页后，可在「我的收藏」里快速回到这份指南。
+          </div>
+          <pre class="code" style="font-size:12.5px; margin:0;"><code><span class="c">// 练习配置示例</span>
+{ <span class="k">"topic"</span>: <span class="n">"vocabulary"</span>, <span class="k">"size"</span>: <span class="n">20</span> }</code></pre>
+          <p class="state-note">引用：3px 主色左边框 + <code>primary-light</code> 底；代码：<code>surface-secondary</code> 底 + 1px 边框，移动端横向可滚动。</p>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">页底 · 上一篇 / 下一篇 <span>新增</span></div>
+        <div class="spec-card-body">
+          <div class="pager" style="margin:0; padding:0; border:0; grid-template-columns:1fr 1fr;">
+            <a class="pager-card">
+              <span class="dir">← 上一篇</span>
+              <span class="title">产品概览</span>
+            </a>
+            <a class="pager-card is-next">
+              <span class="dir">下一篇 →</span>
+              <span class="title">题库与学习路径</span>
+            </a>
+          </div>
+          <div class="pager" style="margin:14px 0 0; padding:0; border:0; grid-template-columns:1fr;">
+            <a class="pager-card"><span class="dir">← 上一篇</span><span class="title">产品概览</span></a>
+          </div>
+          <p class="state-note">桌面等宽双卡；移动端单列，上下堆叠（上例为移动态）。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────── 规范 ───────────── -->
+  <section class="section" id="specs">
+    <div class="section-head">
+      <span class="section-index">04</span>
+      <h2>设计规范</h2>
+      <p>栅格、字号、间距、颜色、圆角阴影与断点</p>
+    </div>
+
+    <div class="spec-grid">
+
+      <div class="spec-card">
+        <div class="spec-card-head">栅格与栏宽 <span>1440 / 1200 / 300 / 40 / 820</span></div>
+        <div class="spec-card-body">
+          <div class="ruler">
+            <div class="ruler-bar">
+              <span class="seg-toc" style="width:25.86%;">目录 300</span>
+              <span class="seg-gap" style="width:3.45%;">40</span>
+              <span class="seg-main" style="width:70.69%;">正文 820（内边距 20 → 阅读宽 778）</span>
+            </div>
+            <div class="ruler-caption"><span>容器 1200（两侧各 120 留白）</span><span>主内容 1160</span></div>
+          </div>
+          <p class="state-note">
+            桌面：<code>grid-template-columns: 15rem minmax(0,1fr)</code>，列间距 2rem。
+            目录 <code>position: sticky; top: 3.5rem</code>（页面无纵向内边距，两卡顶边齐平），正文卡内边距 1rem。
+          </p>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">字号层级 <span>设计稿 px ↔ 正式站点 rem</span></div>
+        <div class="spec-card-body">
+          <table class="data">
+            <thead>
+              <tr><th>层级</th><th>设计稿（舒适档）</th><th>rem</th><th>18 / 20 / 22</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><b>页面标题 h1</b>（桌面）</td><td>37.5px</td><td class="mono">1.875rem（text-3xl）</td><td>33.8 / 37.5 / 41.3</td></tr>
+              <tr><td><b>页面标题 h1</b>（移动）</td><td>27px</td><td class="mono">1.35rem</td><td>24.3 / 27 / 29.7</td></tr>
+              <tr><td><b>正文</b></td><td>20px</td><td class="mono">1rem（.article-content）</td><td>18 / 20 / 22</td></tr>
+              <tr><td>正文 h2 / h3</td><td>27 / 23px</td><td class="mono">1.35 / 1.15rem</td><td>按密度等比</td></tr>
+              <tr><td>摘要、上下篇标题</td><td>17.5px</td><td class="mono">0.875rem（text-sm）</td><td>15.8 / 17.5 / 19.3</td></tr>
+              <tr><td>目录父级</td><td>17.5px</td><td class="mono">0.875rem</td><td>15.8 / 17.5 / 19.3</td></tr>
+              <tr><td>目录子级、面包屑、元信息</td><td>15px</td><td class="mono">0.75rem（text-xs）</td><td>13.5 / 15 / 16.5</td></tr>
+              <tr><td>代码、图注</td><td>15 / 13px</td><td class="mono">0.75rem / 0.65rem</td><td>随根字号</td></tr>
+            </tbody>
+          </table>
+          <p class="state-note">除设计稿中的标注值外，正式站点所有字号与间距都以 rem 表达，随 <code>data-density</code>（18/20/22px）整体缩放。</p>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">间距规范 <span>rem 为唯一单位</span></div>
+        <div class="spec-card-body">
+          <table class="data">
+            <thead>
+              <tr><th>用途</th><th>rem</th><th>18 / 20 / 22</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>图标与文字、标签内间距</td><td class="mono">0.25 – 0.5</td><td>4.5–9 / 5–10 / 5.5–11</td></tr>
+              <tr><td>目录行内边距、元信息</td><td class="mono">0.75</td><td>13.5 / 15 / 16.5</td></tr>
+              <tr><td>卡片内边距（移动）</td><td class="mono">1</td><td>18 / 20 / 22</td></tr>
+              <tr><td>标题区内层间距</td><td class="mono">0.75 – 1</td><td>13.5–18 / 15–20 / 16.5–22</td></tr>
+              <tr><td>标题区 ↔ 分隔线 ↔ 正文</td><td class="mono">1.5 / 1.25</td><td>27/24 · 30/25 · 33/27.5</td></tr>
+              <tr><td>栅格列间距</td><td class="mono">2</td><td>36 / 40 / 44</td></tr>
+              <tr><td>正文卡片内边距（桌面）</td><td class="mono">1</td><td>18 / 20 / 22</td></tr>
+              <tr><td>章节之间（正文 h2 上）</td><td class="mono">1.6em</td><td>随正文字号</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">颜色令牌 <span>无新增色值</span></div>
+        <div class="spec-card-body">
+          <div class="swatches">
+            <div class="swatch"><i style="background:var(--background)"></i><div>页面底色<code>--background</code></div></div>
+            <div class="swatch"><i style="background:var(--surface)"></i><div>卡片表面<code>--surface</code></div></div>
+            <div class="swatch"><i style="background:var(--surface-secondary)"></i><div>次级表面<code>--surface-secondary</code></div></div>
+            <div class="swatch"><i style="background:var(--border)"></i><div>边框<code>--border</code></div></div>
+            <div class="swatch"><i style="background:var(--border-light)"></i><div>浅边框 / 分隔<code>--border-light</code></div></div>
+            <div class="swatch"><i style="background:var(--primary)"></i><div>主色<code>--primary</code></div></div>
+            <div class="swatch"><i style="background:var(--primary-light)"></i><div>浅主色底<code>--primary-light</code></div></div>
+            <div class="swatch"><i style="background:var(--primary-strong)"></i><div>深主色文字<code>--primary-strong</code></div></div>
+            <div class="swatch"><i style="background:var(--foreground)"></i><div>主文字<code>--foreground</code></div></div>
+            <div class="swatch"><i style="background:var(--foreground-secondary)"></i><div>次级文字<code>--foreground-secondary</code></div></div>
+            <div class="swatch"><i style="background:var(--foreground-tertiary)"></i><div>三级文字<code>--foreground-tertiary</code></div></div>
+            <div class="swatch"><i style="background:var(--destructive)"></i><div>危险色（仅错误态）<code>--destructive</code></div></div>
+          </div>
+          <p class="state-note">暗色模式直接复用现有 <code>.dark</code> 令牌，不额外定义颜色。</p>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">圆角 / 边框 / 阴影 <span>沿用卡片规范</span></div>
+        <div class="spec-card-body">
+          <table class="data">
+            <thead><tr><th>元素</th><th>规格</th></tr></thead>
+            <tbody>
+              <tr><td>目录卡、正文卡、移动卡</td><td><b>12px</b>（<code class="mono">--radius .75rem</code>）</td></tr>
+              <tr><td>目录条、上下篇、代码块、图注图</td><td><b>8px</b>（<code class="mono">--radius-sm</code>）</td></tr>
+              <tr><td>药丸标签</td><td>999px</td></tr>
+              <tr><td>边框</td><td>1px <code>--border</code>；分隔线 1px <code>--border-light</code></td></tr>
+              <tr><td>阴影</td><td><code class="mono">0 1px 2px rgba(16,35,26,.04), 0 4px 12px rgba(16,35,26,.04)</code></td></tr>
+              <tr><td>浮层（移动目录）</td><td>同上 <code>card-shadow</code>，靠 1px <code>--border</code> 与下方遮罩区分层级</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">断点行为 <span>1024 / 640</span></div>
+        <div class="spec-card-body">
+          <table class="data">
+            <thead><tr><th>断点</th><th>行为</th></tr></thead>
+            <tbody>
+              <tr><td><b>≥ 1024（lg）</b></td><td>双栏：目录 15rem 固定在左，正文卡 1rem 内边距；上下篇双卡并排。</td></tr>
+              <tr><td><b>640 – 1023</b></td><td>目录收为顶部按钮 / 目录条；正文通栏，卡片内边距 1rem；上下篇仍可并排。</td></tr>
+              <tr><td><b>&lt; 640</b></td><td>目录条 sticky；标题区压缩（面包屑省略前缀、摘要 2 行截断）；两栏块堆叠；上下篇单列。</td></tr>
+              <tr><td>长文阅读宽</td><td>桌面正文卡内宽 778px（约 39 个汉字/行），移动端满宽减 2rem。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ───────────── 改动说明 ───────────── -->
+  <section class="section" id="changes">
+    <div class="section-head">
+      <span class="section-index">05</span>
+      <h2>与当前实现相比改了什么</h2>
+      <p>对照 <code>wiki-browser.tsx</code> 现状</p>
+    </div>
+
+    <div class="spec-card">
+      <div class="spec-card-head">差异清单 <span>为什么改</span></div>
+      <div class="spec-card-body" style="padding:0;">
+        <table class="data">
+          <thead>
+            <tr><th style="width:15%">区域</th><th style="width:30%">现状</th><th style="width:31%">设计稿</th><th>原因</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>目录容器</b></td>
+              <td>透明裸列表，仅顶部分割线；跟随页面滚动消失</td>
+              <td>白卡 + 12px 圆角 + 阴影；<code>sticky</code> 常驻</td>
+              <td>长文滚动时仍可换页，目录本身成为可识别的导航区域</td>
+            </tr>
+            <tr>
+              <td><b>当前项</b></td>
+              <td><code>bg-primary-light</code> + 文字变色</td>
+              <td>增加 3px 主色竖条，父级箭头常显</td>
+              <td>颜色之外多一层位置线索；展开状态不再靠 hover 才发现</td>
+            </tr>
+            <tr>
+              <td><b>标题区</b></td>
+              <td>面包屑 / 标题 / 摘要 / 更新时间均 <code>mt-2</code>，节奏偏平</td>
+              <td>0.5 / 0.7 / 0.7rem 递进；元信息合并为一行 + 标签</td>
+              <td>先看到「这是哪一页」，再看到「读多久、什么时候更新」</td>
+            </tr>
+            <tr>
+              <td><b>标题 ↔ 正文</b></td>
+              <td>1px <code>border</code>，且间距为 0（紧贴）</td>
+              <td>1px <code>border-light</code>，上下 1.5rem / 1.25rem</td>
+              <td>线不压文字；若坚持紧贴可把这两处间距改回 0（待确认）</td>
+            </tr>
+            <tr>
+              <td><b>正文容器</b></td>
+              <td>透明背景，通栏，无阅读宽度限制</td>
+              <td>白卡 + 1rem 内边距，正文阅读宽 778px</td>
+              <td>长文视线跨度过大；白卡与站内其它页面的卡片语言一致</td>
+            </tr>
+            <tr>
+              <td><b>上下篇</b></td>
+              <td>无</td>
+              <td>新增双卡，移动端堆叠</td>
+              <td>文档是链式阅读，缺省出入口会打断连续浏览</td>
+            </tr>
+            <tr>
+              <td><b>移动目录</b></td>
+              <td>「目录 / 收起目录」按钮，展开后列表插在正文上方</td>
+              <td>sticky 目录条（带当前页名）+ 浮层卡片</td>
+              <td>滚动中随时换页；收起后不占正文空间</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>待确认项（评审时拍板）</b>
+      <ul>
+        <li><b>标题分隔线的呼吸感：</b>设计稿给 1.5rem / 1.25rem；上一轮线上要求「紧贴」，两种方案只差这两个数值。</li>
+        <li><b>右侧「本页大纲」：</b>≥1280 时可加 200px 栏，锚点跟随滚动；会增加三栏复杂度，本稿未画。</li>
+        <li><b>目录搜索：</b>节点超过 30 篇时建议加过滤输入框，当前先不做。</li>
+        <li><b>术语：</b>「目录 / 本页大纲 / 相关页面」沿用现有 i18n 词条，不新增文案。</li>
+      </ul>
+    </div>
+
+    <div class="callout" style="border-color:var(--border); background:var(--surface);">
+      <b>落地映射（仅供参考，本次不实施）</b>
+      <ul>
+        <li>目录卡：<code>wiki-browser.tsx</code> 的 <code>aside</code> 外层加 <code>rounded-xl border bg-surface card-shadow</code>，栅格改为 <code>lg:grid-cols-[15rem_minmax(0,1fr)] gap-8</code>。</li>
+        <li>正文卡：<code>article</code> 加卡片样式与 <code>p-4</code>（四周统一 1rem，舒适档 20px，随密度缩放）。</li>
+        <li>标题区：面包屑、h1、摘要、元信息之间的间距统一为 <code>rem</code>，分隔线改 <code>border-light</code>。</li>
+        <li>上下篇：需要接口提供相邻节点，或在前端按 tree 顺序推导（树已包含全部节点）。</li>
+        <li>评审后修订：页面去掉纵向内边距（仅留 0.25rem 贴边缓冲），正文卡内边距统一 1rem（20px），左卡 sticky 改为 <code>top: 3.5rem</code>，保证两卡顶边 0px 差值。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="footer-note">
+    设计稿为静态 HTML，未引入外部依赖与图片资源；示例配图使用虚线占位块，正式实现沿用后台富文本产出的图片。
+    颜色、圆角、阴影均来自 <code>apps/web/src/app/globals.css</code> 现有令牌；正文排版沿用 <code>.article-content</code> 的字号与间距规则。
+    本稿不修改 <code>apps/web</code> 下任何代码。
+  </div>
+
+</div>
+
+</body>
+</html>

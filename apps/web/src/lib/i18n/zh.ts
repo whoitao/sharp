@@ -586,6 +586,8 @@ export const zh: Messages = {
     emptyContent: "该页面还没有正文内容。",
     notFound: "页面不存在",
     updatedAt: "更新于 {date}",
+    prev: "上一篇",
+    next: "下一篇",
   },
   notFound: {
     title: "404",

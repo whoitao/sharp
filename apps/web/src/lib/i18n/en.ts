@@ -592,6 +592,8 @@ export const en = {
     emptyContent: "This page has no content yet.",
     notFound: "Page not found",
     updatedAt: "Updated {date}",
+    prev: "Previous",
+    next: "Next",
   },
   notFound: {
     title: "404",

@@ -4,7 +4,7 @@ import { RichText } from "@/components/learn/rich-text";
 import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { WikiPageDetail, WikiTreeNode } from "@/lib/wiki/api";
-import { ChevronDown, ChevronRight, List } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronRight, List } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -22,6 +22,15 @@ function findChain(
   return [];
 }
 
+/** 目录树的阅读顺序（深度优先），用于推导上一篇 / 下一篇 */
+function flattenTree(nodes: WikiTreeNode[], acc: WikiTreeNode[] = []): WikiTreeNode[] {
+  for (const node of nodes) {
+    acc.push(node);
+    flattenTree(node.children, acc);
+  }
+  return acc;
+}
+
 interface TreeRowsProps {
   nodes: WikiTreeNode[];
   depth: number;
@@ -32,7 +41,7 @@ interface TreeRowsProps {
 
 function WikiTreeRows({ nodes, depth, activePath, collapsed, onToggle }: TreeRowsProps) {
   return (
-    <ul className={depth === 0 ? "divide-y divide-border-light" : undefined}>
+    <ul className={cn(depth === 0 && "divide-y divide-border-light")}>
       {nodes.map((node) => {
         const selected = node.path === activePath;
         const hasChildren = node.children.length > 0;
@@ -41,10 +50,16 @@ function WikiTreeRows({ nodes, depth, activePath, collapsed, onToggle }: TreeRow
           <li key={node.id}>
             <div
               className={cn(
-                "flex items-center transition-colors",
+                "relative flex items-center transition-colors",
                 selected ? "bg-primary-light" : "hover:bg-surface-secondary",
               )}
             >
+              {selected && (
+                <span
+                  aria-hidden
+                  className="absolute inset-y-1.5 left-0 w-[3px] rounded-r bg-primary"
+                />
+              )}
               {hasChildren ? (
                 <button
                   type="button"
@@ -67,9 +82,13 @@ function WikiTreeRows({ nodes, depth, activePath, collapsed, onToggle }: TreeRow
                 title={node.title}
                 style={{ paddingLeft: `${depth * 0.75}rem` }}
                 className={cn(
-                  "min-w-0 flex-1 truncate py-2 pr-3",
+                  "min-w-0 flex-1 truncate py-1.5 pr-3 leading-5",
                   depth === 0 ? "text-sm font-semibold" : "text-xs",
-                  selected ? "text-primary-strong" : "text-foreground",
+                  selected
+                    ? "text-primary-strong"
+                    : depth === 0
+                      ? "text-foreground"
+                      : "text-foreground-secondary",
                 )}
               >
                 {node.title}
@@ -91,7 +110,7 @@ function WikiTreeRows({ nodes, depth, activePath, collapsed, onToggle }: TreeRow
   );
 }
 
-/** Wiki 浏览页：左侧树 + 右侧正文，窄屏目录可收起 */
+/** Wiki 浏览页：左侧目录卡 + 右侧正文卡，窄屏目录收进顶部条 */
 export function WikiBrowser({
   tree,
   detail,
@@ -109,6 +128,16 @@ export function WikiBrowser({
     return chain.length > 0
       ? chain.map((node) => ({ path: node.path, title: node.title }))
       : [{ path: detail.path, title: detail.title }];
+  }, [tree, detail]);
+
+  const neighbors = useMemo(() => {
+    if (!detail) return { prev: null, next: null };
+    const flat = flattenTree(tree);
+    const index = flat.findIndex((node) => node.path === detail.path);
+    return {
+      prev: index > 0 ? flat[index - 1] : null,
+      next: index >= 0 ? (flat[index + 1] ?? null) : null,
+    };
   }, [tree, detail]);
 
   const dateFormatter = useMemo(
@@ -131,53 +160,91 @@ export function WikiBrowser({
   };
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setMobileOpen((open) => !open)}
-        className="mb-3 inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground-secondary card-shadow lg:hidden"
-      >
-        <List className="h-4 w-4" />
-        {mobileOpen ? t("wiki.hideToc") : t("wiki.toc")}
-      </button>
-
-      <div className="grid items-start gap-5 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <aside
+    <div className="pt-[0.25rem]">
+      {/* 窄屏：sticky 目录条 + 展开卡片 */}
+      <div className="sticky top-14 z-30 -mx-4 mb-4 border-b border-border-light bg-background/90 px-4 py-2 backdrop-blur-md lg:hidden">
+        <button
+          type="button"
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((open) => !open)}
           className={cn(
-            "overflow-hidden rounded-none border-0 bg-transparent shadow-none lg:block",
-            mobileOpen ? "block" : "hidden",
+            "flex h-[2.2rem] w-full items-center gap-2 rounded-sm border px-3 text-sm transition-colors card-shadow",
+            mobileOpen
+              ? "border-primary bg-primary-light text-primary-strong"
+              : "border-border bg-surface text-foreground-secondary",
           )}
         >
-          <div className="max-h-[46vh] overflow-y-auto lg:max-h-[calc(100vh-10rem)]">
-            {tree.length === 0 ? (
-              <p className="px-3 py-8 text-center text-xs text-foreground-tertiary">
-                {t("wiki.empty")}
-              </p>
-            ) : (
-              <WikiTreeRows
-                nodes={tree}
-                depth={0}
-                activePath={detail?.path ?? null}
-                collapsed={collapsed}
-                onToggle={toggleNode}
-              />
-            )}
+          <List className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1 truncate text-left font-semibold">
+            {mobileOpen ? t("wiki.hideToc") : (detail?.title ?? t("wiki.toc"))}
+          </span>
+          <ChevronDown
+            className={cn("h-4 w-4 shrink-0 transition-transform", mobileOpen && "rotate-180")}
+          />
+        </button>
+
+        {mobileOpen && (
+          <div className="mt-2 max-h-[46vh] overflow-y-auto rounded-lg border border-border bg-surface card-shadow">
+            <div className="border-b border-border-light px-4 py-3 text-xs font-bold tracking-wide text-foreground">
+              {t("wiki.toc")}
+            </div>
+            <div className="py-2">
+              {tree.length === 0 ? (
+                <p className="px-3 py-6 text-center text-xs text-foreground-tertiary">
+                  {t("wiki.empty")}
+                </p>
+              ) : (
+                <WikiTreeRows
+                  nodes={tree}
+                  depth={0}
+                  activePath={detail?.path ?? null}
+                  collapsed={collapsed}
+                  onToggle={toggleNode}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8">
+        <aside className="hidden lg:sticky lg:top-14 lg:block">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface card-shadow">
+            <div className="flex items-center gap-2 border-b border-border-light px-4 pb-3 pt-4 text-xs font-bold tracking-wide text-foreground">
+              <List className="h-4 w-4 shrink-0" />
+              {t("wiki.toc")}
+            </div>
+            <div className="max-h-[calc(100vh-10rem)] overflow-y-auto py-2">
+              {tree.length === 0 ? (
+                <p className="px-3 py-8 text-center text-xs text-foreground-tertiary">
+                  {t("wiki.empty")}
+                </p>
+              ) : (
+                <WikiTreeRows
+                  nodes={tree}
+                  depth={0}
+                  activePath={detail?.path ?? null}
+                  collapsed={collapsed}
+                  onToggle={toggleNode}
+                />
+              )}
+            </div>
           </div>
         </aside>
 
-        <article className="min-w-0 rounded-none border-0 bg-transparent shadow-none">
+        <article className="min-w-0 rounded-lg border border-border bg-surface p-4 card-shadow">
           {detail ? (
             <>
               <nav
                 aria-label="breadcrumb"
-                className="flex flex-wrap items-center gap-1 text-xs text-foreground-tertiary"
+                className="flex flex-wrap items-center gap-2 text-xs text-foreground-tertiary"
               >
                 <Link href="/wiki" className="transition-colors hover:text-foreground">
                   {t("wiki.title")}
                 </Link>
                 {crumbs.map((crumb, index) => (
-                  <span key={crumb.path} className="flex items-center gap-1">
-                    <span>/</span>
+                  <span key={crumb.path} className="flex items-center gap-2">
+                    <span className="text-border">/</span>
                     {index === crumbs.length - 1 ? (
                       <span className="text-foreground-secondary">{crumb.title}</span>
                     ) : (
@@ -192,30 +259,69 @@ export function WikiBrowser({
                 ))}
               </nav>
 
-              <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight md:text-3xl">
+              <h1 className="mt-3 text-[1.35rem] font-bold leading-tight tracking-tight md:text-3xl">
                 {detail.title}
               </h1>
               {detail.summary && (
-                <p className="mt-2 text-sm leading-relaxed text-foreground-secondary">
+                <p className="mt-3.5 max-w-[62ch] text-sm leading-[1.7] text-foreground-secondary">
                   {detail.summary}
                 </p>
               )}
-              <p className="mt-2 text-xs text-foreground-tertiary">
+              <p className="mt-3.5 flex flex-wrap items-center gap-2 text-xs text-foreground-tertiary">
                 {t("wiki.updatedAt", {
                   date: dateFormatter.format(new Date(detail.updatedAt)),
                 })}
               </p>
 
-              <div className="border-t border-border">
+              <div className="mt-[1.5rem] border-t border-border-light" />
+
+              <div className="mt-[1.25rem]">
                 {detail.content ? (
-                  <RichText
-                    html={detail.content}
-                    className="text-sm leading-relaxed [&>*:first-child]:!mt-0"
-                  />
+                  <RichText html={detail.content} className="[&>*:first-child]:!mt-0" />
                 ) : (
                   <p className="text-sm text-foreground-tertiary">{t("wiki.emptyContent")}</p>
                 )}
               </div>
+
+              {(neighbors.prev || neighbors.next) && (
+                <nav
+                  aria-label={`${t("wiki.prev")} / ${t("wiki.next")}`}
+                  className="mt-[2.2rem] grid gap-4 border-t border-border-light pt-[1.5rem] md:grid-cols-2"
+                >
+                  {neighbors.prev ? (
+                    <Link
+                      href={`/wiki/${neighbors.prev.path}`}
+                      className="flex flex-col gap-1 rounded-sm border border-border bg-surface px-4 py-4 transition-colors hover:border-primary hover:bg-surface-secondary"
+                    >
+                      <span className="flex items-center gap-1 text-xs text-foreground-tertiary">
+                        <ArrowLeft className="h-3.5 w-3.5" />
+                        {t("wiki.prev")}
+                      </span>
+                      <span className="text-sm font-semibold leading-snug text-foreground">
+                        {neighbors.prev.title}
+                      </span>
+                    </Link>
+                  ) : (
+                    <span aria-hidden className="hidden md:block" />
+                  )}
+                  {neighbors.next ? (
+                    <Link
+                      href={`/wiki/${neighbors.next.path}`}
+                      className="flex flex-col gap-1 rounded-sm border border-border bg-surface px-4 py-4 transition-colors hover:border-primary hover:bg-surface-secondary md:items-end md:text-right"
+                    >
+                      <span className="flex items-center gap-1 text-xs text-foreground-tertiary">
+                        {t("wiki.next")}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="text-sm font-semibold leading-snug text-foreground">
+                        {neighbors.next.title}
+                      </span>
+                    </Link>
+                  ) : (
+                    <span aria-hidden className="hidden md:block" />
+                  )}
+                </nav>
+              )}
             </>
           ) : (
             <div className="py-16 text-center text-sm text-foreground-tertiary">
