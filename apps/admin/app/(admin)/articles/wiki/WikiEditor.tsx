@@ -16,9 +16,11 @@ import {
   App,
   Button,
   Card,
+  Col,
   Empty,
   Form,
   Input,
+  Row,
   Select,
   Space,
   Spin,
@@ -157,7 +159,7 @@ export default function WikiEditor({
           <span>{detail.title}</span>
           <Tag
             color={detail.status === "published" ? "green" : "default"}
-            bordered={false}
+            variant="filled"
             style={{ marginInlineEnd: 0 }}
           >
             {detail.status === "published"
@@ -234,35 +236,44 @@ export default function WikiEditor({
         disabled={!canWrite}
         onValuesChange={() => onDirtyChange(true)}
       >
-        <Form.Item
-          name="title"
-          label={t("wiki.titleLabel")}
-          rules={[{ required: true, message: t("wiki.titleRequired") }]}
-        >
-          <Input maxLength={200} />
-        </Form.Item>
+        {/* 标题 / Slug / 可见性：宽屏一行三等分，md 起两列，窄屏单列 */}
+        <Row gutter={16}>
+          <Col xs={24} md={12} xl={8}>
+            <Form.Item
+              name="title"
+              label={t("wiki.titleLabel")}
+              rules={[{ required: true, message: t("wiki.titleRequired") }]}
+            >
+              <Input maxLength={200} />
+            </Form.Item>
+          </Col>
 
-        <Form.Item
-          name="slug"
-          label={t("wiki.slugLabel")}
-          extra={t("wiki.slugHint")}
-          rules={[
-            { required: true, message: t("wiki.slugRequired") },
-            { pattern: SLUG_PATTERN, message: t("wiki.slugInvalid") },
-          ]}
-        >
-          <Input maxLength={80} />
-        </Form.Item>
+          <Col xs={24} md={12} xl={8}>
+            <Form.Item
+              name="slug"
+              label={t("wiki.slugLabel")}
+              extra={t("wiki.slugHint")}
+              rules={[
+                { required: true, message: t("wiki.slugRequired") },
+                { pattern: SLUG_PATTERN, message: t("wiki.slugInvalid") },
+              ]}
+            >
+              <Input maxLength={80} />
+            </Form.Item>
+          </Col>
 
-        <Form.Item name="visibility" label={t("wiki.visibility")}>
-          <Select
-            style={{ maxWidth: 200 }}
-            options={[
-              { label: t("wiki.visibilityPublic"), value: "public" },
-              { label: t("wiki.visibilityPrivate"), value: "private" },
-            ]}
-          />
-        </Form.Item>
+          <Col xs={24} md={12} xl={8}>
+            <Form.Item name="visibility" label={t("wiki.visibility")}>
+              <Select
+                style={{ width: "100%" }}
+                options={[
+                  { label: t("wiki.visibilityPublic"), value: "public" },
+                  { label: t("wiki.visibilityPrivate"), value: "private" },
+                ]}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
 
         <Form.Item name="summary" label={t("wiki.summaryLabel")}>
           <Input.TextArea rows={2} maxLength={500} showCount />

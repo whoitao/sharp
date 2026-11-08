@@ -49,13 +49,19 @@ function buildDocument(html: string, fontSize: number, color: string, lineHeight
     background: transparent;
     color: ${color};
     font-size: ${fontSize}px;
-    line-height: ${lineHeight}px;
+    /* 行高写成无单位比值：正文行高不变，局部 em 字号放大时行高按比例跟随，避免上下行叠字 */
+    line-height: ${(lineHeight / fontSize).toFixed(3)};
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", Arial, sans-serif;
     word-break: break-word;
   }
   p { margin: 0 0 10px; }
   p:last-child { margin-bottom: 0; }
   img { display: block; max-width: 100%; height: auto; margin: 4px 0; border-radius: 4px; }
+  /* 图文左右布局：float 由后台编辑器写入 inline style，手机上文字继续环绕 */
+  img[style*="float: left"], img[style*="float:left"] { float: left; margin: 4px 10px 8px 0; }
+  img[style*="float: right"], img[style*="float:right"] { float: right; margin: 4px 0 8px 10px; }
+  /* 浮动图片脱离文档流，收尾清除，避免高度测量漏掉或溢出 */
+  body::after { display: block; clear: both; content: ""; }
   .katex { font-size: 1.05em; }
   .katex-display { margin: 6px 0; overflow-x: auto; overflow-y: hidden; }
   /* 表格先按内容自适应宽度；超出容器时由脚本等比缩小字号，仍放不下才回退为定宽换行 */
@@ -68,6 +74,31 @@ function buildDocument(html: string, fontSize: number, color: string, lineHeight
   }
   th { font-weight: 600; }
   td p, th p { margin: 0; }
+  /* 图文两栏：布局表格无边框，图片随列宽自适应且不浮动 */
+  table.sharp-two-col { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 6px 0; }
+  table.sharp-two-col td, table.sharp-two-col th {
+    border: 0;
+    padding: 0 8px;
+    vertical-align: top;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  table.sharp-two-col td:first-child, table.sharp-two-col th:first-child { padding-left: 0; }
+  table.sharp-two-col td:last-child, table.sharp-two-col th:last-child { padding-right: 0; }
+  table.sharp-two-col img { float: none !important; margin: 0 0 8px; max-width: 100%; }
+  table.sharp-two-col img:not([style*="width"]) { width: 100%; }
+  /* 窄屏（含手机）两栏堆叠成上下排列，不横向滚动、不挤成窄条 */
+  @media (max-width: 640px) {
+    table.sharp-two-col,
+    table.sharp-two-col tbody,
+    table.sharp-two-col tr,
+    table.sharp-two-col td {
+      display: block;
+      width: 100% !important;
+    }
+    table.sharp-two-col td { padding: 0 0 8px; }
+  }
   /* 回退态：定宽铺满，允许长内容折行 */
   table.fit-fallback { width: 100% !important; table-layout: fixed; }
   table.fit-fallback td, table.fit-fallback th { white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
@@ -110,7 +141,7 @@ ${html}
     function fitTables() {
       var max = document.documentElement.clientWidth || 0;
       if (!max) return;
-      var tables = document.querySelectorAll('table');
+      var tables = document.querySelectorAll('table:not(.sharp-two-col)');
       for (var i = 0; i < tables.length; i++) {
         var t = tables[i];
         t.classList.remove('fit-fallback');

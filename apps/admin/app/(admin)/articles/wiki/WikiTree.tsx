@@ -48,14 +48,14 @@ export default function WikiTree({
             </span>
             {node.status === "draft" && (
               <Tag
-                bordered={false}
+                variant="filled"
                 style={{ marginInlineEnd: 0, color: token.colorTextTertiary }}
               >
                 {t("wiki.statusDraft")}
               </Tag>
             )}
             {node.visibility === "private" && (
-              <Tag bordered={false} color="orange" style={{ marginInlineEnd: 0 }}>
+              <Tag variant="filled" color="orange" style={{ marginInlineEnd: 0 }}>
                 {t("wiki.visibilityPrivate")}
               </Tag>
             )}

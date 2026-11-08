@@ -64,6 +64,8 @@ html, body {
 
 /* 富文本编辑器（TipTap）在 antd Form / Modal 内的排版收敛 */
 .sharp-rich-text {
+  position: relative;
+
   outline: none;
 }
 
@@ -77,6 +79,87 @@ html, body {
   margin-bottom: 0;
 }
 
+/* 空文档占位：文案由 Placeholder 扩展写入 data-placeholder，随 i18n 切换 */
+.sharp-rich-text p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+
+  position: absolute;
+  top: 0;
+  inset-inline-start: 1px;
+
+  color: rgba(0, 0, 0, .32);
+
+  pointer-events: none;
+}
+
+html[data-theme='dark'] .sharp-rich-text p.is-editor-empty:first-child::before {
+  color: rgba(255, 255, 255, .32);
+}
+
+.sharp-rich-text h1,
+.sharp-rich-text h2,
+.sharp-rich-text h3 {
+  margin: 8px 0 4px;
+
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.sharp-rich-text h1 {
+  font-size: 22px;
+}
+
+.sharp-rich-text h2 {
+  font-size: 19px;
+}
+
+.sharp-rich-text h3 {
+  font-size: 16px;
+}
+
+.sharp-rich-text h1:first-child,
+.sharp-rich-text h2:first-child,
+.sharp-rich-text h3:first-child {
+  margin-top: 0;
+}
+
+.sharp-rich-text ul,
+.sharp-rich-text ol {
+  margin: 4px 0;
+  padding-inline-start: 1.4em;
+}
+
+.sharp-rich-text ul {
+  list-style: disc;
+}
+
+.sharp-rich-text ol {
+  list-style: decimal;
+}
+
+.sharp-rich-text li > p {
+  margin: 0;
+}
+
+.sharp-rich-text blockquote {
+  margin: 4px 0;
+  padding-inline-start: 10px;
+
+  border-inline-start: 3px solid rgba(16, 185, 129, .45);
+
+  color: rgba(0, 0, 0, .65);
+}
+
+html[data-theme='dark'] .sharp-rich-text blockquote {
+  color: rgba(255, 255, 255, .65);
+}
+
+.sharp-rich-text a {
+  color: #10b981;
+
+  text-decoration: underline;
+}
+
 /* 行内公式与文本基线对齐，避免撑高行高 */
 .sharp-rich-text .katex {
   font-size: 1.05em;
@@ -88,21 +171,48 @@ html, body {
   outline: 2px solid rgba(16, 185, 129, .4);
 }
 
-/* 题目图片：不超过容器宽度，也不超过 480px 绝对上限；
-   小图保持自然尺寸不放大，竖长图限高 320px，编辑时一屏内可览 */
+/* 图片：设置了 width 的按尺寸显示，最长不超过容器宽度；
+   未设置尺寸的历史图片保持 480px / 320px 上限，小图不放大 */
 .sharp-rich-text img {
   display: block;
 
   margin: 4px 0;
   border-radius: 4px;
   width: auto;
-  max-width: min(100%, 480px);
+  max-width: 100%;
   height: auto;
+}
+
+.sharp-rich-text img:not([style*='width']) {
+  max-width: min(100%, 480px);
   max-height: 320px;
 }
 
 .sharp-rich-text img.ProseMirror-selectednode {
   outline: 2px solid rgba(16, 185, 129, .4);
+}
+
+/* 图文左右布局：float 由工具栏写入 inline style，环绕间距在这里补 */
+.sharp-rich-text img[style*='float: left'],
+.sharp-rich-text img[style*='float:left'] {
+  float: left;
+
+  margin: 4px 12px 8px 0;
+}
+
+.sharp-rich-text img[style*='float: right'],
+.sharp-rich-text img[style*='float:right'] {
+  float: right;
+
+  margin: 4px 0 8px 12px;
+}
+
+/* 浮动图片脱离文档流，用伪元素收尾，避免溢出到编辑器底部 */
+.sharp-rich-text::after {
+  display: block;
+  clear: both;
+
+  content: '';
 }
 
 /* 表格：固定列宽布局，避免长公式把某一列撑爆 */
@@ -130,6 +240,47 @@ html, body {
   text-align: left;
 
   background: rgba(5, 5, 5, .04);
+}
+
+/* 图文两栏：布局表格不画边框、不带表头底色，视觉上就是并排两列；
+   浅色虚线仅在编辑器内提示这是布局块，导出到 Web/移动端不会出现 */
+.sharp-rich-text table.sharp-two-col {
+  outline: 1px dashed rgba(16, 185, 129, .35);
+  outline-offset: 2px;
+}
+
+.sharp-rich-text table.sharp-two-col td,
+.sharp-rich-text table.sharp-two-col th {
+  border: 0;
+  padding: 0 8px;
+  min-width: 0;
+
+  vertical-align: top;
+
+  background: transparent;
+}
+
+.sharp-rich-text table.sharp-two-col td:first-child,
+.sharp-rich-text table.sharp-two-col th:first-child {
+  padding-inline-start: 0;
+}
+
+.sharp-rich-text table.sharp-two-col td:last-child,
+.sharp-rich-text table.sharp-two-col th:last-child {
+  padding-inline-end: 0;
+}
+
+/* 两栏里的图片随列宽自适应，不参与浮动（浮动能力仍保留在普通正文里） */
+.sharp-rich-text table.sharp-two-col img {
+  float: none !important;
+
+  margin: 0 0 4px;
+  max-width: 100%;
+}
+
+.sharp-rich-text table.sharp-two-col img:not([style*='width']) {
+  width: 100%;
+  max-height: none;
 }
 
 /* 单元格内部的段落不要带外边距，否则表格行高被撑开 */

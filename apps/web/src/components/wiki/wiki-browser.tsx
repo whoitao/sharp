@@ -206,9 +206,12 @@ export function WikiBrowser({
                 })}
               </p>
 
-              <div className="mt-6 border-t border-border pt-6">
+              <div className="border-t border-border">
                 {detail.content ? (
-                  <RichText html={detail.content} className="text-sm leading-relaxed" />
+                  <RichText
+                    html={detail.content}
+                    className="text-sm leading-relaxed [&>*:first-child]:!mt-0"
+                  />
                 ) : (
                   <p className="text-sm text-foreground-tertiary">{t("wiki.emptyContent")}</p>
                 )}

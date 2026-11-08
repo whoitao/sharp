@@ -62,7 +62,10 @@ export const buildAdminTheme = (isDark: boolean) => {
       colorBgContainer: palette.surface,
       colorBgElevated: palette.surface,
       colorBgLayout: palette.background,
-      colorBgSpotlight: palette.surfaceSecondary,
+      // Tooltip / Slider 等「聚光」浮层的底色，始终搭配 colorTextLightSolid(#fff) 白字。
+      // 不能复用 surfaceSecondary：浅色下它接近白色，白字几乎不可见。
+      // 浅色用近黑底、深色用比卡片略亮的墨绿底，两套主题对比度均 > 7:1。
+      colorBgSpotlight: isDark ? "#2B3F36" : "rgba(0, 0, 0, 0.85)",
       colorBorder: palette.border,
       colorBorderSecondary: palette.borderLight,
       colorText: palette.text,

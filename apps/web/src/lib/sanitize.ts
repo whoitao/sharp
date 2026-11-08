@@ -79,6 +79,8 @@ const ALLOWED_STYLES = {
     height: [/^\d+(\.\d+)?(px|em|rem|%)$/],
     "vertical-align": [/^(top|middle|bottom|baseline)$/],
     "border-radius": [/^\d+(\.\d+)?(px|em|rem|%)$/],
+    // 图文左右布局：图片左侧/右侧浮动，文字环绕
+    float: [/^(left|right|none)$/],
   },
 };
 
