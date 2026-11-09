@@ -426,33 +426,9 @@ export function fetchKnowledgeRecords(
   );
 }
 
-/** 选中教材只提交 textbookId，年级/科目/出版社由服务端反推 */
-export async function selectTextbook(textbookId: string): Promise<void> {
-  const res = await fetch("/api/app/settings", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", accept: "application/json" },
-    body: JSON.stringify({ textbookId }),
-  });
-  if (!res.ok) throw new AppApiError(res.status);
-}
-
 export function flattenTextbooks(stage: CatalogStageDto | null | undefined): TextbookDto[] {
   if (!stage) return [];
   return stage.subjects.flatMap((subject) => subject.textbooks);
-}
-
-export function findTextbook(
-  catalog: CatalogResponse | null,
-  textbookId: string | null,
-): TextbookDto | null {
-  if (!catalog || !textbookId) return null;
-  for (const stage of catalog.stages) {
-    for (const subject of stage.subjects) {
-      const hit = subject.textbooks.find((t) => t.id === textbookId);
-      if (hit) return hit;
-    }
-  }
-  return null;
 }
 
 /** 取第一个有题目的章节（深度优先），用于进入二级视图时的默认选中 */

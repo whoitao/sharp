@@ -1,3 +1,4 @@
+import type { TextbookDto } from "@/lib/learn/api";
 import type { Density, ThemeMode } from "@/lib/theme";
 
 export type Gender = "male" | "female";
@@ -20,6 +21,9 @@ export interface AppSettings {
   language: "zh" | "en";
   density: Density;
   /** 全局学习范围：年级 / 科目，选中教材时会由服务端同步覆盖 */
+  textbookId: string | null;
+  /** 当前教材的完整展示信息（含章节数/题数），全局 scope 的唯一来源 */
+  textbook: TextbookDto | null;
   gradeId: string | null;
   subjectId: string | null;
 }
@@ -88,6 +92,8 @@ export async function fetchSettings(): Promise<AppSettings> {
     theme: data.theme ?? "system",
     language: data.language ?? "zh",
     density: data.density ?? "comfortable",
+    textbookId: data.textbookId ?? null,
+    textbook: data.textbook ?? null,
     gradeId: data.gradeId ?? null,
     subjectId: data.subjectId ?? null,
   };
@@ -108,6 +114,8 @@ export async function updateSettings(
     theme: data.theme ?? payload.theme ?? "system",
     language: data.language ?? payload.language ?? "zh",
     density: data.density ?? payload.density ?? "comfortable",
+    textbookId: data.textbookId ?? payload.textbookId ?? null,
+    textbook: data.textbook ?? payload.textbook ?? null,
     gradeId: data.gradeId ?? payload.gradeId ?? null,
     subjectId: data.subjectId ?? payload.subjectId ?? null,
   };

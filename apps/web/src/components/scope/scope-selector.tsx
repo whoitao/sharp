@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 
-/** 导航栏里的全局学习范围入口：与移动端一致，年级 / 科目存到账号设置 */
+/** 导航栏里的全局学习范围入口：与移动端一致，年级 / 科目 / 当前教材存到账号设置 */
 export function ScopeSelector() {
   const { t } = useLocale();
   const {
@@ -18,10 +18,12 @@ export function ScopeSelector() {
     subjects,
     gradeId,
     subjectId,
+    textbook,
     saving,
     saveFailed,
     setGrade,
     setSubject,
+    selectTextbook,
   } = useStudyScope();
   const [open, setOpen] = useState(false);
 
@@ -51,7 +53,12 @@ export function ScopeSelector() {
     gradeGroups.flatMap((group) => group.grades).find((grade) => grade.id === gradeId)
       ?.name ?? null;
   const subjectName = subjects.find((subject) => subject.id === subjectId)?.name ?? null;
-  const label = [gradeName, subjectName].filter(Boolean).join(" · ");
+  // 教材版本只在年级/科目仍与所选教材一致时展示，避免手动改范围后残留旧版本
+  const textbookLabel =
+    textbook && textbook.gradeId === gradeId && textbook.subjectId === subjectId
+      ? `${textbook.publisherName}${textbook.semester === 0 ? "全" : textbook.semester === 1 ? "上" : "下"}`
+      : null;
+  const label = [gradeName, subjectName, textbookLabel].filter(Boolean).join(" · ");
 
   if (!ready || !signedIn) return null;
 
@@ -68,8 +75,9 @@ export function ScopeSelector() {
       >
         <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-foreground-tertiary" />
         <span
+          title={label || undefined}
           className={cn(
-            "hidden max-w-[9rem] truncate sm:inline",
+            "hidden max-w-[12rem] truncate sm:inline",
             !label && "font-medium text-foreground-tertiary",
           )}
         >
@@ -87,6 +95,7 @@ export function ScopeSelector() {
         subjectId={subjectId}
         onGrade={setGrade}
         onSubject={setSubject}
+        onTextbook={selectTextbook}
         saving={saving}
         saveFailed={saveFailed}
       />

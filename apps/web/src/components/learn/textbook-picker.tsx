@@ -6,7 +6,6 @@ import { useLocale } from "@/lib/i18n";
 import {
   fetchCatalog,
   flattenTextbooks,
-  selectTextbook,
   type CatalogResponse,
   type TextbookDto,
 } from "@/lib/learn/api";
@@ -18,17 +17,19 @@ import { useEffect, useMemo, useState } from "react";
 type Status = "loading" | "error" | "ready";
 
 /**
- * 教材选择列表：竖版封面卡片，选中后回调 onOpen。
- * 只作为「我的教材」页内嵌区块使用，当前教材横幅与页面标题由外层展示。
+ * 教材选择列表：竖版封面卡片。
+ * 只作为「我的教材」页内嵌区块使用，当前教材横幅由外层从全局 scope 派生。
  */
-export function TextbookPicker({
-  onOpen,
-}: {
-  onOpen: (textbook: TextbookDto) => void;
-}) {
+export function TextbookPicker() {
   const { t } = useLocale();
-  // 年级 / 科目来自导航栏的全局学习范围，不在列表里单独筛选
-  const { gradeId, subjectId, clear: clearScope, syncFromTextbook } = useStudyScope();
+  // 年级 / 科目 / 当前教材来自导航栏的全局学习范围，不在列表里单独筛选
+  const {
+    gradeId,
+    subjectId,
+    textbook: currentTextbook,
+    clear: clearScope,
+    selectTextbook,
+  } = useStudyScope();
   // 还没选年级或科目时只给提示，不把全部教材倒出来
   const scopeMissing = !gradeId || !subjectId;
 
@@ -74,26 +75,24 @@ export function TextbookPicker({
 
   const totalTextbooks = allTextbooks.length;
   const hasFilters = Boolean(gradeId || subjectId);
+  // 选中态优先取全局当前教材，保证与导航栏胶囊、其它页面一致
+  const activeId = currentTextbook?.id ?? selectedId;
 
   async function handlePick(textbook: TextbookDto) {
     if (savingId) return;
     setSelectError(false);
-    if (selectedId !== textbook.id) {
+    if (activeId !== textbook.id) {
       setSavingId(textbook.id);
       try {
-        // 只提交 textbookId，年级/科目/出版社由服务端反推
-        await selectTextbook(textbook.id);
-        setSelectedId(textbook.id);
-        // 服务端已把教材的年级/科目写进设置，同步导航栏的全局范围
-        syncFromTextbook({ gradeId: textbook.gradeId, subjectId: textbook.subjectId });
+        // 全局唯一写入点：提交后由服务端回传最新教材摘要
+        await selectTextbook(textbook);
       } catch {
         setSelectError(true);
-        setSavingId(null);
         return;
+      } finally {
+        setSavingId(null);
       }
-      setSavingId(null);
     }
-    onOpen(textbook);
   }
 
   return (
@@ -170,7 +169,7 @@ export function TextbookPicker({
           ) : (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {filtered.map((textbook) => {
-                const selected = textbook.id === selectedId;
+                const selected = textbook.id === activeId;
                 const saving = savingId === textbook.id;
                 return (
                   <button

@@ -4,45 +4,16 @@ import { TextbookCover } from "@/components/learn/textbook-cover";
 import { TextbookPicker } from "@/components/learn/textbook-picker";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
-import { fetchCatalog, type TextbookDto } from "@/lib/learn/api";
+import { useStudyScope } from "@/lib/study-scope";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-type Status = "loading" | "error" | "ready";
-
-/** 我的教材：当前教材 + 页面内直接选教材，选中后即时更新上方卡片 */
+/** 我的教材：当前教材来自全局 scope，页面内选教材后全局状态与其它页面一并更新 */
 export function TextbookPanel() {
   const { t } = useLocale();
-  const [textbook, setTextbook] = useState<TextbookDto | null>(null);
-  const [status, setStatus] = useState<Status>("loading");
-  const [reloadKey, setReloadKey] = useState(0);
+  const { ready, loadFailed, reload, textbook } = useStudyScope();
 
-  useEffect(() => {
-    let alive = true;
-    setStatus("loading");
-    fetchCatalog()
-      .then((catalog) => {
-        if (!alive) return;
-        const all = catalog.stages.flatMap((stage) =>
-          stage.subjects.flatMap((subject) => subject.textbooks),
-        );
-        setTextbook(
-          all.find((item) => item.id === catalog.selectedTextbookId) ??
-            all.find((item) => item.selected) ??
-            null,
-        );
-        setStatus("ready");
-      })
-      .catch(() => {
-        if (alive) setStatus("error");
-      });
-    return () => {
-      alive = false;
-    };
-  }, [reloadKey]);
-
-  if (status === "loading") {
+  if (!ready) {
     return (
       <div className="flex items-center justify-center gap-2 py-16 text-sm text-foreground-secondary">
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -51,19 +22,14 @@ export function TextbookPanel() {
     );
   }
 
-  if (status === "error") {
+  if (loadFailed) {
     return (
       <div className="rounded-lg border border-border bg-surface p-6 text-center card-shadow">
         <p className="text-sm font-semibold">{t("account.loadErrorTitle")}</p>
         <p className="mt-1 text-xs text-foreground-secondary">
           {t("account.loadErrorBody")}
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-4"
-          onClick={() => setReloadKey((key) => key + 1)}
-        >
+        <Button variant="outline" size="sm" className="mt-4" onClick={reload}>
           {t("account.retry")}
         </Button>
       </div>
@@ -101,7 +67,7 @@ export function TextbookPanel() {
         </div>
       )}
 
-      <TextbookPicker onOpen={setTextbook} />
+      <TextbookPicker />
     </div>
   );
 }

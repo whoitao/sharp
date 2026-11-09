@@ -104,7 +104,13 @@ export function KnowledgeBrowser({
         if (!alive) return;
         setTree(data);
         // 默认选中第一个有题目的知识点，没有则退回第一个以便提示「暂无题目」
-        setActiveKpId(firstKnowledgePointWithQuestions(data)?.id ?? data[0]?.id ?? null);
+        const first = firstKnowledgePointWithQuestions(data)?.id ?? data[0]?.id ?? null;
+        setActiveKpId(first);
+        if (!first) {
+          // 当前教材没有知识点：单元面板直接进入空态，避免一直显示加载中
+          setUnits(null);
+          setUnitsStatus("ready");
+        }
         setTreeStatus("ready");
       })
       .catch(() => {
@@ -187,7 +193,9 @@ export function KnowledgeBrowser({
                   units: units.totalUnits,
                   questions: units.totalQuestions,
                 })
-              : t("learn.loading")
+              : unitsStatus === "loading"
+                ? t("learn.loading")
+                : ""
           }
           status={unitsStatus}
           units={units}

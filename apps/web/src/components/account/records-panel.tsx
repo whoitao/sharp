@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
 import {
-  fetchCatalog,
   fetchChapterStats,
   fetchKnowledgePointStats,
   fetchStudyRecords,
@@ -43,8 +42,8 @@ export function RecordsPanel() {
   const [statsStatus, setStatsStatus] = useState<LoadStatus>("loading");
 
   const [tab, setTab] = useState<TabKey>("time");
-  // 年级 / 科目统一取自导航栏的全局学习范围
-  const { ready: scopeReady, gradeId, subjectId, grades } = useStudyScope();
+  // 年级 / 科目 / 当前教材统一取自导航栏的全局学习范围
+  const { ready: scopeReady, gradeId, subjectId, grades, textbook } = useStudyScope();
 
   const [records, setRecords] = useState<StudyRecordDto[]>([]);
   const [recordsStatus, setRecordsStatus] = useState<LoadStatus>("loading");
@@ -103,20 +102,10 @@ export function RecordsPanel() {
     void loadRecords(1, false);
   }, [scopeReady, loadRecords]);
 
-  // 当前教材用于「按章节」统计
+  // 当前教材用于「按章节」统计：跟随全局 scope，胶囊切换后重新取章节统计
   useEffect(() => {
-    let alive = true;
-    fetchCatalog()
-      .then((catalog) => {
-        if (alive) setTextbookId(catalog.selectedTextbookId ?? null);
-      })
-      .catch(() => {
-        if (alive) setTextbookId(null);
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
+    setTextbookId(textbook?.id ?? null);
+  }, [textbook?.id]);
 
   useEffect(() => {
     if (tab !== "chapter") return;

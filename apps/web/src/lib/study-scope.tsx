@@ -1,7 +1,13 @@
 "use client";
 
 import { subscribeSession } from "@/lib/auth/client";
-import { fetchGrades, fetchSubjects, type GradeDto, type SubjectDto } from "@/lib/learn/api";
+import {
+  fetchGrades,
+  fetchSubjects,
+  type GradeDto,
+  type SubjectDto,
+  type TextbookDto,
+} from "@/lib/learn/api";
 import {
   fetchSessionProfile,
   fetchSettings,
@@ -21,18 +27,24 @@ import {
 interface StudyScopeValue {
   /** 是否已确定登录态与字典，避免导航栏先渲染占位再跳变 */
   ready: boolean;
+  /** 设置读取失败：页面可据此展示重试，而不是误判为「未选教材」 */
+  loadFailed: boolean;
   signedIn: boolean;
   grades: GradeDto[];
   subjects: SubjectDto[];
   gradeId: string | null;
   subjectId: string | null;
+  /** 全局当前教材：胶囊、/learn 横幅与章节/知识点、我的教材页都从这里派生 */
+  textbook: TextbookDto | null;
   saving: boolean;
   saveFailed: boolean;
   setGrade: (id: string | null) => void;
   setSubject: (id: string | null) => void;
   clear: () => void;
-  /** 选教材时服务端已同步年级/科目，这里只同步前端状态 */
-  syncFromTextbook: (textbook: { gradeId: string; subjectId: string }) => void;
+  /** 全局唯一写入点：提交 textbookId 并用服务端返回的最新教材刷新全局状态 */
+  selectTextbook: (textbook: TextbookDto) => Promise<void>;
+  /** 重新读取设置（失败重试 / 外部状态变化时使用） */
+  reload: () => void;
 }
 
 const StudyScopeContext = createContext<StudyScopeValue | null>(null);
@@ -43,17 +55,20 @@ const StudyScopeContext = createContext<StudyScopeValue | null>(null);
  */
 export function StudyScopeProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [grades, setGrades] = useState<GradeDto[]>([]);
   const [subjects, setSubjects] = useState<SubjectDto[]>([]);
   const [gradeId, setGradeId] = useState<string | null>(null);
   const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [textbook, setTextbook] = useState<TextbookDto | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const aliveRef = useRef(true);
 
   const load = useCallback(() => {
     setReady(false);
+    setLoadFailed(false);
     fetchSessionProfile()
       .then(async (profile) => {
         if (!aliveRef.current) return;
@@ -61,6 +76,7 @@ export function StudyScopeProvider({ children }: { children: ReactNode }) {
           setSignedIn(false);
           setGradeId(null);
           setSubjectId(null);
+          setTextbook(null);
           return;
         }
         setSignedIn(true);
@@ -74,9 +90,11 @@ export function StudyScopeProvider({ children }: { children: ReactNode }) {
         setSubjects(subjectList);
         setGradeId(settings.gradeId);
         setSubjectId(settings.subjectId);
+        setTextbook(settings.textbook);
       })
       .catch(() => {
-        /* 字典或设置读取失败时保持未选状态，不影响页面其它内容 */
+        /* 字典或设置读取失败时保持未选状态，由 loadFailed 提示页面重试 */
+        if (aliveRef.current) setLoadFailed(true);
       })
       .finally(() => {
         if (aliveRef.current) setReady(true);
@@ -145,42 +163,84 @@ export function StudyScopeProvider({ children }: { children: ReactNode }) {
     });
   }, [gradeId, persist, signedIn, subjectId]);
 
-  const syncFromTextbook = useCallback(
-    (textbook: { gradeId: string; subjectId: string }) => {
-      setGradeId(textbook.gradeId);
-      setSubjectId(textbook.subjectId);
+  // 教材唯一写入点：先用已选教材快照即时更新全局状态，再用服务端回传的最新摘要校准
+  const selectTextbook = useCallback(
+    async (selected: TextbookDto) => {
+      const previous = { gradeId, subjectId, textbook };
+      setSaveFailed(false);
+      setSaving(true);
+      setGradeId(selected.gradeId);
+      setSubjectId(selected.subjectId);
+      setTextbook(selected);
+      try {
+        const settings = await updateSettings({ textbookId: selected.id });
+        if (!aliveRef.current) return;
+        setGradeId(settings.gradeId);
+        setSubjectId(settings.subjectId);
+        // 章节数 / 题数等统计以服务端最新结果为准，避免用目录里的旧快照
+        setTextbook(settings.textbook ?? selected);
+      } catch (error) {
+        if (aliveRef.current) {
+          setGradeId(previous.gradeId);
+          setSubjectId(previous.subjectId);
+          setTextbook(previous.textbook);
+          setSaveFailed(true);
+        }
+        throw error;
+      } finally {
+        if (aliveRef.current) setSaving(false);
+      }
     },
-    [],
+    [gradeId, subjectId, textbook],
+  );
+
+  // 年级/科目被单独改动后，旧教材不再属于当前范围：对外视为未选，避免横幅继续显示旧教材
+  const currentTextbook = useMemo(
+    () =>
+      textbook &&
+      gradeId &&
+      subjectId &&
+      textbook.gradeId === gradeId &&
+      textbook.subjectId === subjectId
+        ? textbook
+        : null,
+    [textbook, gradeId, subjectId],
   );
 
   const value = useMemo<StudyScopeValue>(
     () => ({
       ready,
+      loadFailed,
       signedIn,
       grades,
       subjects,
       gradeId,
       subjectId,
+      textbook: currentTextbook,
       saving,
       saveFailed,
       setGrade,
       setSubject,
       clear,
-      syncFromTextbook,
+      selectTextbook,
+      reload: load,
     }),
     [
       clear,
+      currentTextbook,
       gradeId,
       grades,
+      load,
+      loadFailed,
       ready,
       saveFailed,
       saving,
+      selectTextbook,
       setGrade,
       setSubject,
       signedIn,
       subjectId,
       subjects,
-      syncFromTextbook,
     ],
   );
 

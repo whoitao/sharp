@@ -174,7 +174,7 @@ const petErrorMessage = (err: unknown, fallback: string): string => {
 
 // ─── API Methods ───────────────────────────────────────────────────────────────
 
-/** 教材版本选项：仅当前科目/年级下有题的版本，附题数（后端 /api/app/publishers 按题数降序） */
+/** 教材版本选项：当前科目/年级下有章节的版本（0 题也算），附题数（后端 /api/app/publishers 按题数降序） */
 export interface PublisherOption {
   id: string;
   name: string;
@@ -351,7 +351,7 @@ export const api = {
   },
 
   // 教材（Publisher / Grade / Chapter）
-  // 教材版本：返回当前科目/年级下「章节下已录题目」的版本，附题数（后端按题数降序）
+  // 教材版本：返回当前科目/年级下「已有章节」的版本（0 题也算），附题数（后端按题数降序）
   async fetchPublishers(subjectId?: string, gradeId?: string): Promise<PublisherOption[]> {
     return dedupeInFlight(`fetchPublishers:${subjectId ?? 'all'}:${gradeId ?? 'all'}`, async () => {
       try {

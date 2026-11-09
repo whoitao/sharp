@@ -1,6 +1,49 @@
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { textbookCoverPublicUrl } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
+
+const SEMESTER_LABEL: Record<number, string> = { 0: "全一册", 1: "上册", 2: "下册" };
+
+/** 当前教材的完整展示信息：导航栏胶囊、/learn 横幅、我的教材页共用一份全局状态 */
+async function textbookSummary(
+  textbook: {
+    id: bigint;
+    name: string;
+    semester: number;
+    coverUrl: string | null;
+    subject: { id: bigint; name: string };
+    stage: { id: bigint; name: string };
+    grade: { id: bigint; name: string; sortOrder: number };
+    publisher: { id: bigint; name: string };
+  } | null,
+) {
+  if (!textbook) return null;
+  // 章节数 / 题数随当前教材一起返回，切换后无需前端再单独取数
+  const [chapterCount, questionCount] = await Promise.all([
+    prisma.chapter.count({ where: { textbookId: textbook.id } }),
+    prisma.question.count({ where: { chapter: { textbookId: textbook.id } } }),
+  ]);
+  return {
+    id: textbook.id.toString(),
+    name: textbook.name,
+    subjectId: textbook.subject.id.toString(),
+    subjectName: textbook.subject.name,
+    stageId: textbook.stage.id.toString(),
+    stageName: textbook.stage.name,
+    gradeId: textbook.grade.id.toString(),
+    gradeName: textbook.grade.name,
+    gradeSortOrder: textbook.grade.sortOrder,
+    publisherId: textbook.publisher.id.toString(),
+    publisherName: textbook.publisher.name,
+    semester: textbook.semester,
+    semesterLabel: SEMESTER_LABEL[textbook.semester] ?? "",
+    coverUrl: textbook.coverUrl ? textbookCoverPublicUrl(textbook.coverUrl) : null,
+    chapterCount,
+    questionCount,
+    selected: true,
+  };
+}
 
 export async function GET(request: NextRequest) {
   const appUser = requireAppUser(request);
@@ -8,6 +51,16 @@ export async function GET(request: NextRequest) {
 
   const settings = await prisma.userSettings.findUnique({
     where: { userId: appUser.id },
+    include: {
+      textbook: {
+        include: {
+          subject: { select: { id: true, name: true } },
+          stage: { select: { id: true, name: true } },
+          grade: { select: { id: true, name: true, sortOrder: true } },
+          publisher: { select: { id: true, name: true } },
+        },
+      },
+    },
   });
 
   return NextResponse.json({
@@ -18,6 +71,7 @@ export async function GET(request: NextRequest) {
     density: settings?.density ?? "comfortable",
     // 「我的教材」全局单选 + 由教材反推的学习范围
     textbookId: settings?.textbookId?.toString() ?? null,
+    textbook: await textbookSummary(settings?.textbook ?? null),
     gradeId: settings?.gradeId?.toString() ?? null,
     subjectId: settings?.subjectId?.toString() ?? null,
     publisherId: settings?.publisherId?.toString() ?? null,
@@ -123,6 +177,16 @@ export async function PUT(request: NextRequest) {
       userId: appUser.id,
       ...data,
     },
+    include: {
+      textbook: {
+        include: {
+          subject: { select: { id: true, name: true } },
+          stage: { select: { id: true, name: true } },
+          grade: { select: { id: true, name: true, sortOrder: true } },
+          publisher: { select: { id: true, name: true } },
+        },
+      },
+    },
   });
 
   return NextResponse.json({
@@ -132,6 +196,7 @@ export async function PUT(request: NextRequest) {
     language: settings.language,
     density: settings.density,
     textbookId: settings.textbookId?.toString() ?? null,
+    textbook: await textbookSummary(settings.textbook),
     gradeId: settings.gradeId?.toString() ?? null,
     subjectId: settings.subjectId?.toString() ?? null,
     publisherId: settings.publisherId?.toString() ?? null,

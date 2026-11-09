@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { PetBackpackItem, PetFeedResult, PetHomeData } from '@sharp/shared';
 import { Image } from 'expo-image';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -68,21 +68,6 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
 
   // 养宠规则说明弹窗
   const [rulesOpen, setRulesOpen] = useState(false);
-
-  // header 右上角：养宠指南问号按钮
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={() => setRulesOpen(true)}
-          hitSlop={10}
-          style={{ marginRight: 8, padding: 4 }}
-        >
-          <Ionicons name="help-circle-outline" size={22 * font} color={colors.text} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, colors.text, font]);
 
   const loadPet = useCallback(async () => {
     try {
@@ -364,9 +349,27 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
 
       {/* 进化路线 */}
       <View style={{ marginTop: 18 * spacing }}>
-        <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 15 * font, marginBottom: 9 * spacing }]}>
-          {t.petRouteTitle}
-        </Text>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 9 * spacing,
+          }}
+        >
+          <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 15 * font }]}>
+            {t.petRouteTitle}
+          </Text>
+          <TouchableOpacity
+            onPress={() => setRulesOpen(true)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={t.petRulesTitle}
+            style={{ padding: 4 }}
+          >
+            <Ionicons name="help-circle-outline" size={18 * font} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
         <View style={[styles.rowGap, { gap: 8 * spacing }]}>
           {pet.route.map((stage) => {
             const active = stage.stageKey === pet.growthStage.key;

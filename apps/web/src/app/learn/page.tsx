@@ -5,7 +5,7 @@ import { KnowledgeBrowser } from "@/components/learn/knowledge-browser";
 import { TextbookCover } from "@/components/learn/textbook-cover";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
-import { fetchCatalog, findTextbook, type TextbookDto } from "@/lib/learn/api";
+import { useStudyScope } from "@/lib/study-scope";
 import {
   BookOpen,
   Loader2,
@@ -14,11 +14,10 @@ import {
   Repeat,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 type View = "chapters" | "knowledge";
-type Status = "loading" | "error" | "ready";
 
 /**
  * 学习首页：未选教材 → 引导去「我的教材」选择；
@@ -26,31 +25,11 @@ type Status = "loading" | "error" | "ready";
  */
 export default function LearnPage() {
   const { t } = useLocale();
-
-  const [status, setStatus] = useState<Status>("loading");
-  const [reloadKey, setReloadKey] = useState(0);
-  const [selected, setSelected] = useState<TextbookDto | null>(null);
+  // 当前教材来自全局 study scope：胶囊切换后横幅与章节/知识点立即跟随，无需刷新
+  const { ready, loadFailed, reload, textbook: selected } = useStudyScope();
   const [view, setView] = useState<View>("chapters");
 
-  useEffect(() => {
-    let alive = true;
-    setStatus("loading");
-    fetchCatalog()
-      .then((data) => {
-        if (!alive) return;
-        const textbook = findTextbook(data, data.selectedTextbookId ?? null);
-        setSelected(textbook);
-        setStatus("ready");
-      })
-      .catch(() => {
-        if (alive) setStatus("error");
-      });
-    return () => {
-      alive = false;
-    };
-  }, [reloadKey]);
-
-  if (status === "loading") {
+  if (!ready) {
     return (
       <div className="flex items-center justify-center gap-2 py-16 text-sm text-foreground-secondary">
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -59,13 +38,13 @@ export default function LearnPage() {
     );
   }
 
-  if (status === "error") {
+  if (loadFailed) {
     return (
       <div className="pb-6 md:pb-8">
         <div className="mt-6 flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-6 card-shadow">
           <p className="font-bold">{t("learn.loadErrorTitle")}</p>
           <p className="text-sm text-foreground-secondary">{t("learn.loadErrorBody")}</p>
-          <Button size="sm" variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
+          <Button size="sm" variant="outline" onClick={reload}>
             <RefreshCw className="mr-1.5 h-4 w-4" />
             {t("learn.retry")}
           </Button>

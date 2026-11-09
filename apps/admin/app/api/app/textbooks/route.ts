@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 const SEMESTER_LABEL: Record<number, string> = { 0: "全一册", 1: "上册", 2: "下册" };
 
 /**
- * 「我的教材」列表：只返回已有题目内容的教材，按 学段 → 科目 分组。
+ * 「我的教材」列表：返回已有章节的教材，按 学段 → 科目 分组。
  * selected 由用户设置的全局单选 textbookId 决定。
  */
 export async function GET(request: NextRequest) {
@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
   const [stagesDict, textbooks] = await Promise.all([
     prisma.stage.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] }),
     prisma.textbook.findMany({
-      where: { chapters: { some: { questions: { some: {} } } } },
+      // 只要教材下还有章节就展示，不再要求章节里已有题目
+      where: { chapters: { some: {} } },
       include: {
         subject: { select: { id: true, name: true, icon: true, sortOrder: true } },
         stage: { select: { id: true, name: true, sortOrder: true } },
