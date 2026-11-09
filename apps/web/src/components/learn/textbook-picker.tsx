@@ -105,7 +105,7 @@ export function TextbookPicker() {
 
       {status === "loading" && (
         <div className="grid gap-3 sm:grid-cols-2">
-          {[0, 1, 2, 3].map((i) => (
+          {[0, 1].map((i) => (
             <div
               key={i}
               className="h-[136px] animate-pulse rounded-lg border border-border bg-surface"

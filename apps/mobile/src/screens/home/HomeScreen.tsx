@@ -2,7 +2,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Grade, PetDetail, Subject, SubjectOverview } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ScopeSelector from '../../components/ScopeSelector';
 import StreakBadge from '../../components/StreakBadge';
@@ -93,7 +93,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
     navigation.setOptions({
       headerLeft: () => (
-        <View style={{ marginLeft: 16 }}>
+        // Web 端 headerLeft 从容器 x=0 起排，需要补内容区的 16 左边距；
+        // 原生 header 自带 leading inset（等于内容区 16），再加会右移
+        <View testID="home-streak" style={Platform.OS === 'web' ? { marginLeft: 16 } : undefined}>
           <StreakBadge days={streak} />
         </View>
       ),
@@ -206,7 +208,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               />
             </View>
 
-            <View style={[styles.quickRow, { gap: 8 * spacing, marginTop: 12 * spacing }]}>
+            <View
+              testID="home-quick-row"
+              style={[styles.quickRow, { gap: 8 * spacing, marginTop: 12 * spacing }]}
+            >
               <QuickEntry
                 icon="bookmark-outline"
                 label={t.wrongQuestions}

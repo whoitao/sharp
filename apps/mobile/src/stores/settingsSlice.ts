@@ -37,6 +37,9 @@ export const loadSettings = createAsyncThunk('settings/load', async () => {
   return await api.getSettings();
 });
 
+// 三步选择会连续写入年级/科目/教材，串行执行避免后到的旧响应覆盖新值
+let settingsWriteChain: Promise<unknown> = Promise.resolve();
+
 export const updateSettings = createAsyncThunk(
   'settings/update',
   async (settings: {
@@ -49,7 +52,9 @@ export const updateSettings = createAsyncThunk(
     publisherId?: string | null;
     textbookId?: string | null;
   }) => {
-    return await api.updateSettings(settings);
+    const task = settingsWriteChain.then(() => api.updateSettings(settings));
+    settingsWriteChain = task.catch(() => undefined);
+    return await task;
   }
 );
 

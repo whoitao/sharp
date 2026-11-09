@@ -226,6 +226,27 @@ export const zh = {
   crashLogClear: '清空',
   crashLogClearConfirm: '确定清空全部崩溃日志吗？',
 
+  // 全局学习范围（学段 → 科目 → 教材 三步选择）
+  scopeTitle: '选择学习范围',
+  scopeStepStage: '学段',
+  scopeStepSubject: '科目',
+  scopeStepTextbook: '教材',
+  scopeNotChosen: '未选择',
+  scopeChooseStage: '学段',
+  scopeChooseGrade: '年级',
+  scopeChooseSubject: '科目',
+  scopeChooseTextbook: '教材',
+  scopeTitleWithValue: (label: string, value: string) => `${label}（${value}）`,
+  scopeCurrentGrade: (name: string) => `当前年级：${name}`,
+  scopeEmptyGrades: '该学段暂无年级。',
+  scopeEmptyTextbooksTitle: '暂无可用教材',
+  scopeEmptyTextbooksBody: '这个年级和科目下还没有已收录的教材，返回上一步换个组合试试。',
+  scopeBack: '上一步',
+  scopeDone: '完成',
+  scopeClose: '关闭',
+  scopeCount: (num: number) => `${num} 本`,
+  scopeChaptersCount: (num: number) => `${formatCount(num)} 章`,
+
   // Textbook（教材同步）
   textbookTitle: '教材同步',
   textbookMy: '我的教材',

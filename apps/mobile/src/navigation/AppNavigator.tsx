@@ -265,18 +265,20 @@ const HomeStackNavigator: React.FC = () => {
     <HomeStack.Screen
       name="Home"
       component={withGradient(withTabRootTopInset(HomeScreen))}
-      options={{ title: t.home }}
+      // 首页顶部栏只放「连续天数」和范围胶囊，不再显示页面标题
+      options={{ headerTitle: () => null }}
     />
     {/* 从首页快捷入口进入的错题本 / 学习记录，返回时回到首页 */}
     <HomeStack.Screen
       name="WrongQuestions"
       component={withGradient(WrongQuestionsScreen)}
-      options={{ title: t.wrongQuestions }}
+      // 顶部栏右侧是范围胶囊，标题会与胶囊压字，统一不显示标题
+      options={{ headerTitle: () => null }}
     />
     <HomeStack.Screen
       name="Records"
       component={withGradient(RecordsScreen)}
-      options={{ title: t.studyStats }}
+      options={{ headerTitle: () => null }}
     />
     {/* 从首页的学习记录点进练习结果，保持在首页 Tab 内 */}
     <HomeStack.Screen
@@ -288,7 +290,7 @@ const HomeStackNavigator: React.FC = () => {
     <HomeStack.Screen
       name="Textbook"
       component={withGradient(TextbookScreen)}
-      options={{ title: t.textbookTitle }}
+      options={{ headerTitle: () => null }}
     />
     <HomeStack.Screen
       name="TextbookUnits"
@@ -355,7 +357,8 @@ const StudyStackNavigator: React.FC = () => {
     <StudyStack.Screen
       name="Study"
       component={withGradient(withTabRootTopInset(StudyScreen))}
-      options={{ title: t.study }}
+      // 学习页顶部栏只保留入口操作，不再显示页面标题
+      options={{ headerTitle: () => null }}
     />
     <StudyStack.Screen
       name="Quiz"
@@ -377,7 +380,7 @@ const StudyStackNavigator: React.FC = () => {
     <StudyStack.Screen
       name="Textbook"
       component={withGradient(TextbookScreen)}
-      options={{ title: t.textbookTitle }}
+      options={{ headerTitle: () => null }}
     />
     <StudyStack.Screen
       name="TextbookUnits"
@@ -436,7 +439,7 @@ const ProfileStackNavigator: React.FC = () => {
     <ProfileStack.Screen
       name="Textbook"
       component={withGradient(TextbookScreen)}
-      options={{ title: t.textbookMy }}
+      options={{ headerTitle: () => null }}
     />
     <ProfileStack.Screen
       name="TextbookUnits"
@@ -455,17 +458,17 @@ const ProfileStackNavigator: React.FC = () => {
     <ProfileStack.Screen
       name="Records"
       component={withGradient(RecordsScreen)}
-      options={{ title: t.studyStats }}
+      options={{ headerTitle: () => null }}
     />
     <ProfileStack.Screen
       name="WrongQuestions"
       component={withGradient(WrongQuestionsScreen)}
-      options={{ title: t.wrongQuestions }}
+      options={{ headerTitle: () => null }}
     />
     <ProfileStack.Screen
       name="Favorites"
       component={withGradient(FavoritesScreen)}
-      options={{ title: t.favorites }}
+      options={{ headerTitle: () => null }}
     />
     <ProfileStack.Screen
       name="CrashLog"

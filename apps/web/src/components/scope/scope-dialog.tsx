@@ -156,7 +156,10 @@ export function ScopeDialog({
       ),
     [allTextbooks, gradeId, subjectId],
   );
-  const selectedTextbookName = globalTextbook?.name ?? null;
+  // 步骤条空间有限，教材用「版本 + 上/下/全」短标签（与导航栏胶囊口径一致）
+  const selectedTextbookShort = globalTextbook
+    ? `${globalTextbook.publisherName}${globalTextbook.semester === 0 ? "全" : globalTextbook.semester === 1 ? "上" : "下"}`
+    : null;
 
   const activeGroup =
     gradeGroups.find((group) => group.stageId === activeStageId) ?? gradeGroups[0] ?? null;
@@ -227,7 +230,7 @@ export function ScopeDialog({
   const stepMetas: { step: Step; label: string; value: string | null }[] = [
     { step: 1, label: t("scope.stepStage"), value: currentGrade?.name ?? null },
     { step: 2, label: t("scope.stepSubject"), value: currentSubject?.name ?? null },
-    { step: 3, label: t("scope.stepTextbook"), value: selectedTextbookName },
+    { step: 3, label: t("scope.stepTextbook"), value: selectedTextbookShort },
   ];
   const canGoStep2 = Boolean(currentGrade);
   const canGoStep3 = Boolean(currentGrade && currentSubject);
@@ -298,14 +301,14 @@ export function ScopeDialog({
           <X className="h-4 w-4" aria-hidden />
         </button>
 
-        <div className="flex items-stretch gap-0.5 px-5 pr-11 pt-3 sm:px-6 sm:pr-12">
+        <div className="flex items-stretch gap-1 px-2 pr-8 pt-3 sm:gap-0.5 sm:px-6 sm:pr-12">
           {stepMetas.map((meta, index) => {
             const active = step === meta.step;
             const reachable = isReachable(meta.step);
             return (
               <Fragment key={meta.step}>
                 {index > 0 && (
-                  <span className="flex shrink-0 items-center text-foreground-tertiary">
+                  <span className="hidden shrink-0 items-center text-foreground-tertiary sm:flex">
                     <ChevronRight className="h-3.5 w-3.5" aria-hidden />
                   </span>
                 )}
@@ -315,7 +318,7 @@ export function ScopeDialog({
                   disabled={!reachable}
                   aria-current={active ? "step" : undefined}
                   className={cn(
-                    "flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-center transition-colors",
+                    "flex min-h-[2.5rem] min-w-0 flex-1 items-center justify-center rounded-lg px-0 py-1.5 text-center transition-colors sm:px-2",
                     active
                       ? "bg-primary-light text-primary-strong"
                       : reachable
@@ -323,10 +326,10 @@ export function ScopeDialog({
                         : "text-foreground-tertiary opacity-60",
                   )}
                 >
-                  <span className="flex items-center justify-center gap-1.5 text-xs font-bold leading-none">
+                  <span className="flex min-w-0 items-center justify-center gap-0.5 text-[0.5625rem] font-bold leading-none sm:gap-1.5 sm:text-xs">
                     <span
                       className={cn(
-                        "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[0.625rem] leading-none",
+                        "inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full border text-[0.5rem] leading-none sm:h-4 sm:w-4 sm:text-[0.625rem]",
                         active
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-current",
@@ -338,10 +341,12 @@ export function ScopeDialog({
                         meta.step
                       )}
                     </span>
-                    <span className="truncate leading-none">{meta.label}</span>
-                  </span>
-                  <span className="w-full truncate text-[0.6875rem] font-medium leading-tight">
-                    {meta.value ?? t("scope.notChosen")}
+                    <span className="truncate leading-none">
+                      {t("scope.titleWithValue", {
+                        label: meta.label,
+                        value: meta.value ?? t("scope.notChosen"),
+                      })}
+                    </span>
                   </span>
                 </button>
               </Fragment>

@@ -8,7 +8,7 @@ import type {
   Subject,
   TextbookCatalog,
 } from '@sharp/shared';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -98,9 +98,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
   const [kps, setKps] = useState<KnowledgePoint[]>([]);
   const [kpsLoading, setKpsLoading] = useState(false);
 
-  // 首次进入时用于恢复全局学习范围；后续用户修改不再触发重新拉取字典
-  const initialScopeRef = useRef({ gradeId: savedGradeId, subjectId: savedSubjectId });
-
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -114,15 +111,6 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
         setSubjects(subs);
         setGrades(gradeList);
         setCatalog(catalogData);
-        const { gradeId, subjectId } = initialScopeRef.current;
-        if (gradeId) {
-          const grade = gradeList.find((g) => g.id === gradeId);
-          if (grade) setSelectedGrade(grade);
-        }
-        if (subjectId) {
-          const subject = subs.find((s) => s.id === subjectId);
-          if (subject) setSelectedSubject(subject);
-        }
       } catch {
         // ignore
       } finally {
@@ -133,6 +121,18 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
       cancelled = true;
     };
   }, []);
+
+  // 全局范围是唯一数据源：教材选择会把年级/科目反推写回 Redux，
+  // 这里跟随 Redux 更新本地展示状态，选中教材后学习页无需手动刷新。
+  useEffect(() => {
+    if (grades.length === 0) return;
+    setSelectedGrade(grades.find((grade) => grade.id === savedGradeId) ?? null);
+  }, [savedGradeId, grades]);
+
+  useEffect(() => {
+    if (subjects.length === 0) return;
+    setSelectedSubject(subjects.find((subject) => subject.id === savedSubjectId) ?? null);
+  }, [savedSubjectId, subjects]);
 
   // 首页点学科行进入：科目列表到位后自动选中该学科，然后立刻清掉参数
   const requestedSubjectId = route.params?.subjectId;

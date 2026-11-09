@@ -226,6 +226,28 @@ export const en: TranslationKeys = {
   crashLogClear: 'Clear',
   crashLogClearConfirm: 'Clear all crash logs?',
 
+  // Global study scope (Stage → Subject → Textbook)
+  scopeTitle: 'Select Study Scope',
+  scopeStepStage: 'Stage',
+  scopeStepSubject: 'Subject',
+  scopeStepTextbook: 'Textbook',
+  scopeNotChosen: 'Not selected',
+  scopeChooseStage: 'Stage',
+  scopeChooseGrade: 'Grade',
+  scopeChooseSubject: 'Subject',
+  scopeChooseTextbook: 'Textbook',
+  scopeTitleWithValue: (label: string, value: string) => `${label} (${value})`,
+  scopeCurrentGrade: (name: string) => `Current grade: ${name}`,
+  scopeEmptyGrades: 'No grades in this stage.',
+  scopeEmptyTextbooksTitle: 'No textbooks available',
+  scopeEmptyTextbooksBody:
+    'No textbooks have been added for this grade and subject yet. Go back and try another combination.',
+  scopeBack: 'Back',
+  scopeDone: 'Done',
+  scopeClose: 'Close',
+  scopeCount: (num: number) => `${num} book${num === 1 ? '' : 's'}`,
+  scopeChaptersCount: (num: number) => `${formatCount(num)} ch.`,
+
   // Textbook
   textbookTitle: 'Textbooks',
   textbookMy: 'My Textbook',
