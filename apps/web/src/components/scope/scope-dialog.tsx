@@ -74,7 +74,7 @@ function ChoiceChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition-colors sm:px-3.5",
+        "inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border px-3 text-sm font-semibold transition-colors sm:px-3.5",
         active
           ? "border-primary bg-primary-light text-primary-strong"
           : "border-transparent bg-surface-secondary text-foreground hover:border-border hover:text-primary-strong",
@@ -160,6 +160,14 @@ export function ScopeDialog({
 
   const activeGroup =
     gradeGroups.find((group) => group.stageId === activeStageId) ?? gradeGroups[0] ?? null;
+
+  // 分组标题带出当前已选值，避免用户看不出选中了哪个学段/年级
+  const stageTitle = activeGroup
+    ? t("scope.titleWithValue", { label: t("scope.chooseStage"), value: activeGroup.stageName })
+    : t("scope.chooseStage");
+  const gradeTitle = currentGrade
+    ? t("scope.titleWithValue", { label: t("scope.chooseGrade"), value: currentGrade.name })
+    : t("scope.chooseGrade");
 
   // 每次打开都回到第 1 步，并把学段定位到当前年级所属学段
   useEffect(() => {
@@ -344,8 +352,8 @@ export function ScopeDialog({
         <div className="flex-1 overflow-y-auto px-5 pb-5 pt-4 sm:px-6">
           {step === 1 && (
             <section>
-              <h3 className="text-sm font-bold text-foreground">{t("scope.chooseStage")}</h3>
-              <div className="mt-3 flex flex-wrap gap-1.5">
+              <h3 className="text-sm font-bold text-foreground">{stageTitle}</h3>
+              <div className="mt-3 flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {gradeGroups.map((group) => (
                   <ChoiceChip
                     key={group.stageId}
@@ -358,9 +366,9 @@ export function ScopeDialog({
               </div>
 
               <h3 className="mt-5 text-sm font-bold text-foreground">
-                {t("scope.chooseGrade")}
+                {gradeTitle}
               </h3>
-              <div className="mt-3 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {activeGroup?.grades.length ? (
                   activeGroup.grades.map((grade) => (
                     <ChoiceChip
@@ -427,7 +435,7 @@ export function ScopeDialog({
 
               {catalogStatus === "loading" && (
                 <div className="mt-3 space-y-2">
-                  {[0, 1, 2].map((i) => (
+                  {[0, 1].map((i) => (
                     <div
                       key={i}
                       className="h-[76px] animate-pulse rounded-lg border border-border bg-surface"

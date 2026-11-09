@@ -198,7 +198,11 @@ export const api = {
 
   async register(username: string, password: string): Promise<LoginResponse> {
     try {
-      await apiClient.post('/api/app/auth/register', { username, password });
+      await apiClient.post(
+        '/api/app/auth/register',
+        { username, password },
+        { headers: { 'x-client-source': 'mobile' } }
+      );
     } catch (err) {
       throw new Error(apiErrorMessage(err, 'Registration failed'));
     }

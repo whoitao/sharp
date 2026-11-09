@@ -6,8 +6,9 @@ import { usePageSize } from "@/components/antd-providers";
 import { usePermissions } from "@/components/permissions";
 import { formatDateOnly } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
-import { KeyOutlined, PlayCircleOutlined, StopOutlined } from "@ant-design/icons";
-import { App, Button, Form, Input, Modal, Space, Table, Tag } from "antd";
+import type { MessageKey } from "@/lib/i18n";
+import { KeyOutlined, ExperimentOutlined, PlayCircleOutlined, StopOutlined } from "@ant-design/icons";
+import { App, Button, Form, Input, Modal, Select, Space, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
 
@@ -16,11 +17,29 @@ interface User {
   username: string;
   nickname: string | null;
   status: string;
+  isTest: boolean;
+  source: RegistrationSource;
   createdAt: string;
   _count?: {
     studyAttempts: number;
   };
 }
+
+type RegistrationSource = "web" | "mobile" | "admin" | "desktop";
+
+const SOURCE_LABEL_KEY: Record<RegistrationSource, MessageKey> = {
+  web: "users.sourceWeb",
+  mobile: "users.sourceMobile",
+  admin: "users.sourceAdmin",
+  desktop: "users.sourceDesktop",
+};
+
+const SOURCE_COLOR: Record<RegistrationSource, string> = {
+  web: "blue",
+  mobile: "green",
+  admin: "purple",
+  desktop: "default",
+};
 
 interface PaginatedData {
   data: User[];
@@ -29,6 +48,8 @@ interface PaginatedData {
   pageSize: number;
   totalPages: number;
 }
+
+type TestFilter = "all" | "test" | "normal";
 
 export default function UsersPanel() {
   const { t } = useLocale();
@@ -40,8 +61,10 @@ export default function UsersPanel() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [testFilter, setTestFilter] = useState<TestFilter>("all");
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [togglingTestId, setTogglingTestId] = useState<string | null>(null);
   const [resetTarget, setResetTarget] = useState<User | null>(null);
   const [resetForm] = Form.useForm();
   const [resetting, setResetting] = useState(false);
@@ -74,11 +97,12 @@ export default function UsersPanel() {
     }
   };
 
-  const fetchUsers = async (p: number, s: string) => {
+  const fetchUsers = async (p: number, s: string, f: TestFilter) => {
     setLoading(true);
     const token = localStorage.getItem("admin_token");
     const params = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
     if (s) params.set("search", s);
+    if (f !== "all") params.set("isTest", f === "test" ? "true" : "false");
 
     try {
       const res = await fetch(`/api/admin/users?${params}`, {
@@ -102,13 +126,18 @@ export default function UsersPanel() {
   };
 
   useEffect(() => {
-    fetchUsers(1, "");
+    fetchUsers(1, "", "all");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = (value: string) => {
     setSearch(value);
-    fetchUsers(1, value);
+    fetchUsers(1, value, testFilter);
+  };
+
+  const handleTestFilter = (value: TestFilter) => {
+    setTestFilter(value);
+    fetchUsers(1, search, value);
   };
 
   const toggleUserStatus = async (user: User) => {
@@ -124,9 +153,35 @@ export default function UsersPanel() {
         },
         body: JSON.stringify({ status: newStatus }),
       });
-      await fetchUsers(page, search);
+      await fetchUsers(page, search, testFilter);
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const toggleUserTest = async (user: User) => {
+    setTogglingTestId(user.id);
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/test`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isTest: !user.isTest }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        message.success(user.isTest ? t("users.unmarkedTest") : t("users.markedTest"));
+      } else {
+        message.error(data.error ?? t("users.markTestFailed"));
+      }
+      await fetchUsers(page, search, testFilter);
+    } catch {
+      message.error(t("users.markTestFailed"));
+    } finally {
+      setTogglingTestId(null);
     }
   };
 
@@ -151,6 +206,25 @@ export default function UsersPanel() {
         <Tag color={status === "active" ? "success" : "error"}>
           {status === "active" ? t("users.statusActive") : t("users.statusDisabled")}
         </Tag>
+      ),
+    },
+    {
+      title: t("users.colIsTest"),
+      dataIndex: "isTest",
+      key: "isTest",
+      render: (isTest: boolean) =>
+        isTest ? (
+          <Tag color="warning">{t("users.testYes")}</Tag>
+        ) : (
+          <Tag>{t("users.testNo")}</Tag>
+        ),
+    },
+    {
+      title: t("users.colSource"),
+      dataIndex: "source",
+      key: "source",
+      render: (source: RegistrationSource) => (
+        <Tag color={SOURCE_COLOR[source]}>{t(SOURCE_LABEL_KEY[source])}</Tag>
       ),
     },
     {
@@ -186,6 +260,18 @@ export default function UsersPanel() {
           {canWrite && (
             <Button
               variant="text"
+              color={record.isTest ? "orange" : undefined}
+              size="small"
+              icon={<ExperimentOutlined />}
+              loading={togglingTestId === record.id}
+              title={record.isTest ? t("users.unmarkTest") : t("users.markTest")}
+              aria-label={record.isTest ? t("users.unmarkTest") : t("users.markTest")}
+              onClick={() => toggleUserTest(record)}
+            />
+          )}
+          {canWrite && (
+            <Button
+              variant="text"
               color={record.status === "active" ? "danger" : "primary"}
               size="small"
               icon={record.status === "active" ? <StopOutlined /> : <PlayCircleOutlined />}
@@ -209,6 +295,16 @@ export default function UsersPanel() {
           style={{ width: 320 }}
           onSearch={handleSearch}
         />
+        <Select<TestFilter>
+          value={testFilter}
+          style={{ width: 140 }}
+          onChange={handleTestFilter}
+          options={[
+            { value: "all", label: t("users.filterAll") },
+            { value: "test", label: t("users.filterTest") },
+            { value: "normal", label: t("users.filterNormal") },
+          ]}
+        />
       </Space>
 
       <Table<User>
@@ -223,7 +319,7 @@ export default function UsersPanel() {
           total,
           showSizeChanger: false,
           showTotal: (n) => t("common.total", { n }),
-          onChange: (p) => fetchUsers(p, search),
+          onChange: (p) => fetchUsers(p, search, testFilter),
         }}
       />
 

@@ -8,6 +8,14 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// 注册来源：与调用端一一对应，desktop 为桌面端预留取值
+enum RegistrationSource {
+  web
+  mobile
+  admin
+  desktop
+}
+
 model User {
   id           String   @id @default(uuid())
   username     String   @unique
@@ -17,6 +25,10 @@ model User {
   gender       String?
   phone        String?
   status       String   @default("active")
+  // 测试账号标记：仅用于后台运营区分，不影响登录与学习逻辑
+  isTest       Boolean  @default(false)
+  // 注册来源：由服务端按调用端写入；历史账号无法回溯，默认视为 web
+  source       RegistrationSource @default(web)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

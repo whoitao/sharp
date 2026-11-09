@@ -2,8 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 
+// 公开注册只允许 web / mobile 两端；desktop 暂无注册入口只保留枚举值，
+// admin 仅能由后台创建接口写入，避免外部伪造来源。
+const PUBLIC_SOURCES = ["web", "mobile"] as const;
+type PublicSource = (typeof PUBLIC_SOURCES)[number];
+
+function isPublicSource(value: string): value is PublicSource {
+  return (PUBLIC_SOURCES as readonly string[]).includes(value);
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const source = (request.headers.get("x-client-source") ?? "web").toLowerCase();
+    if (!isPublicSource(source)) {
+      return NextResponse.json(
+        { error: "Invalid registration source" },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { username, password } = body;
 
@@ -38,8 +55,8 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password);
     const user = await prisma.user.create({
-      data: { username, passwordHash },
-      select: { id: true, username: true, nickname: true, avatar: true, gender: true, phone: true, status: true, createdAt: true },
+      data: { username, passwordHash, source },
+      select: { id: true, username: true, nickname: true, avatar: true, gender: true, phone: true, status: true, isTest: true, source: true, createdAt: true },
     });
 
     // Create default settings

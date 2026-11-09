@@ -33,6 +33,8 @@ export async function PUT(
         nickname: true,
         avatar: true,
         status: true,
+        isTest: true,
+        source: true,
         updatedAt: true,
       },
     });

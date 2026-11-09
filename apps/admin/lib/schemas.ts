@@ -35,10 +35,21 @@ const QUERY_SOURCES = ["exam", "textbook", "mock", "custom"] as const;
 
 /* ===== 列表 query ===== */
 
+export const createUserSchema = z.object({
+  username: z.string().trim().min(3).max(50),
+  password: z.string().min(6).max(100),
+  nickname: optionalText,
+});
+
 export const usersQuerySchema = z.object({
   page: pageSchema,
   pageSize: pageSizeSchema(10),
   search: optionalText,
+  // 测试账号筛选：不传 = 全部，true / false 精确过滤
+  isTest: z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? undefined : value),
+    z.enum(["true", "false"]).optional(),
+  ),
 });
 
 export const adminsQuerySchema = z.object({

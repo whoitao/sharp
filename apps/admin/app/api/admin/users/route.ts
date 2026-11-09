@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/middleware";
 import { handleRouteError } from "@/lib/http";
-import { usersQuerySchema } from "@/lib/schemas";
+import { hashPassword } from "@/lib/auth";
+import { createUserSchema, usersQuerySchema } from "@/lib/schemas";
 
 export async function GET(request: NextRequest) {
   const admin = await requirePermission(request, "users");
@@ -15,14 +16,17 @@ export async function GET(request: NextRequest) {
     const { page, pageSize } = query;
     const search = query.search;
 
-    const where = search
-      ? {
-          OR: [
-            { username: { contains: search, mode: "insensitive" as const } },
-            { nickname: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
-      : {};
+    const where = {
+      ...(query.isTest === undefined ? {} : { isTest: query.isTest === "true" }),
+      ...(search
+        ? {
+            OR: [
+              { username: { contains: search, mode: "insensitive" as const } },
+              { nickname: { contains: search, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    };
 
     const [total, users] = await Promise.all([
       prisma.user.count({ where }),
@@ -34,6 +38,8 @@ export async function GET(request: NextRequest) {
           nickname: true,
           avatar: true,
           status: true,
+          isTest: true,
+          source: true,
           createdAt: true,
           updatedAt: true,
           _count: {
@@ -53,6 +59,41 @@ export async function GET(request: NextRequest) {
       pageSize,
       totalPages: Math.ceil(total / pageSize),
     });
+  } catch (err) {
+    return handleRouteError(err, "admin/users");
+  }
+}
+
+/** 后台创建学员账号：来源固定为 admin，仅需 users:write 权限，不接受来源参数 */
+export async function POST(request: NextRequest) {
+  const admin = await requirePermission(request, "users");
+  if (admin instanceof NextResponse) return admin;
+
+  try {
+    const body = createUserSchema.parse(await request.json());
+    const passwordHash = await hashPassword(body.password);
+
+    const user = await prisma.user.create({
+      data: {
+        username: body.username,
+        passwordHash,
+        nickname: body.nickname ?? null,
+        source: "admin",
+      },
+      select: {
+        id: true,
+        username: true,
+        nickname: true,
+        status: true,
+        isTest: true,
+        source: true,
+        createdAt: true,
+      },
+    });
+
+    await prisma.userSettings.create({ data: { userId: user.id } });
+
+    return NextResponse.json(user, { status: 201 });
   } catch (err) {
     return handleRouteError(err, "admin/users");
   }

@@ -25,6 +25,8 @@ export async function GET(
         nickname: true,
         avatar: true,
         status: true,
+        isTest: true,
+        source: true,
         createdAt: true,
         updatedAt: true,
         settings: {

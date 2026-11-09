@@ -57,7 +57,11 @@ export async function POST(request: NextRequest) {
   try {
     upstream = await fetch(`${adminApiBase()}/api/app/auth/register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // 来源由 BFF 固定写入，忽略客户端传入的任何同名请求头，防止伪造
+        "x-client-source": "web",
+      },
       body: JSON.stringify({ username, password }),
       cache: "no-store",
     });

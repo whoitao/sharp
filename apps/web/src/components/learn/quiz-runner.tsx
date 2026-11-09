@@ -71,6 +71,7 @@ export function QuizRunner({
 
   const startedAtRef = useRef(Date.now());
   const completedRef = useRef(false);
+  const autoAdvanceRef = useRef<number | null>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
 
@@ -92,6 +93,16 @@ export function QuizRunner({
     }, 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  // 自动跳题的延时任务在卸载时清理，避免组件已离开后仍改状态下标
+  useEffect(
+    () => () => {
+      if (autoAdvanceRef.current !== null) {
+        window.clearTimeout(autoAdvanceRef.current);
+      }
+    },
+    [],
+  );
 
   const current = questions[index];
   const multiple = isMultipleChoice(current);
@@ -181,6 +192,20 @@ export function QuizRunner({
     setSelected((prev) => ({ ...prev, [current.id]: keys }));
     setJudged((prev) => ({ ...prev, [current.id]: true }));
     setCorrectMap((prev) => ({ ...prev, [current.id]: isCorrect }));
+
+    // 单选题答对后自动进入下一题（短暂停留让用户看到判定结果）；
+    // 最后一题停在当前判定状态，答错或多选题保持现状等待用户操作。
+    if (isCorrect && !multiple && index < questions.length - 1) {
+      if (autoAdvanceRef.current !== null) {
+        window.clearTimeout(autoAdvanceRef.current);
+      }
+      const from = index;
+      autoAdvanceRef.current = window.setTimeout(() => {
+        autoAdvanceRef.current = null;
+        // 用户已手动翻页时不重复前进
+        setIndex((value) => (value === from ? Math.min(from + 1, questions.length - 1) : value));
+      }, 700);
+    }
   };
 
   const handleOptionClick = (optionKey: string) => {
@@ -296,6 +321,14 @@ export function QuizRunner({
     );
   };
 
+  const navButtonClass = (enabled: boolean) =>
+    cn(
+      "h-7 rounded-sm px-2.5 font-semibold",
+      enabled
+        ? "border-primary bg-primary text-primary-foreground shadow-sm hover:border-primary hover:bg-primary/90 hover:text-primary-foreground"
+        : "border-border bg-surface-secondary text-foreground-tertiary shadow-none",
+    );
+
   const optionClass = (tone: OptionTone) =>
     cn(
       "flex w-full items-center gap-3 rounded-sm border px-3.5 py-3 text-left transition-colors",
@@ -374,9 +407,10 @@ export function QuizRunner({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 rounded-sm border-border bg-surface px-2.5 font-semibold text-foreground-secondary hover:border-primary/40 hover:bg-surface hover:text-foreground"
+                className={navButtonClass(index > 0)}
                 onClick={() => setIndex((value) => Math.max(0, value - 1))}
                 disabled={index === 0}
+                title={t("quiz.prev")}
                 aria-label={t("quiz.prev")}
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -384,11 +418,12 @@ export function QuizRunner({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 rounded-sm border-primary/40 bg-surface px-2.5 font-semibold text-primary-strong hover:border-primary/60 hover:bg-surface hover:text-primary-strong"
+                className={navButtonClass(index < questions.length - 1)}
                 onClick={() =>
                   setIndex((value) => Math.min(questions.length - 1, value + 1))
                 }
                 disabled={index === questions.length - 1}
+                title={t("quiz.next")}
                 aria-label={t("quiz.next")}
               >
                 <ChevronRight className="h-3.5 w-3.5" />

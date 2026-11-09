@@ -6,7 +6,6 @@ import type { RawQuestion } from "./types";
 // ────────────────────────────────────────────────
 
 export const grade1ChinesePart3: RawQuestion[] = [
-  // === 课文（二）8 雨点儿 6 ===
   { type: 1, content: `雨点儿是从（ ）里飘落下来的。`,
     analysis: `课文写"数不清的雨点儿，从云彩里飘落下来"。`,
     difficulty: 1, semester: 1, chapterName: `8 雨点儿`, kpNames: [`提取主要信息`],
@@ -14,27 +13,27 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `云彩`, isCorrect: true },
       { key: `B`, content: `大树`, isCorrect: false },
       { key: `C`, content: `大山`, isCorrect: false },
-      { key: `D`, content: `河流`, isCorrect: false },
+      { key: `D`, content: `河流`, isCorrect: false }
     ],
   },
   { type: 1, content: `小雨点儿要去（ ）。`,
     analysis: `小雨点儿回答："我要去有花有草的地方。"`,
     difficulty: 1, semester: 1, chapterName: `8 雨点儿`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `有花有草的地方`, isCorrect: true },
-      { key: `B`, content: `没有花没有草的地方`, isCorrect: false },
+      { key: `A`, content: `没有花没有草的地方`, isCorrect: false },
+      { key: `B`, content: `有花有草的地方`, isCorrect: true },
       { key: `C`, content: `大海里`, isCorrect: false },
-      { key: `D`, content: `沙漠里`, isCorrect: false },
+      { key: `D`, content: `沙漠里`, isCorrect: false }
     ],
   },
   { type: 1, content: `大雨点儿要去（ ）。`,
     analysis: `大雨点儿说："我要去没有花没有草的地方。"`,
     difficulty: 1, semester: 1, chapterName: `8 雨点儿`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `没有花没有草的地方`, isCorrect: true },
-      { key: `B`, content: `有花有草的地方`, isCorrect: false },
-      { key: `C`, content: `树林里`, isCorrect: false },
-      { key: `D`, content: `池塘里`, isCorrect: false },
+      { key: `A`, content: `有花有草的地方`, isCorrect: false },
+      { key: `B`, content: `树林里`, isCorrect: false },
+      { key: `C`, content: `没有花没有草的地方`, isCorrect: true },
+      { key: `D`, content: `池塘里`, isCorrect: false }
     ],
   },
   { type: 3, content: `雨点儿落下来以后，花草长得更好了。`,
@@ -42,17 +41,17 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 1, chapterName: `8 雨点儿`, kpNames: [`理解课文大意`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `"数不清的雨点儿"中，"数不清"说明雨点儿（ ）。`,
     analysis: `"数不清"就是多得数不过来，说明雨点儿非常多。`,
     difficulty: 2, semester: 1, chapterName: `8 雨点儿`, kpNames: [`词语在语境中的意思`],
     options: [
-      { key: `A`, content: `非常多`, isCorrect: true },
-      { key: `B`, content: `很少`, isCorrect: false },
-      { key: `C`, content: `很大`, isCorrect: false },
-      { key: `D`, content: `很冷`, isCorrect: false },
+      { key: `A`, content: `很少`, isCorrect: false },
+      { key: `B`, content: `很大`, isCorrect: false },
+      { key: `C`, content: `很冷`, isCorrect: false },
+      { key: `D`, content: `非常多`, isCorrect: true }
     ],
   },
   { type: 1, content: `课文把雨点儿当成人来写，这种写法叫（ ）。`,
@@ -62,49 +61,45 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `拟人`, isCorrect: true },
       { key: `B`, content: `比喻`, isCorrect: false },
       { key: `C`, content: `夸张`, isCorrect: false },
-      { key: `D`, content: `反问`, isCorrect: false },
+      { key: `D`, content: `反问`, isCorrect: false }
     ],
   },
-
-  // === 口语交际：用多大的声音 3 ===
   { type: 1, content: `在图书馆里，我们应该（ ）。`,
     analysis: `图书馆需要安静，说话要小声，不能影响别人看书。`,
     difficulty: 1, semester: 1, chapterName: `口语交际：用多大的声音`, kpNames: [`表达清楚完整`],
     options: [
-      { key: `A`, content: `小声说话`, isCorrect: true },
-      { key: `B`, content: `大声喊叫`, isCorrect: false },
+      { key: `A`, content: `大声喊叫`, isCorrect: false },
+      { key: `B`, content: `小声说话`, isCorrect: true },
       { key: `C`, content: `唱歌`, isCorrect: false },
-      { key: `D`, content: `打电话聊天`, isCorrect: false },
+      { key: `D`, content: `打电话聊天`, isCorrect: false }
     ],
   },
   { type: 1, content: `在操场上叫远处的同学，声音要（ ）。`,
     analysis: `距离远，声音要大一些，对方才能听清楚。`,
     difficulty: 2, semester: 1, chapterName: `口语交际：用多大的声音`, kpNames: [`表达清楚完整`],
     options: [
-      { key: `A`, content: `大一些`, isCorrect: true },
-      { key: `B`, content: `小一些`, isCorrect: false },
-      { key: `C`, content: `不出声`, isCorrect: false },
-      { key: `D`, content: `用耳语`, isCorrect: false },
+      { key: `A`, content: `小一些`, isCorrect: false },
+      { key: `B`, content: `不出声`, isCorrect: false },
+      { key: `C`, content: `大一些`, isCorrect: true },
+      { key: `D`, content: `用耳语`, isCorrect: false }
     ],
   },
   { type: 3, content: `和别人说话时，声音大小要看场合。`,
     analysis: `在安静的场合要小声，在空旷的操场可以大声，这叫做分场合说话。`,
     difficulty: 2, semester: 1, chapterName: `口语交际：用多大的声音`, kpNames: [`倾听与回应`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
-
-  // === 语文园地六 5 ===
   { type: 1, content: `"早晨起来，面向太阳。前面是东，后面是（ ）。"`,
     analysis: `早晨太阳从东方升起，面向太阳，前面是东，后面就是西。`,
     difficulty: 2, semester: 1, chapterName: `语文园地六`, kpNames: [`课文背诵`],
     options: [
-      { key: `A`, content: `西`, isCorrect: true },
-      { key: `B`, content: `南`, isCorrect: false },
-      { key: `C`, content: `北`, isCorrect: false },
-      { key: `D`, content: `东`, isCorrect: false },
+      { key: `A`, content: `南`, isCorrect: false },
+      { key: `B`, content: `北`, isCorrect: false },
+      { key: `C`, content: `东`, isCorrect: false },
+      { key: `D`, content: `西`, isCorrect: true }
     ],
   },
   { type: 1, content: `"前面是东，后面是西，左面是（ ），右面是南。"`,
@@ -114,7 +109,7 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `北`, isCorrect: true },
       { key: `B`, content: `东`, isCorrect: false },
       { key: `C`, content: `西`, isCorrect: false },
-      { key: `D`, content: `南`, isCorrect: false },
+      { key: `D`, content: `南`, isCorrect: false }
     ],
   },
   { type: 3, content: `早晨面向太阳时，前面是东。`,
@@ -122,39 +117,37 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 1, chapterName: `语文园地六`, kpNames: [`联系生活实际理解`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `"小时不识月，呼作白玉盘"写的是（ ）。`,
     analysis: `诗句把月亮叫作"白玉盘"，写的是月亮。`,
     difficulty: 2, semester: 1, chapterName: `语文园地六`, kpNames: [`古诗理解`],
     options: [
-      { key: `A`, content: `月亮`, isCorrect: true },
-      { key: `B`, content: `太阳`, isCorrect: false },
+      { key: `A`, content: `太阳`, isCorrect: false },
+      { key: `B`, content: `月亮`, isCorrect: true },
       { key: `C`, content: `星星`, isCorrect: false },
-      { key: `D`, content: `白云`, isCorrect: false },
+      { key: `D`, content: `白云`, isCorrect: false }
     ],
   },
   { type: 1, content: `"白玉盘"比喻的是（ ）。`,
     analysis: `圆圆的月亮又白又亮，像白玉做的盘子。`,
     difficulty: 2, semester: 1, chapterName: `语文园地六`, kpNames: [`比喻`],
     options: [
-      { key: `A`, content: `圆圆的月亮`, isCorrect: true },
-      { key: `B`, content: `白盘子`, isCorrect: false },
-      { key: `C`, content: `太阳`, isCorrect: false },
-      { key: `D`, content: `云朵`, isCorrect: false },
+      { key: `A`, content: `白盘子`, isCorrect: false },
+      { key: `B`, content: `太阳`, isCorrect: false },
+      { key: `C`, content: `圆圆的月亮`, isCorrect: true },
+      { key: `D`, content: `云朵`, isCorrect: false }
     ],
   },
-
-  // === 课文（三）9 明天要远足 6 ===
   { type: 1, content: `课文中的"我"为什么睡不着（ ）。`,
     analysis: `因为明天要远足，"我"太激动、太期待了，所以睡不着。`,
     difficulty: 1, semester: 1, chapterName: `9 明天要远足`, kpNames: [`理解课文大意`],
     options: [
-      { key: `A`, content: `明天要远足，太激动了`, isCorrect: true },
-      { key: `B`, content: `生病了`, isCorrect: false },
-      { key: `C`, content: `饿了`, isCorrect: false },
-      { key: `D`, content: `怕黑`, isCorrect: false },
+      { key: `A`, content: `生病了`, isCorrect: false },
+      { key: `B`, content: `饿了`, isCorrect: false },
+      { key: `C`, content: `怕黑`, isCorrect: false },
+      { key: `D`, content: `明天要远足，太激动了`, isCorrect: true }
     ],
   },
   { type: 1, content: `"我"想象那地方的海有（ ）。`,
@@ -164,49 +157,47 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `很多种颜色`, isCorrect: true },
       { key: `B`, content: `很多鱼`, isCorrect: false },
       { key: `C`, content: `很冷`, isCorrect: false },
-      { key: `D`, content: `很浅`, isCorrect: false },
+      { key: `D`, content: `很浅`, isCorrect: false }
     ],
   },
   { type: 1, content: `"我"想象那地方的云（ ）。`,
     analysis: `课文写"那地方的云，真的像同学说的，那么洁白柔软吗？"`,
     difficulty: 2, semester: 1, chapterName: `9 明天要远足`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `洁白柔软`, isCorrect: true },
-      { key: `B`, content: `又黑又厚`, isCorrect: false },
+      { key: `A`, content: `又黑又厚`, isCorrect: false },
+      { key: `B`, content: `洁白柔软`, isCorrect: true },
       { key: `C`, content: `像棉花糖一样甜`, isCorrect: false },
-      { key: `D`, content: `会下雨`, isCorrect: false },
+      { key: `D`, content: `会下雨`, isCorrect: false }
     ],
   },
   { type: 3, content: `课文写了小朋友远足前兴奋的心情。`,
     analysis: `"翻过来，翻过去""唉——睡不着"都写出远足前的兴奋和期待。`,
     difficulty: 1, semester: 1, chapterName: `9 明天要远足`, kpNames: [`感受课文情感`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
   { type: 1, content: `"翻过来，翻过去"说明"我"（ ）。`,
     analysis: `在床上翻来覆去，说明"我"怎么也睡不着。`,
     difficulty: 2, semester: 1, chapterName: `9 明天要远足`, kpNames: [`词语在语境中的意思`],
     options: [
-      { key: `A`, content: `睡不着`, isCorrect: true },
-      { key: `B`, content: `在做操`, isCorrect: false },
-      { key: `C`, content: `在读书`, isCorrect: false },
-      { key: `D`, content: `在画画`, isCorrect: false },
+      { key: `A`, content: `在做操`, isCorrect: false },
+      { key: `B`, content: `在读书`, isCorrect: false },
+      { key: `C`, content: `睡不着`, isCorrect: true },
+      { key: `D`, content: `在画画`, isCorrect: false }
     ],
   },
   { type: 1, content: `课文反复写"唉——睡不着"，表达了"我"（ ）的心情。`,
     analysis: `"唉——睡不着"反复出现，写出"我"又着急又期待的心情。`,
     difficulty: 3, semester: 1, chapterName: `9 明天要远足`, kpNames: [`感受课文情感`],
     options: [
-      { key: `A`, content: `期待和着急`, isCorrect: true },
-      { key: `B`, content: `难过`, isCorrect: false },
-      { key: `C`, content: `生气`, isCorrect: false },
-      { key: `D`, content: `害怕`, isCorrect: false },
+      { key: `A`, content: `难过`, isCorrect: false },
+      { key: `B`, content: `生气`, isCorrect: false },
+      { key: `C`, content: `害怕`, isCorrect: false },
+      { key: `D`, content: `期待和着急`, isCorrect: true }
     ],
   },
-
-  // === 10 大还是小 6 ===
   { type: 1, content: `"我"自己穿衣服、系鞋带的时候，觉得自己（ ）。`,
     analysis: `能自己做事情，"我"觉得自己长大了。`,
     difficulty: 1, semester: 1, chapterName: `10 大还是小`, kpNames: [`提取主要信息`],
@@ -214,17 +205,17 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `很大`, isCorrect: true },
       { key: `B`, content: `很小`, isCorrect: false },
       { key: `C`, content: `很累`, isCorrect: false },
-      { key: `D`, content: `很饿`, isCorrect: false },
+      { key: `D`, content: `很饿`, isCorrect: false }
     ],
   },
   { type: 1, content: `"我"够不到按钮、听到雷声喊妈妈的时候，觉得自己（ ）。`,
     analysis: `遇到做不到的事、害怕的时候，"我"觉得自己还很小。`,
     difficulty: 1, semester: 1, chapterName: `10 大还是小`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `很小`, isCorrect: true },
-      { key: `B`, content: `很大`, isCorrect: false },
+      { key: `A`, content: `很大`, isCorrect: false },
+      { key: `B`, content: `很小`, isCorrect: true },
       { key: `C`, content: `很勇敢`, isCorrect: false },
-      { key: `D`, content: `很聪明`, isCorrect: false },
+      { key: `D`, content: `很聪明`, isCorrect: false }
     ],
   },
   { type: 3, content: `课文中的"我"有时候希望自己不要长大，更多时候盼着自己快点儿长大。`,
@@ -232,27 +223,27 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 3, semester: 1, chapterName: `10 大还是小`, kpNames: [`理解课文大意`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `下面哪件事说明"我"长大了（ ）。`,
     analysis: `自己整理书包是力所能及的事，能自己做说明长大了。`,
     difficulty: 2, semester: 1, chapterName: `10 大还是小`, kpNames: [`联系生活实际理解`],
     options: [
-      { key: `A`, content: `自己整理书包`, isCorrect: true },
-      { key: `B`, content: `让妈妈喂饭`, isCorrect: false },
-      { key: `C`, content: `哭着找妈妈`, isCorrect: false },
-      { key: `D`, content: `不会穿鞋`, isCorrect: false },
+      { key: `A`, content: `让妈妈喂饭`, isCorrect: false },
+      { key: `B`, content: `哭着找妈妈`, isCorrect: false },
+      { key: `C`, content: `自己整理书包`, isCorrect: true },
+      { key: `D`, content: `不会穿鞋`, isCorrect: false }
     ],
   },
   { type: 1, content: `"我够不到按钮"中，"够"的意思是（ ）。`,
     analysis: `"够"在这里是伸手去摸、去碰到的意思。`,
     difficulty: 3, semester: 1, chapterName: `10 大还是小`, kpNames: [`词语在语境中的意思`],
     options: [
-      { key: `A`, content: `伸手摸到`, isCorrect: true },
-      { key: `B`, content: `足够`, isCorrect: false },
-      { key: `C`, content: `停下`, isCorrect: false },
-      { key: `D`, content: `叫喊`, isCorrect: false },
+      { key: `A`, content: `足够`, isCorrect: false },
+      { key: `B`, content: `停下`, isCorrect: false },
+      { key: `C`, content: `叫喊`, isCorrect: false },
+      { key: `D`, content: `伸手摸到`, isCorrect: true }
     ],
   },
   { type: 1, content: `课文表达了"我"希望（ ）的心情。`,
@@ -262,47 +253,45 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `长大`, isCorrect: true },
       { key: `B`, content: `变小`, isCorrect: false },
       { key: `C`, content: `睡觉`, isCorrect: false },
-      { key: `D`, content: `玩耍`, isCorrect: false },
+      { key: `D`, content: `玩耍`, isCorrect: false }
     ],
   },
-
-  // === 11 项链 5 ===
   { type: 1, content: `课文中，大海是（ ）的。`,
     analysis: `课文开头写"大海，蓝蓝的，又宽又远"。`,
     difficulty: 1, semester: 1, chapterName: `11 项链`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `蓝蓝的`, isCorrect: true },
-      { key: `B`, content: `黄黄的`, isCorrect: false },
+      { key: `A`, content: `黄黄的`, isCorrect: false },
+      { key: `B`, content: `蓝蓝的`, isCorrect: true },
       { key: `C`, content: `绿绿的`, isCorrect: false },
-      { key: `D`, content: `白白的`, isCorrect: false },
+      { key: `D`, content: `白白的`, isCorrect: false }
     ],
   },
   { type: 1, content: `沙滩是（ ）的。`,
     analysis: `课文写"沙滩，黄黄的，又长又软"。`,
     difficulty: 1, semester: 1, chapterName: `11 项链`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `黄黄的`, isCorrect: true },
-      { key: `B`, content: `蓝蓝的`, isCorrect: false },
-      { key: `C`, content: `雪白的`, isCorrect: false },
-      { key: `D`, content: `红红的`, isCorrect: false },
+      { key: `A`, content: `蓝蓝的`, isCorrect: false },
+      { key: `B`, content: `雪白的`, isCorrect: false },
+      { key: `C`, content: `黄黄的`, isCorrect: true },
+      { key: `D`, content: `红红的`, isCorrect: false }
     ],
   },
   { type: 1, content: `小娃娃用海螺和贝壳穿成（ ）。`,
     analysis: `课文写小娃娃把海螺和贝壳穿成彩色的项链，挂在胸前。`,
     difficulty: 1, semester: 1, chapterName: `11 项链`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `彩色的项链`, isCorrect: true },
-      { key: `B`, content: `金色的项链`, isCorrect: false },
-      { key: `C`, content: `白色的项链`, isCorrect: false },
-      { key: `D`, content: `绿色的项链`, isCorrect: false },
+      { key: `A`, content: `金色的项链`, isCorrect: false },
+      { key: `B`, content: `白色的项链`, isCorrect: false },
+      { key: `C`, content: `绿色的项链`, isCorrect: false },
+      { key: `D`, content: `彩色的项链`, isCorrect: true }
     ],
   },
   { type: 3, content: `"快活的脚印落在沙滩上，穿成金色的项链，挂在大海胸前。"`,
     analysis: `这是课文原句，把沙滩上的脚印比作金色的项链。`,
     difficulty: 2, semester: 1, chapterName: `11 项链`, kpNames: [`课文背诵`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
   { type: 1, content: `课文把脚印比作（ ）。`,
@@ -312,19 +301,17 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `金色的项链`, isCorrect: true },
       { key: `B`, content: `彩色的项链`, isCorrect: false },
       { key: `C`, content: `小贝壳`, isCorrect: false },
-      { key: `D`, content: `浪花`, isCorrect: false },
+      { key: `D`, content: `浪花`, isCorrect: false }
     ],
   },
-
-  // === 语文园地七 3 ===
   { type: 1, content: `"种瓜得瓜，种豆得（ ）。"`,
     analysis: `这句谚语说种什么就收获什么，种豆当然得豆。`,
     difficulty: 1, semester: 1, chapterName: `语文园地七`, kpNames: [`课文背诵`],
     options: [
-      { key: `A`, content: `豆`, isCorrect: true },
-      { key: `B`, content: `瓜`, isCorrect: false },
+      { key: `A`, content: `瓜`, isCorrect: false },
+      { key: `B`, content: `豆`, isCorrect: true },
       { key: `C`, content: `花`, isCorrect: false },
-      { key: `D`, content: `果`, isCorrect: false },
+      { key: `D`, content: `果`, isCorrect: false }
     ],
   },
   { type: 3, content: `"前后左右"都是表示方位的词。`,
@@ -332,29 +319,27 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 1, chapterName: `语文园地七`, kpNames: [`词语的本义`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `"千里之行，始于（ ）。"`,
     analysis: `这句名言说再远的路也要从脚下第一步开始。`,
     difficulty: 2, semester: 1, chapterName: `语文园地七`, kpNames: [`课文背诵`],
     options: [
-      { key: `A`, content: `足下`, isCorrect: true },
-      { key: `B`, content: `天上`, isCorrect: false },
-      { key: `C`, content: `远方`, isCorrect: false },
-      { key: `D`, content: `门前`, isCorrect: false },
+      { key: `A`, content: `天上`, isCorrect: false },
+      { key: `B`, content: `远方`, isCorrect: false },
+      { key: `C`, content: `足下`, isCorrect: true },
+      { key: `D`, content: `门前`, isCorrect: false }
     ],
   },
-
-  // === 课文（四）12 雪地里的小画家 7 ===
   { type: 1, content: `小鸡在雪地里画的是（ ）。`,
     analysis: `小鸡的脚印像竹叶，所以说小鸡画竹叶。`,
     difficulty: 1, semester: 1, chapterName: `12 雪地里的小画家`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `竹叶`, isCorrect: true },
-      { key: `B`, content: `梅花`, isCorrect: false },
-      { key: `C`, content: `枫叶`, isCorrect: false },
-      { key: `D`, content: `月牙`, isCorrect: false },
+      { key: `A`, content: `梅花`, isCorrect: false },
+      { key: `B`, content: `枫叶`, isCorrect: false },
+      { key: `C`, content: `月牙`, isCorrect: false },
+      { key: `D`, content: `竹叶`, isCorrect: true }
     ],
   },
   { type: 1, content: `小狗画的是（ ）。`,
@@ -364,45 +349,45 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `梅花`, isCorrect: true },
       { key: `B`, content: `竹叶`, isCorrect: false },
       { key: `C`, content: `枫叶`, isCorrect: false },
-      { key: `D`, content: `月牙`, isCorrect: false },
+      { key: `D`, content: `月牙`, isCorrect: false }
     ],
   },
   { type: 1, content: `小鸭画的是（ ）。`,
     analysis: `小鸭的脚印像枫叶，所以说小鸭画枫叶。`,
     difficulty: 1, semester: 1, chapterName: `12 雪地里的小画家`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `枫叶`, isCorrect: true },
-      { key: `B`, content: `梅花`, isCorrect: false },
+      { key: `A`, content: `梅花`, isCorrect: false },
+      { key: `B`, content: `枫叶`, isCorrect: true },
       { key: `C`, content: `竹叶`, isCorrect: false },
-      { key: `D`, content: `月牙`, isCorrect: false },
+      { key: `D`, content: `月牙`, isCorrect: false }
     ],
   },
   { type: 1, content: `小马画的是（ ）。`,
     analysis: `小马的脚印像月牙，所以说小马画月牙。`,
     difficulty: 1, semester: 1, chapterName: `12 雪地里的小画家`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `月牙`, isCorrect: true },
-      { key: `B`, content: `枫叶`, isCorrect: false },
-      { key: `C`, content: `梅花`, isCorrect: false },
-      { key: `D`, content: `竹叶`, isCorrect: false },
+      { key: `A`, content: `枫叶`, isCorrect: false },
+      { key: `B`, content: `梅花`, isCorrect: false },
+      { key: `C`, content: `月牙`, isCorrect: true },
+      { key: `D`, content: `竹叶`, isCorrect: false }
     ],
   },
   { type: 3, content: `小动物们画画不用颜料也不用笔。`,
     analysis: `课文写"不用颜料不用笔，几步就成一幅画"，它们用脚印画画。`,
     difficulty: 1, semester: 1, chapterName: `12 雪地里的小画家`, kpNames: [`理解课文大意`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
   { type: 1, content: `青蛙没来参加，是因为（ ）。`,
     analysis: `课文写"青蛙为什么没参加？他在洞里睡着啦"，青蛙在冬眠。`,
     difficulty: 2, semester: 1, chapterName: `12 雪地里的小画家`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `在洞里睡觉`, isCorrect: true },
-      { key: `B`, content: `不会画画`, isCorrect: false },
-      { key: `C`, content: `怕冷不出来`, isCorrect: false },
-      { key: `D`, content: `去别处玩了`, isCorrect: false },
+      { key: `A`, content: `不会画画`, isCorrect: false },
+      { key: `B`, content: `怕冷不出来`, isCorrect: false },
+      { key: `C`, content: `去别处玩了`, isCorrect: false },
+      { key: `D`, content: `在洞里睡觉`, isCorrect: true }
     ],
   },
   { type: 1, content: `小动物们用什么画画（ ）。`,
@@ -412,39 +397,37 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `脚印`, isCorrect: true },
       { key: `B`, content: `画笔`, isCorrect: false },
       { key: `C`, content: `颜料`, isCorrect: false },
-      { key: `D`, content: `树枝`, isCorrect: false },
+      { key: `D`, content: `树枝`, isCorrect: false }
     ],
   },
-
-  // === 13 乌鸦喝水 6 ===
   { type: 1, content: `乌鸦一开始喝不到水，是因为（ ）。`,
     analysis: `瓶子里水不多，瓶口又小，乌鸦的嘴伸不进去。`,
     difficulty: 1, semester: 1, chapterName: `13 乌鸦喝水`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `瓶子里水不多，瓶口又小`, isCorrect: true },
-      { key: `B`, content: `瓶子太高`, isCorrect: false },
+      { key: `A`, content: `瓶子太高`, isCorrect: false },
+      { key: `B`, content: `瓶子里水不多，瓶口又小`, isCorrect: true },
       { key: `C`, content: `水太脏`, isCorrect: false },
-      { key: `D`, content: `瓶子破了`, isCorrect: false },
+      { key: `D`, content: `瓶子破了`, isCorrect: false }
     ],
   },
   { type: 1, content: `乌鸦想出的办法是（ ）。`,
     analysis: `乌鸦把小石子一颗一颗放进瓶子里，让水面升高。`,
     difficulty: 1, semester: 1, chapterName: `13 乌鸦喝水`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `把小石子放进瓶子里`, isCorrect: true },
-      { key: `B`, content: `把瓶子推倒`, isCorrect: false },
-      { key: `C`, content: `用吸管喝水`, isCorrect: false },
-      { key: `D`, content: `用翅膀扇水`, isCorrect: false },
+      { key: `A`, content: `把瓶子推倒`, isCorrect: false },
+      { key: `B`, content: `用吸管喝水`, isCorrect: false },
+      { key: `C`, content: `把小石子放进瓶子里`, isCorrect: true },
+      { key: `D`, content: `用翅膀扇水`, isCorrect: false }
     ],
   },
   { type: 1, content: `石子放进瓶子后，瓶子里的水（ ）。`,
     analysis: `石子占了地方，水面就慢慢升高，乌鸦就喝到水了。`,
     difficulty: 2, semester: 1, chapterName: `13 乌鸦喝水`, kpNames: [`理解课文大意`],
     options: [
-      { key: `A`, content: `渐渐升高`, isCorrect: true },
-      { key: `B`, content: `变少了`, isCorrect: false },
-      { key: `C`, content: `变脏了`, isCorrect: false },
-      { key: `D`, content: `结冰了`, isCorrect: false },
+      { key: `A`, content: `变少了`, isCorrect: false },
+      { key: `B`, content: `变脏了`, isCorrect: false },
+      { key: `C`, content: `结冰了`, isCorrect: false },
+      { key: `D`, content: `渐渐升高`, isCorrect: true }
     ],
   },
   { type: 3, content: `乌鸦很聪明，遇到困难会想办法。`,
@@ -452,7 +435,7 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 1, chapterName: `13 乌鸦喝水`, kpNames: [`感受课文情感`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `"渐渐"的意思是（ ）。`,
@@ -462,39 +445,37 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `慢慢`, isCorrect: true },
       { key: `B`, content: `突然`, isCorrect: false },
       { key: `C`, content: `立刻`, isCorrect: false },
-      { key: `D`, content: `飞快`, isCorrect: false },
+      { key: `D`, content: `飞快`, isCorrect: false }
     ],
   },
   { type: 1, content: `下面哪个词和"口渴"有关（ ）。`,
     analysis: `口渴了就要喝水，"喝水"和"口渴"关系最密切。`,
     difficulty: 1, semester: 1, chapterName: `13 乌鸦喝水`, kpNames: [`词语搭配`],
     options: [
-      { key: `A`, content: `喝水`, isCorrect: true },
-      { key: `B`, content: `吃饭`, isCorrect: false },
+      { key: `A`, content: `吃饭`, isCorrect: false },
+      { key: `B`, content: `喝水`, isCorrect: true },
       { key: `C`, content: `睡觉`, isCorrect: false },
-      { key: `D`, content: `走路`, isCorrect: false },
+      { key: `D`, content: `走路`, isCorrect: false }
     ],
   },
-
-  // === 14 小蜗牛 6 ===
   { type: 1, content: `小蜗牛住在（ ）旁边。`,
     analysis: `课文开头写"蜗牛一家住在小树林的旁边"。`,
     difficulty: 1, semester: 1, chapterName: `14 小蜗牛`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `小树林`, isCorrect: true },
-      { key: `B`, content: `大海`, isCorrect: false },
-      { key: `C`, content: `沙漠`, isCorrect: false },
-      { key: `D`, content: `学校`, isCorrect: false },
+      { key: `A`, content: `大海`, isCorrect: false },
+      { key: `B`, content: `沙漠`, isCorrect: false },
+      { key: `C`, content: `小树林`, isCorrect: true },
+      { key: `D`, content: `学校`, isCorrect: false }
     ],
   },
   { type: 1, content: `春天，小树（ ）。`,
     analysis: `蜗牛妈妈告诉小蜗牛"小树发芽了"，春天小树发芽。`,
     difficulty: 1, semester: 1, chapterName: `14 小蜗牛`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `发芽了`, isCorrect: true },
-      { key: `B`, content: `落叶了`, isCorrect: false },
-      { key: `C`, content: `结果了`, isCorrect: false },
-      { key: `D`, content: `开花了`, isCorrect: false },
+      { key: `A`, content: `落叶了`, isCorrect: false },
+      { key: `B`, content: `结果了`, isCorrect: false },
+      { key: `C`, content: `开花了`, isCorrect: false },
+      { key: `D`, content: `发芽了`, isCorrect: true }
     ],
   },
   { type: 1, content: `小蜗牛爬得很（ ）。`,
@@ -504,47 +485,45 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `慢`, isCorrect: true },
       { key: `B`, content: `快`, isCorrect: false },
       { key: `C`, content: `高`, isCorrect: false },
-      { key: `D`, content: `远`, isCorrect: false },
+      { key: `D`, content: `远`, isCorrect: false }
     ],
   },
   { type: 3, content: `小蜗牛每次爬到树林，季节已经变了。`,
     analysis: `因为爬得慢，小蜗牛到树林时季节已经过去了，所以看不到妈妈说的景色。`,
     difficulty: 2, semester: 1, chapterName: `14 小蜗牛`, kpNames: [`理解课文大意`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
   { type: 1, content: `夏天，树林里（ ）。`,
     analysis: `课文写夏天"叶子碧绿碧绿的"，树叶长得又密又绿。`,
     difficulty: 2, semester: 1, chapterName: `14 小蜗牛`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `叶子碧绿碧绿的`, isCorrect: true },
-      { key: `B`, content: `下大雪`, isCorrect: false },
+      { key: `A`, content: `下大雪`, isCorrect: false },
+      { key: `B`, content: `叶子碧绿碧绿的`, isCorrect: true },
       { key: `C`, content: `树叶全落了`, isCorrect: false },
-      { key: `D`, content: `小树刚发芽`, isCorrect: false },
+      { key: `D`, content: `小树刚发芽`, isCorrect: false }
     ],
   },
   { type: 1, content: `课文告诉我们蜗牛的特点是（ ）。`,
     analysis: `课文通过蜗牛几次去树林的经过，写出蜗牛爬得慢的特点。`,
     difficulty: 2, semester: 1, chapterName: `14 小蜗牛`, kpNames: [`联系生活实际理解`],
     options: [
-      { key: `A`, content: `爬得慢`, isCorrect: true },
-      { key: `B`, content: `飞得快`, isCorrect: false },
-      { key: `C`, content: `跑得远`, isCorrect: false },
-      { key: `D`, content: `跳得高`, isCorrect: false },
+      { key: `A`, content: `飞得快`, isCorrect: false },
+      { key: `B`, content: `跑得远`, isCorrect: false },
+      { key: `C`, content: `爬得慢`, isCorrect: true },
+      { key: `D`, content: `跳得高`, isCorrect: false }
     ],
   },
-
-  // === 口语交际：小兔运南瓜 3 ===
   { type: 1, content: `小兔想把南瓜运回家，可以（ ）。`,
     analysis: `南瓜是圆的，可以滚着走，这样又省力又快。`,
     difficulty: 1, semester: 1, chapterName: `口语交际：小兔运南瓜`, kpNames: [`表达清楚完整`],
     options: [
-      { key: `A`, content: `把南瓜滚回家`, isCorrect: true },
-      { key: `B`, content: `把南瓜扔掉`, isCorrect: false },
-      { key: `C`, content: `坐在南瓜上哭`, isCorrect: false },
-      { key: `D`, content: `请小鸟搬`, isCorrect: false },
+      { key: `A`, content: `把南瓜扔掉`, isCorrect: false },
+      { key: `B`, content: `坐在南瓜上哭`, isCorrect: false },
+      { key: `C`, content: `请小鸟搬`, isCorrect: false },
+      { key: `D`, content: `把南瓜滚回家`, isCorrect: true }
     ],
   },
   { type: 3, content: `遇到难题时，可以动脑筋想办法。`,
@@ -552,7 +531,7 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 1, chapterName: `口语交际：小兔运南瓜`, kpNames: [`联系生活实际理解`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `下面哪个办法最省力（ ）。`,
@@ -562,51 +541,47 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `把圆南瓜滚着走`, isCorrect: true },
       { key: `B`, content: `抱着走`, isCorrect: false },
       { key: `C`, content: `背着走`, isCorrect: false },
-      { key: `D`, content: `踢着走`, isCorrect: false },
+      { key: `D`, content: `踢着走`, isCorrect: false }
     ],
   },
-
-  // === 语文园地八 4 ===
   { type: 1, content: `"花"的偏旁是（ ）。`,
     analysis: `"花"上面是草字头"艹"，草字头的字大多和花草有关。`,
     difficulty: 1, semester: 1, chapterName: `语文园地八`, kpNames: [`常用偏旁识别`],
     options: [
-      { key: `A`, content: `艹`, isCorrect: true },
-      { key: `B`, content: `木`, isCorrect: false },
+      { key: `A`, content: `木`, isCorrect: false },
+      { key: `B`, content: `艹`, isCorrect: true },
       { key: `C`, content: `亻`, isCorrect: false },
-      { key: `D`, content: `氵`, isCorrect: false },
+      { key: `D`, content: `氵`, isCorrect: false }
     ],
   },
   { type: 1, content: `"河"的偏旁是（ ）。`,
     analysis: `"河"左边是三点水，三点水的字大多和水有关。`,
     difficulty: 1, semester: 1, chapterName: `语文园地八`, kpNames: [`偏旁表意功能`],
     options: [
-      { key: `A`, content: `氵`, isCorrect: true },
-      { key: `B`, content: `艹`, isCorrect: false },
-      { key: `C`, content: `木`, isCorrect: false },
-      { key: `D`, content: `口`, isCorrect: false },
+      { key: `A`, content: `艹`, isCorrect: false },
+      { key: `B`, content: `木`, isCorrect: false },
+      { key: `C`, content: `氵`, isCorrect: true },
+      { key: `D`, content: `口`, isCorrect: false }
     ],
   },
   { type: 3, content: `"桃、树、林"都带有"木"字旁，和树木有关。`,
     analysis: `木字旁表示和树木有关，这类字大多与树木、木材有联系。`,
     difficulty: 2, semester: 1, chapterName: `语文园地八`, kpNames: [`偏旁表意功能`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
   { type: 1, content: `"说、话、读"都带有（ ）。`,
     analysis: `"说、话、读"都是言字旁"讠"，和说话有关。`,
     difficulty: 2, semester: 1, chapterName: `语文园地八`, kpNames: [`常用偏旁识别`],
     options: [
-      { key: `A`, content: `讠`, isCorrect: true },
-      { key: `B`, content: `口`, isCorrect: false },
-      { key: `C`, content: `心`, isCorrect: false },
-      { key: `D`, content: `手`, isCorrect: false },
+      { key: `A`, content: `口`, isCorrect: false },
+      { key: `B`, content: `心`, isCorrect: false },
+      { key: `C`, content: `手`, isCorrect: false },
+      { key: `D`, content: `讠`, isCorrect: true }
     ],
   },
-
-  // === 下册 识字（一）1 春夏秋冬 6 ===
   { type: 1, content: `课文《春夏秋冬》中，"春风"对"夏雨"，"秋霜"对（ ）。`,
     analysis: `课文词串是"春风、夏雨、秋霜、冬雪"，秋霜和冬雪相对。`,
     difficulty: 2, semester: 2, chapterName: `1 春夏秋冬`, kpNames: [`课文背诵`],
@@ -614,27 +589,27 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `冬雪`, isCorrect: true },
       { key: `B`, content: `春雨`, isCorrect: false },
       { key: `C`, content: `夏风`, isCorrect: false },
-      { key: `D`, content: `秋月`, isCorrect: false },
+      { key: `D`, content: `秋月`, isCorrect: false }
     ],
   },
   { type: 1, content: `"池草青，山花红"中，"池草"是（ ）的。`,
     analysis: `课文写"池草青"，池塘边的草是青色的。`,
     difficulty: 1, semester: 2, chapterName: `1 春夏秋冬`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `青`, isCorrect: true },
-      { key: `B`, content: `红`, isCorrect: false },
+      { key: `A`, content: `红`, isCorrect: false },
+      { key: `B`, content: `青`, isCorrect: true },
       { key: `C`, content: `黄`, isCorrect: false },
-      { key: `D`, content: `白`, isCorrect: false },
+      { key: `D`, content: `白`, isCorrect: false }
     ],
   },
   { type: 1, content: `"鱼出水，鸟入（ ）。"`,
     analysis: `课文原句是"鱼出水，鸟入林"，鸟儿飞进树林。`,
     difficulty: 1, semester: 2, chapterName: `1 春夏秋冬`, kpNames: [`课文背诵`],
     options: [
-      { key: `A`, content: `林`, isCorrect: true },
-      { key: `B`, content: `水`, isCorrect: false },
-      { key: `C`, content: `云`, isCorrect: false },
-      { key: `D`, content: `山`, isCorrect: false },
+      { key: `A`, content: `水`, isCorrect: false },
+      { key: `B`, content: `云`, isCorrect: false },
+      { key: `C`, content: `林`, isCorrect: true },
+      { key: `D`, content: `山`, isCorrect: false }
     ],
   },
   { type: 3, content: `"春风、夏雨、秋霜、冬雪"分别对应四个季节。`,
@@ -642,17 +617,17 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 2, chapterName: `1 春夏秋冬`, kpNames: [`理解课文大意`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `下面哪个词描写春天（ ）。`,
     analysis: `"春风"是春天才有的风，描写的是春天。`,
     difficulty: 1, semester: 2, chapterName: `1 春夏秋冬`, kpNames: [`词语搭配`],
     options: [
-      { key: `A`, content: `春风`, isCorrect: true },
-      { key: `B`, content: `秋霜`, isCorrect: false },
-      { key: `C`, content: `冬雪`, isCorrect: false },
-      { key: `D`, content: `夏雨`, isCorrect: false },
+      { key: `A`, content: `秋霜`, isCorrect: false },
+      { key: `B`, content: `冬雪`, isCorrect: false },
+      { key: `C`, content: `夏雨`, isCorrect: false },
+      { key: `D`, content: `春风`, isCorrect: true }
     ],
   },
   { type: 1, content: `"游鱼"的"游"说明鱼在（ ）。`,
@@ -662,47 +637,45 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `水里游动`, isCorrect: true },
       { key: `B`, content: `天上飞`, isCorrect: false },
       { key: `C`, content: `地上跑`, isCorrect: false },
-      { key: `D`, content: `树上爬`, isCorrect: false },
+      { key: `D`, content: `树上爬`, isCorrect: false }
     ],
   },
-
-  // === 2 姓氏歌 5 ===
   { type: 1, content: `"木子（ ）"是"李"姓。`,
     analysis: `"李"字由"木"和"子"组成，所以叫"木子李"。`,
     difficulty: 1, semester: 2, chapterName: `2 姓氏歌`, kpNames: [`词语的本义`],
     options: [
-      { key: `A`, content: `李`, isCorrect: true },
-      { key: `B`, content: `张`, isCorrect: false },
+      { key: `A`, content: `张`, isCorrect: false },
+      { key: `B`, content: `李`, isCorrect: true },
       { key: `C`, content: `胡`, isCorrect: false },
-      { key: `D`, content: `吴`, isCorrect: false },
+      { key: `D`, content: `吴`, isCorrect: false }
     ],
   },
   { type: 1, content: `"弓长（ ）"是"张"姓。`,
     analysis: `"张"字由"弓"和"长"组成，所以叫"弓长张"。`,
     difficulty: 1, semester: 2, chapterName: `2 姓氏歌`, kpNames: [`词语的本义`],
     options: [
-      { key: `A`, content: `张`, isCorrect: true },
-      { key: `B`, content: `李`, isCorrect: false },
-      { key: `C`, content: `胡`, isCorrect: false },
-      { key: `D`, content: `吴`, isCorrect: false },
+      { key: `A`, content: `李`, isCorrect: false },
+      { key: `B`, content: `胡`, isCorrect: false },
+      { key: `C`, content: `张`, isCorrect: true },
+      { key: `D`, content: `吴`, isCorrect: false }
     ],
   },
   { type: 1, content: `"口天（ ）"是"吴"姓。`,
     analysis: `"吴"字由"口"和"天"组成，所以叫"口天吴"。`,
     difficulty: 2, semester: 2, chapterName: `2 姓氏歌`, kpNames: [`词语的本义`],
     options: [
-      { key: `A`, content: `吴`, isCorrect: true },
-      { key: `B`, content: `李`, isCorrect: false },
-      { key: `C`, content: `张`, isCorrect: false },
-      { key: `D`, content: `许`, isCorrect: false },
+      { key: `A`, content: `李`, isCorrect: false },
+      { key: `B`, content: `张`, isCorrect: false },
+      { key: `C`, content: `许`, isCorrect: false },
+      { key: `D`, content: `吴`, isCorrect: true }
     ],
   },
   { type: 3, content: `"古月胡"说的是"胡"字由"古"和"月"组成。`,
     analysis: `课文中用拆字的方法介绍姓氏，"古月胡"就是"古"和"月"合成"胡"。`,
     difficulty: 2, semester: 2, chapterName: `2 姓氏歌`, kpNames: [`词语的本义`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
   { type: 1, content: `下面哪个是我国的姓氏（ ）。`,
@@ -712,39 +685,37 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `欧阳`, isCorrect: true },
       { key: `B`, content: `北京`, isCorrect: false },
       { key: `C`, content: `苹果`, isCorrect: false },
-      { key: `D`, content: `学校`, isCorrect: false },
+      { key: `D`, content: `学校`, isCorrect: false }
     ],
   },
-
-  // === 3 小青蛙 5 ===
   { type: 1, content: `课文中的小青蛙做什么好事情（ ）。`,
     analysis: `课文写小青蛙"保护禾苗吃害虫，做了不少好事情"。`,
     difficulty: 1, semester: 2, chapterName: `3 小青蛙`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `保护禾苗吃害虫`, isCorrect: true },
-      { key: `B`, content: `唱歌跳舞`, isCorrect: false },
+      { key: `A`, content: `唱歌跳舞`, isCorrect: false },
+      { key: `B`, content: `保护禾苗吃害虫`, isCorrect: true },
       { key: `C`, content: `帮人搬家`, isCorrect: false },
-      { key: `D`, content: `送信`, isCorrect: false },
+      { key: `D`, content: `送信`, isCorrect: false }
     ],
   },
   { type: 1, content: `"河水清清天气晴"中，"晴"和（ ）有关。`,
     analysis: `"晴"是日字旁，表示天气晴朗，和太阳有关。`,
     difficulty: 2, semester: 2, chapterName: `3 小青蛙`, kpNames: [`偏旁表意功能`],
     options: [
-      { key: `A`, content: `太阳`, isCorrect: true },
-      { key: `B`, content: `水`, isCorrect: false },
-      { key: `C`, content: `眼睛`, isCorrect: false },
-      { key: `D`, content: `心情`, isCorrect: false },
+      { key: `A`, content: `水`, isCorrect: false },
+      { key: `B`, content: `眼睛`, isCorrect: false },
+      { key: `C`, content: `太阳`, isCorrect: true },
+      { key: `D`, content: `心情`, isCorrect: false }
     ],
   },
   { type: 1, content: `"清、晴、睛、情、请"这些字都含有（ ）。`,
     analysis: `这些字都有"青"这个部分，读音也相近，是形声字。`,
     difficulty: 2, semester: 2, chapterName: `3 小青蛙`, kpNames: [`形声字`],
     options: [
-      { key: `A`, content: `青`, isCorrect: true },
-      { key: `B`, content: `日`, isCorrect: false },
-      { key: `C`, content: `目`, isCorrect: false },
-      { key: `D`, content: `讠`, isCorrect: false },
+      { key: `A`, content: `日`, isCorrect: false },
+      { key: `B`, content: `目`, isCorrect: false },
+      { key: `C`, content: `讠`, isCorrect: false },
+      { key: `D`, content: `青`, isCorrect: true }
     ],
   },
   { type: 3, content: `"睛"是目字旁，和眼睛有关。`,
@@ -752,7 +723,7 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 2, chapterName: `3 小青蛙`, kpNames: [`偏旁表意功能`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `我们应该（ ）小青蛙。`,
@@ -762,47 +733,45 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `爱护`, isCorrect: true },
       { key: `B`, content: `伤害`, isCorrect: false },
       { key: `C`, content: `捕捉`, isCorrect: false },
-      { key: `D`, content: `讨厌`, isCorrect: false },
+      { key: `D`, content: `讨厌`, isCorrect: false }
     ],
   },
-
-  // === 4 猜字谜 5 ===
   { type: 1, content: `"左边绿，右边红，左右相遇起凉风"的谜底是（ ）。`,
     analysis: `左边是"禾"（绿），右边是"火"（红），合起来是"秋"，秋天起凉风。`,
     difficulty: 3, semester: 2, chapterName: `4 猜字谜`, kpNames: [`会意字`],
     options: [
-      { key: `A`, content: `秋`, isCorrect: true },
-      { key: `B`, content: `春`, isCorrect: false },
+      { key: `A`, content: `春`, isCorrect: false },
+      { key: `B`, content: `秋`, isCorrect: true },
       { key: `C`, content: `夏`, isCorrect: false },
-      { key: `D`, content: `冬`, isCorrect: false },
+      { key: `D`, content: `冬`, isCorrect: false }
     ],
   },
   { type: 1, content: `"'言'来互相尊重"说的是（ ）字。`,
     analysis: `言字旁加"青"就是"请"，请人帮忙要互相尊重。`,
     difficulty: 2, semester: 2, chapterName: `4 猜字谜`, kpNames: [`形声字`],
     options: [
-      { key: `A`, content: `请`, isCorrect: true },
-      { key: `B`, content: `清`, isCorrect: false },
-      { key: `C`, content: `晴`, isCorrect: false },
-      { key: `D`, content: `睛`, isCorrect: false },
+      { key: `A`, content: `清`, isCorrect: false },
+      { key: `B`, content: `晴`, isCorrect: false },
+      { key: `C`, content: `请`, isCorrect: true },
+      { key: `D`, content: `睛`, isCorrect: false }
     ],
   },
   { type: 1, content: `"'日'出万里无云"说的是（ ）字。`,
     analysis: `日字旁加"青"就是"晴"，表示天气晴朗。`,
     difficulty: 2, semester: 2, chapterName: `4 猜字谜`, kpNames: [`形声字`],
     options: [
-      { key: `A`, content: `晴`, isCorrect: true },
-      { key: `B`, content: `清`, isCorrect: false },
-      { key: `C`, content: `请`, isCorrect: false },
-      { key: `D`, content: `情`, isCorrect: false },
+      { key: `A`, content: `清`, isCorrect: false },
+      { key: `B`, content: `请`, isCorrect: false },
+      { key: `C`, content: `情`, isCorrect: false },
+      { key: `D`, content: `晴`, isCorrect: true }
     ],
   },
   { type: 3, content: `"'水'到纯净透明"的谜底是"清"。`,
     analysis: `三点水加"青"就是"清"，水清澈透明。`,
     difficulty: 2, semester: 2, chapterName: `4 猜字谜`, kpNames: [`形声字`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
   { type: 1, content: `"绿的喜欢及时雨，红的最怕水来攻"中，"红"指的是（ ）。`,
@@ -812,19 +781,17 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `火`, isCorrect: true },
       { key: `B`, content: `花`, isCorrect: false },
       { key: `C`, content: `太阳`, isCorrect: false },
-      { key: `D`, content: `苹果`, isCorrect: false },
+      { key: `D`, content: `苹果`, isCorrect: false }
     ],
   },
-
-  // === 口语交际：听故事，讲故事 2 ===
   { type: 1, content: `听故事时，我们应该（ ）。`,
     analysis: `听故事要认真，记住故事的主要内容，才能讲给别人听。`,
     difficulty: 1, semester: 2, chapterName: `口语交际：听故事，讲故事`, kpNames: [`倾听与回应`],
     options: [
-      { key: `A`, content: `认真听，记住主要内容`, isCorrect: true },
-      { key: `B`, content: `打断别人`, isCorrect: false },
+      { key: `A`, content: `打断别人`, isCorrect: false },
+      { key: `B`, content: `认真听，记住主要内容`, isCorrect: true },
       { key: `C`, content: `做别的事`, isCorrect: false },
-      { key: `D`, content: `大声说话`, isCorrect: false },
+      { key: `D`, content: `大声说话`, isCorrect: false }
     ],
   },
   { type: 3, content: `讲故事时，声音要响亮，让人听清楚。`,
@@ -832,37 +799,35 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 2, chapterName: `口语交际：听故事，讲故事`, kpNames: [`表达清楚完整`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
-
-  // === 语文园地一 4 ===
   { type: 1, content: `"春回大地，万物复苏"描写的是（ ）季。`,
     analysis: `春天回到大地，万物重新生长，描写的是春季。`,
     difficulty: 1, semester: 2, chapterName: `语文园地一`, kpNames: [`词语搭配`],
     options: [
-      { key: `A`, content: `春`, isCorrect: true },
-      { key: `B`, content: `夏`, isCorrect: false },
-      { key: `C`, content: `秋`, isCorrect: false },
-      { key: `D`, content: `冬`, isCorrect: false },
+      { key: `A`, content: `夏`, isCorrect: false },
+      { key: `B`, content: `秋`, isCorrect: false },
+      { key: `C`, content: `春`, isCorrect: true },
+      { key: `D`, content: `冬`, isCorrect: false }
     ],
   },
   { type: 1, content: `"冰天雪地"描写的是（ ）季。`,
     analysis: `到处是冰和雪，描写的是寒冷的冬季。`,
     difficulty: 1, semester: 2, chapterName: `语文园地一`, kpNames: [`词语搭配`],
     options: [
-      { key: `A`, content: `冬`, isCorrect: true },
-      { key: `B`, content: `春`, isCorrect: false },
-      { key: `C`, content: `夏`, isCorrect: false },
-      { key: `D`, content: `秋`, isCorrect: false },
+      { key: `A`, content: `春`, isCorrect: false },
+      { key: `B`, content: `夏`, isCorrect: false },
+      { key: `C`, content: `秋`, isCorrect: false },
+      { key: `D`, content: `冬`, isCorrect: true }
     ],
   },
   { type: 3, content: `"莺歌燕舞"是描写春天景色的词语。`,
     analysis: `黄莺歌唱、燕子飞舞，是春天生机勃勃的景象。`,
     difficulty: 2, semester: 2, chapterName: `语文园地一`, kpNames: [`词语搭配`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
   { type: 1, content: `下面哪个词描写秋天（ ）。`,
@@ -872,19 +837,17 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `果实累累`, isCorrect: true },
       { key: `B`, content: `冰雪融化`, isCorrect: false },
       { key: `C`, content: `烈日炎炎`, isCorrect: false },
-      { key: `D`, content: `春暖花开`, isCorrect: false },
+      { key: `D`, content: `春暖花开`, isCorrect: false }
     ],
   },
-
-  // === 快乐读书吧 3 ===
   { type: 1, content: `读故事时，遇到不懂的地方可以（ ）。`,
     analysis: `遇到不懂的地方可以问一问、想一想，这样才能读懂故事。`,
     difficulty: 1, semester: 2, chapterName: `快乐读书吧`, kpNames: [`联系生活实际理解`],
     options: [
-      { key: `A`, content: `问一问、想一想`, isCorrect: true },
-      { key: `B`, content: `不读了`, isCorrect: false },
+      { key: `A`, content: `不读了`, isCorrect: false },
+      { key: `B`, content: `问一问、想一想`, isCorrect: true },
       { key: `C`, content: `撕掉书`, isCorrect: false },
-      { key: `D`, content: `抄一遍`, isCorrect: false },
+      { key: `D`, content: `抄一遍`, isCorrect: false }
     ],
   },
   { type: 3, content: `和同学一起读故事，可以互相交流。`,
@@ -892,29 +855,27 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 2, chapterName: `快乐读书吧`, kpNames: [`倾听与回应`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `下面哪种做法能让我们读到更多故事（ ）。`,
     analysis: `每天坚持阅读，才能读到更多有趣的故事。`,
     difficulty: 1, semester: 2, chapterName: `快乐读书吧`, kpNames: [`联系生活实际理解`],
     options: [
-      { key: `A`, content: `每天坚持阅读`, isCorrect: true },
-      { key: `B`, content: `只看动画片`, isCorrect: false },
-      { key: `C`, content: `把书藏起来`, isCorrect: false },
-      { key: `D`, content: `从不翻书`, isCorrect: false },
+      { key: `A`, content: `只看动画片`, isCorrect: false },
+      { key: `B`, content: `把书藏起来`, isCorrect: false },
+      { key: `C`, content: `每天坚持阅读`, isCorrect: true },
+      { key: `D`, content: `从不翻书`, isCorrect: false }
     ],
   },
-
-  // === 下册 课文（一）1 吃水不忘挖井人 6 ===
   { type: 1, content: `毛主席带领战士和乡亲们挖了一口（ ）。`,
     analysis: `课文写毛主席带领战士和乡亲们挖了一口井，解决了吃水难的问题。`,
     difficulty: 1, semester: 2, chapterName: `1 吃水不忘挖井人`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `井`, isCorrect: true },
-      { key: `B`, content: `河`, isCorrect: false },
-      { key: `C`, content: `池塘`, isCorrect: false },
-      { key: `D`, content: `水库`, isCorrect: false },
+      { key: `A`, content: `河`, isCorrect: false },
+      { key: `B`, content: `池塘`, isCorrect: false },
+      { key: `C`, content: `水库`, isCorrect: false },
+      { key: `D`, content: `井`, isCorrect: true }
     ],
   },
   { type: 1, content: `乡亲们立石碑是为了（ ）。`,
@@ -924,49 +885,47 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `感谢毛主席`, isCorrect: true },
       { key: `B`, content: `装饰村子`, isCorrect: false },
       { key: `C`, content: `纪念节日`, isCorrect: false },
-      { key: `D`, content: `记录天气`, isCorrect: false },
+      { key: `D`, content: `记录天气`, isCorrect: false }
     ],
   },
   { type: 1, content: `石碑上刻着"吃水不忘（ ）"。`,
     analysis: `石碑上刻着"吃水不忘挖井人，时刻想念毛主席"。`,
     difficulty: 1, semester: 2, chapterName: `1 吃水不忘挖井人`, kpNames: [`课文背诵`],
     options: [
-      { key: `A`, content: `挖井人`, isCorrect: true },
-      { key: `B`, content: `种树人`, isCorrect: false },
+      { key: `A`, content: `种树人`, isCorrect: false },
+      { key: `B`, content: `挖井人`, isCorrect: true },
       { key: `C`, content: `修路人`, isCorrect: false },
-      { key: `D`, content: `建房人`, isCorrect: false },
+      { key: `D`, content: `建房人`, isCorrect: false }
     ],
   },
   { type: 3, content: `课文告诉我们要懂得感恩。`,
     analysis: `喝上水要记住挖井的人，告诉我们得到帮助要懂得感恩。`,
     difficulty: 1, semester: 2, chapterName: `1 吃水不忘挖井人`, kpNames: [`感受课文情感`],
     options: [
-      { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `A`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `正确`, isCorrect: true }
     ],
   },
   { type: 1, content: `村子里原来没有水井，乡亲们吃水要（ ）。`,
     analysis: `课文写村子里没有水井，乡亲们吃水要到很远的地方去挑。`,
     difficulty: 1, semester: 2, chapterName: `1 吃水不忘挖井人`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `到很远的地方挑`, isCorrect: true },
-      { key: `B`, content: `喝雨水`, isCorrect: false },
-      { key: `C`, content: `挖池塘`, isCorrect: false },
-      { key: `D`, content: `买水`, isCorrect: false },
+      { key: `A`, content: `喝雨水`, isCorrect: false },
+      { key: `B`, content: `挖池塘`, isCorrect: false },
+      { key: `C`, content: `到很远的地方挑`, isCorrect: true },
+      { key: `D`, content: `买水`, isCorrect: false }
     ],
   },
   { type: 1, content: `"时刻想念毛主席"中，"时刻"的意思是（ ）。`,
     analysis: `"时刻"就是时时、经常，表示一直没有忘记。`,
     difficulty: 3, semester: 2, chapterName: `1 吃水不忘挖井人`, kpNames: [`词语在语境中的意思`],
     options: [
-      { key: `A`, content: `经常、时时`, isCorrect: true },
-      { key: `B`, content: `有时候`, isCorrect: false },
-      { key: `C`, content: `一会儿`, isCorrect: false },
-      { key: `D`, content: `从不`, isCorrect: false },
+      { key: `A`, content: `有时候`, isCorrect: false },
+      { key: `B`, content: `一会儿`, isCorrect: false },
+      { key: `C`, content: `从不`, isCorrect: false },
+      { key: `D`, content: `经常、时时`, isCorrect: true }
     ],
   },
-
-  // === 下册 课文（一）2 我多想去看看 4 ===
   { type: 1, content: `课文中的"我"想去北京看（ ）。`,
     analysis: `课文写"遥远的北京城，有一座雄伟的天安门，广场上的升旗仪式非常壮观"。`,
     difficulty: 1, semester: 2, chapterName: `2 我多想去看看`, kpNames: [`提取主要信息`],
@@ -974,17 +933,17 @@ export const grade1ChinesePart3: RawQuestion[] = [
       { key: `A`, content: `天安门和升旗仪式`, isCorrect: true },
       { key: `B`, content: `大海`, isCorrect: false },
       { key: `C`, content: `草原`, isCorrect: false },
-      { key: `D`, content: `沙漠`, isCorrect: false },
+      { key: `D`, content: `沙漠`, isCorrect: false }
     ],
   },
   { type: 1, content: `新疆有美丽的天山，雪山上盛开着（ ）。`,
     analysis: `课文写"雪山上盛开着洁白的雪莲"。`,
     difficulty: 1, semester: 2, chapterName: `2 我多想去看看`, kpNames: [`提取主要信息`],
     options: [
-      { key: `A`, content: `雪莲`, isCorrect: true },
-      { key: `B`, content: `桃花`, isCorrect: false },
+      { key: `A`, content: `桃花`, isCorrect: false },
+      { key: `B`, content: `雪莲`, isCorrect: true },
       { key: `C`, content: `荷花`, isCorrect: false },
-      { key: `D`, content: `菊花`, isCorrect: false },
+      { key: `D`, content: `菊花`, isCorrect: false }
     ],
   },
   { type: 3, content: `"我多想去看看"表达了孩子想去外面看看的愿望。`,
@@ -992,17 +951,17 @@ export const grade1ChinesePart3: RawQuestion[] = [
     difficulty: 1, semester: 2, chapterName: `2 我多想去看看`, kpNames: [`感受课文情感`],
     options: [
       { key: `A`, content: `正确`, isCorrect: true },
-      { key: `B`, content: `错误`, isCorrect: false },
+      { key: `B`, content: `错误`, isCorrect: false }
     ],
   },
   { type: 1, content: `"遥远的北京城"中，"遥远"的意思是（ ）。`,
     analysis: `"遥远"就是距离很远。`,
     difficulty: 2, semester: 2, chapterName: `2 我多想去看看`, kpNames: [`词语在语境中的意思`],
     options: [
-      { key: `A`, content: `很远`, isCorrect: true },
-      { key: `B`, content: `很近`, isCorrect: false },
-      { key: `C`, content: `很高`, isCorrect: false },
-      { key: `D`, content: `很冷`, isCorrect: false },
+      { key: `A`, content: `很近`, isCorrect: false },
+      { key: `B`, content: `很高`, isCorrect: false },
+      { key: `C`, content: `很远`, isCorrect: true },
+      { key: `D`, content: `很冷`, isCorrect: false }
     ],
-  },
+  }
 ];

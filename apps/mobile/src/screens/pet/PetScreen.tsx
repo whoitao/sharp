@@ -592,8 +592,10 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
               </View>
             )}
 
+            </ScrollView>
+
             {selectedFood && (
-              <View style={[styles.rowBetween, { marginTop: 14 * spacing }]}>
+              <View style={[styles.rowBetween, { marginTop: 14 * spacing, flexShrink: 0 }]}>
                 <Text style={{ color: colors.textSecondary, fontSize: 13 * font }}>{t.petFeedQuantity}</Text>
                 <View style={[styles.rowGap, { gap: 10 * spacing }]}>
                   <TouchableOpacity
@@ -644,7 +646,6 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             {feedError && (
               <Text style={{ color: colors.error, fontSize: 12 * font, marginTop: 10 * spacing }}>{feedError}</Text>
             )}
-            </ScrollView>
 
             <TouchableOpacity
               disabled={!selectedFood || feeding}
@@ -825,7 +826,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    maxHeight: '82%',
+    maxHeight: '88%',
   },
   foodRow: {
     flexDirection: 'row',
