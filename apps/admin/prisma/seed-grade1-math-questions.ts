@@ -64,7 +64,6 @@ async function main() {
   if (oldIds.length > 0) {
     await prisma.userQuestionProgress.deleteMany({ where: { questionId: { in: oldIds } } });
     await prisma.studyAttemptItem.deleteMany({ where: { questionId: { in: oldIds } } });
-    await prisma.questionTagLink.deleteMany({ where: { questionId: { in: oldIds } } });
     await prisma.questionOption.deleteMany({ where: { questionId: { in: oldIds } } });
     await prisma.questionKnowledgePoint.deleteMany({ where: { questionId: { in: oldIds } } });
     await prisma.question.deleteMany({ where: { id: { in: oldIds } } });

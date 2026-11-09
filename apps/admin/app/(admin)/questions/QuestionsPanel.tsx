@@ -32,6 +32,7 @@ import {
   InputNumber,
   Modal,
   Popover,
+  Rate,
   Row,
   Select,
   Space,
@@ -929,7 +930,8 @@ export default function QuestionsPanel() {
             </Col>
             <Col span={12}>
               <Form.Item label={t("questions.difficultyLabel")} name="difficulty">
-                <InputNumber min={1} max={5} style={{ width: "100%" }} />
+                {/* 五颗星对应难度 1-5，不允许半星、不允许清零 */}
+                <Rate count={5} allowClear={false} allowHalf={false} />
               </Form.Item>
             </Col>
           </Row>

@@ -9,8 +9,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
@@ -57,6 +59,11 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
+  const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  // Modal 内的百分比 maxHeight 在部分机型上解析不到父级高度，弹层会被内容撑出屏幕底部，
+  // 这里直接用窗口高度算出像素上限，保证顶部不会顶出状态栏、底部内容可滚动。
+  const sheetMaxHeight = Math.round(windowHeight * 0.88);
   const dispatch = useDispatch<AppDispatch>();
   const savedTextbookId = useSelector((state: RootState) => state.settings.textbookId);
 
@@ -284,6 +291,7 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
             style={[
               styles.sheet,
               {
+                maxHeight: sheetMaxHeight,
                 backgroundColor: colors.surface,
                 borderTopLeftRadius: 20 * radius,
                 borderTopRightRadius: 20 * radius,
@@ -416,7 +424,8 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
               contentContainerStyle={{
                 paddingHorizontal: 16 * spacing,
                 paddingTop: 14 * spacing,
-                paddingBottom: 20 * spacing,
+                // 底部再让出安全区，最后一行选项不会被 Home Indicator 压住
+                paddingBottom: Math.max(20 * spacing, insets.bottom + 16),
               }}
             >
               {step === 1 && (
@@ -706,7 +715,9 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
                   borderTopWidth: StyleSheet.hairlineWidth,
                   borderTopColor: colors.borderLight,
                   paddingHorizontal: 16 * spacing,
-                  paddingVertical: 8 * spacing,
+                  paddingTop: 8 * spacing,
+                  // 底部固定栏同样让出安全区
+                  paddingBottom: Math.max(8 * spacing, insets.bottom + 6),
                 }}
               >
                 <TouchableOpacity
@@ -760,8 +771,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 560,
     alignSelf: 'center',
-    // 小屏/横屏都不顶出状态栏，内容超出时靠内部 ScrollView 滚动
-    maxHeight: '88%',
+    // 高度上限由组件内按窗口高度算出的 sheetMaxHeight 控制（Modal 内百分比不可靠），
+    // 内容超出时靠内部 ScrollView 滚动；圆角需要裁掉溢出的内容
+    overflow: 'hidden',
   },
   optionChip: {
     borderWidth: StyleSheet.hairlineWidth,

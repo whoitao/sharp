@@ -537,3 +537,40 @@ export function buildAvatarUrl(
 
 export * from './pet';
 export * from './wiki';
+
+// ── Leaderboard ──
+
+export type LeaderboardPeriod = 'week' | 'month' | 'all';
+
+export interface QuizLeaderboardEntry {
+  rank: number;
+  userId: string;
+  nickname: string | null;
+  avatar: string | null;
+  totalQuestions: number;
+  accuracy: number;
+  gradeName: string | null;
+}
+
+export interface PetLeaderboardEntry {
+  rank: number;
+  userId: string;
+  nickname: string | null;
+  avatar: string | null;
+  petName: string | null;
+  petSpecies: string | null;
+  petLevel: number;
+  petExp: number;
+}
+
+export interface QuizLeaderboardResponse {
+  entries: QuizLeaderboardEntry[];
+  currentUser: QuizLeaderboardEntry | null;
+  nextRankGap: number | null;
+}
+
+export interface PetLeaderboardResponse {
+  entries: PetLeaderboardEntry[];
+  currentUser: PetLeaderboardEntry | null;
+  nextRankGap: number | null;
+}

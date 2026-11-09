@@ -31,6 +31,9 @@ import PetAdoptScreen from '../screens/pet/PetAdoptScreen';
 import PetFeedsScreen from '../screens/pet/PetFeedsScreen';
 import PetScreen from '../screens/pet/PetScreen';
 
+// Leaderboard screens
+import LeaderboardScreen from '../screens/leaderboard/LeaderboardScreen';
+
 // Study screens
 import QuizResultScreen from '../screens/study/QuizResultScreen';
 import QuizScreen from '../screens/study/QuizScreen';
@@ -170,9 +173,14 @@ export type ProfileStackParamList = {
   QuizResult: QuizResultParams;
 };
 
+export type LeaderboardStackParamList = {
+  Leaderboard: undefined;
+};
+
 export type MainTabParamList = {
   HomeTab: undefined;
   StudyTab: undefined;
+  LeaderboardTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -182,6 +190,7 @@ const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const StudyStack = createNativeStackNavigator<StudyStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
+const LeaderboardStack = createNativeStackNavigator<LeaderboardStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 // 页面级渐变包装：所有主页面根容器背景已设为透明，由该包装组件铺满整页浅绿渐变（与头部渐变无缝衔接）
@@ -501,6 +510,33 @@ const ProfileStackNavigator: React.FC = () => {
   );
 };
 
+// ─── Leaderboard Stack Navigator ──────────────────────────────────────────────
+
+const LeaderboardStackNavigator: React.FC = () => {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+
+  return (
+    <LeaderboardStack.Navigator
+      screenOptions={{
+        headerBackground: () => <GradientHeader />,
+        headerShadowVisible: false,
+        headerTintColor: colors.text,
+        headerTitleAlign: 'center',
+        headerTitleStyle: { fontWeight: '400' },
+        headerBackButtonDisplayMode: 'minimal',
+        animation: 'slide_from_right',
+      }}
+    >
+    <LeaderboardStack.Screen
+      name="Leaderboard"
+      component={withGradient(withTabRootTopInset(LeaderboardScreen))}
+      options={{ title: t.lbTitle }}
+    />
+    </LeaderboardStack.Navigator>
+  );
+};
+
 // ─── Tab icon component ─────────────────────────────────────────────────────
 
 interface TabIconProps {
@@ -536,6 +572,7 @@ const withTabBoundary = (scope: string, Navigator: React.ComponentType): React.F
 
 const HomeTabScreen = withTabBoundary('HomeTab', HomeStackNavigator);
 const StudyTabScreen = withTabBoundary('StudyTab', StudyStackNavigator);
+const LeaderboardTabScreen = withTabBoundary('LeaderboardTab', LeaderboardStackNavigator);
 const ProfileTabScreen = withTabBoundary('ProfileTab', ProfileStackNavigator);
 
 // ─── Main Tab Navigator ───────────────────────────────────────────────────────
@@ -584,6 +621,14 @@ const MainTabNavigator: React.FC = () => {
         options={{
           title: t.study,
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'book' : 'book-outline'} focused={focused} />,
+        }}
+      />
+      <Tab.Screen
+        name="LeaderboardTab"
+        component={LeaderboardTabScreen as any}
+        options={{
+          title: t.leaderboard,
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'trophy' : 'trophy-outline'} focused={focused} />,
         }}
       />
       <Tab.Screen

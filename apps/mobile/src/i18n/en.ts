@@ -5,6 +5,7 @@ export const en: TranslationKeys = {
   // Navigation
   home: 'Home',
   study: 'Study',
+  leaderboard: 'Rank',
   profile: 'Profile',
 
   // Settings
@@ -355,4 +356,22 @@ export const en: TranslationKeys = {
       body: 'Three stages: growth at Lv.10, mature at Lv.20, max Lv.30. Each evolution unlocks a new form.',
     },
   ],
+
+  // Leaderboard
+  lbTitle: 'Leaderboard',
+  lbSubtitle: 'Compete with students nationwide',
+  lbQuizTab: 'Quiz',
+  lbPetTab: 'Pet',
+  lbWeek: 'Week',
+  lbMonth: 'Month',
+  lbAll: 'All',
+  lbEmpty: 'No ranking data yet',
+  lbFullRanking: 'Full Ranking',
+  lbQuestions: (num: number) => `${formatCount(num)} Qs`,
+  lbExp: (num: number) => `${formatCount(num)} EXP`,
+  lbAccuracy: (num: number) => `Accuracy ${num}%`,
+  lbLevel: (num: number) => `Lv.${num}`,
+  lbMyRank: 'My Rank',
+  lbGapToNext: (num: number) => `${formatCount(num)} Qs to next rank`,
+  lbGapToNextPet: (num: number) => `${formatCount(num)} EXP to next rank`,
 };

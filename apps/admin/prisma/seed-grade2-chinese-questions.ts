@@ -12,8 +12,6 @@ const SUBJECT_ID = BigInt(1); // 语文
 const STAGE_ID = BigInt(1); // 小学
 const SOURCE = "textbook";
 const BATCH = 8;
-// 幂等 & 回滚标记：所有由本脚本写入的题目都挂在这个标签上
-const SEED_TAG = "G2-CN-400-2026-11";
 const EXPECTED_TOTAL = 400;
 
 const questions: RawQuestion[] = [
@@ -23,13 +21,12 @@ const questions: RawQuestion[] = [
   ...grade2ChinesePart4,
 ];
 
-/** 删除题目及其所有依赖数据（章节/知识点/标签关联、作答记录、学习进度、收藏） */
+/** 删除题目及其所有依赖数据（作答记录、学习进度、收藏、选项、知识点；标签关联由数据库级联删除） */
 async function deleteQuestions(ids: bigint[]) {
   if (ids.length === 0) return;
   await prisma.userQuestionProgress.deleteMany({ where: { questionId: { in: ids } } });
   await prisma.studyAttemptItem.deleteMany({ where: { questionId: { in: ids } } });
   await prisma.userQuestionFavorite.deleteMany({ where: { questionId: { in: ids } } });
-  await prisma.questionTagLink.deleteMany({ where: { questionId: { in: ids } } });
   await prisma.questionOption.deleteMany({ where: { questionId: { in: ids } } });
   await prisma.questionKnowledgePoint.deleteMany({ where: { questionId: { in: ids } } });
   await prisma.question.deleteMany({ where: { id: { in: ids } } });
@@ -67,18 +64,16 @@ function validateData() {
 
 async function main() {
   const rollback = process.argv.includes("--rollback");
-  const tag = await prisma.questionTag.findUnique({ where: { name: SEED_TAG } });
 
   if (rollback) {
-    if (!tag) {
-      console.log(`未找到标记标签 ${SEED_TAG}，无需回滚。`);
-      return;
-    }
-    const links = await prisma.questionTagLink.findMany({ where: { tagId: tag.id }, select: { questionId: true } });
-    const ids = links.map(l => l.questionId);
+    const contents = questions.map(q => q.content);
+    const existing = await prisma.question.findMany({
+      where: { gradeId: GRADE_ID, subjectId: SUBJECT_ID, content: { in: contents } },
+      select: { id: true },
+    });
+    const ids = existing.map(q => q.id);
     await deleteQuestions(ids);
-    await prisma.questionTag.delete({ where: { id: tag.id } });
-    console.log(`已回滚：删除 ${ids.length} 道题目，统一标记 ${SEED_TAG} 已移除。`);
+    console.log(`已回滚：按题干匹配删除 ${ids.length} 道题目。`);
     return;
   }
 
@@ -145,29 +140,34 @@ async function main() {
   }
   console.log("  章节与知识点全部匹配成功。");
 
-  // 4. 幂等准备：标签 + 已存在内容
+  // 4. 幂等准备：按题干 + 章节判重（不依赖标签）
   console.log("\n=== Step 4: 检查已有数据（幂等）===");
-  const tagRecord = await prisma.questionTag.upsert({
-    where: { name: SEED_TAG },
-    update: {},
-    create: { name: SEED_TAG, type: "source", sortOrder: 0 },
-  });
-  const existingLinks = await prisma.questionTagLink.findMany({
-    where: { tagId: tagRecord.id },
-    select: { questionId: true, question: { select: { content: true } } },
+  const desiredContents = new Set(questions.map(q => q.content));
+  const existingQuestions = await prisma.question.findMany({
+    where: { gradeId: GRADE_ID, subjectId: SUBJECT_ID, content: { in: [...desiredContents] } },
+    select: { id: true, content: true, chapterId: true },
   });
   const existingByContent = new Map<string, bigint>();
-  for (const l of existingLinks) existingByContent.set(l.question.content, l.questionId);
-  console.log(`  标记 ${SEED_TAG} 下已有 ${existingLinks.length} 道题`);
+  for (const q of existingQuestions) existingByContent.set(q.content, q.id);
+  console.log(`  已存在题干匹配 ${existingQuestions.length} 道`);
 
-  const desiredContents = new Set(questions.map(q => q.content));
-  const staleIds = existingLinks
-    .filter(l => !desiredContents.has(l.question.content))
-    .map(l => l.questionId);
-  if (staleIds.length > 0) {
-    await deleteQuestions(staleIds);
-    console.log(`  清理已不在数据集中的旧题 ${staleIds.length} 道`);
+  // 章节不一致的历史题目就地修正（同年级同科目、题干相同即视为同题）
+  const chapterIdByContent = new Map<string, bigint | null>();
+  for (const q of questions) {
+    const sem = q.semester ?? chosen[0].semester;
+    const key = `${sem}|${q.chapterName}`;
+    chapterIdByContent.set(q.content, l2Map.get(key) ?? l1Map.get(key) ?? null);
   }
+  let repairCount = 0;
+  for (const e of existingQuestions) {
+    const expect = chapterIdByContent.get(e.content) ?? null;
+    if (String(expect) !== String(e.chapterId)) {
+      await prisma.question.update({ where: { id: e.id }, data: { chapterId: expect } });
+      repairCount++;
+    }
+  }
+  if (repairCount > 0) console.log(`  修正章节不一致 ${repairCount} 道`);
+
   const pending = questions.filter(q => !existingByContent.has(q.content));
   console.log(`  本次待插入 ${pending.length} 道，已存在跳过 ${questions.length - pending.length} 道`);
 
@@ -212,9 +212,6 @@ async function main() {
               sortNo: opt.key.charCodeAt(0) - 65,
             })),
           }),
-          prisma.questionTagLink.create({
-            data: { questionId: question.id, tagId: tagRecord.id },
-          }),
         ];
         if (kpIds.length > 0) {
           writes.push(prisma.questionKnowledgePoint.createMany({
@@ -234,10 +231,11 @@ async function main() {
 
   // 6. 统计校验
   console.log(`\n=== Step 6: 统计校验 ===`);
-  const allIds = [
-    ...existingLinks.filter(l => desiredContents.has(l.question.content)).map(l => l.questionId),
-    ...insertedIds,
-  ];
+  const seededQuestions = await prisma.question.findMany({
+    where: { gradeId: GRADE_ID, subjectId: SUBJECT_ID, content: { in: [...desiredContents] } },
+    select: { id: true },
+  });
+  const allIds = seededQuestions.map(q => q.id);
   const total = await prisma.question.count({ where: { id: { in: allIds } } });
   const optCount = await prisma.questionOption.count({ where: { questionId: { in: allIds } } });
   const kpLinkCount = await prisma.questionKnowledgePoint.count({ where: { questionId: { in: allIds } } });
@@ -257,7 +255,7 @@ async function main() {
   } else {
     console.log(`  本次无新增（全部已存在）`);
   }
-  console.log(`  统一标记: ${SEED_TAG}（回滚: npx tsx prisma/seed-grade2-chinese-questions.ts --rollback）`);
+  console.log(`  回滚: npx tsx prisma/seed-grade2-chinese-questions.ts --rollback（按题干匹配删除）`);
 
   // 章节分布（按 L1 单元汇总，并列出 L2 明细）
   const dist = await prisma.question.groupBy({

@@ -10,15 +10,18 @@ import type {
   KnowledgePoint,
   KnowledgePointStudyStat,
   Language,
+  LeaderboardPeriod,
   LoginResponse,
   PaginatedResponse,
   PetFeedRecord,
   PetFeedResult,
   PetFoodsData,
   PetHomeData,
+  PetLeaderboardResponse,
   PetSpeciesInfo,
   Question,
   QuestionTag,
+  QuizLeaderboardResponse,
   StudyRecord,
   StudyRecordSummary,
   StudyStatsOverview,
@@ -982,6 +985,20 @@ export const api = {
   async getPetFeeds(page = 1): Promise<PaginatedResponse<PetFeedRecord>> {
     const response = await apiClient.get<PaginatedResponse<PetFeedRecord>>('/api/app/pet/feeds', {
       params: { page },
+    });
+    return response.data;
+  },
+
+  async getQuizLeaderboard(period: LeaderboardPeriod = 'week'): Promise<QuizLeaderboardResponse> {
+    const response = await apiClient.get<QuizLeaderboardResponse>('/api/app/leaderboard', {
+      params: { type: 'quiz', period },
+    });
+    return response.data;
+  },
+
+  async getPetLeaderboard(): Promise<PetLeaderboardResponse> {
+    const response = await apiClient.get<PetLeaderboardResponse>('/api/app/leaderboard', {
+      params: { type: 'pet' },
     });
     return response.data;
   },

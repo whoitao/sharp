@@ -5,6 +5,7 @@ export const zh = {
   // Navigation
   home: '首页',
   study: '学习',
+  leaderboard: '排行',
   profile: '我的',
 
   // Settings
@@ -354,6 +355,24 @@ export const zh = {
       body: '宠物分为三个阶段：Lv.10 进入成长期，Lv.20 进入成熟期，最高 Lv.30。每次进化都会解锁新形态。',
     },
   ],
+
+  // Leaderboard
+  lbTitle: '排行榜',
+  lbSubtitle: '与全国同学一较高下',
+  lbQuizTab: '答题榜',
+  lbPetTab: '宠物榜',
+  lbWeek: '本周',
+  lbMonth: '本月',
+  lbAll: '总榜',
+  lbEmpty: '暂无排行数据',
+  lbFullRanking: '完整排名',
+  lbQuestions: (num: number) => `${formatCount(num)} 题`,
+  lbExp: (num: number) => `${formatCount(num)} 经验`,
+  lbAccuracy: (num: number) => `正确率 ${num}%`,
+  lbLevel: (num: number) => `Lv.${num}`,
+  lbMyRank: '我的排名',
+  lbGapToNext: (num: number) => `距上一名还差 ${formatCount(num)} 题`,
+  lbGapToNextPet: (num: number) => `距上一名还差 ${formatCount(num)} 经验`,
 };
 
 export type TranslationKeys = typeof zh;
