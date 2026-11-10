@@ -1,6 +1,7 @@
 "use client";
 
-import { PetLottie, type PetAnimationKind } from "@/components/pet/pet-lottie";
+import { PetMotion } from "@/components/pet/pet-motion";
+import type { PetAnimationKind } from "@/components/pet/pet-lottie";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
 import {
@@ -384,12 +385,14 @@ export function PetHome() {
                 <div className="relative mx-auto w-full max-w-[280px]">
                   {/* 舞台固定正方形，动画切换不引起布局跳动 */}
                   <div className="relative aspect-square w-full p-3">
-                    <PetLottie
+                    <PetMotion
                       kind={animKind}
                       idleUrl={pet.growthStage.idleLottieUrl}
                       feedUrl={pet.growthStage.feedLottieUrl}
                       evolveUrl={pet.growthStage.evolveLottieUrl}
                       imageUrl={pet.growthStage.imageUrl}
+                      sideImageUrl={pet.growthStage.sideImageUrl}
+                      manifestUrl={pet.growthStage.motionManifestUrl}
                       fallbackIcon={pet.species.icon}
                       onFinish={handleAnimationFinish}
                       className="h-full w-full"

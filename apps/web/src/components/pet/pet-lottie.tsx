@@ -1,35 +1,19 @@
 "use client";
 
+import { prefetchAnimationData } from "@/components/pet/pet-lottie-loader";
+import {
+  useLottiePlayer,
+  usePrefersReducedMotion,
+} from "@/components/pet/use-lottie-player";
 import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export type PetAnimationKind = "idle" | "feed" | "evolve";
-
-type LottiePlayer = {
-  loadAnimation: (config: Record<string, unknown>) => {
-    destroy: () => void;
-    addEventListener: (name: string, callback: () => void) => void;
-  };
-};
-
-const animationCache = new Map<string, Promise<Record<string, unknown>>>();
-
-/** 同一份动画 JSON 只拉取一次；失败后允许下次重试 */
-function loadAnimationData(url: string) {
-  const cached = animationCache.get(url);
-  if (cached) return cached;
-  const promise = fetch(url, { cache: "force-cache" }).then((response) => {
-    if (!response.ok) throw new Error(`lottie ${url} ${response.status}`);
-    return response.json() as Promise<Record<string, unknown>>;
-  });
-  animationCache.set(url, promise);
-  promise.catch(() => animationCache.delete(url));
-  return promise;
-}
 
 /**
  * 宠物动画播放器：使用后台配置的 Lottie JSON（与移动端同一批资源）。
  * - idle 循环播放，feed / evolve 播放一次后回调 onFinish；
+ * - idle 播放时预取 feed / evolve 的 JSON，避免首次播放现拉；
  * - 尊重 prefers-reduced-motion：开启时直接展示静态形象，不加载动画；
  * - 地址缺失、加载失败或环境不支持时回落到静态图 / emoji 占位。
  */
@@ -52,24 +36,8 @@ export function PetLottie({
   onFinish?: () => void;
   className?: string;
 }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const onFinishRef = useRef(onFinish);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [ready, setReady] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
   const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    onFinishRef.current = onFinish;
-  }, [onFinish]);
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
 
   useEffect(() => {
     setImageFailed(false);
@@ -78,62 +46,18 @@ export function PetLottie({
   const url = kind === "feed" ? feedUrl : kind === "evolve" ? evolveUrl : idleUrl;
   const playable = !reducedMotion && !!url;
 
+  const { containerRef, ready, failed } = useLottiePlayer({
+    url,
+    loop: kind === "idle",
+    enabled: playable,
+    onComplete: onFinish,
+  });
+
+  // idle 播起来之后再预取后续动作，避免和首屏动画抢带宽
   useEffect(() => {
-    if (!playable || !url) {
-      setReady(false);
-      return;
-    }
-
-    let cancelled = false;
-    let instance: ReturnType<LottiePlayer["loadAnimation"]> | null = null;
-    setFailed(false);
-    setReady(false);
-
-    (async () => {
-      const [module, data] = await Promise.all([
-        import("lottie-web"),
-        loadAnimationData(url),
-      ]);
-      if (cancelled) return;
-      const container = containerRef.current;
-      if (!container) return;
-
-      const player = ((module as unknown as { default?: LottiePlayer }).default ??
-        (module as unknown as LottiePlayer)) as LottiePlayer;
-      container.innerHTML = "";
-      instance = player.loadAnimation({
-        container,
-        renderer: "svg",
-        loop: kind === "idle",
-        autoplay: true,
-        // lottie 会改写传入对象，这里克隆一份，避免缓存复用后动画状态串扰
-        animationData: structuredClone(data),
-        rendererSettings: {
-          preserveAspectRatio: "xMidYMid meet",
-          progressiveLoad: true,
-          hideOnTransparent: true,
-        },
-      });
-      instance.addEventListener("data_failed", () => {
-        if (!cancelled) setFailed(true);
-      });
-      instance.addEventListener("complete", () => {
-        if (!cancelled) onFinishRef.current?.();
-      });
-      // SVG 节点是在 DOMLoaded 后才插入容器的，等到这时再撤掉静态图，避免中间空一帧
-      instance.addEventListener("DOMLoaded", () => {
-        if (!cancelled) setReady(true);
-      });
-    })().catch(() => {
-      if (!cancelled) setFailed(true);
-    });
-
-    return () => {
-      cancelled = true;
-      instance?.destroy();
-      if (containerRef.current) containerRef.current.innerHTML = "";
-    };
-  }, [playable, url, kind]);
+    if (kind !== "idle" || !ready) return;
+    prefetchAnimationData([feedUrl, evolveUrl]);
+  }, [kind, ready, feedUrl, evolveUrl]);
 
   const showLottie = playable && !failed && ready;
 

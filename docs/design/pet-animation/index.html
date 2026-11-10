@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sharp · 宠物动画设计稿（幼犬单阶段 · v1）</title>
+<style>
+:root {
+  --border: #dde7e1;
+  --border-light: #edf3f0;
+  --background: #f2f8f5;
+  --surface: #ffffff;
+  --surface-secondary: #f7fbf9;
+  --foreground: #10231a;
+  --foreground-secondary: #4f6b5e;
+  --foreground-tertiary: #5c7268;
+  --primary: #10b981;
+  --primary-light: #ddf6ea;
+  --primary-strong: #0b7f58;
+  --primary-foreground: #ffffff;
+  --warning: #f59e0b;
+  --destructive: #cf2121;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --card-shadow: 0 1px 2px rgba(16, 35, 26, .04), 0 4px 12px rgba(16, 35, 26, .04);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+img { display: block; }
+
+/* ── 文档控制条 ── */
+.proto-bar {
+  position: sticky; top: 0; z-index: 120;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.proto-inner {
+  max-width: 1520px; margin: 0 auto; padding: 10px 24px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.proto-title { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.proto-title span {
+  margin-left: 8px; padding: 2px 7px; border-radius: 999px;
+  background: var(--primary-light); color: var(--primary-strong);
+  font-size: 11px; font-weight: 600;
+}
+.proto-nav { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.proto-nav a { padding: 5px 10px; border-radius: 7px; font-size: 12.5px; color: var(--foreground-secondary); }
+.proto-nav a:hover { background: var(--surface-secondary); color: var(--foreground); }
+.proto-note { font-size: 12px; color: var(--foreground-tertiary); white-space: nowrap; }
+
+/* ── 文档骨架 ── */
+.doc { max-width: 1520px; margin: 0 auto; padding: 40px 24px 96px; }
+.hero { margin-bottom: 44px; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--primary-strong);
+}
+.hero h1 { margin: 10px 0 0; font-size: 34px; line-height: 1.25; letter-spacing: -.01em; }
+.hero p { margin: 12px 0 0; max-width: 78ch; color: var(--foreground-secondary); font-size: 15px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); font-size: 12.5px; color: var(--foreground-secondary);
+}
+.chip b { color: var(--foreground); font-weight: 600; }
+.chip.is-primary { border-color: color-mix(in srgb, var(--primary) 34%, var(--border)); background: var(--primary-light); color: var(--primary-strong); }
+.chip.is-warn { border-color: color-mix(in srgb, var(--warning) 30%, var(--border)); background: #fff7e8; color: #9a5b00; }
+
+.section { padding-top: 34px; margin-top: 34px; border-top: 1px solid var(--border); scroll-margin-top: 96px; }
+.section-head { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+.section-head h2 { margin: 0; font-size: 21px; letter-spacing: -.01em; }
+.section-head p { margin: 0; font-size: 13.5px; color: var(--foreground-tertiary); }
+.section-index {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 8px;
+  background: var(--primary-light); color: var(--primary-strong);
+  font-size: 12px; font-weight: 700;
+}
+
+/* ── 画板外壳 ── */
+.board-scroll { overflow-x: auto; padding: 4px 4px 18px; }
+.board {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(16, 35, 26, .08);
+  overflow: hidden;
+}
+.board-desktop { width: 1440px; }
+.chrome {
+  display: flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 14px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface-secondary);
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); }
+.addr {
+  flex: 1; max-width: 520px; margin: 0 auto 0 10px;
+  height: 22px; line-height: 22px; padding: 0 10px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--foreground-tertiary);
+  font-size: 11.5px; text-align: left;
+}
+.board-legend {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: 10px 22px; margin: 16px 2px 0;
+}
+.board-legend li { display: flex; gap: 9px; font-size: 12.5px; color: var(--foreground-secondary); line-height: 1.6; }
+.board-legend b { color: var(--foreground); font-weight: 600; }
+.num {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; margin-top: 2px; border-radius: 50%;
+  background: var(--primary-strong); color: var(--primary-foreground);
+  font-size: 10.5px; font-weight: 700;
+}
+.pin {
+  position: absolute; z-index: 6;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--primary-strong); color: var(--primary-foreground);
+  border: 2px solid var(--surface);
+  font-size: 10.5px; font-weight: 700; line-height: 1;
+  box-shadow: 0 2px 6px rgba(16, 35, 26, .18);
+}
+.pin.is-warn { background: var(--warning); color: #3b2400; }
+
+/* ── 桌面画板内：真实界面骨架 ── */
+.screen { background: var(--background); position: relative; }
+.mock-nav {
+  position: relative; height: 56px;
+  border-bottom: 1px solid var(--border-light);
+  background: color-mix(in srgb, var(--background) 82%, transparent);
+}
+.mock-nav-inner {
+  max-width: 1200px; margin: 0 auto; height: 56px; padding: 0 20px;
+  display: flex; align-items: center; gap: 24px;
+}
+.mock-brand { display: flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 700; color: var(--primary); }
+.mock-brand i {
+  width: 28px; height: 28px; border-radius: 8px; background: var(--primary);
+  color: var(--primary-foreground); font-style: normal; font-size: 14px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.mock-navlinks { display: flex; align-items: center; gap: 4px; }
+.mock-navlinks a { padding: 7px 12px; border-radius: 8px; font-size: 17.5px; font-weight: 500; color: var(--foreground-secondary); }
+.mock-navlinks a.is-active { background: var(--primary-light); color: var(--primary-strong); font-weight: 600; }
+.mock-navactions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary-light); border: 1px solid var(--border); }
+
+.mock-main { max-width: 1200px; margin: 0 auto; padding: 24px 20px 40px; }
+.acc-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 25px; align-items: start; }
+.acc-menu { display: flex; flex-direction: column; gap: 4px; }
+.acc-menu a {
+  display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px;
+  border-radius: 8px; background: var(--surface); border: 1px solid transparent;
+  font-size: 17px; font-weight: 600; color: var(--foreground-secondary);
+}
+.acc-menu a.is-active { background: var(--primary-light); color: var(--primary-strong); }
+.acc-menu i { width: 15px; height: 15px; border-radius: 4px; background: currentColor; opacity: .5; }
+
+.pet-grid { display: grid; grid-template-columns: minmax(0,5fr) minmax(0,7fr); gap: 25px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 15px; }
+.card {
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+  box-shadow: var(--card-shadow);
+}
+.card-hero { padding: 25px; position: relative; }
+.stage-wrap { width: 280px; margin: 0 auto; position: relative; }
+.stage {
+  position: relative; aspect-ratio: 1 / 1; width: 100%; padding: 15px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 40%, var(--border));
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(135deg, var(--surface-secondary) 0 10px, var(--surface) 10px 20px);
+}
+.stage-inner {
+  position: relative; width: 100%; height: 100%; border-radius: 6px;
+  background: var(--surface);
+  display: grid; place-items: center; overflow: hidden;
+}
+.stage-inner img {
+  width: 78%; height: auto; max-height: 96%;
+  object-fit: contain; object-position: center bottom;
+  filter: drop-shadow(0 6px 10px rgba(16,35,26,.10));
+}
+.stage-inner .ghost {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 11px; color: var(--foreground-tertiary); text-align: center;
+  opacity: .0;
+}
+.pet-name { margin-top: 16px; display: flex; align-items: center; gap: 8px; }
+.pet-name h3 { margin: 0; font-size: 27px; font-weight: 700; line-height: 1.2; }
+.state-chip {
+  padding: 3px 10px; border-radius: 999px; background: var(--primary-light);
+  color: var(--primary-strong); font-size: 12px; font-weight: 600;
+}
+.pet-sub { margin-top: 4px; font-size: 12px; color: var(--foreground-tertiary); }
+.meter { margin-top: 15px; }
+.meter-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--foreground-secondary); }
+.bar { height: 6px; margin-top: 6px; border-radius: 999px; background: var(--border-light); overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 999px; background: var(--primary); }
+.bar > i.is-warn { background: var(--warning); }
+.btn-row { display: flex; gap: 10px; margin-top: 18px; }
+.btn {
+  flex: 1; height: 38px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 15px; font-weight: 600;
+}
+.btn.is-primary { background: var(--primary); color: var(--primary-foreground); }
+.btn.is-outline { border: 1px solid var(--border); background: var(--surface); color: var(--foreground); }
+.card-today { padding: 20px 25px; }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.muted { font-size: 12px; color: var(--foreground-tertiary); }
+.strong { font-size: 14px; font-weight: 700; color: var(--primary-strong); }
+
+.stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 15px; }
+.stat { padding: 16px; }
+.stat p { margin: 0; font-size: 12px; color: var(--foreground-tertiary); }
+.stat b { display: block; margin-top: 4px; font-size: 20px; }
+.route { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-top: 12px; }
+.route-cell {
+  border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center;
+  font-size: 12px; color: var(--foreground-tertiary);
+}
+.route-cell.is-active { border-color: var(--primary); background: var(--primary-light); color: var(--primary-strong); }
+.route-thumb {
+  height: 80px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--surface-secondary); font-size: 11px; color: var(--foreground-tertiary);
+  margin-bottom: 6px;
+}
+.ghost-block {
+  border: 1px dashed var(--border); border-radius: 12px; height: 76px;
+  display: grid; place-items: center; font-size: 12px; color: var(--foreground-tertiary);
+  background: repeating-linear-gradient(135deg, var(--surface-secondary) 0 8px, var(--surface) 8px 16px);
+}
+
+/* ── 标尺 ── */
+.ruler { position: relative; height: 22px; margin: 0 auto; }
+.ruler::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 1px;
+  background: color-mix(in srgb, var(--primary) 55%, transparent);
+}
+.ruler::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 9px;
+  border-left: 1px solid var(--primary); border-right: 1px solid var(--primary);
+}
+.ruler span {
+  position: absolute; left: 50%; top: -9px; transform: translateX(-50%);
+  padding: 0 5px; background: var(--surface);
+  font-family: var(--mono); font-size: 10.5px; color: var(--primary-strong); white-space: nowrap;
+}
+
+/* ── 窄屏画板 ── */
+.phone-wrap { width: 395px; }
+.phone {
+  width: 395px; border: 10px solid #16211c; border-radius: 34px;
+  background: var(--background); overflow: hidden;
+  box-shadow: 0 18px 40px rgba(16, 35, 26, .16);
+}
+.phone-status { height: 26px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; background: var(--background); font-size: 10px; color: var(--foreground-tertiary); }
+.m-body { padding: 10px 20px 20px; }
+.m-title { margin: 2px 0 12px; font-size: 18px; font-weight: 700; }
+.m-tabbar {
+  display: flex; border-top: 1px solid var(--border-light); background: var(--surface);
+  padding-bottom: 6px;
+}
+.m-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; height: 50px; font-size: 10px; color: var(--foreground-tertiary);
+}
+.m-tab.is-active { color: var(--primary-strong); font-weight: 600; }
+.m-tab svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.phone-caption { margin: 12px 2px 0; font-size: 12.5px; color: var(--foreground-tertiary); }
+.phone-caption b { color: var(--foreground); font-weight: 600; }
+
+/* ── 行走边界示意 ── */
+.walk-canvas { position: relative; width: 250px; height: 250px; padding: 0; display: block; overflow: hidden; }
+.walk-canvas .wk-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--warning); opacity: .75; }
+.walk-canvas .wk-left { left: 30px; }
+.walk-canvas .wk-right { right: 30px; }
+.walk-canvas .wk-ground { position: absolute; left: 30px; right: 30px; bottom: 42px; height: 1px; background: var(--warning); }
+.walk-canvas .wk-anchor {
+  position: absolute; left: 125px; bottom: 36px; width: 11px; height: 11px;
+  transform: rotate(45deg); background: var(--warning);
+  border: 2px solid var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+.walk-canvas .wk-pet {
+  position: absolute; left: 50%; bottom: 42px; transform: translateX(-50%);
+  max-width: 64%; max-height: 62%; object-fit: contain;
+  filter: drop-shadow(0 6px 8px rgba(16,35,26,.12));
+}
+.walk-canvas .wk-tag {
+  position: absolute; top: 8px; padding: 1px 5px; border-radius: 4px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 32%, var(--border));
+  font-family: var(--mono); font-size: 9px; color: #9a5b00; white-space: nowrap;
+}
+.walk-canvas .wk-tag-left { left: 34px; }
+.walk-canvas .wk-tag-right { right: 34px; }
+.walk-canvas .wk-span {
+  position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 8.5px; color: #9a5b00; white-space: nowrap;
+}
+.walk-canvas .wk-anchor-label {
+  position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%);
+  font-size: 8.5px; color: var(--foreground-tertiary); white-space: nowrap;
+}
+
+/* ── 通用排版 ── */
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 22px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; }
+.panel { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--card-shadow); }
+.panel-head {
+  padding: 13px 18px; border-bottom: 1px solid var(--border-light);
+  font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+}
+.panel-head span { margin-left: auto; font-weight: 500; color: var(--foreground-tertiary); font-size: 12px; }
+.panel-body { padding: 16px 18px; }
+table.data { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.data th, table.data td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+table.data th { font-size: 11.5px; font-weight: 700; color: var(--foreground-tertiary); background: var(--surface-secondary); white-space: nowrap; }
+table.data tr:last-child td { border-bottom: 0; }
+table.data code {
+  padding: 1px 5px; border-radius: 5px; background: var(--surface-secondary);
+  border: 1px solid var(--border-light); font-family: var(--mono); font-size: 11.5px;
+}
+.tag { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.tag.is-ok { background: var(--primary-light); color: var(--primary-strong); }
+.tag.is-todo { background: #fff7e8; color: #9a5b00; }
+.tag.is-new { background: #eef2ff; color: #3b4bb3; }
+.note { font-size: 12.5px; color: var(--foreground-secondary); line-height: 1.75; }
+.note b { color: var(--foreground); }
+.callout {
+  margin-top: 18px; padding: 16px 20px; border: 1px solid color-mix(in srgb, var(--primary) 26%, var(--border));
+  border-left: 3px solid var(--primary); border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--primary-light); font-size: 13px; line-height: 1.8;
+}
+.callout > b { color: var(--primary-strong); display: block; margin-bottom: 6px; font-size: 13.5px; }
+.callout li b { display: inline; margin: 0; font-size: inherit; color: var(--foreground); }
+.callout ul { padding-left: 1.1em; list-style: disc; }
+.callout li { margin: 4px 0; }
+.footer-note { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 12px; color: var(--foreground-tertiary); line-height: 1.8; }
+.footer-note code { font-family: var(--mono); font-size: 11.5px; }
+
+/* ── 状态画板 ── */
+.state-board {
+  display: grid; grid-template-columns: 250px minmax(0,1fr); gap: 18px;
+  padding: 16px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--card-shadow);
+}
+.state-canvas {
+  position: relative; width: 250px; height: 250px; border-radius: 10px;
+  background:
+    repeating-linear-gradient(135deg, var(--surface-secondary) 0 10px, var(--surface) 10px 20px);
+  display: grid; place-items: center; overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+.state-canvas img { max-width: 82%; max-height: 88%; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(16,35,26,.10)); }
+.state-canvas .placeholder {
+  width: 74%; height: 74%; border: 1px dashed var(--border); border-radius: 8px;
+  display: grid; place-items: center; text-align: center; padding: 12px;
+  font-size: 11px; color: var(--foreground-tertiary); background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+.state-meta h3 { margin: 0 0 2px; font-size: 16px; }
+.state-meta .kicker { font-family: var(--mono); font-size: 11.5px; color: var(--primary-strong); }
+.spec-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px 14px; margin-top: 10px; }
+.spec-list div { font-size: 12px; color: var(--foreground-secondary); }
+.spec-list span { display: block; font-size: 11px; color: var(--foreground-tertiary); }
+.spec-list b { font-family: var(--mono); font-size: 12.5px; color: var(--foreground); font-weight: 600; }
+.frames { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; align-items: flex-end; }
+.frame {
+  width: 46px; text-align: center; font-family: var(--mono); font-size: 9.5px; color: var(--foreground-tertiary);
+}
+.frame i {
+  display: block; height: 34px; border-radius: 6px; margin-bottom: 3px;
+  background: var(--surface-secondary); border: 1px solid var(--border-light);
+}
+.frame.is-key i { background: var(--primary-light); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+.frame.is-key { color: var(--primary-strong); }
+
+/* ── 512 画布规范图 ── */
+.canvas-spec {
+  position: relative; width: 512px; height: 512px; margin: 0 auto;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--primary) 10%, transparent) 1px, transparent 1px) 0 0 / 64px 64px,
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 10%, transparent) 1px, transparent 1px) 0 0 / 64px 64px,
+    var(--surface);
+  border: 1.5px solid var(--foreground);
+  border-radius: 4px;
+}
+.canvas-spec .safe { position: absolute; border: 1px dashed var(--primary); border-radius: 4px; }
+.canvas-spec .safe-label {
+  position: absolute; z-index: 4; font-family: var(--mono); font-size: 10px; color: var(--primary-strong);
+  background: color-mix(in srgb, var(--surface) 90%, transparent); padding: 0 4px;
+}
+.canvas-spec .ground {
+  position: absolute; left: 0; right: 0; top: 470px; height: 1px; z-index: 3;
+  background: var(--warning);
+}
+.canvas-spec .ground-label {
+  position: absolute; z-index: 4; right: 8px; top: 452px;
+  font-family: var(--mono); font-size: 10px; color: #9a5b00;
+  background: color-mix(in srgb, var(--surface) 90%, transparent); padding: 0 4px;
+}
+.canvas-spec .anchor {
+  position: absolute; left: 256px; top: 470px; width: 13px; height: 13px;
+  transform: translate(-50%,-50%) rotate(45deg);
+  background: var(--warning); border: 2px solid var(--surface);
+}
+.canvas-spec .centerline { position: absolute; left: 256px; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--foreground) 18%, transparent); }
+.canvas-spec .body-box {
+  position: absolute; left: 51px; right: 51px; top: 36px; bottom: 42px;
+  border: 1px solid color-mix(in srgb, var(--primary) 55%, var(--border));
+  border-radius: 6px; display: flex; align-items: flex-end; justify-content: center;
+}
+.canvas-spec .body-box img { max-height: 92%; max-width: 92%; object-fit: contain; }
+.canvas-spec .dim-x {
+  position: absolute; left: 51px; right: 51px; bottom: 14px; height: 12px;
+  border-left: 1px solid var(--foreground-secondary); border-right: 1px solid var(--foreground-secondary);
+}
+.canvas-spec .dim-x::before { content:""; position:absolute; left:0; right:0; top:6px; height:1px; background: var(--foreground-secondary); }
+.canvas-spec .dim-x span {
+  position: absolute; left: 50%; top: -14px; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 10px; color: var(--foreground-secondary);
+  background: var(--surface); padding: 0 4px;
+}
+
+/* ── 优先级阶梯 ── */
+.ladder { display: flex; flex-direction: column; gap: 8px; }
+.ladder-row { display: grid; grid-template-columns: 108px minmax(0,1fr) 74px; gap: 10px; align-items: center; font-size: 12px; }
+.ladder-row .name { font-weight: 600; }
+.ladder-row .track { height: 24px; border-radius: 6px; background: var(--surface-secondary); overflow: hidden; }
+.ladder-row .fill {
+  height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 9px;
+  font-size: 11px; color: var(--primary-foreground); font-weight: 600; white-space: nowrap;
+}
+.ladder-row .weight { font-family: var(--mono); font-size: 11px; color: var(--foreground-tertiary); text-align: right; }
+
+/* ── 时序图 ── */
+.timeline { overflow-x: auto; padding-bottom: 4px; }
+.tl { min-width: 660px; }
+.tl-head, .tl-row { display: grid; grid-template-columns: 96px minmax(0,1fr); gap: 10px; align-items: center; }
+.tl-head { font-family: var(--mono); font-size: 10px; color: var(--foreground-tertiary); }
+.tl-axis { position: relative; height: 18px; border-bottom: 1px solid var(--border); }
+.tl-axis span { position: absolute; top: 0; transform: translateX(-50%); }
+.tl-track {
+  position: relative; height: 34px; border-radius: 6px; background: var(--surface-secondary);
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 1px);
+  background-size: 56px 100%;
+}
+.tl-bar {
+  position: absolute; top: 6px; height: 22px; border-radius: 5px;
+  display: flex; align-items: center; padding: 0 8px;
+  font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden;
+}
+.tl-bar.is-idle { background: var(--border-light); color: var(--foreground-secondary); }
+.tl-bar.is-walk { background: color-mix(in srgb, var(--primary) 22%, var(--surface)); color: var(--primary-strong); }
+.tl-bar.is-happy { background: #e6f0ff; color: #2b4fa8; }
+.tl-bar.is-feed { background: color-mix(in srgb, var(--warning) 24%, var(--surface)); color: #8a5200; }
+.tl-bar.is-evolve { background: color-mix(in srgb, var(--primary) 42%, var(--surface)); color: var(--primary-strong); }
+.tl-bar.is-ui { background: var(--surface); border: 1px solid var(--border); color: var(--foreground-secondary); }
+.tl-label { font-size: 12px; font-weight: 600; }
+.tl-note { font-size: 11.5px; color: var(--foreground-tertiary); margin-top: 6px; }
+.tl-note code { word-break: break-all; }
+.data.is-fixed { table-layout: fixed; }
+.data.is-fixed th, .data.is-fixed td { overflow-wrap: anywhere; }
+
+/* ── 令牌卡 ── */
+.token-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; }
+.token { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.token .swatch { height: 46px; }
+.token .info { padding: 8px 10px; font-size: 11px; color: var(--foreground-tertiary); }
+.token .info b { display: block; font-size: 12px; color: var(--foreground); }
+.token .info code { font-family: var(--mono); font-size: 10.5px; }
+.rule-list { list-style: disc; padding-left: 1.15em; font-size: 12.5px; color: var(--foreground-secondary); line-height: 1.85; }
+.rule-list li::marker { color: var(--primary); }
+.rule-list code { font-family: var(--mono); font-size: 11.5px; background: var(--surface-secondary); padding: 1px 5px; border-radius: 5px; }
+
+@media (max-width: 1180px) {
+  .proto-note { display: none; }
+}
+@media (max-width: 900px) {
+  .doc { padding: 26px 16px 72px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .state-board { grid-template-columns: 1fr; }
+  .state-canvas { width: 100%; }
+  .canvas-spec { zoom: .62; }
+  .ladder-row { grid-template-columns: 78px minmax(0,1fr) 46px; }
+  .phone-wrap { width: 100%; max-width: 395px; }
+  .phone { max-width: 100%; }
+  .hero h1 { font-size: 26px; }
+}
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <div class="proto-inner">
+    <div class="proto-title">宠物动画设计稿<span>v1 · 幼犬单阶段</span></div>
+    <nav class="proto-nav">
+      <a href="#s01">01 场景尺寸</a>
+      <a href="#s02">02 状态画板</a>
+      <a href="#s03">03 尺寸锚点</a>
+      <a href="#s04">04 素材对照</a>
+      <a href="#s05">05 优先级时序</a>
+      <a href="#s06">06 规范卡</a>
+    </nav>
+    <div class="proto-note">仅设计稿 · 未改代码 / 未生成素材</div>
+  </div>
+</div>
+
+<div class="doc">
+
+  <header class="hero">
+    <div class="eyebrow">Design Spec · Pet Animation</div>
+    <h1>我的宠物：让幼犬在卡片里走起来</h1>
+    <p>
+      本稿只覆盖 <b>dog / juvenile（幼犬）</b> 一个阶段，作为「宠物会走动」的验证样板。其余 14 个进化阶段不改配置、不加素材、行为与现在完全一致。
+      画板按真实舞台尺寸 1:1 还原（280px 容器 + 15px 内边距 = 250px 画布），可直接对照实现。
+    </p>
+    <div class="chips">
+      <span class="chip is-primary">范围 <b>仅 dog / juvenile</b></span>
+      <span class="chip">画布 <b>512 × 512</b></span>
+      <span class="chip">锚点 <b>(256, 470)</b></span>
+      <span class="chip">动作 <b>5 个</b></span>
+      <span class="chip is-warn">sleep / hungry <b>不在本阶段</b></span>
+    </div>
+
+    <div class="panel" style="margin-top:22px;">
+      <div class="panel-head">已定决策（本稿按此绘制） <span>2026-11-10 确认</span></div>
+      <div class="panel-body" style="padding:0;">
+        <table class="data">
+          <tbody>
+            <tr>
+              <td style="width:20%"><b>1:1 立绘</b></td>
+              <td style="width:46%"><b>outpainting 扩画布</b>：以现有 3:4 立绘为主体，只补画左右两侧背景，主体像素与画风完全不变</td>
+              <td>占屏比例与现在一致；不重绘、不换姿势</td>
+            </tr>
+            <tr>
+              <td><b>走动范围</b></td>
+              <td><b>整条舞台</b>左右走，与移动端一致；左右各 12% 为停止区</td>
+              <td>行程 190px（250px 画布的 76%）</td>
+            </tr>
+            <tr>
+              <td><b>移动端影响</b></td>
+              <td><b>接受两端共用同一个 <code style="font-family:var(--mono)">imageUrl</code></b>，不拆 URL</td>
+              <td>移动端 180pt 画框内使用同一张 1:1 图</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════ 01 ══════════ -->
+  <section class="section" id="s01">
+    <div class="section-head">
+      <span class="section-index">01</span>
+      <h2>场景比例还原</h2>
+      <p>1440 桌面与 375 窄屏两个画板，尺寸为真实 CSS px（舒适档：根字号 20px）；桌面是页头导航 + 左侧账户菜单，移动端没有页头导航，只有底部 tab。</p>
+    </div>
+
+    <div class="board-scroll">
+      <div class="board board-desktop">
+        <div class="chrome">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <div class="addr">localhost:3001/account/pet</div>
+        </div>
+        <div class="screen">
+          <div class="mock-nav">
+            <div class="mock-nav-inner">
+              <div class="mock-brand"><i>锐</i>Sharp</div>
+              <div class="mock-navlinks">
+                <a>学习</a><a>排行榜</a><a>新闻</a><a>Wiki</a><a>关于</a>
+              </div>
+              <div class="mock-navactions"><div class="avatar"></div><div class="avatar"></div></div>
+            </div>
+          </div>
+
+          <div class="mock-main">
+            <div class="acc-grid">
+              <nav class="acc-menu">
+                <a><i></i>个人信息</a>
+                <a><i></i>我的教材</a>
+                <a class="is-active"><i></i>我的宠物</a>
+                <a><i></i>学习记录</a>
+                <a><i></i>我的收藏</a>
+                <a><i></i>错题本</a>
+                <a><i></i>设置</a>
+              </nav>
+
+              <div class="pet-grid">
+                <!-- 左栏 371px -->
+                <div class="col">
+                  <div class="card card-hero">
+                    <span class="pin" style="left:-9px; top:-9px;">1</span>
+                    <div class="stage-wrap">
+                      <div class="stage">
+                        <div class="stage-inner">
+                          <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/juvenile/image.webp?v=20261104b" alt="幼犬立绘（现有素材，3:4）" />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="ruler" style="width:280px; margin-top:8px;"><span>280px = 14rem</span></div>
+                    <div class="ruler" style="width:250px; margin-top:2px;"><span>画布 250px</span></div>
+
+                    <div class="pet-name">
+                      <h3>小柴 · Lv.3</h3>
+                      <span class="state-chip">精神满满</span>
+                    </div>
+                    <div class="pet-sub">小狗 · 幼犬 · 陪伴 12 天</div>
+
+                    <div class="meter">
+                      <div class="meter-row"><span>距离下一级 197 经验</span><span>3 / 200</span></div>
+                      <div class="bar"><i style="width:2%"></i></div>
+                    </div>
+                    <div class="meter">
+                      <div class="meter-row"><span>饱腹度</span><span>100 / 200</span></div>
+                      <div class="bar"><i class="is-warn" style="width:50%"></i></div>
+                    </div>
+
+                    <div class="btn-row">
+                      <div class="btn is-primary">喂食</div>
+                      <div class="btn is-outline">去练习 →</div>
+                    </div>
+                  </div>
+
+                  <div class="card card-today">
+                    <div class="row-between">
+                      <span class="muted">今日经验</span>
+                      <span class="strong">0 / 100</span>
+                    </div>
+                    <div class="bar"><i style="width:0%"></i></div>
+                    <p class="muted" style="margin:6px 0 0;">今天还能获得 100 经验</p>
+                  </div>
+                </div>
+
+                <!-- 右栏 519px -->
+                <div class="col">
+                  <div class="stat-grid">
+                    <div class="card stat"><p>累计答对</p><b>0</b></div>
+                    <div class="card stat"><p>累计喂养</p><b>0</b></div>
+                    <div class="card stat"><p>最爱科目</p><b>—</b></div>
+                  </div>
+                  <div class="card" style="padding:16px;">
+                    <div class="row-between">
+                      <span style="font-size:15px;font-weight:700;">进化路线</span>
+                      <span class="tag is-ok">查看养成指南</span>
+                    </div>
+                    <div class="route">
+                      <div class="route-cell is-active"><div class="route-thumb">幼犬</div>Lv.1</div>
+                      <div class="route-cell"><div class="route-thumb">成犬</div>Lv.10</div>
+                      <div class="route-cell"><div class="route-thumb">守护犬</div>Lv.20</div>
+                    </div>
+                  </div>
+                  <div class="ghost-block">最近喂养（本次不改）</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 标注 -->
+          <span class="pin is-warn" style="left:calc(50% - 348px); top:224px;">2</span>
+          <span class="pin" style="left:calc(50% - 348px); top:334px;">3</span>
+          <span class="pin" style="left:calc(50% - 76px); top:300px;">4</span>
+        </div>
+      </div>
+    </div>
+
+    <ul class="board-legend">
+      <li><span class="num">1</span><div><b>舞台容器 280px</b>：`max-w-[280px]` + `aspect-square`，当前是写死 px。建议改为 `max-w-[14rem]`，随密度缩放。</div></li>
+      <li><span class="num">2</span><div><b>左栏 371px</b>：账户中心 `11rem` 侧栏 + `gap-5` 后，`5fr/7fr` 栅格算出；它决定了 280px 舞台两侧还剩多少余量。</div></li>
+      <li><span class="num">3</span><div><b>内边距 15px</b>：`p-3` 在舒适档 = 0.75rem = 15px，舞台实际画布 = 280 − 30 = <b>250px</b>。</div></li>
+      <li><span class="num">4</span><div><b>右栏 519px</b>：统计 / 进化路线 / 最近喂养。本次不改动，仅作比例参照。</div></li>
+    </ul>
+
+    <div class="grid-2" style="margin-top:26px;">
+      <div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-status"><span>9:41</span><span>5G</span></div>
+            <div class="m-body">
+              <div class="m-title">我的宠物</div>
+              <div class="card card-hero" style="padding:20px;">
+                <div class="stage-wrap" style="width:280px;">
+                  <div class="stage" style="padding:15px;">
+                    <div class="stage-inner">
+                      <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/juvenile/image.webp?v=20261104b" alt="幼犬立绘（现有素材）" />
+                    </div>
+                  </div>
+                </div>
+                <div class="pet-name"><h3 style="font-size:23px;">小柴 · Lv.3</h3><span class="state-chip">精神满满</span></div>
+                <div class="pet-sub">小狗 · 幼犬 · 陪伴 12 天</div>
+                <div class="meter">
+                  <div class="meter-row"><span>饱腹度</span><span>100 / 200</span></div>
+                  <div class="bar"><i class="is-warn" style="width:50%"></i></div>
+                </div>
+                <div class="btn-row"><div class="btn is-primary">喂食</div><div class="btn is-outline">去练习 →</div></div>
+              </div>
+            </div>
+            <div class="m-tabbar">
+              <div class="m-tab">
+                <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg>
+                首页
+              </div>
+              <div class="m-tab">
+                <svg viewBox="0 0 24 24"><path d="M4 19V5a1 1 0 0 1 1-1h6v16H5a1 1 0 0 1-1-1z"/><path d="M13 4h6a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-6"/></svg>
+                学习
+              </div>
+              <div class="m-tab">
+                <svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 5H5v2a3 3 0 0 0 3 3"/><path d="M16 5h3v2a3 3 0 0 1-3 3"/><path d="M12 13v5"/><path d="M9 21h6"/></svg>
+                排行榜
+              </div>
+              <div class="m-tab is-active">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+                我的
+              </div>
+            </div>
+          </div>
+          <p class="phone-caption"><b>375 窄屏</b>：移动端为「状态栏 / 页面内容 / 底部 tab」三段结构，<b>没有页头导航</b>（品牌行与「个人信息 / 我的教材 / 我的宠物 / 学习记录」这组竖排入口只属于桌面账户中心）。内容宽 375 − 40 = 335px，卡片内宽 295px，舞台仍是 280px，画布 250px；底部 4 个 tab（首页 / 学习 / 排行榜 / 我的）固定高 50px，滚动内容需为其预留高度。</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="panel-head">三档根字号下的实际尺寸 <span>rem = 当前根字号</span></div>
+          <div class="panel-body" style="padding:0;">
+            <table class="data">
+              <thead>
+                <tr><th>项</th><th>紧凑 18px</th><th>标准 20px</th><th>宽松 22px</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>舞台（现状 280px 写死）</td><td>280px</td><td>280px</td><td>280px</td></tr>
+                <tr><td>舞台（建议 14rem）</td><td>252px</td><td><b>280px</b></td><td>308px*</td></tr>
+                <tr><td>内边距 0.75rem（p-3）</td><td>13.5px</td><td>15px</td><td>16.5px</td></tr>
+                <tr><td>画布（舞台 − 2×p-3）</td><td>225px</td><td><b>250px</b></td><td>275px*</td></tr>
+                <tr><td>行走速度 3.6rem/s</td><td>64.8px/s</td><td>72px/s</td><td>79.2px/s</td></tr>
+                <tr><td>走完整条舞台耗时</td><td>≈3.5s</td><td>≈3.5s</td><td>≈3.5s</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:16px;">
+          <b>一个必须注意的边界</b>
+          <ul>
+            <li>宽松档 14rem = 308px，在 375 窄屏会顶破卡片内宽 295px，因此实现必须是 <code>w-full max-w-[14rem]</code>（先让满，再封顶），标注 * 的两格实际会被容器压到 295px / 262px。</li>
+            <li>密度切换时舞台与位移会一起缩放，但「走完整条舞台耗时」保持恒定，观感才不别扭——所以速度单位用 rem/s，而不是 px/s。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 02 ══════════ -->
+  <section class="section" id="s02">
+    <div class="section-head">
+      <span class="section-index">02</span>
+      <h2>五个动画状态</h2>
+      <p>每个画板 250px 真实画布；缩略条示意关键帧分布</p>
+    </div>
+
+    <!-- idle -->
+    <div class="state-board" style="margin-bottom:16px;">
+      <div class="state-canvas">
+        <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/juvenile/image.webp?v=20261104b" alt="idle 待机" />
+      </div>
+      <div class="state-meta">
+        <div class="kicker">idle / 待机呼吸</div>
+        <h3>默认常驻，整卡无交互时一直在呼吸</h3>
+        <div class="spec-list">
+          <div><span>帧数 / 帧率</span><b>90f / 30fps</b></div>
+          <div><span>时长 / 循环</span><b>3.0s · 循环</b></div>
+          <div><span>触发条件</span><b>默认状态</b></div>
+          <div><span>结束后回落</span><b>自身（无终点）</b></div>
+          <div><span>实现</span><b>整图 scale 94→100→94</b></div>
+          <div><span>素材</span><b>复用现有 idle.json</b></div>
+        </div>
+        <div class="frames">
+          <div class="frame is-key"><i></i>f0</div>
+          <div class="frame"><i></i>f15</div>
+          <div class="frame"><i></i>f30</div>
+          <div class="frame is-key"><i></i>f45</div>
+          <div class="frame"><i></i>f60</div>
+          <div class="frame"><i></i>f75</div>
+          <div class="frame is-key"><i></i>f90</div>
+        </div>
+        <p class="tl-note">呼吸是「整图缩放」，不是骨骼形变：缩放基准与锚点必须固定在图底中心，否则会左右漂。</p>
+      </div>
+    </div>
+
+    <!-- walk -->
+    <div class="state-board" style="margin-bottom:16px;">
+      <div class="state-canvas walk-canvas">
+        <div class="wk-line wk-left"></div>
+        <div class="wk-line wk-right"></div>
+        <div class="wk-ground"></div>
+        <div class="wk-anchor"></div>
+        <img class="wk-pet" src="../pets/dog-juvenile-side-a.jpg" alt="走路 A 帧（现有侧身参考）" />
+        <span class="wk-tag wk-tag-left">左界 · 停</span>
+        <span class="wk-tag wk-tag-right">右界 · 转身</span>
+        <span class="wk-span">行程 190px · 锚点 (256,470)</span>
+      </div>
+      <div class="state-meta">
+        <div class="kicker">walk / 走动</div>
+        <h3>只在卡片舞台内左右走，到边界停下或换向</h3>
+        <div class="spec-list">
+          <div><span>帧数 / 帧率</span><b>12f / 12fps</b></div>
+          <div><span>时长 / 循环</span><b>1.0s · 循环</b></div>
+          <div><span>触发条件</span><b>空闲 5–9s 随机</b></div>
+          <div><span>结束后回落</span><b>idle</b></div>
+          <div><span>位移方式</span><b>CSS translateX（3.6rem/s）</b></div>
+          <div><span>安全区</span><b>左右各 12%（30px / 250px）</b></div>
+        </div>
+        <div class="frames">
+          <div class="frame is-key"><i style="background:#fff;"></i>f0 A</div>
+          <div class="frame"><i></i>f3</div>
+          <div class="frame is-key"><i></i>f4 过渡</div>
+          <div class="frame"><i></i>f7</div>
+          <div class="frame is-key"><i></i>f8 B</div>
+          <div class="frame"><i></i>f11</div>
+        </div>
+        <p class="tl-note">
+          转身点发生在<b>到达边界的前一刻</b>：先停 120ms，按 30° / 55° 两帧淡化（或降级为直接 <code>scaleX:-1</code>），再朝反方向起步；
+          起步时位移延迟 80ms，避免「原地滑步」。<b>锚点是脚底 (256,470)</b>，位移只改变 x，不改 y。
+        </p>
+      </div>
+    </div>
+
+    <!-- feed / happy / evolve -->
+    <div class="grid-3">
+      <div class="state-board" style="grid-template-columns:1fr;">
+        <div class="state-canvas" style="width:100%; height:220px;">
+          <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/juvenile/image.webp?v=20261104b" alt="feed 进食" style="height:150px; width:auto; max-width:86%;" />
+          <div style="position:absolute; right:14px; bottom:26px; font-size:20px;">🍎</div>
+        </div>
+        <div class="state-meta" style="margin-top:12px;">
+          <div class="kicker">feed / 进食</div>
+          <h3 style="font-size:15px;">低头吃，头顶冒食物图标</h3>
+          <div class="spec-list">
+            <div><span>帧 / 率</span><b>45f / 30fps</b></div>
+            <div><span>时长</span><b>1.5s · 单次</b></div>
+            <div><span>触发</span><b>喂食接口成功</b></div>
+            <div><span>回落</span><b>idle（或 evolve）</b></div>
+            <div><span>优先级</span><b>50</b></div>
+            <div><span>素材</span><b>复用现有 feed.json</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="state-board" style="grid-template-columns:1fr;">
+        <div class="state-canvas" style="width:100%; height:220px;">
+          <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/juvenile/image.webp?v=20261104b" alt="happy 开心" style="height:150px; width:auto; max-width:86%; transform:rotate(-4deg) translateY(-4px);" />
+        </div>
+        <div class="state-meta" style="margin-top:12px;">
+          <div class="kicker">happy / 开心</div>
+          <h3 style="font-size:15px;">点击宠物：下压、上跳、回落</h3>
+          <div class="spec-list">
+            <div><span>帧 / 率</span><b>24f / 24fps</b></div>
+            <div><span>时长</span><b>1.0s · 单次</b></div>
+            <div><span>触发</span><b>点击舞台 / 升级</b></div>
+            <div><span>回落</span><b>idle</b></div>
+            <div><span>优先级</span><b>30</b></div>
+            <div><span>素材</span><b class="is-todo">待生成 happy.json</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="state-board" style="grid-template-columns:1fr;">
+        <div class="state-canvas" style="width:100%; height:220px;">
+          <div style="position:absolute; width:150px; height:150px; border-radius:50%; border:2px dashed color-mix(in srgb, var(--primary) 60%, transparent);"></div>
+          <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/juvenile/image.webp?v=20261104b" alt="evolve 进化" style="height:150px; width:auto; max-width:86%;" />
+        </div>
+        <div class="state-meta" style="margin-top:12px;">
+          <div class="kicker">evolve / 进化</div>
+          <h3 style="font-size:15px;">光环 + 缩放，升阶段专用</h3>
+          <div class="spec-list">
+            <div><span>帧 / 率</span><b>60f / 30fps</b></div>
+            <div><span>时长</span><b>2.0s · 单次</b></div>
+            <div><span>触发</span><b>stageUp 且拿到新阶段数据</b></div>
+            <div><span>回落</span><b>新阶段 idle</b></div>
+            <div><span>优先级</span><b>60（最高）</b></div>
+            <div><span>素材</span><b>复用现有 evolve.json</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>关于 evolve 在本次范围里的定位</b>
+      <ul>
+        <li>幼犬是 1–9 级，升到 10 级才进化到「成犬」，本阶段验收基本触发不到；链路保留、不重做素材。</li>
+        <li>真正会看到的是 feed / happy / walk / idle 四个；evolve 只需保证「不被打断、播完回落到新阶段 idle」。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════ 03 ══════════ -->
+  <section class="section" id="s03">
+    <div class="section-head">
+      <span class="section-index">03</span>
+      <h2>尺寸与锚点规范</h2>
+      <p>512×512 画布 · 脚底锚点 · 安全边距 · 镜像规则</p>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="panel">
+        <div class="panel-head">画布规范图 <span>单位：画布坐标</span></div>
+        <div class="panel-body">
+          <div class="canvas-spec">
+            <div class="centerline"></div>
+            <div class="body-box">
+              <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/juvenile/image.webp?v=20261104b" alt="主体范围示意" />
+            </div>
+            <div class="ground"></div>
+            <div class="ground-label">ground y = 470</div>
+            <div class="anchor"></div>
+            <div class="safe" style="left:24px; top:24px; right:24px; bottom:24px;"></div>
+            <div class="safe-label" style="left:26px; top:26px;">安全边 24px</div>
+            <div class="safe-label" style="right:26px; top:26px;">主体框 410 × 434</div>
+          </div>
+          <div style="margin-top:14px; display:flex; justify-content:space-between; font-family:var(--mono); font-size:10.5px; color:var(--foreground-tertiary);">
+            <span>0</span><span>256</span><span>512</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="panel">
+          <div class="panel-head">关键数值 <span>所有帧共用</span></div>
+          <div class="panel-body" style="padding:0;">
+            <table class="data">
+              <tbody>
+                <tr><td>逻辑画布</td><td><code>512 × 512</code>，透明背景，无地面/阴影</td></tr>
+                <tr><td>主锚点</td><td><code>(256, 470)</code> = 水平居中、距底 42px（8.2%）</td></tr>
+                <tr><td>主体高度</td><td>约占画布 86%（≈440px），正/侧/迈步三图顶部差 ≤2px</td></tr>
+                <tr><td>主体宽度</td><td>≤410px，左右各留 51px（≈10%）行走安全边</td></tr>
+                <tr><td>额外安全边</td><td>四周 24px 内不放描边，避免缩放被切</td></tr>
+                <tr><td>镜像</td><td>朝左为默认；朝右用 <code>scaleX:-1</code>，锚点不变</td></tr>
+                <tr><td>导出</td><td>母版 PNG 1024 → WebP 512，单帧 ≤40KB</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">舞台内边界 <span>画布 250px 时</span></div>
+          <div class="panel-body">
+            <div style="position:relative; height:120px; border:1px solid var(--border); border-radius:8px; background:repeating-linear-gradient(135deg,var(--surface-secondary) 0 8px,var(--surface) 8px 16px); overflow:hidden;">
+              <div style="position:absolute; left:0; top:0; bottom:0; width:30px; background:color-mix(in srgb, var(--warning) 12%, transparent); border-right:1px dashed var(--warning);"></div>
+              <div style="position:absolute; right:0; top:0; bottom:0; width:30px; background:color-mix(in srgb, var(--warning) 12%, transparent); border-left:1px dashed var(--warning);"></div>
+              <div style="position:absolute; left:30px; right:30px; bottom:16px; height:2px; background:var(--warning);"></div>
+              <div style="position:absolute; left:30px; bottom:20px; width:12px; height:12px; transform:rotate(45deg); background:var(--warning);"></div>
+              <div style="position:absolute; right:30px; bottom:20px; width:12px; height:12px; transform:rotate(45deg); background:var(--warning);"></div>
+              <div style="position:absolute; inset:8px; border:1px solid color-mix(in srgb,var(--primary) 45%,var(--border)); border-radius:4px; pointer-events:none;"></div>
+              <div style="position:absolute; left:50%; bottom:44px; transform:translateX(-50%); font-family:var(--mono); font-size:10px; color:var(--primary-strong);">行走区间 190px</div>
+            </div>
+            <p class="note" style="margin:10px 0 0;">
+              左右各 12% 是<b>停止区</b>：宠物中心点进不去，保证身体不越出卡片、不压到下方文字。
+              边界处触发转身：停 120ms → 转身淡化 → 反向起步（延迟 80ms）。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 04 ══════════ -->
+  <section class="section" id="s04">
+    <div class="section-head">
+      <span class="section-index">04</span>
+      <h2>素材对照区</h2>
+      <p>幼犬单阶段共 10 项；虚线框为待生成/待重出</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="panel-head">规格与命名 <span>根路径 <code style="font-family:var(--mono)">sharpbucket/pets/dog/juvenile/</code></span></div>
+      <div class="panel-body" style="padding:0;">
+        <table class="data is-fixed">
+          <thead>
+            <tr><th style="width:5%">#</th><th style="width:24%">文件</th><th style="width:18%">尺寸 / 格式</th><th style="width:8%">数量</th><th style="width:33%">用途与要求</th><th style="width:12%">状态</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><code>image-v2.webp</code></td>
+              <td>1024×1024 · 透明 WebP</td>
+              <td>1</td>
+              <td>1:1 正身立绘，<b>outpainting 扩画布</b>（主体像素不变，仅补左右两侧）；六处共用（舞台、进化路线缩略图、领养页、feed/evolve 底图、移动端）。<b>不覆盖旧文件</b>，≤150KB</td>
+              <td><span class="tag is-todo">待出图</span></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><code>motion/front.webp</code></td>
+              <td>512×512 · 透明 WebP</td>
+              <td>1</td>
+              <td>正面站姿，由 #1 等比缩放；manifest <code>front.body</code></td>
+              <td><span class="tag is-todo">待生成</span></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><code>motion/side.webp</code></td>
+              <td>512×512 · 透明 WebP，朝左</td>
+              <td>1</td>
+              <td>侧身站立，<code>side.body</code>，<code>facing:"left"</code></td>
+              <td><span class="tag is-todo">待生成</span></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><code>motion/walk-a.webp</code></td>
+              <td>512×512 · 透明 WebP，朝左</td>
+              <td>1</td>
+              <td>迈步 A（前腿前伸）</td>
+              <td><span class="tag is-todo">待生成</span></td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><code>motion/walk-b.webp</code></td>
+              <td>512×512 · 透明 WebP，朝左</td>
+              <td>1</td>
+              <td>迈步 B（后腿抬起）；可与 A 镜像后修腿</td>
+              <td><span class="tag is-todo">待生成</span></td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><code>motion/idle.json</code></td>
+              <td>512 画布 · 90f/30fps</td>
+              <td>1</td>
+              <td>正面呼吸；沿用 94→100→94 曲线，锚点改到 512 坐标</td>
+              <td><span class="tag is-new">待改编</span></td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td><code>motion/walk.json</code></td>
+              <td>12f / 12fps</td>
+              <td>1</td>
+              <td>3 张图轮播 + 身体上下 2px 起伏</td>
+              <td><span class="tag is-new">待新建</span></td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td><code>motion/happy.json</code></td>
+              <td>24f / 24fps</td>
+              <td>1</td>
+              <td>下压 8% → 上跳 6px → 回落 + 倾斜 4°</td>
+              <td><span class="tag is-new">待新建</span></td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td><code>motion/manifest.json</code></td>
+              <td>JSON · version 2</td>
+              <td>1</td>
+              <td>汇总 front/side actions、<code>walkSpeed: 3.6</code>、scale 对齐值</td>
+              <td><span class="tag is-new">待新建</span></td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td><code>motion/legacy-image-3x4.webp</code></td>
+              <td>1680×2240</td>
+              <td>1</td>
+              <td>旧立绘备份，仅用于回滚</td>
+              <td><span class="tag is-ok">复制即可</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">占位框：素材位与现状对照 <span>灰底=已有可用，虚线=待生成</span></div>
+      <div class="panel-body">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px;">
+          <div>
+            <div style="position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; border:1px solid var(--border); background:var(--surface-secondary); display:grid; place-items:center;">
+              <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/juvenile/image.webp?v=20261104b" alt="现有 3:4 立绘" style="width:100%; height:100%; object-fit:contain;" />
+              <span class="tag is-todo" style="position:absolute; left:8px; top:8px;">3:4 · 待扩成 1:1</span>
+            </div>
+            <p class="tl-note">现有 <code>image.webp</code>（1680×2240）→ outpainting 补边</p>
+          </div>
+          <div>
+            <div style="aspect-ratio:1; border-radius:10px; border:1px dashed var(--border); background:repeating-linear-gradient(135deg,var(--surface-secondary) 0 9px,var(--surface) 9px 18px); display:grid; place-items:center; text-align:center; padding:14px; font-size:11.5px; color:var(--foreground-tertiary);">
+              待生成<br>motion/front.webp<br><span style="font-family:var(--mono);font-size:10px;">512 · 正面</span>
+            </div>
+            <p class="tl-note">正面站姿（#2）</p>
+          </div>
+          <div>
+            <div style="position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; border:1px solid var(--border); background:var(--surface-secondary); display:grid; place-items:center;">
+              <img src="../pets/dog-juvenile-side-a.jpg" alt="现有侧身参考 A" style="width:100%; height:100%; object-fit:contain;" />
+              <span class="tag is-todo" style="position:absolute; left:8px; top:8px;">参考 · 风格不符</span>
+            </div>
+            <p class="tl-note"><code>dog-juvenile-side-a.jpg</code>：仅参考姿态，画风需重做</p>
+          </div>
+          <div>
+            <div style="position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; border:1px solid var(--border); background:var(--surface-secondary); display:grid; place-items:center;">
+              <img src="../pets/dog-juvenile-side-b.jpg" alt="现有侧身参考 B" style="width:100%; height:100%; object-fit:contain;" />
+              <span class="tag is-todo" style="position:absolute; left:8px; top:8px;">参考 · 风格不符</span>
+            </div>
+            <p class="tl-note"><code>dog-juvenile-side-b.jpg</code>：同上，姿态参考</p>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:16px; border-color:color-mix(in srgb, var(--warning) 34%, var(--border)); border-left-color:var(--warning); background:#fff7e8;">
+          <b>必须提前知道的一件事</b>
+          <ul>
+            <li>仓库里已有的 `dog-juvenile-side-a/b.jpg` 是<b>扁平粗描边</b>画风，与当前写实萌系立绘（紫柴、红项圈）不是同一套美术，不能直接当成交付素材，只能作为「姿态/比例」参考。</li>
+            <li>现有 `motion/` 下的 front-stand / side / turn 也是同一批旧画风，本阶段用新素材覆盖，不沿用。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 05 ══════════ -->
+  <section class="section" id="s05">
+    <div class="section-head">
+      <span class="section-index">05</span>
+      <h2>优先级与交互时序</h2>
+      <p>高优先级立即打断低优先级；单次动作播完必须回落</p>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="panel">
+        <div class="panel-head">动作优先级阶梯 <span>数字越高越优先</span></div>
+        <div class="panel-body">
+          <div class="ladder">
+            <div class="ladder-row"><span class="name">evolve</span><div class="track"><div class="fill" style="width:100%; background:var(--primary);">进化 · 单次 2.0s</div></div><span class="weight">60</span></div>
+            <div class="ladder-row"><span class="name">feed</span><div class="track"><div class="fill" style="width:84%; background:#c98118;">进食 · 单次 1.5s</div></div><span class="weight">50</span></div>
+            <div class="ladder-row"><span class="name">happy</span><div class="track"><div class="fill" style="width:56%; background:#3f6ad8;">开心 · 单次 1.0s</div></div><span class="weight">30</span></div>
+            <div class="ladder-row"><span class="name">walk</span><div class="track"><div class="fill" style="width:40%; background:var(--primary-strong);">走动 · 循环</div></div><span class="weight">20</span></div>
+            <div class="ladder-row"><span class="name">状态变体</span><div class="track"><div class="fill" style="width:18%; background:var(--foreground-tertiary);">sleep / hungry</div></div><span class="weight">5</span></div>
+            <div class="ladder-row"><span class="name">idle</span><div class="track"><div class="fill" style="width:12%; background:var(--border); color:var(--foreground-secondary);">待机</div></div><span class="weight">0</span></div>
+          </div>
+          <p class="note" style="margin:14px 0 0;">
+            状态变体（5）本阶段<b>不接动作</b>，只保留位置：等后续做 sleep / hungry 时直接插进阶梯，不需要改状态机结构。
+          </p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">打断规则 <span>状态机只认这四条</span></div>
+        <div class="panel-body">
+          <table class="data">
+            <tbody>
+              <tr><td><b>打断</b></td><td>高优先级可立即打断低优先级；evolve 不可被任何动作打断</td></tr>
+              <tr><td><b>排队</b></td><td>同时到达最多缓存 1 个；被更高优先级覆盖时丢弃</td></tr>
+              <tr><td><b>回落</b></td><td>单次动作结束 → 当前状态的常驻动作（本阶段恒为 idle）</td></tr>
+              <tr><td><b>不响应</b></td><td>satiety 数值变化、经验变化只更新 HUD，不进动作队列</td></tr>
+            </tbody>
+          </table>
+          <p class="note" style="margin:10px 0 0;">
+            从而保证：喂食时不会被饱腹度刷新打断、升级动画不会被「正在走」抢占、连点不会叠播。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">时序一：喂食 <span>点击「喂食」→ 抽屉 → feed → 回落</span></div>
+      <div class="panel-body timeline">
+        <div class="tl">
+          <div class="tl-head"><span>动作</span><div class="tl-axis">
+            <span style="left:0">0s</span><span style="left:20%">1s</span><span style="left:40%">2s</span><span style="left:60%">3s</span><span style="left:80%">4s</span>
+          </div></div>
+          <div class="tl-row"><span class="tl-label">界面</span><div class="tl-track">
+            <div class="tl-bar is-ui" style="left:0; width:22%;">抽屉打开 · 走动暂停</div>
+            <div class="tl-bar is-ui" style="left:56%; width:16%;">结果提示 1.2s</div>
+            <div class="tl-bar is-ui" style="left:72%; width:12%;">抽屉自动关闭</div>
+          </div></div>
+          <div class="tl-row"><span class="tl-label">宠物动作</span><div class="tl-track">
+            <div class="tl-bar is-idle" style="left:0; width:22%;">idle</div>
+            <div class="tl-bar is-feed" style="left:22%; width:30%;">feed 1.5s</div>
+            <div class="tl-bar is-idle" style="left:52%; width:48%;">idle</div>
+          </div></div>
+          <div class="tl-row"><span class="tl-label">数据</span><div class="tl-track">
+            <div class="tl-bar is-ui" style="left:52%; width:18%;">刷新 home（静默）</div>
+          </div></div>
+        </div>
+        <p class="tl-note">若本次触发 stageUp：feed 播完 → 刷新出新阶段素材 → evolve 2.0s → 新阶段 idle。幼犬阶段几乎不会发生。</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">时序二：点击宠物 <span>走动中点击也要先转正</span></div>
+      <div class="panel-body timeline">
+        <div class="tl">
+          <div class="tl-head"><span>动作</span><div class="tl-axis">
+            <span style="left:0">0s</span><span style="left:25%">1s</span><span style="left:50%">2s</span><span style="left:75%">3s</span>
+          </div></div>
+          <div class="tl-row"><span class="tl-label">走 → 点</span><div class="tl-track">
+            <div class="tl-bar is-walk" style="left:0; width:18%;">walk</div>
+            <div class="tl-bar is-idle" style="left:18%; width:6%;">转正 120ms</div>
+            <div class="tl-bar is-happy" style="left:24%; width:25%;">happy 1.0s</div>
+            <div class="tl-bar is-idle" style="left:49%; width:51%;">idle</div>
+          </div></div>
+          <div class="tl-row"><span class="tl-label">原地待机点</span><div class="tl-track">
+            <div class="tl-bar is-idle" style="left:0; width:24%;">idle</div>
+            <div class="tl-bar is-happy" style="left:24%; width:25%;">happy 1.0s</div>
+            <div class="tl-bar is-idle" style="left:49%; width:51%;">idle</div>
+          </div></div>
+        </div>
+        <p class="tl-note">连点：第二次点击在 happy 播放中到达 → 丢弃（不排队、不重播），避免一直在兴奋状态。</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">时序三：饱腹度下降 <span>本阶段只换文案/气泡，不切动作</span></div>
+      <div class="panel-body timeline">
+        <div class="tl">
+          <div class="tl-head"><span>动作</span><div class="tl-axis">
+            <span style="left:0">0min</span><span style="left:30%">5min</span><span style="left:60%">…</span><span style="left:88%">下次刷新</span>
+          </div></div>
+          <div class="tl-row"><span class="tl-label">饱腹度</span><div class="tl-track">
+            <div class="tl-bar is-idle" style="left:0; width:30%;">100 → 96（本地不推算）</div>
+            <div class="tl-bar is-ui" style="left:30%; width:58%;">服务端按小时结算，页面静默拉取</div>
+          </div></div>
+          <div class="tl-row"><span class="tl-label">宠物动作</span><div class="tl-track">
+            <div class="tl-bar is-idle" style="left:0; width:88%;">idle / walk 照常，不受数值影响</div>
+          </div></div>
+          <div class="tl-row"><span class="tl-label">胶囊</span><div class="tl-track">
+            <div class="tl-bar is-ui" style="left:0; width:44%;">精神满满</div>
+            <div class="tl-bar is-feed" style="left:44%; width:24%;">有点饿了（&lt;30）</div>
+            <div class="tl-bar is-ui" style="left:68%; width:32%;">呼呼睡（2 天未喂）</div>
+          </div></div>
+        </div>
+        <p class="tl-note">sleep／hungry 的专属动作属于最后一阶段；本阶段到「胶囊变色 + 气泡」为止，保证状态可见即可。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 06 ══════════ -->
+  <section class="section" id="s06">
+    <div class="section-head">
+      <span class="section-index">06</span>
+      <h2>规范卡</h2>
+      <p>颜色 / 字号 / 依赖 / 降级，四件事写死</p>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="panel">
+        <div class="panel-head">颜色：只用现有令牌 <span>来源 apps/web/src/app/globals.css</span></div>
+        <div class="panel-body">
+          <div class="token-grid">
+            <div class="token"><div class="swatch" style="background:#10b981"></div><div class="info"><b>primary</b><code>#10b981</code></div></div>
+            <div class="token"><div class="swatch" style="background:#0b7f58"></div><div class="info"><b>primary-strong</b><code>#0b7f58</code></div></div>
+            <div class="token"><div class="swatch" style="background:#ddf6ea"></div><div class="info"><b>primary-light</b><code>#ddf6ea</code></div></div>
+            <div class="token"><div class="swatch" style="background:#ffffff; border-bottom:1px solid #edf3f0"></div><div class="info"><b>surface</b><code>#ffffff</code></div></div>
+            <div class="token"><div class="swatch" style="background:#f7fbf9"></div><div class="info"><b>surface-secondary</b><code>#f7fbf9</code></div></div>
+            <div class="token"><div class="swatch" style="background:#dde7e1"></div><div class="info"><b>border</b><code>#dde7e1</code></div></div>
+            <div class="token"><div class="swatch" style="background:#4f6b5e"></div><div class="info"><b>foreground-secondary</b><code>#4f6b5e</code></div></div>
+            <div class="token"><div class="swatch" style="background:#f59e0b"></div><div class="info"><b>warning（饱腹度）</b><code>#f59e0b</code></div></div>
+          </div>
+          <p class="note" style="margin:12px 0 0;">
+            宠物动画本身<b>不引入新色</b>：舞台无底色，只用卡片 surface；走动边界/锚点属于标注层，不进产品界面。
+          </p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">字号与尺寸 <span>全部 rem，不写 px</span></div>
+        <div class="panel-body">
+          <ul class="rule-list">
+            <li>舞台宽度：<code>w-full max-w-[14rem]</code>；内边距 <code>p-3</code>（0.75rem）。</li>
+            <li>走速：<code>3.6rem/s</code>，位移换算实时读根字号，不缓存 px。</li>
+            <li>停止区：舞台宽的 <code>12%</code>（比例而非 px）。</li>
+            <li>按钮/文字：沿用现有 <code>text-xs / text-sm / text-base</code>，不新增字号档。</li>
+            <li>动画素材尺寸（512）属于<b>资源规格</b>，不是布局尺寸，不受 rem 约束。</li>
+            <li>禁用：<code>width: 280px</code>、<code>translateX(72px)</code>、<code>bottom: 30px</code> 这类写死值。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:18px; align-items:start;">
+      <div class="panel">
+        <div class="panel-head">依赖与降级 <span>不新增任何包</span></div>
+        <div class="panel-body">
+          <ul class="rule-list">
+            <li>继续使用已有 <code>lottie-web@5.13.0</code>；不引入 GSAP / Framer Motion / PixiJS / 雪碧图工具。</li>
+            <li>位移用 CSS <code>transform: translateX()</code>，动画仍在 Lottie 内。</li>
+            <li>降级链：<code>manifest 就绪</code> → 分层动作（会走）→ <code>manifest 缺失/失败</code> → 现有单动画 + 不位移 → <code>Lottie 失败</code> → 静态图 → <code>图片失败</code> → emoji。</li>
+            <li><code>prefers-reduced-motion</code>：只显示静态图，不位移、不播放。</li>
+            <li>页面不可见时暂停播放器与位移。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">范围红线 <span>评审时逐条核对</span></div>
+        <div class="panel-body">
+          <ul class="rule-list">
+            <li>只动 <code>dog / juvenile</code>：其余 14 个阶段不新增素材、不改 Admin 字段、代码走原分支。</li>
+            <li>不改数据库 schema、不改接口、不改种子脚本。</li>
+            <li>不做 sleep / hungry 动作、不做整页走动、不做拖拽、不做多宠物。</li>
+            <li>本次交付<b>设计稿</b>；代码等通知后再执行。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:22px;">
+      <b>还有需要你决策的点吗？——没有了</b>
+      <ul>
+        <li>三项已确认：立绘 outpainting 扩 1:1、整条舞台走动、两端共用同一 <code>imageUrl</code>。</li>
+        <li>以下两项按方案默认执行，属于可后续升级的实现细节，不阻塞开工：<b>happy</b> 用整图变换（不加新素材）、<b>转身</b>用 120ms 硬翻转（不加 30°/55° 两帧）。若你希望改成真姿势/真转身帧，随时说，只增加 2–3 张素材，不动结构。</li>
+        <li><b>只等你发话开始实现。</b>代码、素材、数据库与存储均未改动。</li>
+      </ul>
+    </div>
+
+    <div class="callout" style="border-color:var(--border); background:var(--surface);">
+      <b>实现映射（本次不实施，供评审对照）</b>
+      <ul>
+        <li>新增：<code>lib/pet/motion.ts</code>、<code>hooks/use-pet-motion.ts</code>、<code>components/pet/pet-stage.tsx</code>。</li>
+        <li>修改：<code>pet-lottie.tsx</code>（抽加载器 + <code>imagePreserveAspectRatio:"xMidYMid meet"</code>）、<code>pet-home.tsx</code>（有 manifest 才挂 PetStage；舞台改 14rem；抽屉打开暂停走动）。</li>
+        <li>配置：Admin 只填幼犬三个 URL（<code>imageUrl</code>、<code>sideImageUrl</code>、<code>motionManifestUrl</code>），其余阶段不碰。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="footer-note">
+    设计稿为静态 HTML，无外部依赖（宠物形象直接引用线上现有立绘与仓库内既有侧身参考图，未生成任何新素材）。
+    画板内使用真实 px 以 1:1 还原舞台尺寸；规范卡约束的是<b>实现</b>：颜色只用 globals.css 现有令牌、尺寸只用 rem。
+    本稿不修改 <code>apps/web</code> 下任何代码，也未变更数据库与存储。
+  </div>
+
+</div>
+</body>
+</html>
