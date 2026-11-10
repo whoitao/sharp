@@ -511,7 +511,7 @@ table.data code {
 
 <div class="proto-bar">
   <div class="proto-inner">
-    <div class="proto-title">宠物动画设计稿<span>v1 · 幼犬单阶段</span></div>
+    <div class="proto-title">宠物动画设计稿<span>v2 · 幼犬已落地 + 成犬设计</span></div>
     <nav class="proto-nav">
       <a href="#s01">01 场景尺寸</a>
       <a href="#s02">02 状态画板</a>
@@ -519,6 +519,8 @@ table.data code {
       <a href="#s04">04 素材对照</a>
       <a href="#s05">05 优先级时序</a>
       <a href="#s06">06 规范卡</a>
+      <a href="#s07">07 成犬阶段</a>
+      <a href="#s08">08 成年阶段</a>
     </nav>
     <div class="proto-note">仅设计稿 · 未改代码 / 未生成素材</div>
   </div>
@@ -530,11 +532,11 @@ table.data code {
     <div class="eyebrow">Design Spec · Pet Animation</div>
     <h1>我的宠物：让幼犬在卡片里走起来</h1>
     <p>
-      本稿只覆盖 <b>dog / juvenile（幼犬）</b> 一个阶段，作为「宠物会走动」的验证样板。其余 14 个进化阶段不改配置、不加素材、行为与现在完全一致。
+      01–06 是 <b>dog / juvenile（幼犬）</b> 的方案，已按此落地并上线；<b>07 是新增的 dog / growing（成犬）设计与素材规划</b>，只出设计稿，未生成素材、未改配置。
       画板按真实舞台尺寸 1:1 还原（280px 容器 + 15px 内边距 = 250px 画布），可直接对照实现。
     </p>
     <div class="chips">
-      <span class="chip is-primary">范围 <b>仅 dog / juvenile</b></span>
+      <span class="chip is-primary">范围 <b>幼犬（已落地）+ 成犬（设计）</b></span>
       <span class="chip">画布 <b>512 × 512</b></span>
       <span class="chip">锚点 <b>(256, 470)</b></span>
       <span class="chip">动作 <b>5 个</b></span>
@@ -1325,6 +1327,461 @@ table.data code {
         <li>新增：<code>lib/pet/motion.ts</code>、<code>hooks/use-pet-motion.ts</code>、<code>components/pet/pet-stage.tsx</code>。</li>
         <li>修改：<code>pet-lottie.tsx</code>（抽加载器 + <code>imagePreserveAspectRatio:"xMidYMid meet"</code>）、<code>pet-home.tsx</code>（有 manifest 才挂 PetStage；舞台改 14rem；抽屉打开暂停走动）。</li>
         <li>配置：Admin 只填幼犬三个 URL（<code>imageUrl</code>、<code>sideImageUrl</code>、<code>motionManifestUrl</code>），其余阶段不碰。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════ 07 ══════════ -->
+  <section class="section" id="s07">
+    <div class="section-head">
+      <span class="section-index">07</span>
+      <h2>成犬阶段（growing）设计</h2>
+      <p>同一只狗长大 · 比例差异 · 素材复用边界 · 512 锚点对照</p>
+    </div>
+
+    <div class="callout" style="margin:0 0 18px;">
+      <b>这一段只出设计稿</b>
+      <ul>
+        <li>本轮<b>不生成素材、不写代码、不改数据库与 Storage</b>。下面所有 URL、体积、状态都标注了「现状」或「目标」，不要把目标值当成已交付。</li>
+        <li>growing 现状：<code>image.webp</code> 400×400（19,820B）、<code>idle/feed/evolve.json</code> 都是 400 画布、asset 指向 <code>image.webp</code>，<code>sideImageUrl</code> 与 <code>motionManifestUrl</code> <b>为空</b>——页面现在只有呼吸，不会走。</li>
+      </ul>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="panel">
+        <div class="panel-head">造型现状对照 <span>左：幼犬（已落地） / 右：成犬（现网）</span></div>
+        <div class="panel-body">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <div style="aspect-ratio:1; border:1px solid var(--border); border-radius:10px; background:var(--surface-secondary); display:grid; place-items:center; overflow:hidden;">
+                <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/juvenile/image-v3.webp" alt="幼犬立绘" style="width:100%; height:100%; object-fit:contain;" />
+              </div>
+              <p class="tl-note"><b>juvenile</b> · 768² · 42,976B · 软边水彩、腮红、大头短腿</p>
+            </div>
+            <div>
+              <div style="aspect-ratio:1; border:1px solid var(--border); border-radius:10px; background:var(--surface-secondary); display:grid; place-items:center; overflow:hidden;">
+                <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/growing/image.webp" alt="成犬立绘" style="width:100%; height:100%; object-fit:contain;" />
+              </div>
+              <p class="tl-note"><b>growing</b> · 400² · 19,820B · 厚描边平涂、无腮红、瘦高长腿</p>
+            </div>
+          </div>
+          <div class="callout" style="margin-top:14px; border-color:color-mix(in srgb, var(--warning) 34%, var(--border)); border-left-color:var(--warning); background:#fff7e8;">
+            <b>必须直视的差异：两代画风不是一套</b>
+            <ul>
+              <li>幼犬新图是<b>软边水彩</b>（无明显外描边、有腮红、毛发边缘虚）；成犬现网图是<b>厚描边 + 平涂</b>（深棕轮廓约体高 0.9%、无腮红）。</li>
+              <li>如果成犬直接沿用现网图做走动，10 级进化那一刻会出现「换了一只狗/换了一套画风」的跳变。</li>
+              <li>所以成犬这一版必须<b>重绘</b>，而不是把现网 400px 图放大。重绘方向见下方「需要你拍板的点」。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">量化差异 <span>透明通道实测 + 目测估算</span></div>
+        <div class="panel-body" style="padding:0;">
+          <table class="data">
+            <thead>
+              <tr><th style="width:26%">项</th><th style="width:26%">幼犬 juvenile</th><th style="width:26%">成犬 growing</th><th style="width:22%">差异</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>主体包围盒（实测）</td><td>467 × 651（768 画布）</td><td>251 × 400（400 画布）</td><td>—</td></tr>
+              <tr><td>宽高比 w/h</td><td><code>0.717</code></td><td><code>0.627</code></td><td>成犬<b>窄 12.5%</b>，显瘦高</td></tr>
+              <tr><td>最宽处位置</td><td>体高 82%（臀部）</td><td>体高 85%（臀部）</td><td>基本一致</td></tr>
+              <tr><td>头宽 / 臀宽（目测）</td><td>≈ 0.95</td><td>≈ 0.78</td><td>成犬头身比更成人化</td></tr>
+              <tr><td>腿长 / 体高（目测）</td><td>≈ 18%</td><td>≈ 30%</td><td>腿明显变长</td></tr>
+              <tr><td>姿态</td><td>团坐、前腿并拢</td><td>挺坐、胸线抬高</td><td>视平线抬高</td></tr>
+              <tr><td>画风</td><td>软边水彩 + 腮红</td><td>厚描边平涂、无腮红</td><td><b>需统一</b></td></tr>
+              <tr><td>画布留白</td><td>四边 ≥ 54px（768）</td><td>顶/底贴边（0–399）</td><td>成犬现图无安全边</td></tr>
+              <tr><td>现状体积</td><td>42,976B（768²）</td><td>19,820B（400²）</td><td>成犬清晰度不足</td></tr>
+            </tbody>
+          </table>
+          <p class="note" style="margin:10px 14px 14px;">
+            「目测」三项是按两张图并排目视估算，误差约 ±5 个百分点；其余为透明通道逐像素实测。
+            成犬现图<b>顶到画布上下边界</b>，放大后耳尖/脚掌会被裁，做 512 版本时必须补 24px 安全边。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">「同一只狗长大」要锁死的特征 <span>提示词约束，逐条写死在正向前缀里</span></div>
+      <div class="panel-body" style="padding:0;">
+        <table class="data">
+          <thead>
+            <tr><th style="width:16%">特征</th><th style="width:44%">锁死值</th><th style="width:40%">允许的变化</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><b>毛色</b></td><td>主体橘棕、胸口/口吻/眉点奶油白，与幼犬同一色板（目标 ΔE ≤ 3）</td><td>成年后白色面积略收，不加新色</td></tr>
+            <tr><td><b>项圈</b></td><td>正红、单圈、宽约 <code>14px @512</code>（颈围 1/3），不被毛发切断</td><td>可加一枚小吊牌，直径 ≤ 项圈宽</td></tr>
+            <tr><td><b>描边</b></td><td>与所选画风一致：软边方案 ≤ 体高 0.5%；硬边方案 0.9% ±0.1%</td><td>全图统一，不出现 2px→4px 抖动</td></tr>
+            <tr><td><b>耳朵</b></td><td>三角立耳、内耳粉、外缘短毛簇；耳根间距 ≈ 头宽 0.42</td><td>比例略收（成年耳相对更小）</td></tr>
+            <tr><td><b>尾巴</b></td><td>上卷贴臀、尾尖浅色、毛量蓬松</td><td>成犬尾根更高、上卷更明显</td></tr>
+            <tr><td><b>眼睛</b></td><td>圆眼、左上高光、大小一致；<b>成犬取消腮红</b></td><td>仅去掉腮红与婴儿肥</td></tr>
+          </tbody>
+        </table>
+        <div class="panel-body" style="border-top:1px solid var(--border-light);">
+          <p class="note" style="margin:0 0 8px;">正向骨架（与幼犬共用，只替换体型/姿态句；以「软边水彩」方案为例）：</p>
+          <pre style="margin:0; padding:12px 14px; border-radius:8px; background:var(--surface-secondary); border:1px solid var(--border); overflow-x:auto; font-family:var(--mono); font-size:11.5px; line-height:1.7; white-space:pre-wrap;">same character sheet, adult shiba inu, full body, soft watercolor cel shading,
+thin warm-brown silhouette line, warm orange and cream palette, red collar,
+simple clean shapes, transparent background, no shadow, no ground
+体型句（按动作替换）：
+  front  sitting upright, straight front legs, head-to-body ratio 1 : 2.4
+  side   strict side profile facing left, standing on four legs, tail curled up
+  walk-a strict side profile facing left, walking, front leg lifted forward
+  walk-b strict side profile facing left, walking, rear leg lifted</pre>
+          <p class="note" style="margin:10px 0 0;">负向固定：<code>puppy proportions, oversized head, blush cheeks, thick black outline, gradient shading, realistic fur, extra legs, extra tail, text, watermark, background, shadow, 3/4 view, cropped ears, cropped paws</code></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">素材清单 <span>根路径 <code style="font-family:var(--mono)">sharpbucket/pets/dog/growing/</code></span></div>
+      <div class="panel-body" style="padding:0;">
+        <table class="data is-fixed">
+          <thead>
+            <tr><th style="width:5%">#</th><th style="width:25%">文件</th><th style="width:18%">尺寸 / 格式</th><th style="width:14%">新建 / 复用</th><th style="width:38%">说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td><code>image-v3.webp</code></td><td>768×768 · 透明 WebP</td><td><span class="tag is-todo">新出</span></td><td>1:1 立绘，<b>不需要 outpainting</b>（成犬现图本来就是 400² 正方形，只是分辨率与留白不足）。目标 ≤50KB，六处共用</td></tr>
+            <tr><td>2</td><td><code>motion/front-v2.webp</code></td><td>512×512 · 透明</td><td><span class="tag is-todo">新出</span></td><td>由 #1 等比缩，主体高占画布 85%，≤40KB；manifest <code>front.body</code></td></tr>
+            <tr><td>3</td><td><code>motion/side-v2.webp</code></td><td>512×512 · 朝左</td><td><span class="tag is-todo">新出</span></td><td>侧身站立，脚底 y=470、项圈中心 x=196</td></tr>
+            <tr><td>4</td><td><code>motion/walk-a-v2.webp</code></td><td>512×512 · 朝左</td><td><span class="tag is-todo">新出</span></td><td>迈步 A（前腿前伸）</td></tr>
+            <tr><td>5</td><td><code>motion/walk-b-v2.webp</code></td><td>512×512 · 朝左</td><td><span class="tag is-todo">新出</span></td><td>迈步 B（后腿抬起）；三帧主体宽度差 ≤5%</td></tr>
+            <tr><td>6</td><td><code>motion/idle-v2.json</code></td><td>512 画布 · 90f/30fps</td><td><span class="tag is-new">改参数</span></td><td>呼吸曲线 94→100→94 可照抄，<b>asset 指向 front-v2、坐标改 512 锚点</b></td></tr>
+            <tr><td>7</td><td><code>motion/side-idle-v2.json</code></td><td>512 画布 · 90f/30fps</td><td><span class="tag is-new">改参数</span></td><td>侧身待机，结构同幼犬，仅换 asset 与坐标</td></tr>
+            <tr><td>8</td><td><code>motion/walk-v2.json</code></td><td>512 画布 · 12f/12fps</td><td><span class="tag is-ok">可整段复用</span></td><td>纯三图轮播 + 上下 2px 起伏，与角色无关；只改 asset 引用与 <code>p</code> 坐标</td></tr>
+            <tr><td>9</td><td><code>motion/happy-v2.json</code></td><td>512 画布 · 24f/24fps</td><td><span class="tag is-ok">可复用时间轴</span></td><td>下压 8% → 上跳 6px → 回落 + 倾斜 4°；只按成犬主体高度微调 <code>s</code>/<code>p</code></td></tr>
+            <tr><td>10</td><td><code>motion/feed-v2.json</code></td><td>512 画布 · 45f/30fps</td><td><span class="tag is-new">改参数</span></td><td>时间轴可照抄，底图换 growing，坐标重算</td></tr>
+            <tr><td>11</td><td><code>motion/evolve-v2.json</code></td><td>512 画布 · 60f/30fps</td><td><span class="tag is-new">改参数</span></td><td>整图 + 1 个光环图层，光环比例按成犬主体重算</td></tr>
+            <tr><td>12</td><td><code>motion/manifest-v2.json</code></td><td>JSON · version 2</td><td><span class="tag is-todo">新出</span></td><td><code>size:512</code>、<code>facing:"left"</code>、<code>walkSpeed:72</code>、front/side 两组 actions</td></tr>
+            <tr><td>13</td><td><code>motion/legacy-image-400.webp</code></td><td>400×400</td><td><span class="tag is-ok">复制即可</span></td><td>现网立绘备份，仅回滚用，页面不引用</td></tr>
+          </tbody>
+        </table>
+        <p class="note" style="margin:10px 14px 14px;">
+          命名一律带 <code>-v2</code>，<b>不覆盖</b> <code>idle.json</code> / <code>feed.json</code> / <code>evolve.json</code> / <code>image.webp</code>：
+          切换前旧配置仍能正常呼吸，任一时刻都可以只改 URL 回退。
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:18px; align-items:start;">
+      <div class="panel">
+        <div class="panel-head">锚点对照 <span>512 画布坐标</span></div>
+        <div class="panel-body" style="padding:0;">
+          <table class="data">
+            <thead><tr><th style="width:30%">项</th><th style="width:26%">幼犬</th><th style="width:26%">成犬</th><th style="width:18%">是否变化</th></tr></thead>
+            <tbody>
+              <tr><td>逻辑画布</td><td>512 × 512</td><td>512 × 512</td><td>不变</td></tr>
+              <tr><td>ground y</td><td>470</td><td>470</td><td>不变</td></tr>
+              <tr><td>正面中心 x</td><td>256</td><td>256</td><td>不变</td></tr>
+              <tr><td>侧身项圈中心 x</td><td>196</td><td>196</td><td>不变（三帧统一）</td></tr>
+              <tr><td>主体高</td><td>434（85%）</td><td>434（85%）</td><td>不变，保证进化前后视觉等高</td></tr>
+              <tr><td>主体宽</td><td>311</td><td>272</td><td><b>−12.5%</b>（更瘦）</td></tr>
+              <tr><td>主体框左 → 右</td><td>100 → 411</td><td>120 → 392</td><td>居中，左右各多 20px 余量</td></tr>
+              <tr><td>四周安全边</td><td>24px</td><td>24px</td><td>不变</td></tr>
+              <tr><td>项圈 → 地面</td><td>177 / 191 / 187</td><td>195 – 205（估）</td><td>腿变长，整体上移</td></tr>
+              <tr><td>正/侧/迈步顶部差</td><td>≤ 2px</td><td>≤ 2px</td><td>不变</td></tr>
+              <tr><td>单帧体积</td><td>≤ 40KB</td><td>≤ 40KB</td><td>不变</td></tr>
+              <tr><td>母版</td><td>768² q88 → 42,976B</td><td>768² q88 → 目标 ≤50KB</td><td>不变</td></tr>
+            </tbody>
+          </table>
+          <p class="note" style="margin:10px 14px 14px;">
+            主体宽从 311 收窄到 272，是<b>造型变化</b>带来的，<b>不要靠横向缩放去凑</b>——横向压扁会让成犬显得比幼犬矮胖。
+            舞台内宠物盒仍占短边 64%，两者显示高度一致。
+          </p>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="panel">
+          <div class="panel-head">验收清单 <span>逐条可判定</span></div>
+          <div class="panel-body">
+            <ul class="rule-list">
+              <li>1. 进化瞬间：幼犬 → 成犬，主体高度差 ≤ 2px，脚底线不跳动。</li>
+              <li>2. 走动只发生在卡片舞台内，左右停止区各 12%，出界即转向。</li>
+              <li>3. 侧身朝左与 <code>facing:"left"</code> 一致，朝右时镜像且不出现反字/反项圈。</li>
+              <li>4. feed / evolve 能立刻打断走动，播完回到正面 idle。</li>
+              <li>5. 三帧主体宽度差 ≤5%、项圈→地面差 ≤4%，逐帧看不出「换身体」。</li>
+              <li>6. 768 立绘 ≤50KB、四帧 512 ≤40KB、JSON 合计 ≤20KB。</li>
+              <li>7. 256px 盲测：幼犬与成犬并排，3 秒内判断「同一只狗变大」而非「两只狗」。</li>
+              <li>8. <code>prefers-reduced-motion</code> 下只显示静态图，无位移、无抖动。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">回滚 <span>只改配置，不动代码</span></div>
+          <div class="panel-body">
+            <ul class="rule-list">
+              <li><b>回到只有呼吸</b>：清空 <code>motionManifestUrl</code>，页面自动回落单动画分支。</li>
+              <li><b>立绘回旧图</b>：<code>imageUrl</code> 改回 <code>.../growing/image.webp</code>（旧 400²，19,820B）。</li>
+              <li><b>侧身回空</b>：<code>sideImageUrl</code> 清空，不影响正面 idle。</li>
+              <li><b>素材回滚</b>：旧立绘备份在 <code>motion/legacy-image-400.webp</code>；旧 JSON 全程未覆盖，可直接指回。</li>
+              <li><b>不碰</b>：<code>dog/juvenile</code> 已上线的四个地址、其余 13 个阶段、数据库 schema。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">本轮范围红线 <span>评审时逐条核对</span></div>
+      <div class="panel-body">
+        <ul class="rule-list">
+          <li>只出<b>设计稿</b>：不生成图片、不写 JSON、不上传 Storage、不改 Admin、不改数据库、不改 <code>apps/web</code> 代码。</li>
+          <li>只规划 <code>dog / growing</code>：其余 13 个阶段（含 <code>dog/mature</code>）不在本轮。</li>
+          <li>不新增协议：继续用 manifest v2，不引入骨骼动画、序列帧、视频、雪碧图。</li>
+          <li>不做转身帧、眨眼图层、sleep / hungry 动作——与幼犬阶段保持一致。</li>
+          <li>不新建视觉语言：07 复用 01–06 的面板、表格、标签与配色。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:18px;">
+      <b>需要你拍板的点（只有一个）</b>
+      <ul>
+        <li><b>成犬画风跟谁统一？</b> A）跟幼犬的新图统一为<b>软边水彩</b>（推荐：进化最连贯，但成犬会与现网 400px 图有可见差异，需要重绘）；B）统一为<b>厚描边平涂</b>（则幼犬那套已上线素材要重做，成本高）；C）各画各的（成本最低，但 10 级进化会明显「换狗」）。</li>
+        <li>其余按幼犬既定规格执行、无需再确认：512 画布、锚点 (256,470)、正/侧双层、5–9s 随机走动、整条舞台、manifest v2、两端共用 <code>imageUrl</code>、rem 化舞台。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="s08">
+    <div class="section-head">
+      <span class="section-index">08</span>
+      <h2>成年阶段（mature）设计</h2>
+      <p>现状实测 · 与 growing 的造型差异 · 素材复用边界 · 512 锚点与项圈实测依据</p>
+    </div>
+
+    <div class="callout" style="margin:0 0 18px;">
+      <b>这一段同样只出设计稿</b>
+      <ul>
+        <li>本轮<b>不生成素材、不写 JSON、不上传 Storage、不改数据库、不改前端代码</b>。下面凡标「目标 / 预估」的数字都还没发生，不要当成已交付。</li>
+        <li>mature 现状（<b>实测</b>）：立绘 <code>image.webp</code> <b>368×368</b>（20,194B），透明主体包围盒 <b>324 × 368</b>，<b>上下贴边（y = 0 → 367）、无安全边</b>。</li>
+        <li>储物间只有 3 个动画：<code>idle.json</code>（654B）、<code>feed.json</code>（821B）、<code>evolve.json</code>（1,673B），三者画布都是 <b>400×400</b>，asset 指向 400×400 的 <code>image.webp</code>——<b>比实际 368 图大 8.7%，当前页面是拉伸显示</b>。</li>
+        <li>数据库这一行：<code>sideImageUrl</code> 与 <code>motionManifestUrl</code> <b>均为空</b>；没有 <code>happy.json</code>、没有侧身图、没有 <code>walk</code>、没有 <code>manifest</code>。所以现在只有呼吸，不会走、不会侧身。</li>
+      </ul>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="panel">
+        <div class="panel-head">造型现状对照 <span>左：growing（已落地） / 右：mature（现网）</span></div>
+        <div class="panel-body">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <div style="aspect-ratio:1; border:1px solid var(--border); border-radius:10px; background:var(--surface-secondary); display:grid; place-items:center; overflow:hidden;">
+                <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/growing/image-v3.webp" alt="growing 立绘" style="width:100%; height:100%; object-fit:contain;" />
+              </div>
+              <p class="tl-note"><b>growing</b> · 768² · 41,918B · 软边水彩、淡腮红、瘦高长腿</p>
+            </div>
+            <div>
+              <div style="aspect-ratio:1; border:1px solid var(--border); border-radius:10px; background:var(--surface-secondary); display:grid; place-items:center; overflow:hidden;">
+                <img src="https://faliyecwupijgmjbvzca.supabase.co/storage/v1/object/public/sharpbucket/pets/dog/mature/image.webp" alt="mature 立绘" style="width:100%; height:100%; object-fit:contain;" />
+              </div>
+              <p class="tl-note"><b>mature</b> · 368² · 20,194B · 粗黑描边平涂、吐舌、<b>黄披风 + 盾牌</b></p>
+            </div>
+          </div>
+          <div class="callout" style="margin-top:14px; border-color:color-mix(in srgb, var(--warning) 34%, var(--border)); border-left-color:var(--warning); background:#fff7e8;">
+            <b>必须直视的问题：现网 mature 不是「长大的同一只狗」</b>
+            <ul>
+              <li>它是一套<b>独立的卡通吉祥物</b>：黄色披风、胸口盾牌、吐舌笑脸、软垂耳、均匀粗黑描边、没有红项圈。</li>
+              <li>与 juvenile / growing 的<b>软边水彩、三角立耳、红项圈、上卷尾</b>没有任何共用特征——直接沿用会在 growing → mature 那一步「换狗 + 换画风」。</li>
+              <li>披风还会破坏走动帧：侧身迈步时披风必须有布料摆动，2 帧无法表现，只能硬穿帮。</li>
+              <li>结论同 07：<b>重绘</b>，不是把 368px 图放大，也不继承它的 0.880 宽高比。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">量化差异 <span>透明通道逐像素实测</span></div>
+        <div class="panel-body" style="padding:0;">
+          <table class="data">
+            <thead>
+              <tr><th style="width:26%">项</th><th style="width:26%">growing（已落地）</th><th style="width:26%">mature（现网）</th><th style="width:22%">差异</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>母版画布 / 体积</td><td>768² · 41,918B</td><td><b>368²</b> · 20,194B</td><td>分辨率仅一半</td></tr>
+              <tr><td>主体包围盒（实测）</td><td>417 × 651（768）</td><td><b>324 × 368</b>（368）</td><td>—</td></tr>
+              <tr><td>宽高比 w/h</td><td><code>0.641</code></td><td><code>0.880</code></td><td>现图<b>宽 37%</b>，但由披风和摊坐造成</td></tr>
+              <tr><td>最宽处位置</td><td>体高 77%（臀 + 尾）</td><td>体高 65%，278px（披风下摆）</td><td>现图宽度被披风主导</td></tr>
+              <tr><td>画布留白</td><td>四边 ≥ 58px（768）</td><td><b>顶/底 0px</b>，左右 22–23px</td><td>放大必裁耳尖/脚掌</td></tr>
+              <tr><td>动画画布</td><td>512（manifest v2）</td><td><b>400</b>，asset 声明 400 但图 368</td><td>当前是 8.7% 拉伸</td></tr>
+              <tr><td>动画数量</td><td>7（含侧身 idle / walk）</td><td><b>3</b>（idle / feed / evolve）</td><td>缺 happy / 侧身 / 走动</td></tr>
+              <tr><td>画风</td><td>软边水彩、细棕描边、淡腮红</td><td>平涂、粗黑描边、无腮红</td><td><b>需统一</b></td></tr>
+              <tr><td>身份符号</td><td>红项圈、三角立耳、上卷尾</td><td>黄披风、盾牌、软垂耳、吐舌</td><td><b>需统一</b></td></tr>
+            </tbody>
+          </table>
+          <p class="note" style="margin:10px 14px 14px;">
+            表格里的 <code>0.880</code> 是真实测出来的，但<b>不能当 mature 的比例锚点</b>：它是「披风撑宽 + 后腿外摊」的结果，不代表成年柴犬的骨架。
+            重绘时按下方目标值 0.68 ± 0.03 执行，<b>不允许横向拉伸凑数</b>（与 07 同一红线）。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">mature 与 growing 的造型差异 <span>同一只狗，第三个形态</span></div>
+      <div class="panel-body" style="padding:0;">
+        <table class="data">
+          <thead>
+            <tr><th style="width:16%">项</th><th style="width:28%">growing（青春期）</th><th style="width:28%">mature（成年 · 目标）</th><th style="width:28%">依据</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><b>体型</b></td><td>瘦高、胸深开始发育，主体宽 272（0.627）</td><td>骨架定型、<b>肩胸加宽</b>，主体宽 <b>295 ± 13</b>（<b>0.68 ± 0.03</b>）</td><td>成年犬横向体量比青春期大 6–10%，但不回到幼犬的圆润</td></tr>
+            <tr><td><b>腿长</b></td><td>腿长 / 体高 ≈ 34%（目测 ±5pp）</td><td>≈ 37%，<b>不再变长</b>，只加粗小腿</td><td>骨骼闭合后腿长定型，变化转移到肌肉量</td></tr>
+            <tr><td><b>头身比</b></td><td>≈ 1 : 2.4，吻部偏短</td><td>≈ <b>1 : 2.6</b>，吻部略方、下颌线更硬</td><td>成年头骨比例稳定，头不再相对变大</td></tr>
+            <tr><td><b>尾巴</b></td><td>上卷贴臀、尾量中等</td><td>尾根更高、<b>卷得更满</b>，尾毛蓬松成一个闭环</td><td>柴犬成年标志性卷尾，且不增加额外宽度（收在臀上）</td></tr>
+            <tr><td><b>项圈</b></td><td>正红单圈，宽 14px @512</td><td>同色同款，宽 <b>16px @512</b>，<b>必须可见</b></td><td>颈围变大；项圈是三阶段唯一的强连续符号</td></tr>
+            <tr><td><b>腮红</b></td><td>幼犬的 50%（已降淡）</td><td>建议 <b>30–35%</b>，保留一点暖调</td><td>成年犬的幼态特征应继续退，见下方「拍板点 3」</td></tr>
+            <tr><td><b>道具</b></td><td>无</td><td><b>无披风、无盾牌</b>（建议）</td><td>披风在 2 帧走动里无法正确摆动，且不属于三阶段共用身份</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">「同一只狗长大」要锁死的特征 <span>第三段，只允许体型变化</span></div>
+      <div class="panel-body" style="padding:0;">
+        <table class="data">
+          <thead>
+            <tr><th style="width:16%">特征</th><th style="width:44%">锁死值</th><th style="width:40%">允许的变化</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><b>毛色</b></td><td>与 juvenile / growing 同一色板：主体橘棕、口吻/胸/腹/眉点奶油白（ΔE ≤ 3）</td><td>白色面积略收，不加新色</td></tr>
+            <tr><td><b>项圈</b></td><td>正红、单圈、宽 16px @512、不被毛发切断</td><td>可加一枚小吊牌，直径 ≤ 16px</td></tr>
+            <tr><td><b>描边</b></td><td>软边水彩 + 细暖棕轮廓，≤ 体高 0.5%（约 2px @512）</td><td>全图统一，不出现粗细抖动</td></tr>
+            <tr><td><b>耳朵</b></td><td>三角立耳、内耳粉、耳根间距 ≈ 头宽 0.42</td><td>成年耳相对略小，不软垂</td></tr>
+            <tr><td><b>尾巴</b></td><td>上卷贴臀、尾尖浅色、毛量蓬松</td><td>卷幅更满、尾根更高</td></tr>
+            <tr><td><b>眼睛 / 腮红</b></td><td>圆眼、左上高光；腮红保留但再淡一档</td><td>不加吐舌、不加道具</td></tr>
+          </tbody>
+        </table>
+        <div class="panel-body" style="border-top:1px solid var(--border-light);">
+          <p class="note" style="margin:0 0 8px;">正向骨架（与 07 同源，只替换成年体型句）：</p>
+          <pre style="margin:0; padding:12px 14px; border-radius:8px; background:var(--surface-secondary); border:1px solid var(--border); overflow-x:auto; font-family:var(--mono); font-size:11.5px; line-height:1.7; white-space:pre-wrap;">same character sheet, adult shiba inu, full body, soft watercolor cel shading,
+thin warm-brown silhouette line, warm orange and cream palette, red collar,
+simple clean shapes, transparent background, no shadow, no ground
+体型句（按动作替换）：
+  front  sitting upright, broad shoulders, head-to-body ratio 1 : 2.6
+  side   strict side profile facing left, standing on four legs, tail curled tight
+  walk-a strict side profile facing left, walking, front leg lifted forward
+  walk-b strict side profile facing left, walking, rear leg lifted</pre>
+          <p class="note" style="margin:10px 0 0;">负向固定：<code>cape, shield badge, tongue out, floppy ears, thick black outline, flat vector style, puppy proportions, oversized head, heavy blush, gradient shading, extra legs, extra tail, text, watermark, background, shadow, 3/4 view, cropped ears, cropped paws</code></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">素材清单 <span>根路径 <code style="font-family:var(--mono)">sharpbucket/pets/dog/mature/</code></span></div>
+      <div class="panel-body" style="padding:0;">
+        <table class="data is-fixed">
+          <thead>
+            <tr><th style="width:5%">#</th><th style="width:25%">文件</th><th style="width:18%">尺寸 / 格式</th><th style="width:14%">新建 / 复用</th><th style="width:38%">说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td><code>image-v3.webp</code></td><td>768×768 · 透明 WebP</td><td><span class="tag is-todo">新出</span></td><td>1:1 立绘，主体高 651、四边留白 ≈58px；目标 ≤50KB；领养页/进化路线共用</td></tr>
+            <tr><td>2</td><td><code>motion/front-v2.webp</code></td><td>512×512 · 透明</td><td><span class="tag is-todo">新出</span></td><td>主体高 434、主体宽 295 ±13、ground y 470、中心 x 256；≤40KB</td></tr>
+            <tr><td>3</td><td><code>motion/side-v2.webp</code></td><td>512×512 · 朝左</td><td><span class="tag is-todo">新出</span></td><td>侧身站立；项圈中心 x 以重绘实测为准（基线 208，允许 205–215，见锚点表）</td></tr>
+            <tr><td>4</td><td><code>motion/walk-a-v2.webp</code></td><td>512×512 · 朝左</td><td><span class="tag is-todo">新出</span></td><td>迈步 A（前腿前抬，小步幅）</td></tr>
+            <tr><td>5</td><td><code>motion/walk-b-v2.webp</code></td><td>512×512 · 朝左</td><td><span class="tag is-todo">新出</span></td><td>迈步 B（后腿轻抬）；三帧主体宽度差 ≤5%</td></tr>
+            <tr><td>6</td><td><code>motion/idle-v2.json</code></td><td>512 画布 · 90f/30fps</td><td><span class="tag is-ok">整段复用时间轴</span></td><td>照抄 growing 的 94→100→94，只换 asset 与 <code>p</code>（256,256）</td></tr>
+            <tr><td>7</td><td><code>motion/side-idle-v2.json</code></td><td>512 画布 · 90f/30fps</td><td><span class="tag is-ok">整段复用时间轴</span></td><td>换 asset 为 <code>side-v2.webp</code>，坐标同上</td></tr>
+            <tr><td>8</td><td><code>motion/walk-v2.json</code></td><td>512 画布 · 24f/24fps</td><td><span class="tag is-ok">整段复用</span></td><td>三图轮播 + 2px 起伏，与角色无关；只改 asset 引用</td></tr>
+            <tr><td>9</td><td><code>motion/happy-v2.json</code></td><td>512 画布 · 24f/24fps</td><td><span class="tag is-new">新建（复用时间轴）</span></td><td>mature 现在没有 happy；照抄 growing 的下压/上跳/回弹，只换 asset</td></tr>
+            <tr><td>10</td><td><code>motion/feed-v2.json</code></td><td>512 画布 · 45f/30fps</td><td><span class="tag is-ok">整段复用时间轴</span></td><td>照抄 growing 的 256→233→256，只换 asset</td></tr>
+            <tr><td>11</td><td><code>motion/evolve-v2.json</code></td><td>512 画布 · 60f/30fps</td><td><span class="tag is-new">改参数</span></td><td>时间轴照抄；光环椭圆按 mature 主体宽重算（≈ 295 / 272 × 251.7 ≈ 273）</td></tr>
+            <tr><td>12</td><td><code>motion/manifest-v2.json</code></td><td>JSON · version 2</td><td><span class="tag is-todo">新出</span></td><td><code>size:512</code>、<code>facing:"left"</code>、<code>walkSpeed:72</code>、front/side 两组 actions</td></tr>
+            <tr><td>13</td><td><code>motion/legacy-image-368.webp</code></td><td>368×368</td><td><span class="tag is-ok">复制即可</span></td><td>现网立绘备份，仅回滚用，页面不引用</td></tr>
+          </tbody>
+        </table>
+        <p class="note" style="margin:10px 14px 14px;">
+          命名一律带 <code>-v2</code>，<b>不覆盖</b> <code>idle.json</code> / <code>feed.json</code> / <code>evolve.json</code> / <code>image.webp</code>。
+          mature 与 growing 的动画时间轴完全同构，<b>唯一变量是 asset 与坐标</b>，所以 6–10 项都不需要重新设计动效。
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:18px; align-items:start;">
+      <div class="panel">
+        <div class="panel-head">锚点对照 <span>512 画布坐标</span></div>
+        <div class="panel-body" style="padding:0;">
+          <table class="data">
+            <thead><tr><th style="width:30%">项</th><th style="width:26%">growing（实测）</th><th style="width:26%">mature（目标）</th><th style="width:18%">是否变化</th></tr></thead>
+            <tbody>
+              <tr><td>逻辑画布</td><td>512 × 512</td><td>512 × 512</td><td>不变</td></tr>
+              <tr><td>ground y</td><td>470</td><td>470</td><td>不变</td></tr>
+              <tr><td>正面中心 x</td><td>256</td><td>256</td><td>不变</td></tr>
+              <tr><td>侧身项圈中心 x</td><td><b>208</b>（实测）</td><td><b>205 – 215</b>，以重绘实测为准</td><td>不写死 196</td></tr>
+              <tr><td>主体高</td><td>434</td><td>434</td><td>不变，保证进化瞬间等高</td></tr>
+              <tr><td>主体宽</td><td>272（0.639）</td><td><b>295 ± 13</b>（0.68 ± 0.03）</td><td>+8.5%（肩胸变宽）</td></tr>
+              <tr><td>主体框左 → 右</td><td>120 → 392</td><td>108 → 404</td><td>左右余量 24 → 12</td></tr>
+              <tr><td>四周安全边</td><td>24px</td><td>24px</td><td>不变</td></tr>
+              <tr><td>项圈 → 地面</td><td>256 / 225 / 231</td><td>235 – 265（预估）</td><td>腿长微增</td></tr>
+              <tr><td>768 母版主体</td><td>417 × 651</td><td>约 443 × 651</td><td>等比</td></tr>
+              <tr><td>单帧 / 母版体积</td><td>≤40KB / 41,918B</td><td>≤40KB / ≤50KB</td><td>不变</td></tr>
+            </tbody>
+          </table>
+          <p class="note" style="margin:10px 14px 14px;">
+            <b>项圈 x 为什么不是 196：</b>07 出图时实测，成犬鼻尖到项圈占侧身宽度的 <b>48%</b>；若把项圈钉在 196，站立帧左侧只剩 24px 安全边，迈步 A 的鼻尖会直接出界 6px。growing 最终取实测值 <b>208</b>。
+            mature 的胸更宽、吻部更方，这个比例预计再涨 1–2 个百分点，所以写成 <b>205–215 区间 + 三帧统一</b>，<b>由实测定值，不预先写死</b>。
+            项圈 x 只影响三帧之间的横向对齐，不影响舞台定位，因此允许跨阶段取不同值。
+          </p>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="panel">
+          <div class="panel-head">验收清单 <span>逐条可判定</span></div>
+          <div class="panel-body">
+            <ul class="rule-list">
+              <li>1. 进化瞬间：growing → mature，主体高度差 ≤ 2px，脚底线不跳动。</li>
+              <li>2. 走动只在卡片舞台内，左右停止区各 12%，出界即转向。</li>
+              <li>3. 侧身朝左与 <code>facing:"left"</code> 一致；朝右时镜像且项圈不出现反字。</li>
+              <li>4. feed / evolve / happy 能立刻打断走动，播完回到正面 idle。</li>
+              <li>5. 三帧主体宽度差 ≤5%、项圈→地面差 ≤4%，逐帧看不出「换身体」。</li>
+              <li>6. 768 立绘 ≤50KB、四帧 512 ≤40KB、JSON 合计 ≤20KB。</li>
+              <li>7. 256px 盲测：growing 与 mature 并排，3 秒内判断「同一只狗更壮了」。</li>
+              <li>8. <b>红项圈在正面与侧身都可见</b>；行走三帧不出现披风、盾牌、吐舌。</li>
+              <li>9. <code>prefers-reduced-motion</code> 下只显示静态图，无位移、无抖动。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">回滚 <span>只改配置，不动代码</span></div>
+          <div class="panel-body">
+            <ul class="rule-list">
+              <li><b>回到只有呼吸</b>：清空 <code>motionManifestUrl</code>，回落单动画分支（idle.json）。</li>
+              <li><b>立绘回旧图</b>：<code>imageUrl</code> 改回 <code>.../mature/image.webp</code>（368²，20,194B）。</li>
+              <li><b>侧身回空</b>：<code>sideImageUrl</code> 清空，不影响正面 idle。</li>
+              <li><b>素材回滚</b>：旧立绘备份 <code>motion/legacy-image-368.webp</code>；<code>idle/feed/evolve.json</code> 全程不覆盖。</li>
+              <li><b>不碰</b>：<code>dog/juvenile</code>、<code>dog/growing</code> 已上线的六个地址，其余阶段，以及数据库 schema。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">本轮范围红线 <span>评审时逐条核对</span></div>
+      <div class="panel-body">
+        <ul class="rule-list">
+          <li>只出<b>设计稿</b>：不生成图片、不写 JSON、不上传 Storage、不改 Admin、不改数据库、不改 <code>apps/web</code>。</li>
+          <li>只规划 <code>dog / mature</code>：不动 juvenile / growing 的已上线素材与 DB 行，不动其他宠物。</li>
+          <li>不新增协议：继续 manifest v2，不引入骨骼动画、序列帧、视频、雪碧图。</li>
+          <li>不做转身帧、眨眼图层、sleep / hungry 动作。</li>
+          <li>不新建视觉语言：08 复用 01–07 的面板、表格、标签与配色。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:18px;">
+      <b>需要你拍板的点（三个）</b>
+      <ul>
+        <li><b>1. 披风与盾牌留不留？</b> 建议<b>不留</b>：披风没有布料动画，侧身迈步 2 帧必然穿帮；盾牌也不属于三阶段共用身份。若你希望保留「英雄感」，建议降级为<b>项圈上的小吊牌</b>（≤16px），不保留披风。</li>
+        <li><b>2. 成年宽高比定 0.68 ± 0.03（主体宽 295）行不行？</b> 现网的 0.880 是披风撑出来的，不能当锚点；0.68 比 growing 的 0.639 宽 8.5%，视觉上是「壮了一圈但没变圆」。</li>
+        <li><b>3. 腮红再降一档到幼犬的 30–35%？</b> 建议降：成年犬保留腮红会持续显得幼态，但完全去掉会丢掉软边水彩的家族感，留一点点暖调最稳。</li>
+        <li class="note" style="margin-top:8px;">其余按既定规格执行、无需再确认：512 画布、锚点 (256, 470)、正/侧双层、5–9s 随机走动、整条舞台、manifest v2、两端共用 <code>imageUrl</code>、rem 化舞台。</li>
       </ul>
     </div>
   </section>

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type {
@@ -426,9 +427,17 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = () => {
               ...(tab === p ? cardShadow(isDark) : null),
             }}
           >
-            <Text style={{ fontSize: 16 * font }}>
-              {p === 'quiz' ? '📋' : '🐾'}
-            </Text>
+            {p === 'quiz' ? (
+              <Text style={{ fontSize: 16 * font }}>
+                📋
+              </Text>
+            ) : (
+              <Ionicons
+                name="paw"
+                size={16 * font}
+                color={tab === p ? colors.text : colors.textSecondary}
+              />
+            )}
             <Text
               style={{
                 color: tab === p ? colors.text : colors.textSecondary,
