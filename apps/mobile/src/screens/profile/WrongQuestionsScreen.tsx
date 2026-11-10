@@ -263,11 +263,11 @@ const WrongQuestionsScreen: React.FC = () => {
         radius={radius}
         analysisLabel={t.analysis}
         difficultyLabel={t.difficultyLabel}
-        questionTypeLabel={item.type === 2 ? t.multipleChoice : t.singleChoice}
+        questionTypeLabel={item.type === 2 ? t.multipleChoice : item.type === 3 ? t.judgement : t.singleChoice}
         onToggle={toggleExpand}
       />
     ),
-    [expandedIds, colors, spacing, font, radius, t.analysis, t.difficultyLabel, t.singleChoice, t.multipleChoice, toggleExpand]
+    [expandedIds, colors, spacing, font, radius, t.analysis, t.difficultyLabel, t.singleChoice, t.multipleChoice, t.judgement, toggleExpand]
   );
 
   const contentContainerStyle = useMemo(

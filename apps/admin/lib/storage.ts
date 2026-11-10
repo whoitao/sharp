@@ -14,6 +14,13 @@ export const MAX_QUESTION_IMAGE_BYTES = 5 * 1024 * 1024;
 /** 教材封面单次上传上限 10MB */
 export const MAX_TEXTBOOK_COVER_BYTES = 10 * 1024 * 1024;
 
+/** 站点素材：logo 2MB / favicon 1MB / 分享图 5MB */
+export const MAX_SITE_LOGO_BYTES = 2 * 1024 * 1024;
+export const MAX_SITE_FAVICON_BYTES = 1 * 1024 * 1024;
+export const MAX_SITE_OG_BYTES = 5 * 1024 * 1024;
+
+export type SiteAssetKind = "logo" | "favicon" | "og";
+
 export type ImageContentType = "image/jpeg" | "image/png" | "image/webp";
 
 /** 存储配置缺失（环境变量未填） */
@@ -204,4 +211,26 @@ export async function uploadTextbookCover(
   const path = textbookCoverPath(contentType);
   await putObject(path, bytes, contentType);
   return { objectPath: path, url: textbookCoverPublicUrl(path) };
+}
+
+/** 站点素材：site/{logo|favicon|og}/{随机UUID}.{ext} */
+export function siteAssetPath(kind: SiteAssetKind, contentType: ImageContentType): string {
+  return `site/${kind}/${randomId()}.${CONTENT_TYPE_TO_EXT[contentType]}`;
+}
+
+/** 站点素材的完整 URL（DB 只存相对路径） */
+export function siteAssetPublicUrl(path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+}
+
+/** 上传站点素材，返回相对路径与完整 URL */
+export async function uploadSiteAsset(
+  bytes: Uint8Array,
+  contentType: ImageContentType,
+  kind: SiteAssetKind,
+): Promise<{ objectPath: string; url: string }> {
+  const path = siteAssetPath(kind, contentType);
+  await putObject(path, bytes, contentType);
+  return { objectPath: path, url: siteAssetPublicUrl(path) };
 }

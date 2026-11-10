@@ -1,12 +1,24 @@
 import { ArticleList } from "@/components/article-views";
 import { fetchArticles } from "@/lib/api";
+import { getRequestLocale } from "@/lib/i18n/get-request-locale";
+import { buildSiteMetadata, getSiteSettings, siteNameFor } from "@/lib/site-settings";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-export const metadata: Metadata = {
-  title: "新闻中心 | Sharp",
-  description: "Sharp 产品动态、学习指南与备考技巧",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [settings, locale] = await Promise.all([getSiteSettings(), getRequestLocale()]);
+  const siteName = siteNameFor(settings, locale);
+  return buildSiteMetadata({
+    settings,
+    locale,
+    path: "/articles",
+    title: locale === "zh" ? `新闻中心 | ${siteName}` : `News | ${siteName}`,
+    description:
+      locale === "zh"
+        ? `${siteName} 产品动态、学习指南与备考技巧`
+        : `${siteName} product updates, learning guides and exam tips`,
+  });
+}
 
 export default function ArticlesPage({
   searchParams,

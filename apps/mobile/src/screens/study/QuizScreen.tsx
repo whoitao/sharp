@@ -90,8 +90,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
   const currentQuestion = currentQuestions[currentIndex] ?? null;
   const totalQuestions = currentQuestions.length;
   const isLastQuestion = currentIndex >= totalQuestions - 1;
-  // QuestionType.MULTIPLE_CHOICE = 2
+  // QuestionType: 1=单选 2=多选 3=判断
   const isMultipleChoice = currentQuestion?.type === 2;
+  const isTrueFalse = currentQuestion?.type === 3;
   const isFavorited = currentQuestion
     ? favoriteOverrides[currentQuestion.id] ?? Boolean(currentQuestion.isFavorited)
     : false;
@@ -633,7 +634,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => {
           </View>
           <View style={styles.questionMetaRight}>
             <Text style={[styles.questionType, { color: colors.textTertiary, fontSize: 12 * font, marginRight: 8 * spacing }]}>
-              {isMultipleChoice ? t.multipleChoice : t.singleChoice}
+              {isMultipleChoice ? t.multipleChoice : isTrueFalse ? t.judgement : t.singleChoice}
             </Text>
             <TouchableOpacity
               onPress={handleToggleFavorite}

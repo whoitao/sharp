@@ -135,7 +135,13 @@ function ActiveNavMenu() {
   return <NavMenu pathname={pathname} />;
 }
 
-export function Navbar() {
+export function Navbar({
+  siteName = "Sharp",
+  logoUrl = null,
+}: {
+  siteName?: string;
+  logoUrl?: string | null;
+}) {
   const { locale, setLocale } = useLocale();
 
   return (
@@ -143,10 +149,15 @@ export function Navbar() {
       <div className="container mx-auto flex h-14 max-w-[1200px] items-center px-4">
         <div className="flex min-w-0 items-center md:mr-4">
           <Link href="/" className="mr-3 flex shrink-0 items-center space-x-2 md:mr-6">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-              S
-            </span>
-            <span className="hidden text-xl font-bold text-primary sm:inline">Sharp</span>
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={siteName} className="h-7 w-7 object-contain" />
+            ) : (
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
+                {siteName.slice(0, 1).toUpperCase() || "S"}
+              </span>
+            )}
+            <span className="hidden text-xl font-bold text-primary sm:inline">{siteName}</span>
           </Link>
           {/* 断点与答题页答题卡一致（lg）：答题卡并排时完整展示，换行后收进下拉 */}
           <div className="hidden lg:block">

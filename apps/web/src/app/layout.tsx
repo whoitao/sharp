@@ -3,16 +3,20 @@ import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { LocaleProvider } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n/get-request-locale";
+import { buildSiteMetadata, getSiteSettings, siteNameFor } from "@/lib/site-settings";
 import { StudyScopeProvider } from "@/lib/study-scope";
 import { ThemeProvider } from "@/lib/theme";
 import { themeInitScript } from "@/lib/theme-init";
 import type { Metadata } from "next";
+import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Sharp - Modern Learning Platform",
-  description: "A modern quiz and vocabulary learning platform built with Next.js and React Native",
-};
+/** metadata 依赖站点设置与请求语言，按请求生成（项目已关闭 static shell） */
+export async function generateMetadata(): Promise<Metadata> {
+  const [settings, locale] = await Promise.all([getSiteSettings(), getRequestLocale()]);
+  return buildSiteMetadata({ settings, locale });
+}
 
 /**
  * 首屏语言依赖请求 Cookie，属于运行时数据。
@@ -27,8 +31,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // 首屏语言在服务端确定：优先用户选择（Cookie），其次浏览器 Accept-Language
-  const locale = await getRequestLocale();
+  const [locale, settings] = await Promise.all([getRequestLocale(), getSiteSettings()]);
   const htmlLang = locale === "zh" ? "zh-CN" : "en";
+  const siteName = siteNameFor(settings, locale);
+  // 「仅生产环境生效」开启时，开发环境不注入统计脚本
+  const gaEnabled =
+    !!settings.gaMeasurementId &&
+    (!settings.analyticsProductionOnly || process.env.NODE_ENV === "production");
+  const gaId = JSON.stringify(settings.gaMeasurementId ?? "");
 
   return (
     <html lang={htmlLang} suppressHydrationWarning>
@@ -36,21 +46,42 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
+        {gaEnabled && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${settings.gaMeasurementId}`}
+              strategy="afterInteractive"
+            />
+            <Script
+              id="ga-init"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', ${gaId});`,
+              }}
+            />
+          </>
+        )}
         <ClientStoreProvider>
           <ThemeProvider>
             <LocaleProvider initialLocale={locale}>
               <StudyScopeProvider>
                 <div className="flex min-h-screen flex-col">
-                  <Navbar />
+                  <Navbar siteName={siteName} logoUrl={settings.logoUrl} />
                   <main className="container mx-auto w-full max-w-[1200px] flex-1 px-4">
                     {children}
                   </main>
-                  <Footer />
+                  <Footer
+                    siteName={siteName}
+                    siteUrl={settings.siteUrl}
+                    icpNumber={settings.icpNumber}
+                  />
                 </div>
               </StudyScopeProvider>
             </LocaleProvider>
           </ThemeProvider>
         </ClientStoreProvider>
+        {/* Vercel Web Analytics：仅生产环境上报，与站点「仅生产环境生效」开关语义一致 */}
+        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
   );

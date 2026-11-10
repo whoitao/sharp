@@ -52,6 +52,7 @@ const PERMISSION_LABEL_KEYS: Record<PermissionResource, MessageKey> = {
   users: "permissions.users",
   admins: "permissions.admins",
   roles: "permissions.roles",
+  settings: "permissions.settings",
 };
 
 export default function RolesPanel() {

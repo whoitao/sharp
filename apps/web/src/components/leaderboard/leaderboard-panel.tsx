@@ -296,7 +296,7 @@ export function LeaderboardPanel() {
     p === "week" ? t("leaderboard.week") : p === "month" ? t("leaderboard.month") : t("leaderboard.allTime");
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pb-10 pt-0">
+    <div className="mx-auto max-w-5xl px-4 pb-10 pt-0 md:px-0">
       {/* Tab toggle */}
       <div className="mb-4 inline-flex rounded-xl bg-surface-secondary p-1">
         <button

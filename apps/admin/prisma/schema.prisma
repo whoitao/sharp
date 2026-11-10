@@ -696,3 +696,41 @@ model PetConfig {
   updatedAt              DateTime @updatedAt
   updatedBy              String?
 }
+
+// 单行站点设置：id 固定为 default，后台读写，Web 通过公开只读接口获取
+model SiteSetting {
+  id                      String   @id @default("default")
+  siteNameZh              String   @default("Sharp")
+  siteNameEn              String   @default("Sharp")
+  sloganZh                String?
+  sloganEn                String?
+  // 品牌素材：Supabase Storage 相对路径，null 时 Web 回落到内置默认值
+  logoPath                String?
+  faviconPath             String?
+  ogImagePath             String?
+  // SEO
+  siteUrl                 String?
+  seoTitleZh              String?
+  seoTitleEn              String?
+  seoDescriptionZh        String?
+  seoDescriptionEn        String?
+  // 统计与合规
+  gaMeasurementId         String?
+  analyticsProductionOnly Boolean  @default(true)
+  icpNumber               String?
+  updatedAt               DateTime @updatedAt
+  updatedBy               String?
+  revisions               SiteSettingRevision[]
+}
+
+// 站点设置变更审计：每次保存/回滚写一条整行快照，保留最近 20 条
+model SiteSettingRevision {
+  id        BigInt      @id @default(autoincrement())
+  snapshot  Json
+  changedBy String?
+  createdAt DateTime    @default(now())
+  settingId String
+  setting   SiteSetting @relation(fields: [settingId], references: [id], onDelete: Cascade)
+
+  @@index([settingId, createdAt])
+}

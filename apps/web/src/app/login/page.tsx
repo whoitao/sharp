@@ -1,11 +1,23 @@
 import { AuthPanel } from "@/components/auth/auth-panel";
+import { getRequestLocale } from "@/lib/i18n/get-request-locale";
+import { buildSiteMetadata, getSiteSettings, siteNameFor } from "@/lib/site-settings";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-export const metadata: Metadata = {
-  title: "学员登录 · Sharp",
-  description: "登录或注册 Sharp 学员账号，在 Web 上继续学习。",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [settings, locale] = await Promise.all([getSiteSettings(), getRequestLocale()]);
+  const siteName = siteNameFor(settings, locale);
+  return buildSiteMetadata({
+    settings,
+    locale,
+    path: "/login",
+    title: locale === "zh" ? `学员登录 · ${siteName}` : `Sign in · ${siteName}`,
+    description:
+      locale === "zh"
+        ? `登录或注册 ${siteName} 学员账号，在 Web 上继续学习。`
+        : `Sign in or create a ${siteName} account to continue learning on the web.`,
+  });
+}
 
 function AuthFallback() {
   return (

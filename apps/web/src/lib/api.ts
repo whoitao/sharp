@@ -1,7 +1,7 @@
 /** 文章前端接口（公开），Web 端服务端渲染时直接请求后台 API */
 
 // 与 BFF 共用同一套配置（ADMIN_API_BASE 优先），生产环境硬编码兜底
-const API_BASE = (
+export const API_BASE = (
   process.env.ADMIN_API_BASE ??
   process.env.NEXT_PUBLIC_API_BASE ??
   "https://admin.sharp.whoitao.top/"

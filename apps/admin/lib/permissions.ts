@@ -1,4 +1,4 @@
-// 后台权限模型：13 个模块 × read/write，共 26 项。
+// 后台权限模型：14 个模块 × read/write，共 28 项。
 // 数据库只存「角色 → 权限」的分配，权限清单一律以本文件为准，避免两边漂移。
 
 export type PermissionAction = "read" | "write";
@@ -15,7 +15,8 @@ export type PermissionResource =
   | "grades"
   | "articles"
   | "pets"
-  | "study-records";
+  | "study-records"
+  | "settings";
 
 export type Permission = `${PermissionResource}:${PermissionAction}`;
 
@@ -43,6 +44,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   { key: "users", label: "学员管理", writable: true },
   { key: "admins", label: "管理员管理", writable: true },
   { key: "roles", label: "角色权限", writable: true },
+  { key: "settings", label: "站点设置", writable: true },
 ];
 
 /** 全部权限键（不含通配符） */
@@ -158,4 +160,5 @@ export const NAV_PERMISSIONS: Record<string, Permission[]> = {
   "/grades": ["grades:read"],
   "/articles": ["articles:read"],
   "/pets": ["pets:read"],
+  "/site-settings": ["settings:read"],
 };

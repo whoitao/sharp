@@ -47,6 +47,7 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.gradeManagement" },
   { key: "/articles", icon: <ReadOutlined />, labelKey: "nav.articles" },
   { key: "/pets", icon: <HeartOutlined />, labelKey: "nav.petManagement" },
+  { key: "/site-settings", icon: <SettingOutlined />, labelKey: "nav.siteSettings" },
 ];
 
 const THEME_OPTIONS: { value: ThemeMode; labelKey: MessageKey; icon: React.ReactNode }[] = [

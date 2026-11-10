@@ -1,7 +1,9 @@
 import { CategoryNav } from "@/components/article-views";
 import { fetchArticleDetail, fetchArticles } from "@/lib/api";
 import { formatArticleDate } from "@/lib/article-format";
+import { getRequestLocale } from "@/lib/i18n/get-request-locale";
 import { sanitizeHtml } from "@/lib/sanitize";
+import { getSiteSettings, siteNameFor } from "@/lib/site-settings";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -25,8 +27,16 @@ export default function ArticleDetailPage({ params }: PageProps) {
 
 async function ArticleDetail({ params }: PageProps) {
   const { id } = await params;
-  const [article, articles] = await Promise.all([fetchArticleDetail(id), fetchArticles()]);
+  const [article, articles, settings, locale] = await Promise.all([
+    fetchArticleDetail(id),
+    fetchArticles(),
+    getSiteSettings(),
+    getRequestLocale(),
+  ]);
   if (!article) notFound();
+
+  const siteName = siteNameFor(settings, locale);
+  const canonical = new URL(`/articles/${id}`, settings.siteUrl).toString();
 
   const categories = Array.from(
     new Set(articles.map((item) => item.categoryName).filter(Boolean)),
@@ -34,8 +44,9 @@ async function ArticleDetail({ params }: PageProps) {
 
   return (
     <div className="py-8 md:py-12">
-      <title>{`${article.title} | Sharp`}</title>
+      <title>{`${article.title} | ${siteName}`}</title>
       {article.summary ? <meta name="description" content={article.summary} /> : null}
+      <link rel="canonical" href={canonical} />
 
       <div className="grid gap-8 lg:grid-cols-[180px_1fr] lg:items-start lg:gap-6">
         <aside className="lg:sticky lg:top-24">
