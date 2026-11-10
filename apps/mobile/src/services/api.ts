@@ -996,9 +996,9 @@ export const api = {
     return response.data;
   },
 
-  async getPetLeaderboard(): Promise<PetLeaderboardResponse> {
+  async getPetLeaderboard(period: LeaderboardPeriod = 'week'): Promise<PetLeaderboardResponse> {
     const response = await apiClient.get<PetLeaderboardResponse>('/api/app/leaderboard', {
-      params: { type: 'pet' },
+      params: { type: 'pet', period },
     });
     return response.data;
   },

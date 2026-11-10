@@ -368,11 +368,15 @@ export const zh = {
   lbFullRanking: '完整排名',
   lbQuestions: (num: number) => `${formatCount(num)} 题`,
   lbExp: (num: number) => `${formatCount(num)} 经验`,
+  lbQuestionsUnit: '题',
+  lbExpUnit: '经验',
   lbAccuracy: (num: number) => `正确率 ${num}%`,
+  lbAccuracyLabel: '正确率',
   lbLevel: (num: number) => `Lv.${num}`,
   lbMyRank: '我的排名',
-  lbGapToNext: (num: number) => `距上一名还差 ${formatCount(num)} 题`,
-  lbGapToNextPet: (num: number) => `距上一名还差 ${formatCount(num)} 经验`,
+  lbGapToNext: (num: number, rank: number) => `再答 ${formatCount(num)} 题`,
+  lbGapToNextRank: (rank: number) => `超越第 ${rank} 名`,
+  lbGapToNextPet: (num: number, rank: number) => `再获 ${formatCount(num)} 经验`,
 };
 
 export type TranslationKeys = typeof zh;

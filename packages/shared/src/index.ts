@@ -559,6 +559,7 @@ export interface PetLeaderboardEntry {
   avatar: string | null;
   petName: string | null;
   petSpecies: string | null;
+  petImageUrl: string | null;
   petLevel: number;
   petExp: number;
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAppUser } from "@/lib/middleware";
 import { avatarPublicUrl } from "@/lib/storage";
+import { stageOf } from "@/lib/pet";
 
 type Period = "week" | "month" | "all";
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
   const period = parsePeriod(searchParams.get("period"));
 
   if (type === "pet") {
-    return getPetLeaderboard(appUser.id);
+    return getPetLeaderboard(appUser.id, period);
   }
   return getQuizLeaderboard(appUser.id, period);
 }
@@ -102,58 +103,75 @@ async function getQuizLeaderboard(
   return NextResponse.json({ entries, currentUser, nextRankGap });
 }
 
-async function getPetLeaderboard(userId: string): Promise<NextResponse> {
-  // Get all UserPet records with their Pet and Species, ordered by experience desc
+async function getPetLeaderboard(
+  userId: string,
+  period: Period,
+): Promise<NextResponse> {
+  const since = sinceDate(period);
+
+  // Rank by EXP gained over the window; "all" sums every day == cumulative Pet.experience
+  const where = since ? { dateKey: { gte: since } } : {};
+  const stats = await prisma.petDailyStat.groupBy({
+    by: ["userId"],
+    where,
+    _sum: { expGained: true },
+    having: { expGained: { _sum: { gt: 0 } } },
+    orderBy: { _sum: { expGained: "desc" } },
+    take: 100,
+  });
+
+  if (stats.length === 0) {
+    return NextResponse.json({ entries: [], currentUser: null, nextRankGap: null });
+  }
+
+  // Join each ranked user's primary pet for identity, level and stage image
+  const userIds = stats.map((s) => s.userId);
   const userPets = await prisma.userPet.findMany({
-    where: { isPrimary: true },
+    where: { userId: { in: userIds }, isPrimary: true },
     include: {
       pet: {
         include: {
-          species: { select: { name: true, icon: true } },
+          species: { select: { name: true, icon: true, stages: true } },
         },
       },
       user: { select: { id: true, nickname: true, avatar: true } },
     },
-    orderBy: { pet: { experience: "desc" } },
-    take: 100,
   });
+  const petMap = new Map(userPets.map((up) => [up.user.id, up]));
 
-  if (userPets.length === 0) {
-    return NextResponse.json({ entries: [], currentUser: null, nextRankGap: null });
-  }
-
-  const entries = userPets.map((up, i) => ({
-    rank: i + 1,
+  const buildEntry = (
+    up: (typeof userPets)[number],
+    rank: number,
+    exp: number,
+  ) => ({
+    rank,
     userId: up.user.id,
     nickname: up.user.nickname ?? null,
     avatar: up.user.avatar ? avatarPublicUrl(up.user.avatar) : null,
     petName: up.pet.nickname,
     petSpecies: up.pet.species.icon ?? up.pet.species.name,
+    petImageUrl: stageOf(up.pet.level, up.pet.species.stages)?.imageUrl ?? null,
     petLevel: up.pet.level,
-    petExp: up.pet.experience,
-  }));
+    petExp: exp,
+  });
+
+  const ranked = stats
+    .map((s) => ({ up: petMap.get(s.userId), exp: s._sum.expGained ?? 0 }))
+    .filter((r): r is { up: (typeof userPets)[number]; exp: number } => r.up !== undefined);
+
+  const entries = ranked.map((r, i) => buildEntry(r.up, i + 1, r.exp));
 
   // Find current user
-  const currentIdx = userPets.findIndex((up) => up.user.id === userId);
+  const currentIdx = ranked.findIndex((r) => r.up.user.id === userId);
   let currentUser = null;
   let nextRankGap = null;
 
   if (currentIdx >= 0) {
-    const up = userPets[currentIdx];
-    currentUser = {
-      rank: currentIdx + 1,
-      userId: up.user.id,
-      nickname: up.user.nickname ?? null,
-      avatar: up.user.avatar ? avatarPublicUrl(up.user.avatar) : null,
-      petName: up.pet.nickname,
-      petSpecies: up.pet.species.icon ?? up.pet.species.name,
-      petLevel: up.pet.level,
-      petExp: up.pet.experience,
-    };
+    const { up, exp } = ranked[currentIdx];
+    currentUser = buildEntry(up, currentIdx + 1, exp);
 
     if (currentIdx > 0) {
-      const above = userPets[currentIdx - 1];
-      nextRankGap = above.pet.experience - up.pet.experience;
+      nextRankGap = ranked[currentIdx - 1].exp - exp;
     }
   }
 

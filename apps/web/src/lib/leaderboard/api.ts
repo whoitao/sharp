@@ -17,6 +17,7 @@ export interface PetLeaderboardEntry {
   avatar: string | null;
   petName: string | null;
   petSpecies: string | null;
+  petImageUrl: string | null;
   petLevel: number;
   petExp: number;
 }
@@ -54,6 +55,6 @@ export function getQuizLeaderboard(period: LeaderboardPeriod = "week"): Promise<
   return request<QuizLeaderboardResponse>(`/leaderboard?type=quiz&period=${period}`);
 }
 
-export function getPetLeaderboard(): Promise<PetLeaderboardResponse> {
-  return request<PetLeaderboardResponse>("/leaderboard?type=pet");
+export function getPetLeaderboard(period: LeaderboardPeriod = "week"): Promise<PetLeaderboardResponse> {
+  return request<PetLeaderboardResponse>(`/leaderboard?type=pet&period=${period}`);
 }

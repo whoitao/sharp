@@ -34,18 +34,70 @@ type Tab = 'quiz' | 'pet';
 
 const PERIODS: LeaderboardPeriod[] = ['week', 'month', 'all'];
 
+const RING_COLORS = ['#F59E0B', '#94A3B8', '#D97706'];
+const RANK_LABELS = ['1ST', '2ND', '3RD'];
+
 function AvatarCircle({
   src,
   name,
   size,
+  ringColor,
+  emoji,
+  imageUri,
 }: {
   src: string | null;
   name: string | null;
   size: number;
+  ringColor?: string;
+  emoji?: string | null;
+  imageUri?: string | null;
 }) {
   const { colors } = useTheme();
-  const { font } = useDensity();
   const initials = (name ?? '?').slice(0, 1);
+  const inset = ringColor ? 6 : 2;
+
+  if (imageUri) {
+    return (
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: colors.surface,
+          borderWidth: ringColor ? 3 : 1,
+          borderColor: ringColor ?? colors.border,
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        <Image
+          source={{ uri: imageUri }}
+          style={{ width: size - inset, height: size - inset }}
+          contentFit="contain"
+        />
+      </View>
+    );
+  }
+
+  if (emoji) {
+    return (
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: colors.surface,
+          borderWidth: ringColor ? 3 : 1,
+          borderColor: ringColor ?? colors.border,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ fontSize: size * 0.5 }}>{emoji}</Text>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -54,15 +106,15 @@ function AvatarCircle({
         height: size,
         borderRadius: size / 2,
         backgroundColor: colors.surfaceSecondary,
-        borderWidth: 1,
-        borderColor: colors.border,
+        borderWidth: ringColor ? 3 : 1,
+        borderColor: ringColor ?? colors.border,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
       }}
     >
       {src ? (
-        <Image source={src} style={{ width: size, height: size }} contentFit="cover" />
+        <Image source={src} style={{ width: size - inset, height: size - inset, borderRadius: (size - inset) / 2 }} contentFit="cover" />
       ) : (
         <Text style={{ color: colors.textSecondary, fontSize: size * 0.45, fontWeight: '500' }}>
           {initials}
@@ -87,37 +139,124 @@ function PodiumSpot({
   const isQuiz = type === 'quiz';
   const quizEntry = isQuiz ? (entry as QuizLeaderboardEntry) : null;
   const petEntry = !isQuiz ? (entry as PetLeaderboardEntry) : null;
+  const idx = displayRank - 1;
 
   const value = isQuiz ? quizEntry!.totalQuestions : petEntry!.petExp;
-  const unit = isQuiz ? t.lbQuestions(value) : t.lbExp(value);
+  const unit = isQuiz ? t.lbQuestionsUnit : t.lbExpUnit;
 
   return (
-    <View style={{ flex: 1, alignItems: 'center' }}>
+    <View style={{ alignItems: 'center' }}>
       <Text
         style={{
-          color: colors.text,
-          fontSize: 18 * font,
+          color: RING_COLORS[idx],
+          fontSize: 12 * font,
           fontWeight: '700',
-          marginBottom: 2 * spacing,
+          letterSpacing: 1,
+          marginBottom: 6 * spacing,
         }}
       >
-        {formatCount(value)}{' '}
-        <Text style={{ fontSize: 13 * font, fontWeight: '500', color: colors.textSecondary }}>
-          {unit}
-        </Text>
+        {RANK_LABELS[idx]}
       </Text>
-      <AvatarCircle src={entry.avatar} name={entry.nickname} size={40 * spacing} />
+      <AvatarCircle
+        src={isQuiz ? entry.avatar : null}
+        name={entry.nickname}
+        size={displayRank === 1 ? 64 * spacing : 56 * spacing}
+        ringColor={RING_COLORS[idx]}
+        emoji={isQuiz ? null : petEntry!.petSpecies}
+        imageUri={isQuiz ? null : petEntry!.petImageUrl}
+      />
       <Text
         style={{
           color: colors.text,
           fontSize: 13 * font,
           fontWeight: '500',
-          marginTop: 4 * spacing,
+          marginTop: 6 * spacing,
         }}
         numberOfLines={1}
       >
         {entry.nickname ?? '—'}
       </Text>
+      <Text
+        style={{
+          color: colors.text,
+          fontSize: 16 * font,
+          fontWeight: '700',
+          marginTop: 2 * spacing,
+        }}
+      >
+        {formatCount(value)}{' '}
+        <Text style={{ fontSize: 12 * font, fontWeight: '500', color: colors.textSecondary }}>
+          {unit}
+        </Text>
+      </Text>
+    </View>
+  );
+}
+
+function MyRankCard({
+  type,
+  quizUser,
+  petUser,
+  gap,
+}: {
+  type: Tab;
+  quizUser?: QuizLeaderboardEntry | null;
+  petUser?: PetLeaderboardEntry | null;
+  gap: number | null;
+}) {
+  const { colors } = useTheme();
+  const { spacing, font } = useDensity();
+  const { t } = useTranslation();
+  const isQuiz = type === 'quiz';
+  const user = isQuiz ? quizUser : petUser;
+  if (!user) return null;
+
+  const petUser_ = !isQuiz ? (user as PetLeaderboardEntry) : null;
+  const quizUser_ = isQuiz ? (user as QuizLeaderboardEntry) : null;
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface,
+        borderRadius: 12 * spacing,
+        paddingVertical: 14 * spacing,
+        paddingHorizontal: 16 * spacing,
+        marginBottom: 12 * spacing,
+        ...cardShadow(false),
+      }}
+    >
+      <Text
+        style={{
+          color: colors.accent,
+          fontSize: 32 * font,
+          fontWeight: '800',
+          marginRight: 14 * spacing,
+        }}
+      >
+        #{user.rank}
+      </Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: colors.textSecondary, fontSize: 13 * font, marginBottom: 2 * spacing }}>
+          {t.lbMyRank}
+        </Text>
+        <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '600' }}>
+          {isQuiz
+            ? `${formatCount(quizUser_!.totalQuestions)} ${t.lbQuestionsUnit} · ${quizUser_!.accuracy}% ${t.lbAccuracyLabel}`
+            : `${formatCount(petUser_!.petExp)} ${t.lbExpUnit} · ${t.lbLevel(petUser_!.petLevel)}`}
+        </Text>
+      </View>
+      {gap != null && gap > 0 && (
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={{ color: colors.text, fontSize: 13 * font, fontWeight: '600' }}>
+            {isQuiz ? t.lbGapToNext(gap, user.rank - 1) : t.lbGapToNextPet(gap, user.rank - 1)}
+          </Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 12 * font, marginTop: 2 * spacing }}>
+            {t.lbGapToNextRank(user.rank - 1)}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -125,6 +264,7 @@ function PodiumSpot({
 function QuizRow({ entry }: { entry: QuizLeaderboardEntry }) {
   const { colors } = useTheme();
   const { spacing, font } = useDensity();
+  const { t } = useTranslation();
 
   return (
     <View
@@ -162,7 +302,7 @@ function QuizRow({ entry }: { entry: QuizLeaderboardEntry }) {
       </View>
       <Text style={{ color: colors.text, fontSize: 18 * font, fontWeight: '700' }}>
         {formatCount(entry.totalQuestions)}
-        <Text style={{ fontSize: 12 * font, fontWeight: '500', color: colors.textSecondary }}> 题</Text>
+        <Text style={{ fontSize: 12 * font, fontWeight: '500', color: colors.textSecondary }}> {t.lbQuestionsUnit}</Text>
       </Text>
     </View>
   );
@@ -196,7 +336,7 @@ function PetRow({ entry }: { entry: PetLeaderboardEntry }) {
       >
         {entry.rank}
       </Text>
-      <AvatarCircle src={entry.avatar} name={entry.nickname} size={40 * spacing} />
+      <AvatarCircle src={null} name={entry.nickname} size={40 * spacing} emoji={entry.petSpecies} imageUri={entry.petImageUrl} />
       <View style={{ flex: 1, marginLeft: 10 * spacing }}>
         <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '600' }} numberOfLines={1}>
           {entry.nickname ?? '—'}
@@ -207,7 +347,7 @@ function PetRow({ entry }: { entry: PetLeaderboardEntry }) {
       </View>
       <Text style={{ color: colors.text, fontSize: 18 * font, fontWeight: '700' }}>
         {formatCount(entry.petExp)}
-        <Text style={{ fontSize: 12 * font, fontWeight: '500', color: colors.textSecondary }}> EXP</Text>
+        <Text style={{ fontSize: 12 * font, fontWeight: '500', color: colors.textSecondary }}> {t.lbExpUnit}</Text>
       </Text>
     </View>
   );
@@ -218,7 +358,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = () => {
   const { spacing, font } = useDensity();
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('quiz');
-  const [period, setPeriod] = useState<LeaderboardPeriod>('month');
+  const [period, setPeriod] = useState<LeaderboardPeriod>('all');
   const [loading, setLoading] = useState(true);
   const [quizData, setQuizData] = useState<QuizLeaderboardResponse | null>(null);
   const [petData, setPetData] = useState<PetLeaderboardResponse | null>(null);
@@ -230,7 +370,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = () => {
         const data = await api.getQuizLeaderboard(currentPeriod);
         setQuizData(data);
       } else {
-        const data = await api.getPetLeaderboard();
+        const data = await api.getPetLeaderboard(currentPeriod);
         setPetData(data);
       }
     } catch {
@@ -246,8 +386,10 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = () => {
 
   const entries = tab === 'quiz' ? quizData?.entries ?? [] : petData?.entries ?? [];
   const currentUser = tab === 'quiz' ? quizData?.currentUser : petData?.currentUser;
-  const top3 = entries.slice(0, 3);
-  const rest = entries.slice(3);
+  const nextRankGap = tab === 'quiz' ? quizData?.nextRankGap : petData?.nextRankGap;
+  const visible = entries.slice(0, 10);
+  const top3 = visible.slice(0, 3);
+  const rest = visible.slice(3);
 
   const periodLabel = (p: LeaderboardPeriod) =>
     p === 'week' ? t.lbWeek : p === 'month' ? t.lbMonth : t.lbAll;
@@ -278,7 +420,6 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = () => {
               gap: 6 * spacing,
               paddingVertical: 10 * spacing,
               borderRadius: 10 * spacing,
-              // 参考设计图：选中态是白色浮起胶囊（描边 + 阴影），不做绿色填充
               backgroundColor: colors.surface,
               borderWidth: tab === p ? StyleSheet.hairlineWidth : 0,
               borderColor: colors.border,
@@ -286,7 +427,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = () => {
             }}
           >
             <Text style={{ fontSize: 16 * font }}>
-              {p === 'quiz' ? '📋' : '🌿'}
+              {p === 'quiz' ? '📋' : '🐾'}
             </Text>
             <Text
               style={{
@@ -310,7 +451,7 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = () => {
             style={{
               paddingHorizontal: 16 * spacing,
               paddingVertical: 6 * spacing,
-              borderRadius: 20 * spacing,
+              borderRadius: 8 * spacing,
               borderWidth: 1,
               borderColor: period === p ? colors.accent : colors.border,
               backgroundColor: period === p ? colors.accentLight : 'transparent',
@@ -342,29 +483,51 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = () => {
           data={rest as (QuizLeaderboardEntry | PetLeaderboardEntry)[]}
           keyExtractor={(item) => item.userId}
           ListHeaderComponent={
-            top3.length > 0 ? (
-              <View style={{ paddingHorizontal: 16 * spacing, marginBottom: 8 * spacing }}>
-                {/* Podium: 2nd, 1st, 3rd */}
-                <View style={{ flexDirection: 'row', marginBottom: 20 * spacing }}>
-                  {top3.length === 3 ? (
-                    <>
-                      <PodiumSpot entry={top3[1]} displayRank={2} type={tab} />
-                      <PodiumSpot entry={top3[0]} displayRank={1} type={tab} />
-                      <PodiumSpot entry={top3[2]} displayRank={3} type={tab} />
-                    </>
-                  ) : (
-                    top3.map((entry, idx) => (
-                      <PodiumSpot key={idx} entry={entry} displayRank={idx + 1} type={tab} />
-                    ))
-                  )}
-                </View>
+            <View>
+              {/* My Rank card */}
+              <MyRankCard
+                type={tab}
+                quizUser={tab === 'quiz' ? (currentUser as unknown as QuizLeaderboardEntry | null) : null}
+                petUser={tab === 'pet' ? (currentUser as unknown as PetLeaderboardEntry | null) : null}
+                gap={nextRankGap ?? null}
+              />
 
-                {/* Full ranking header */}
-                <Text style={{ color: colors.text, fontSize: 16 * font, fontWeight: '700', marginBottom: 12 * spacing }}>
-                  {t.lbFullRanking}
-                </Text>
-              </View>
-            ) : null
+              {top3.length > 0 && (
+                <View style={{ marginBottom: 8 * spacing }}>
+                  {/* Podium: mint background card */}
+                  <View
+                    style={{
+                      backgroundColor: colors.accentLight,
+                      borderRadius: 16 * spacing,
+                      paddingVertical: 20 * spacing,
+                      paddingHorizontal: 12 * spacing,
+                      marginBottom: 20 * spacing,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'flex-end' }}>
+                      {top3.length === 3 ? (
+                        <>
+                          <PodiumSpot entry={top3[1]} displayRank={2} type={tab} />
+                          <View style={{ marginBottom: 12 * spacing }}>
+                            <PodiumSpot entry={top3[0]} displayRank={1} type={tab} />
+                          </View>
+                          <PodiumSpot entry={top3[2]} displayRank={3} type={tab} />
+                        </>
+                      ) : (
+                        top3.map((entry, idx) => (
+                          <PodiumSpot key={idx} entry={entry} displayRank={idx + 1} type={tab} />
+                        ))
+                      )}
+                    </View>
+                  </View>
+
+                  {/* Full ranking header */}
+                  <Text style={{ color: colors.text, fontSize: 16 * font, fontWeight: '700', marginBottom: 12 * spacing }}>
+                    {t.lbFullRanking}
+                  </Text>
+                </View>
+              )}
+            </View>
           }
           renderItem={({ item }) =>
             tab === 'quiz' ? (

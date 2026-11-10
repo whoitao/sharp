@@ -1,6 +1,5 @@
 "use client";
 
-import { RequireAuth } from "@/components/auth/require-auth";
 import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { BarChart3, BookOpen, NotebookPen, PawPrint, Settings, Star, UserRound } from "lucide-react";
@@ -74,37 +73,35 @@ export default function AccountLayout({
   ];
 
   return (
-    <RequireAuth>
-      <div className="w-full pb-16">
-        <div className="grid gap-5 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-5">
-          <aside className="min-w-0">
-            <nav
-              aria-label={t("account.menu")}
-              className="flex flex-wrap gap-2 pb-1 md:flex-col md:gap-1 md:pb-0"
-            >
-              {tabs.map(({ href, label, icon: Icon, active }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors md:w-full",
-                    active
-                      ? "bg-primary-light text-primary-strong"
-                      : "bg-surface text-foreground-secondary hover:bg-accent hover:text-foreground",
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          </aside>
+    <div className="w-full pb-16">
+      <div className="grid gap-5 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-5">
+        <aside className="min-w-0">
+          <nav
+            aria-label={t("account.menu")}
+            className="flex flex-wrap gap-2 pb-1 md:flex-col md:gap-1 md:pb-0"
+          >
+            {tabs.map(({ href, label, icon: Icon, active }) => (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors md:w-full",
+                  active
+                    ? "bg-primary-light text-primary-strong"
+                    : "bg-surface text-foreground-secondary hover:bg-accent hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </aside>
 
-          {/* 桌面双栏下让内容区撑满行高，页面内的卡片再按需 h-full */}
-          <div className="min-w-0 md:grid">{children}</div>
-        </div>
+        {/* 桌面双栏下让内容区撑满行高，页面内的卡片再按需 h-full */}
+        <div className="min-w-0 md:grid">{children}</div>
       </div>
-    </RequireAuth>
+    </div>
   );
 }

@@ -12,7 +12,7 @@ import {
   type PetLeaderboardResponse,
 } from "@/lib/leaderboard/api";
 import { cn } from "@/lib/utils";
-import { Loader2, User } from "lucide-react";
+import { Loader2, PawPrint, User } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 type Tab = "quiz" | "pet";
@@ -28,13 +28,43 @@ function Avatar({
   name,
   size = 40,
   ringClass,
+  emoji,
+  imageUri,
 }: {
   src: string | null;
   name: string | null;
   size?: number;
   ringClass?: string;
+  emoji?: string | null;
+  imageUri?: string | null;
 }) {
   const initials = (name ?? "?").slice(0, 1).toUpperCase();
+  if (imageUri) {
+    return (
+      <div
+        className={cn(
+          "flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface",
+          ringClass && `border-2 ${ringClass}`
+        )}
+        style={{ width: size, height: size }}
+      >
+        <img src={imageUri} alt={name ?? ""} className="h-full w-full object-contain p-0.5" />
+      </div>
+    );
+  }
+  if (emoji) {
+    return (
+      <div
+        className={cn(
+          "flex shrink-0 items-center justify-center rounded-full bg-surface",
+          ringClass && `border-2 ${ringClass}`
+        )}
+        style={{ width: size, height: size, fontSize: size * 0.5 }}
+      >
+        {emoji}
+      </div>
+    );
+  }
   return (
     <div
       className={cn(
@@ -56,10 +86,12 @@ function PodiumItem({
   entry,
   displayRank,
   type,
+  size = 64,
 }: {
   entry: QuizLeaderboardEntry | PetLeaderboardEntry;
   displayRank: number;
   type: Tab;
+  size?: number;
 }) {
   const { t } = useLocale();
   const isQuiz = type === "quiz";
@@ -74,10 +106,12 @@ function PodiumItem({
         {labels[idx]}
       </span>
       <Avatar
-        src={entry.avatar}
+        src={isQuiz ? entry.avatar : null}
         name={entry.nickname}
-        size={64}
+        size={size}
         ringClass={PODIUM_RING[idx]}
+        emoji={isQuiz ? null : petEntry!.petSpecies}
+        imageUri={isQuiz ? null : petEntry!.petImageUrl}
       />
       <span className="max-w-[5rem] truncate text-sm font-medium text-foreground">
         {entry.nickname ?? "—"}
@@ -122,18 +156,18 @@ function PetRow({ entry }: { entry: PetLeaderboardEntry }) {
       <span className="w-6 text-center text-base font-bold text-foreground-secondary">
         {entry.rank}
       </span>
-      <Avatar src={entry.avatar} name={entry.nickname} size={36} />
+      <Avatar src={null} name={entry.nickname} size={36} emoji={entry.petSpecies} imageUri={entry.petImageUrl} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">
           {entry.nickname ?? "—"}
+        </p>
+        <p className="text-xs text-foreground-tertiary">
+          {entry.petName ?? "Pet"} · {t("leaderboard.level", { n: entry.petLevel })}
         </p>
       </div>
       <div className="text-right">
         <p className="text-base font-bold text-foreground">
           {entry.petExp.toLocaleString()}
-        </p>
-        <p className="text-xs text-foreground-tertiary">
-          {entry.petName ?? "Pet"} · {t("leaderboard.level", { n: entry.petLevel })}
         </p>
       </div>
     </div>
@@ -145,11 +179,13 @@ function MyRankCard({
   quizUser,
   petUser,
   gap,
+  subtitle,
 }: {
   type: Tab;
   quizUser?: QuizLeaderboardEntry | null;
   petUser?: PetLeaderboardEntry | null;
   gap: number | null;
+  subtitle: string;
 }) {
   const { t } = useLocale();
   const isQuiz = type === "quiz";
@@ -168,9 +204,7 @@ function MyRankCard({
 
       <div className="mb-4 text-center">
         <p className="text-5xl font-extrabold text-primary">#{user.rank}</p>
-        <p className="mt-1 text-sm text-foreground-secondary">
-          {isQuiz ? t("leaderboard.myRankLabel") : t("leaderboard.myPetRankLabel")}
-        </p>
+        <p className="mt-1 text-sm text-foreground-secondary">{subtitle}</p>
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3">
@@ -208,7 +242,7 @@ function MyRankCard({
 export function LeaderboardPanel() {
   const { t } = useLocale();
   const [tab, setTab] = useState<Tab>("quiz");
-  const [period, setPeriod] = useState<LeaderboardPeriod>("month");
+  const [period, setPeriod] = useState<LeaderboardPeriod>("all");
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [quizData, setQuizData] = useState<QuizLeaderboardResponse | null>(null);
   const [petData, setPetData] = useState<PetLeaderboardResponse | null>(null);
@@ -230,11 +264,11 @@ export function LeaderboardPanel() {
     [],
   );
 
-  const loadPet = useCallback(async () => {
+  const loadPet = useCallback(async (p: LeaderboardPeriod) => {
     setStatus("loading");
     setError(null);
     try {
-      const data = await getPetLeaderboard();
+      const data = await getPetLeaderboard(p);
       setPetData(data);
       setStatus("ready");
     } catch (e) {
@@ -247,27 +281,22 @@ export function LeaderboardPanel() {
     if (tab === "quiz") {
       loadQuiz(period);
     } else {
-      loadPet();
+      loadPet(period);
     }
   }, [tab, period, loadQuiz, loadPet]);
 
   const entries = tab === "quiz" ? quizData?.entries ?? [] : petData?.entries ?? [];
   const currentUser = tab === "quiz" ? quizData?.currentUser : petData?.currentUser;
   const nextRankGap = tab === "quiz" ? quizData?.nextRankGap : petData?.nextRankGap;
-  const top3 = entries.slice(0, 3);
-  const rest = entries.slice(3);
+  const visible = entries.slice(0, 10);
+  const top3 = visible.slice(0, 3);
+  const rest = visible.slice(3);
 
   const periodLabel = (p: LeaderboardPeriod) =>
     p === "week" ? t("leaderboard.week") : p === "month" ? t("leaderboard.month") : t("leaderboard.allTime");
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pb-10 pt-2">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">{t("leaderboard.title")}</h1>
-        <p className="mt-1 text-sm text-foreground-secondary">{t("leaderboard.subtitle")}</p>
-      </div>
-
+    <div className="mx-auto max-w-5xl px-6 pb-10 pt-0">
       {/* Tab toggle */}
       <div className="mb-4 inline-flex rounded-xl bg-surface-secondary p-1">
         <button
@@ -290,29 +319,27 @@ export function LeaderboardPanel() {
               : "text-foreground-secondary hover:text-foreground"
           )}
         >
-          🌿 {t("leaderboard.petTab")}
+          <PawPrint className="h-4 w-4" /> {t("leaderboard.petTab")}
         </button>
       </div>
 
-      {/* Period filter (quiz only) */}
-      {tab === "quiz" && (
-        <div className="mb-6 flex gap-2">
-          {PERIODS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
-                period === p
-                  ? "border-primary text-primary"
-                  : "border-border-light text-foreground-secondary hover:border-primary/40"
-              )}
-            >
-              {periodLabel(p)}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Period filter */}
+      <div className="mb-6 flex gap-2">
+        {PERIODS.map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className={cn(
+              "rounded-lg border px-4 py-1.5 text-sm font-medium transition-colors",
+              period === p
+                ? "border-primary text-primary"
+                : "border-border-light text-foreground-secondary hover:border-primary/40"
+            )}
+          >
+            {periodLabel(p)}
+          </button>
+        ))}
+      </div>
 
       {status === "loading" && (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-foreground-secondary">
@@ -340,9 +367,11 @@ export function LeaderboardPanel() {
             {/* Podium */}
             {top3.length === 3 && (
               <div className="mb-6 rounded-xl bg-primary-light/40 p-6">
-                <div className="flex items-end justify-center gap-8">
+                <div className="flex items-end justify-evenly">
                   <PodiumItem entry={top3[1]} displayRank={2} type={tab} />
-                  <PodiumItem entry={top3[0]} displayRank={1} type={tab} />
+                  <div className="mb-3">
+                    <PodiumItem entry={top3[0]} displayRank={1} type={tab} size={72} />
+                  </div>
                   <PodiumItem entry={top3[2]} displayRank={3} type={tab} />
                 </div>
               </div>
@@ -384,6 +413,10 @@ export function LeaderboardPanel() {
               quizUser={tab === "quiz" ? (currentUser as QuizLeaderboardEntry | null) : null}
               petUser={tab === "pet" ? (currentUser as PetLeaderboardEntry | null) : null}
               gap={nextRankGap ?? null}
+              subtitle={t(
+                tab === "quiz" ? "leaderboard.myRankLabel" : "leaderboard.myPetRankLabel",
+                { period: periodLabel(period) },
+              )}
             />
           </div>
         </div>
