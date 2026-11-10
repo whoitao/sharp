@@ -19,7 +19,6 @@ import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 const navItems = [
-  { href: "/", labelKey: "nav.home" },
   { href: "/learn", labelKey: "nav.learn", requiresAuth: true },
   { href: "/leaderboard", labelKey: "nav.leaderboard", requiresAuth: true },
   { href: "/articles", labelKey: "nav.articles" },

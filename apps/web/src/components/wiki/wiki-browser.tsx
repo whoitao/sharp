@@ -213,7 +213,7 @@ export function WikiBrowser({
         )}
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8">
+      <div className="grid items-start gap-5 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-5">
         <aside className="hidden lg:sticky lg:top-14 lg:block">
           <div className="overflow-hidden rounded-lg border border-border bg-surface card-shadow">
             <div className="flex items-center gap-2 border-b border-border-light px-4 pb-3 pt-4 text-xs font-bold tracking-wide text-foreground">
