@@ -101,6 +101,11 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
 
   const expProgress = pet && pet.expToNext > 0 ? Math.min(1, pet.experience / pet.expToNext) : 1;
   const satietyProgress = pet ? Math.min(1, pet.satiety / pet.satietyMax) : 0;
+  // 已到最终阶段且经验满：不再显示「距下一级还需」
+  const isMaxLevel =
+    !!pet &&
+    pet.level >= (pet.route[pet.route.length - 1]?.level ?? 0) &&
+    pet.expToNext === pet.experience;
 
   const foodQuantity = useMemo(() => {
     const map: Record<string, number> = {};
@@ -159,6 +164,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
     setAnimation('idle');
   }, []);
 
+  // 两条进度条统一：4px 高、圆角、同一条轨道底色
   const renderProgress = (progress: number, color: string) => (
     <View
       style={[
@@ -236,8 +242,41 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
           cardShadow(isDark),
         ]}
       >
-        <View style={[styles.heroHeader, { gap: 8 * spacing }]}>
-          <Text style={{ color: colors.text, fontSize: 18 * font, fontWeight: '700' }}>
+        {/* 舞台框：宠物形象作为视觉主体，圆角虚线框，透明底 */}
+        <View style={[styles.stage, { borderRadius: 16 * radius }]}>
+          <View style={styles.stagePet}>
+            {pet.growthStage.idleLottieUrl || pet.growthStage.imageUrl ? (
+              <PetMotion
+                manifestUrl={pet.growthStage.motionManifestUrl}
+                kind={animation}
+                idleUrl={pet.growthStage.idleLottieUrl}
+                feedUrl={pet.growthStage.feedLottieUrl}
+                evolveUrl={pet.growthStage.evolveLottieUrl}
+                imageUrl={pet.growthStage.imageUrl}
+                sideImageUrl={pet.growthStage.sideImageUrl}
+                size={200}
+                onFinish={handleAnimationFinish}
+              />
+            ) : (
+              <Text style={{ fontSize: 64 }}>{pet.species.icon ?? '🐾'}</Text>
+            )}
+          </View>
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFillObject,
+              styles.stageDash,
+              { borderColor: colors.accent, borderRadius: 16 * radius, opacity: 0.45 },
+            ]}
+          />
+        </View>
+
+        {/* 名字 · 等级 + 状态标签，左对齐同一行 */}
+        <View style={[styles.heroHeader, { gap: 8 * spacing, marginTop: 14 * spacing }]}>
+          <Text
+            numberOfLines={1}
+            style={{ flexShrink: 1, color: colors.text, fontSize: 19 * font, fontWeight: '700' }}
+          >
             {pet.nickname} · {t.petLevel(pet.level)}
           </Text>
           <View
@@ -256,55 +295,41 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             </Text>
           </View>
         </View>
-        <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font, marginTop: 2 * spacing }}>
+
+        {/* 物种 · 阶段 · 陪伴天数 */}
+        <Text style={{ color: colors.textSecondary, fontSize: 12 * font, marginTop: 4 * spacing }}>
           {pet.species.name} · {pet.growthStage.name} · {t.petCompanionDays(pet.companionDays)}
         </Text>
 
-        <View style={styles.imageWrap}>
-          {pet.growthStage.idleLottieUrl || pet.growthStage.imageUrl ? (
-            <PetMotion
-              manifestUrl={pet.growthStage.motionManifestUrl}
-              kind={animation}
-              idleUrl={pet.growthStage.idleLottieUrl}
-              feedUrl={pet.growthStage.feedLottieUrl}
-              evolveUrl={pet.growthStage.evolveLottieUrl}
-              imageUrl={pet.growthStage.imageUrl}
-              sideImageUrl={pet.growthStage.sideImageUrl}
-              size={180}
-              onFinish={handleAnimationFinish}
-            />
-          ) : (
-            <Text style={{ fontSize: 64 }}>{pet.species.icon ?? '🐾'}</Text>
-          )}
-        </View>
-
-        {/* 成长区 */}
-        <View style={{ marginTop: 14 * spacing }}>
+        {/* 饱腹度：卡片内主指标 */}
+        <View style={{ marginTop: 16 * spacing }}>
           <View style={styles.rowBetween}>
-            <Text style={{ color: colors.textSecondary, fontSize: 11.5 * font }}>
-              {pet.level >= pet.route[pet.route.length - 1]?.level && pet.expToNext === pet.experience
-                ? t.petMaxLevel
-                : t.petExpToNext(Math.max(0, pet.expToNext - pet.experience))}
+            <Text style={{ color: colors.text, fontSize: 12.5 * font }}>
+              {t.petSatiety}
             </Text>
-            <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font }}>
-              {pet.experience} / {pet.expToNext}
-            </Text>
-          </View>
-          {renderProgress(expProgress, colors.accent)}
-        </View>
-
-        {/* 饱腹度 */}
-        <View style={{ marginTop: 12 * spacing }}>
-          <View style={styles.rowBetween}>
-            <Text style={{ color: colors.textSecondary, fontSize: 11.5 * font }}>{t.petSatiety}</Text>
-            <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font }}>
+            <Text style={{ color: colors.textTertiary, fontSize: 12.5 * font }}>
               {pet.satiety} / {pet.satietyMax}
             </Text>
           </View>
           {renderProgress(satietyProgress, colors.warning)}
         </View>
 
-        {/* 主操作 */}
+        {/* 经验：设计稿没有这一项，降级为饱腹度下方的小字 + 细条，不抢视线 */}
+        <View style={{ marginTop: 10 * spacing }}>
+          <View style={styles.rowBetween}>
+            <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font }}>
+              {isMaxLevel
+                ? t.petMaxLevel
+                : t.petExpToNext(Math.max(0, pet.expToNext - pet.experience))}
+            </Text>
+            <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font }}>
+              {pet.experience} / {pet.expToNext}
+            </Text>
+          </View>
+          {renderProgress(expProgress, colors.accent)}
+        </View>
+
+        {/* 主操作：等宽并列，实心绿 + 描边 */}
         <View style={[styles.rowGap, { marginTop: 16 * spacing, gap: 10 * spacing }]}>
           <TouchableOpacity
             onPress={openFeed}
@@ -312,8 +337,9 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             style={[
               styles.primaryButton,
               {
+                height: 46,
                 backgroundColor: pet.canFeed ? colors.accent : colors.border,
-                borderRadius: 12 * radius,
+                borderRadius: 10 * radius,
               },
             ]}
           >
@@ -325,12 +351,18 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             onPress={() => (navigation as any).navigate('StudyTab', { screen: 'Study' })}
             style={[
               styles.secondaryButton,
-              { borderColor: colors.border, borderRadius: 12 * radius },
+              { height: 46, borderColor: colors.border, borderRadius: 10 * radius },
             ]}
           >
-            <Text style={{ color: colors.accentStrong, fontSize: 14 * font, fontWeight: '600' }}>
+            <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '600' }}>
               {t.petGoPractice}
             </Text>
+            <Ionicons
+              name="arrow-forward"
+              size={14 * font}
+              color={colors.text}
+              style={{ marginLeft: 4 * spacing }}
+            />
           </TouchableOpacity>
         </View>
         {!hasFood && (
@@ -754,12 +786,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stateChip: {
-    alignSelf: 'flex-start',
+    // 与名字同一行时垂直居中，避免 chip 顶到文字上方
+    alignSelf: 'center',
   },
-  imageWrap: {
+  // 舞台框：收紧高度的圆角区域，宠物居中，脚底与框底留白
+  stage: {
+    width: '100%',
+    aspectRatio: 1.25,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
+    overflow: 'hidden',
+  },
+  stagePet: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // 主体整体略上移，保证脚底与框底留出固定间距
+    paddingBottom: 8,
+  },
+  stageDash: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
   },
   rowBetween: {
     flexDirection: 'row',
@@ -793,6 +840,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
