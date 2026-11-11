@@ -20,6 +20,8 @@ export async function GET() {
         seoTitleEn: row.seoTitleEn,
         seoDescriptionZh: row.seoDescriptionZh,
         seoDescriptionEn: row.seoDescriptionEn,
+        seoKeywordsZh: row.seoKeywordsZh,
+        seoKeywordsEn: row.seoKeywordsEn,
         gaMeasurementId: row.gaMeasurementId,
         analyticsProductionOnly: row.analyticsProductionOnly,
         icpNumber: row.icpNumber,

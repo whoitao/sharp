@@ -33,6 +33,8 @@ interface SiteSettingsForm {
   seoTitleEn?: string;
   seoDescriptionZh?: string;
   seoDescriptionEn?: string;
+  seoKeywordsZh?: string;
+  seoKeywordsEn?: string;
   gaMeasurementId?: string;
   analyticsProductionOnly: boolean;
   icpNumber?: string;
@@ -83,6 +85,8 @@ export default function SiteSettingsPanel() {
       seoTitleEn: (data.seoTitleEn as string | null) ?? undefined,
       seoDescriptionZh: (data.seoDescriptionZh as string | null) ?? undefined,
       seoDescriptionEn: (data.seoDescriptionEn as string | null) ?? undefined,
+      seoKeywordsZh: (data.seoKeywordsZh as string | null) ?? undefined,
+      seoKeywordsEn: (data.seoKeywordsEn as string | null) ?? undefined,
       gaMeasurementId: (data.gaMeasurementId as string | null) ?? undefined,
       analyticsProductionOnly: data.analyticsProductionOnly !== false,
       icpNumber: (data.icpNumber as string | null) ?? undefined,
@@ -266,6 +270,24 @@ export default function SiteSettingsPanel() {
               <Col xs={24} md={12}>
                 <Form.Item label={t("siteSettings.seoTitleEn")} name="seoTitleEn">
                   <Input maxLength={200} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label={t("siteSettings.seoKeywordsZh")}
+                  name="seoKeywordsZh"
+                  extra={t("siteSettings.seoKeywordsHint")}
+                >
+                  <Input.TextArea rows={2} maxLength={500} showCount />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label={t("siteSettings.seoKeywordsEn")}
+                  name="seoKeywordsEn"
+                  extra={t("siteSettings.seoKeywordsHint")}
+                >
+                  <Input.TextArea rows={2} maxLength={500} showCount />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>

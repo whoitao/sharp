@@ -12,6 +12,24 @@ export const en = {
     account: "Account",
     leaderboard: "Leaderboard",
   },
+  footer: {
+    tagline:
+      "A K-12 learning platform — practise by chapter and knowledge point, with a companion pet that grows with you.",
+    product: "Product",
+    discover: "Discover",
+    about: "About",
+    aboutUs: "About us",
+    contact: "Contact us",
+    privacy: "Privacy policy",
+    terms: "Terms of service",
+    docs: "Docs",
+    openSource: "Open source",
+    rights: "All rights reserved.",
+    backToTop: "Back to top",
+    themeSystem: "System",
+    themeLight: "Light",
+    themeDark: "Dark",
+  },
   account: {
     title: "Account",
     menu: "Account",
@@ -527,7 +545,7 @@ export const en = {
       },
       {
         title: "Learn Anywhere",
-        description: "Practice on both mobile and web, synced in real time.",
+        description: "Practice on both mobile and web.",
       },
     ],
     ctaTitle: "Start with Your First Question Today",

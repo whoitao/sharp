@@ -946,6 +946,10 @@ export const en = {
     seoTitleEn: "Default Title (English)",
     seoDescriptionZh: "Default Description (Chinese)",
     seoDescriptionEn: "Default Description (English)",
+    seoKeywordsZh: "Default Keywords (Chinese)",
+    seoKeywordsEn: "Default Keywords (English)",
+    seoKeywordsHint:
+      "Separate keywords with English commas, e.g. online learning, quizzes, vocabulary. Leave empty to omit the keywords meta tag.",
     seoDescHint: "Recommended 120-160 characters. Falls back to the site name when empty.",
     groupStats: "Analytics & Compliance",
     gaMeasurementId: "GA4 Measurement ID",

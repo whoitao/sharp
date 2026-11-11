@@ -49,6 +49,8 @@ const updateSchema = z.object({
   seoTitleEn: nullableText(200),
   seoDescriptionZh: nullableText(500),
   seoDescriptionEn: nullableText(500),
+  seoKeywordsZh: nullableText(500),
+  seoKeywordsEn: nullableText(500),
   gaMeasurementId: gaSchema,
   analyticsProductionOnly: z.boolean().optional(),
   icpNumber: nullableText(100),

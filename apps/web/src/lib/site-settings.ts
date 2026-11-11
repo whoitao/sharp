@@ -13,6 +13,8 @@ export interface SiteSettings {
   seoTitleEn: string;
   seoDescriptionZh: string;
   seoDescriptionEn: string;
+  seoKeywordsZh: string | null;
+  seoKeywordsEn: string | null;
   gaMeasurementId: string | null;
   analyticsProductionOnly: boolean;
   icpNumber: string | null;
@@ -36,6 +38,8 @@ export const DEFAULTS: SiteSettings = {
     "A modern quiz and vocabulary learning platform built with Next.js and React Native",
   seoDescriptionEn:
     "A modern quiz and vocabulary learning platform built with Next.js and React Native",
+  seoKeywordsZh: null,
+  seoKeywordsEn: null,
   gaMeasurementId: null,
   analyticsProductionOnly: true,
   icpNumber: null,
@@ -60,6 +64,8 @@ export function mergeSiteSettings(remote: Partial<SiteSettings> | null): SiteSet
     seoTitleEn: nonEmpty(remote.seoTitleEn) ?? DEFAULTS.seoTitleEn,
     seoDescriptionZh: nonEmpty(remote.seoDescriptionZh) ?? DEFAULTS.seoDescriptionZh,
     seoDescriptionEn: nonEmpty(remote.seoDescriptionEn) ?? DEFAULTS.seoDescriptionEn,
+    seoKeywordsZh: nonEmpty(remote.seoKeywordsZh),
+    seoKeywordsEn: nonEmpty(remote.seoKeywordsEn),
     gaMeasurementId: nonEmpty(remote.gaMeasurementId),
     analyticsProductionOnly:
       typeof remote.analyticsProductionOnly === "boolean"
@@ -103,6 +109,16 @@ export function seoDescriptionFor(settings: SiteSettings, locale: Locale): strin
   return configured || siteSloganFor(settings, locale) || siteNameFor(settings, locale);
 }
 
+/** 关键词：兼容中英文逗号，去空后返回数组；为空时调用方不输出 meta */
+export function seoKeywordsFor(settings: SiteSettings, locale: Locale): string[] {
+  const configured = locale === "zh" ? settings.seoKeywordsZh : settings.seoKeywordsEn;
+  if (!configured) return [];
+  return configured
+    .split(/[,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function safeBaseUrl(siteUrl: string): URL {
   try {
     return new URL(siteUrl);
@@ -132,11 +148,13 @@ export function buildSiteMetadata({
   const siteName = siteNameFor(settings, locale);
   const finalTitle = title || seoTitleFor(settings, locale);
   const finalDescription = description || seoDescriptionFor(settings, locale);
+  const keywords = seoKeywordsFor(settings, locale);
 
   return {
     metadataBase: base,
     title: finalTitle,
     description: finalDescription,
+    ...(keywords.length > 0 ? { keywords } : {}),
     alternates: { canonical: path },
     icons: { icon: FAVICON_PATH },
     openGraph: {

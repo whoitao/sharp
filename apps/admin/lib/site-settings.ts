@@ -29,6 +29,8 @@ export function toSnapshot(row: SiteSetting) {
     seoTitleEn: row.seoTitleEn,
     seoDescriptionZh: row.seoDescriptionZh,
     seoDescriptionEn: row.seoDescriptionEn,
+    seoKeywordsZh: row.seoKeywordsZh,
+    seoKeywordsEn: row.seoKeywordsEn,
     gaMeasurementId: row.gaMeasurementId,
     analyticsProductionOnly: row.analyticsProductionOnly,
     icpNumber: row.icpNumber,
@@ -48,6 +50,9 @@ export interface SiteSettingSnapshot {
   seoTitleEn: string | null;
   seoDescriptionZh: string | null;
   seoDescriptionEn: string | null;
+  /** 旧快照没有这两个字段；恢复时 undefined 会被 Prisma 忽略，保留当前值 */
+  seoKeywordsZh?: string | null;
+  seoKeywordsEn?: string | null;
   gaMeasurementId: string | null;
   analyticsProductionOnly: boolean;
   icpNumber: string | null;
@@ -67,6 +72,8 @@ export function snapshotToUpdateData(snapshot: SiteSettingSnapshot) {
     seoTitleEn: snapshot.seoTitleEn,
     seoDescriptionZh: snapshot.seoDescriptionZh,
     seoDescriptionEn: snapshot.seoDescriptionEn,
+    seoKeywordsZh: snapshot.seoKeywordsZh,
+    seoKeywordsEn: snapshot.seoKeywordsEn,
     gaMeasurementId: snapshot.gaMeasurementId,
     analyticsProductionOnly: snapshot.analyticsProductionOnly,
     icpNumber: snapshot.icpNumber,

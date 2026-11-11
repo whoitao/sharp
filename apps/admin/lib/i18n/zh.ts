@@ -943,6 +943,10 @@ export const zh: Messages = {
     seoTitleEn: "默认标题（英文）",
     seoDescriptionZh: "默认描述（中文）",
     seoDescriptionEn: "默认描述（英文）",
+    seoKeywordsZh: "默认关键词（中文）",
+    seoKeywordsEn: "默认关键词（英文）",
+    seoKeywordsHint:
+      "多个关键词用英文逗号分隔，例如：在线学习, 题库, 背单词；留空则不输出 keywords。",
     seoDescHint: "建议 120-160 字；留空时回落到站点名。",
     groupStats: "统计与合规",
     gaMeasurementId: "GA4 Measurement ID",

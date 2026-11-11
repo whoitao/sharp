@@ -61,7 +61,10 @@ export default function About() {
         </div>
 
         {/* Contact */}
-        <div className="rounded-lg border border-border bg-surface p-6 card-shadow text-center">
+        <div
+          id="contact"
+          className="scroll-mt-20 rounded-lg border border-border bg-surface p-6 card-shadow text-center"
+        >
           <h2 className="mb-4 text-xl font-bold tracking-tight">{t("about.contactTitle")}</h2>
           <p className="mb-5 text-sm leading-6 text-foreground-secondary">
             {t("about.contactText")}

@@ -721,6 +721,8 @@ model SiteSetting {
   seoTitleEn              String?
   seoDescriptionZh        String?
   seoDescriptionEn        String?
+  seoKeywordsZh           String?
+  seoKeywordsEn           String?
   // 统计与合规
   gaMeasurementId         String?
   analyticsProductionOnly Boolean               @default(true)
