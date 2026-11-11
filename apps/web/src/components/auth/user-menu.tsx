@@ -21,6 +21,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface SessionUser {
@@ -37,6 +38,8 @@ interface SessionUser {
  */
 export function UserMenu() {
   const { t } = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
@@ -69,6 +72,9 @@ export function UserMenu() {
     }
     setUser(null);
     notifySessionChanged();
+    // 退出后回到登录页；若从受保护的个人中心页退出，登录成功后可回跳原页面
+    const next = pathname.startsWith("/account") ? pathname : "/";
+    router.push(`/login?next=${encodeURIComponent(next)}`);
   }
 
   if (!user) {
@@ -93,11 +99,14 @@ export function UserMenu() {
           <UserAvatar name={displayName} avatarUrl={user.avatarUrl} size="sm" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        <div className="px-2 py-1.5">
-          <div className="truncate text-sm font-medium">{displayName}</div>
-          <div className="truncate text-xs text-foreground-tertiary">
-            @{user.username}
+      <DropdownMenuContent align="end" className="w-44">
+        <div className="flex items-center gap-2.5 px-2.5 py-2">
+          <UserAvatar name={displayName} avatarUrl={user.avatarUrl} size="sm" />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">{displayName}</div>
+            <div className="truncate text-xs text-foreground-tertiary">
+              @{user.username}
+            </div>
           </div>
         </div>
         <div className="my-1 h-px bg-border-light" />

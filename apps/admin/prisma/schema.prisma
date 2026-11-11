@@ -17,26 +17,26 @@ enum RegistrationSource {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  username     String   @unique
+  id           String             @id @default(uuid())
+  username     String             @unique
   passwordHash String
   nickname     String?
   avatar       String?
   gender       String?
   phone        String?
-  status       String   @default("active")
+  status       String             @default("active")
   // 测试账号标记：仅用于后台运营区分，不影响登录与学习逻辑
-  isTest       Boolean  @default(false)
+  isTest       Boolean            @default(false)
   // 注册来源：由服务端按调用端写入；历史账号无法回溯，默认视为 web
   source       RegistrationSource @default(web)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
-  studyAttempts    StudyAttempt[]
-  questionProgress UserQuestionProgress[]
+  studyAttempts     StudyAttempt[]
+  questionProgress  UserQuestionProgress[]
   questionFavorites UserQuestionFavorite[]
-  dailyStats       UserDailyStat[]
-  settings         UserSettings?
+  dailyStats        UserDailyStat[]
+  settings          UserSettings?
 
   // 电子宠物
   userPets      UserPet[]
@@ -44,6 +44,10 @@ model User {
   petFoodGrants PetFoodGrant[]
   petFeeds      PetFeedLog[]
   petDailyStats PetDailyStat[]
+
+  // 站内信
+  notifications     Notification[]     @relation("UserNotifications")
+  notificationReads NotificationRead[]
 }
 
 model UserSettings {
@@ -67,13 +71,13 @@ model UserSettings {
 }
 
 model Admin {
-  id           String   @id @default(uuid())
-  username     String   @unique
+  id           String     @id @default(uuid())
+  username     String     @unique
   passwordHash String
-  role         String   @default("admin")
+  role         String     @default("admin")
   roleId       String?
   adminRole    AdminRole? @relation(fields: [roleId], references: [id])
-  createdAt    DateTime @default(now())
+  createdAt    DateTime   @default(now())
 
   @@index([roleId])
 }
@@ -473,7 +477,7 @@ model WikiPage {
   content String? @db.Text
 
   // draft | published
-  status String @default("draft")
+  status      String    @default("draft")
   // public | private
   visibility  String    @default("public")
   publishedAt DateTime?
@@ -518,22 +522,22 @@ model PetSpecies {
 
 // 宠物阶段：每个种类 3 个阶段（幼年 / 成长 / 成熟），负责形象与动画资源
 model PetSpeciesStage {
-  id              String     @id @default(uuid())
-  speciesId       BigInt
-  species         PetSpecies @relation(fields: [speciesId], references: [id], onDelete: Cascade)
-  stageKey        String // juvenile / growing / mature
-  name            String // 幼猫 / 成猫 / 魔法猫
-  minLevel        Int        @default(1) // 该阶段起始等级（含）
-  maxLevel        Int        @default(9) // 该阶段结束等级（含）
-  imageUrl        String? // 静态形象
-  idleLottieUrl   String? // 待机动画
-  feedLottieUrl   String? // 进食动画
-  evolveLottieUrl String? // 进入该阶段的进化动画
+  id                String     @id @default(uuid())
+  speciesId         BigInt
+  species           PetSpecies @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  stageKey          String // juvenile / growing / mature
+  name              String // 幼猫 / 成猫 / 魔法猫
+  minLevel          Int        @default(1) // 该阶段起始等级（含）
+  maxLevel          Int        @default(9) // 该阶段结束等级（含）
+  imageUrl          String? // 静态形象
+  idleLottieUrl     String? // 待机动画
+  feedLottieUrl     String? // 进食动画
+  evolveLottieUrl   String? // 进入该阶段的进化动画
   sideImageUrl      String? // 侧身形象（走动用）
   motionManifestUrl String? // 分层动作包清单（null 时回落旧动画）
-  sortOrder       Int        @default(0)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  sortOrder         Int        @default(0)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   @@unique([speciesId, stageKey])
   @@index([speciesId, sortOrder])
@@ -699,9 +703,9 @@ model PetConfig {
 
 // 单行站点设置：id 固定为 default，后台读写，Web 通过公开只读接口获取
 model SiteSetting {
-  id                      String   @id @default("default")
-  siteNameZh              String   @default("Sharp")
-  siteNameEn              String   @default("Sharp")
+  id                      String                @id @default("default")
+  siteNameZh              String                @default("Sharp")
+  siteNameEn              String                @default("Sharp")
   sloganZh                String?
   sloganEn                String?
   // 品牌素材：Supabase Storage 相对路径，null 时 Web 回落到内置默认值
@@ -716,11 +720,85 @@ model SiteSetting {
   seoDescriptionEn        String?
   // 统计与合规
   gaMeasurementId         String?
-  analyticsProductionOnly Boolean  @default(true)
+  analyticsProductionOnly Boolean               @default(true)
   icpNumber               String?
-  updatedAt               DateTime @updatedAt
+  updatedAt               DateTime              @updatedAt
   updatedBy               String?
   revisions               SiteSettingRevision[]
+}
+
+// —— 站内信 ——
+
+// 消息模板：一条模板可生成多条消息，变量声明见 variables JSON
+model NotificationTemplate {
+  id                  BigInt   @id @default(autoincrement())
+  code                String   @unique @db.VarChar(60) // pet_hungry
+  name                String   @db.VarChar(80)
+  type                String   @db.VarChar(20) // system | pet | study | account
+  level               String   @default("info") @db.VarChar(20) // info | warning | important
+  deliveryMode        String   @db.VarChar(20) // broadcast | event
+  titleTemplate       String   @db.VarChar(200)
+  bodyTemplate        String   @db.VarChar(1000)
+  actionType          String   @default("none") @db.VarChar(20) // none | page | url
+  actionValueTemplate String?  @db.VarChar(500)
+  dedupeKeyTemplate   String?  @db.VarChar(200)
+  variables           Json     @default("[]")
+  enabled             Boolean  @default(true)
+  createdBy           String?  @db.VarChar(64)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  notifications Notification[]
+
+  @@index([type, enabled])
+  @@index([deliveryMode, enabled])
+}
+
+// 消息：保存模板渲染后的快照；广播消息 userId 为 null，不为每个用户预生成
+model Notification {
+  id           BigInt                @id @default(autoincrement())
+  templateId   BigInt?
+  template     NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateCode String                @db.VarChar(60)
+  type         String                @db.VarChar(20)
+  level        String                @default("info") @db.VarChar(20)
+  title        String                @db.VarChar(200)
+  body         String                @db.VarChar(1000)
+  actionType   String                @default("none") @db.VarChar(20)
+  actionValue  String?               @db.VarChar(500)
+  deliveryMode String                @db.VarChar(20) // broadcast | event
+  userId       String?
+  user         User?                 @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  variables    Json?
+  status       String                @default("draft") @db.VarChar(20) // draft | published | revoked
+  isTest       Boolean               @default(false)
+  publishedAt  DateTime?
+  expireAt     DateTime?
+  revokedAt    DateTime?
+  dedupeKey    String?               @unique @db.VarChar(200)
+  createdBy    String?               @db.VarChar(64)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  reads NotificationRead[]
+
+  @@index([status, publishedAt])
+  @@index([deliveryMode, status, publishedAt])
+  @@index([userId, status])
+  @@index([type, createdAt])
+}
+
+// 用户已读：广播消息读取时才写入，避免提前 fan-out
+model NotificationRead {
+  id             BigInt       @id @default(autoincrement())
+  notificationId BigInt
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt         DateTime     @default(now())
+
+  @@unique([notificationId, userId])
+  @@index([userId, readAt])
 }
 
 // 站点设置变更审计：每次保存/回滚写一条整行快照，保留最近 20 条

@@ -15,6 +15,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MoonOutlined,
+  NotificationOutlined,
   OrderedListOutlined,
   QuestionCircleOutlined,
   ReadOutlined,
@@ -46,6 +47,7 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/textbooks", icon: <BookOutlined />, labelKey: "nav.textbookManagement" },
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.gradeManagement" },
   { key: "/articles", icon: <ReadOutlined />, labelKey: "nav.articles" },
+  { key: "/notifications", icon: <NotificationOutlined />, labelKey: "nav.notifications" },
   { key: "/pets", icon: <HeartOutlined />, labelKey: "nav.petManagement" },
   { key: "/site-settings", icon: <SettingOutlined />, labelKey: "nav.siteSettings" },
 ];

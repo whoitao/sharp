@@ -9,7 +9,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:seed:pets": "tsx prisma/seed-pets.ts"
+    "db:seed:pets": "tsx prisma/seed-pets.ts",
+    "db:seed:notifications": "tsx prisma/seed-notification-templates.ts"
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.4",

@@ -14,6 +14,7 @@ export type PermissionResource =
   | "textbooks"
   | "grades"
   | "articles"
+  | "notifications"
   | "pets"
   | "study-records"
   | "settings";
@@ -39,6 +40,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   { key: "textbooks", label: "教材管理", writable: true },
   { key: "grades", label: "年级管理", writable: true },
   { key: "articles", label: "文档管理", writable: true },
+  { key: "notifications", label: "消息管理", writable: true },
   { key: "pets", label: "宠物管理", writable: true },
   { key: "study-records", label: "学习记录", writable: false },
   { key: "users", label: "学员管理", writable: true },
@@ -122,6 +124,8 @@ export const ROLE_PRESETS: RolePreset[] = [
       "dashboard:read",
       "articles:read",
       "articles:write",
+      "notifications:read",
+      "notifications:write",
       "textbooks:read",
       "textbooks:write",
       "questions:read",
@@ -144,6 +148,7 @@ export const ROLE_PRESETS: RolePreset[] = [
       "textbooks:read",
       "grades:read",
       "articles:read",
+      "notifications:read",
       "pets:read",
       "study-records:read",
       "users:read",
@@ -159,6 +164,7 @@ export const NAV_PERMISSIONS: Record<string, Permission[]> = {
   "/textbooks": ["textbooks:read"],
   "/grades": ["grades:read"],
   "/articles": ["articles:read"],
+  "/notifications": ["notifications:read"],
   "/pets": ["pets:read"],
   "/site-settings": ["settings:read"],
 };

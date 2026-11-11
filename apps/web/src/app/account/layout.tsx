@@ -2,7 +2,7 @@
 
 import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { BarChart3, BookOpen, NotebookPen, PawPrint, Settings, Star, UserRound } from "lucide-react";
+import { BarChart3, Bell, BookOpen, NotebookPen, PawPrint, Settings, Star, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -22,10 +22,17 @@ export default function AccountLayout({
   const onWrongQuestions = pathname.startsWith("/account/wrong-questions");
   const onFavorites = pathname.startsWith("/account/favorites");
   const onSettings = pathname.startsWith("/account/settings");
+  const onNotifications = pathname.startsWith("/account/notifications");
   const onTextbook = pathname.startsWith("/account/textbook");
   const onPet = pathname.startsWith("/account/pet");
   const onProfile =
-    !onRecords && !onWrongQuestions && !onFavorites && !onSettings && !onTextbook && !onPet;
+    !onRecords &&
+    !onWrongQuestions &&
+    !onFavorites &&
+    !onSettings &&
+    !onNotifications &&
+    !onTextbook &&
+    !onPet;
 
   const tabs = [
     {
@@ -63,6 +70,12 @@ export default function AccountLayout({
       label: t("account.wrongQuestions"),
       icon: NotebookPen,
       active: onWrongQuestions,
+    },
+    {
+      href: "/account/notifications",
+      label: t("account.notifications"),
+      icon: Bell,
+      active: onNotifications,
     },
     {
       href: "/account/settings",

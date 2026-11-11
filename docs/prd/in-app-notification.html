@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>站内信与消息模板产品文档 v0.2｜Sharp</title>
+<style>
+  :root{
+    --bg:#F2F8F5; --surface:#FFFFFF; --text:#10231A; --muted:#4F6B5E;
+    --line:#DDE7E1; --surface-2:#F7FBF9; --accent:#0B7F58; --accent-bright:#10B981; --accent-soft:#DDF6EA;
+    --warn:#B45309; --warn-soft:#FEF3C7; --danger:#C62828; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  .page{max-width:980px;margin:0 auto;padding:56px 28px 96px}
+  header.doc{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:40px}
+  .kicker{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:600;text-transform:uppercase}
+  h1{font-size:34px;line-height:1.25;margin:12px 0 12px;letter-spacing:-.01em}
+  .lede{color:var(--muted);max-width:760px;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:20px;font-size:13px;color:var(--muted)}
+  .meta b{color:var(--text);font-weight:600}
+  h2{font-size:22px;margin:52px 0 14px;padding-top:8px}
+  h3{font-size:16px;margin:26px 0 10px}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;margin:18px 0}
+  table{width:100%;border-collapse:collapse;margin:14px 0;background:var(--surface);font-size:14px}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+  th{background:var(--accent-soft);font-weight:600;white-space:nowrap}
+  caption{caption-side:top;text-align:left;color:var(--muted);font-size:13px;padding-bottom:6px}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .tag.tbd{background:var(--warn-soft);color:var(--warn)}
+  .tag.off{background:#f1f1ef;color:#6b6b66}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0}
+  .flow .step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px}
+  .flow .arrow{color:var(--muted);font-size:14px}
+  .req{border-left:3px solid var(--accent);padding-left:16px;margin:30px 0}
+  .req h3{margin:0 0 6px;font-size:17px}
+  .req .id{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.06em}
+  .note{font-size:13px;color:var(--muted)}
+  code{background:#f0f3f1;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  hr.soft{border:0;border-top:1px solid var(--line);margin:44px 0}
+
+  /* 内嵌演示 */
+  .demo{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:18px 0}
+  .demo-label{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent);text-transform:uppercase;margin-bottom:10px}
+  .demo-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px}
+  .bell-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+  .bell-wrap svg{width:17px;height:17px;fill:none;stroke:var(--text);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .dot-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--danger);color:#fff;font-size:11px;line-height:18px;text-align:center;font-weight:700}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--bg)}
+  .seg button{border:0;background:transparent;padding:6px 14px;font:inherit;font-size:13px;color:var(--muted);cursor:pointer}
+  .seg button.on{background:var(--surface);color:var(--text);font-weight:600;box-shadow:inset 0 0 0 1px var(--line)}
+  .linkbtn{margin-left:auto;border:0;background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:4px 2px}
+  .msg-list{list-style:none;margin:0;padding:0}
+  .msg{display:flex;gap:12px;align-items:flex-start;padding:14px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+  .msg:last-child{border-bottom:0}
+  .msg:hover .msg-title{color:var(--accent)}
+  .msg .read-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:8px;flex:0 0 auto}
+  .msg.is-read .read-dot{background:transparent;border:1px solid var(--line)}
+  .msg-body{min-width:0;flex:1}
+  .msg-title{font-size:14px;font-weight:600;margin-bottom:2px}
+  .msg.is-read .msg-title{font-weight:500;color:var(--muted)}
+  .msg-text{font-size:13.5px;color:var(--muted);margin-bottom:4px}
+  .msg-meta{font-size:12px;color:#8a948d}
+  .msg-action{font-size:12px;color:var(--accent);border:1px solid var(--accent-soft);background:var(--accent-soft);border-radius:999px;padding:3px 10px;white-space:nowrap;margin-top:2px}
+  .demo-empty{margin:18px 0 6px;text-align:center;color:var(--muted);font-size:14px}
+  .field{margin:12px 0}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+  .field textarea,.field input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;font-size:14px;background:var(--bg);color:var(--text)}
+  .field textarea{min-height:64px;resize:vertical}
+  .var-strip{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
+  .var-chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--bg);color:var(--muted)}
+  .preview-box{margin-top:12px;padding:14px 16px;border:1px dashed var(--line);border-radius:10px;background:var(--bg)}
+  .preview-box .pv-title{font-size:14px;font-weight:600;margin-bottom:4px}
+  .preview-box .pv-body{font-size:14px;color:var(--text)}
+  .warn-line{margin-top:10px;font-size:13px;color:var(--warn);background:var(--warn-soft);border:1px solid #eedec2;border-radius:9px;padding:8px 12px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .wire{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px}
+  .wire .bar{height:8px;border-radius:999px;background:var(--accent-soft);margin:6px 0}
+  .wire .bar.short{width:56%}
+  .wire .row{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+  .wire .row:first-child{border-top:0}
+  .wire .sq{width:28px;height:28px;border-radius:8px;background:var(--accent-soft);flex:0 0 auto}
+  .wire .ln{flex:1}
+
+  /* ── 设计稿 ── */
+  .mk-block{margin:22px 0 32px}
+  .mk-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 12px}
+  .mk-tab{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer}
+  .mk-tab.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .mk-panel{display:none}
+  .mk-panel.on{display:block}
+  .mk-browser{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+  .mk-browser-bar{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);border-radius:12px 12px 0 0}
+  .mk-dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+  .mk-url{margin:0 auto;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px 14px}
+  .mk-nav{display:flex;align-items:center;gap:22px;padding:12px 18px;border-bottom:1px solid var(--line);position:relative}
+  .mk-brand{display:flex;align-items:center;gap:7px;font-weight:700;font-size:15px}
+  .mk-brand i{width:9px;height:9px;border-radius:3px;background:var(--accent-bright);display:inline-block}
+  .mk-links{display:flex;gap:18px;font-size:13px;color:var(--muted)}
+  .mk-links .on{color:var(--text);font-weight:600}
+  .mk-nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .mk-icon-btn{width:32px;height:32px;border:1px solid var(--line);border-radius:9px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);background:var(--surface);font-size:11px;font-weight:600}
+  .mk-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .mk-bell{position:relative;display:inline-flex}
+  .mk-badge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
+  .mk-dd{position:absolute;right:0;top:calc(100% + 10px);width:330px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(16,35,26,.14);z-index:5;overflow:hidden;text-align:left}
+  .mk-dd-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);font-size:13px;font-weight:600}
+  .mk-dd-link{font-size:12px;color:var(--accent);font-weight:500}
+  .mk-dd-item{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .mk-dd-ico{width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .mk-dd-main{min-width:0;flex:1}
+  .mk-dd-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+  .mk-dd-text{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .mk-dd-time{font-size:11px;color:var(--muted);margin-top:2px}
+  .mk-unread-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-bright);flex:0 0 auto}
+  .mk-dd-foot{padding:11px 14px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;color:var(--accent);font-weight:600;background:var(--surface-2)}
+  .mk-canvas{padding:24px;background:var(--bg);border-radius:0 0 12px 12px;min-height:310px}
+  .mk-hero{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;max-width:540px}
+  .mk-hero h4{margin:0 0 6px;font-size:16px}
+  .mk-hero p{margin:0;color:var(--muted);font-size:13px}
+  .mk-bar{height:8px;border-radius:999px;background:var(--accent-soft);margin-top:12px}
+  .mk-bar.short{width:62%}
+  .mk-web-body{padding:22px 24px 26px;background:var(--bg);border-radius:0 0 12px 12px}
+  .mk-web-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+  .mk-web-title{font-size:21px;font-weight:600;line-height:1.3}
+  .mk-web-sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .mk-ghost{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:6px 12px;font-size:12px;color:var(--accent);font-weight:600;white-space:nowrap}
+  .mk-toolbar{display:flex;align-items:center;gap:8px;margin:16px 0 10px}
+  .mk-seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .mk-seg span{padding:4px 12px;border-radius:6px;font-size:12px;color:var(--muted)}
+  .mk-seg .on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .mk-toolbar .mk-right{margin-left:auto;font-size:12px;color:var(--muted)}
+  .mk-acct{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;align-items:start}
+  .mk-side{display:flex;flex-direction:column;gap:6px}
+  .mk-side-item{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid transparent;border-radius:9px;padding:9px 11px;font-size:12px;font-weight:600;color:var(--muted)}
+  .mk-side-item .mk-ico{width:15px;height:15px}
+  .mk-side-item.on{background:var(--accent-soft);color:var(--accent)}
+  .mk-side-badge{margin-left:auto;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:9px;line-height:16px;text-align:center;font-weight:700}
+  .mk-list{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 18px}
+  .mk-item{display:flex;gap:12px;align-items:flex-start;padding:15px 0;border-top:1px solid var(--line)}
+  .mk-item:first-child{border-top:0}
+  .mk-item-ico{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .mk-item-main{min-width:0;flex:1}
+  .mk-item-top{display:flex;align-items:center;gap:8px}
+  .mk-item-title{font-size:14px;font-weight:600}
+  .mk-item.is-read .mk-item-title{color:var(--muted);font-weight:500}
+  .mk-item-text{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .mk-item-meta{font-size:11px;color:var(--muted);margin-top:5px;display:flex;gap:8px;align-items:center}
+  .mk-pill{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .mk-pill.gray{background:var(--surface-2);color:var(--muted);font-weight:500;border:1px solid var(--line)}
+  .mk-item-cta{font-size:11.5px;color:var(--accent);border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .mk-detail{background:var(--bg);padding:26px 24px 30px;border-radius:0 0 12px 12px}
+  .mk-detail-card{max-width:600px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px 26px}
+  .mk-crumb{font-size:11.5px;color:var(--muted);margin-bottom:12px}
+  .mk-detail-title{font-size:21px;font-weight:600;line-height:1.35}
+  .mk-detail-meta{font-size:11.5px;color:var(--muted);margin-top:6px;display:flex;gap:8px;align-items:center}
+  .mk-detail-text{font-size:14px;color:var(--text);margin:16px 0 20px;line-height:1.8}
+  .mk-cta{display:inline-block;background:var(--accent);color:#fff;border-radius:9px;padding:9px 18px;font-size:13px;font-weight:600}
+  .mk-hint{font-size:11.5px;color:var(--muted);margin-top:12px}
+  .mk-phones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:start;margin-top:14px}
+  .mk-phone{background:#0B1512;border-radius:30px;padding:7px;box-shadow:0 14px 34px rgba(16,35,26,.16)}
+  .mk-phone-screen{background:var(--bg);border-radius:24px;overflow:hidden;min-height:540px;display:flex;flex-direction:column}
+  .mk-status{display:flex;justify-content:space-between;align-items:center;padding:9px 18px 2px;font-size:10.5px;font-weight:700;color:var(--text)}
+  .mk-status .sig{display:flex;gap:3px;align-items:flex-end}
+  .mk-status .sig i{display:block;width:3px;background:var(--text);border-radius:1px}
+  .mk-p-head{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 12px}
+  .mk-p-title{font-size:18px;font-weight:700}
+  .mk-p-link{font-size:11.5px;color:var(--accent);font-weight:600}
+  .mk-p-header-btn{position:relative;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:var(--text);flex:0 0 auto}
+  .mk-p-header-btn .mk-ico{width:19px;height:19px}
+  .mk-p-header-badge{position:absolute;top:-1px;right:-1px;min-width:15px;height:15px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:9px;line-height:15px;text-align:center;font-weight:700}
+  .mk-p-head-title{flex:1;text-align:center;font-size:16px;font-weight:700}
+  .mk-p-body{flex:1;padding:0 13px 14px;display:flex;flex-direction:column;gap:10px}
+  .mk-p-profile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px}
+  .mk-p-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex:0 0 auto}
+  .mk-p-name{font-size:14px;font-weight:700}
+  .mk-p-sub{font-size:11px;color:var(--muted);margin-top:1px}
+  .mk-p-menu{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .mk-p-row{display:flex;align-items:center;gap:11px;padding:11px 13px;border-top:1px solid var(--line)}
+  .mk-p-row:first-child{border-top:0}
+  .mk-p-row-ico{width:32px;height:32px;border-radius:9px;background:var(--bg);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .mk-p-row-label{flex:1;font-size:12.5px;font-weight:500}
+  .mk-p-row-value{font-size:10.5px;color:var(--muted);max-width:44%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mk-p-row .mk-chev{width:14px;height:14px;color:var(--muted)}
+  .mk-p-seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .mk-p-seg span{flex:1;text-align:center;font-size:11.5px;padding:4px 0;border-radius:6px;color:var(--muted)}
+  .mk-p-seg .on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .mk-p-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 13px;display:flex;gap:10px;align-items:flex-start}
+  .mk-p-card .mk-item-ico{width:30px;height:30px;border-radius:9px}
+  .mk-p-card-title{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px}
+  .mk-p-card-text{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5}
+  .mk-p-card-time{font-size:10px;color:var(--muted);margin-top:4px}
+  .mk-p-tabbar{display:flex;border-top:1px solid var(--line);background:var(--surface);padding:8px 4px 12px}
+  .mk-p-tab{flex:1;text-align:center;font-size:10px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+  .mk-p-tab.on{color:var(--accent);font-weight:700}
+  .mk-p-tab .mk-ico{width:17px;height:17px}
+  .mk-admin{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  .mk-admin-top{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:12px;color:var(--muted)}
+  .mk-admin-top b{color:var(--text);font-size:13px}
+  .mk-admin-body{background:var(--bg);padding:16px}
+  .mk-admin-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:16px;align-items:start}
+  .mk-form{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .mk-form-title{font-size:14px;font-weight:600;margin-bottom:12px}
+  .mk-field{margin-bottom:10px}
+  .mk-label{font-size:11px;color:var(--muted);margin-bottom:4px}
+  .mk-input{border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--surface);font-size:12.5px;color:var(--text)}
+  .mk-input.area{min-height:52px;line-height:1.7}
+  .mk-input.muted{background:var(--surface-2);color:var(--muted)}
+  .mk-2col{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .mk-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+  .mk-chip{font-size:10.5px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted);background:var(--surface-2)}
+  .mk-chip b{color:var(--accent);font-weight:600}
+  .mk-preview{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .mk-preview-title{font-size:13px;font-weight:600;margin-bottom:10px}
+  .mk-preview-msg{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface-2)}
+  .mk-preview-msg .t{font-size:13px;font-weight:600;display:flex;gap:6px;align-items:center}
+  .mk-preview-msg .b{font-size:12px;color:var(--text);margin-top:6px;line-height:1.7}
+  .mk-preview-msg .m{font-size:10px;color:var(--muted);margin-top:8px}
+  .mk-ok{margin-top:10px;font-size:10.5px;color:var(--accent);background:var(--accent-soft);border-radius:8px;padding:7px 9px}
+  .mk-admin-actions{display:flex;gap:8px;margin-top:12px}
+  .mk-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:600;color:var(--muted)}
+  .mk-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .mk-code{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font:12px/1.75 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text);white-space:pre}
+  .mk-ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+
+  @media (max-width:860px){
+    .mk-phones{grid-template-columns:1fr;max-width:340px;margin-left:auto;margin-right:auto}
+    .mk-admin-grid{grid-template-columns:1fr}
+    .mk-links{display:none}
+    .mk-dd{width:300px}
+  }
+
+  @media (max-width:640px){
+    h1{font-size:27px}.page{padding:36px 18px 72px}table{font-size:13px}th,td{padding:8px}
+    .grid-2{grid-template-columns:1fr}
+    .linkbtn{margin-left:0}
+    .mk-acct{grid-template-columns:1fr}
+    .mk-side{flex-direction:row;flex-wrap:wrap}
+    .mk-side-item{flex:0 0 auto}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <div class="kicker">Product Document · v0.2</div>
+    <h1>站内信：把该说的话，送到该看到的人</h1>
+    <p class="lede">现有「文章」只能面向所有人发布公开内容，无法对某个用户说一句具体的话，也没有已读状态。站内信要补齐这条能力：用<strong>消息模板 + 变量</strong>生成带用户上下文的短提醒，例如「您的宠物<strong>小白</strong>饿了，快去喂食」，并把未读、已读、跳转和过期管理起来。本期只做<strong>中文、Web 与管理后台</strong>，移动端后续接入同一套消息。</p>
+    <div class="meta">
+      <span><b>版本</b> v0.2（范围已确认）</span>
+      <span><b>端</b> Web、管理后台</span>
+      <span><b>语言</b> 中文</span>
+      <span><b>目标用户</b> 学生（接收）、运营与内容人员（发送）</span>
+      <span><b>依赖</b> 用户资料、宠物状态、现有登录态与后台权限</span>
+    </div>
+  </header>
+
+  <h2>1. 背景与问题</h2>
+  <p>产品里已经出现三类需要主动告知用户的事件，但当前没有承载渠道：</p>
+  <ul>
+    <li>宠物状态变化：饱腹度过低时，用户只有主动打开宠物页才会发现，错过喂食时机。</li>
+    <li>系统运营事件：版本升级、维护窗口、功能上线，缺少一个能触达已登录用户的固定位置。</li>
+    <li>账号与学习提醒：未来需要提醒连续未学习、资料未完善等，目前只能靠页面内的静态提示。</li>
+  </ul>
+  <p>这些场景的共同点是：<strong>内容很短、必须指向具体用户、需要知道用户看没看、往往还要一跳直达</strong>。文章是公开的长内容，既没有收件人，也没有已读状态，放在文章里会让公开列表混入私信，因此不复用文章模型。</p>
+  <div class="card">
+    <h3>产品决策</h3>
+    <ul>
+      <li>建立独立的「消息中心」，作为所有主动通知的唯一入口。</li>
+      <li>消息内容必须来自「消息模板」，通过 <code>{$变量名}</code> 占位符生成个性化文案。</li>
+      <li>消息只做短提醒：标题 + 正文 + 可选跳转；长内容仍由文章承载，消息只负责把人带到文章。</li>
+      <li>用户侧统一管理未读与已读；后台统一管理模板、全站广播发布与撤回。</li>
+    </ul>
+  </div>
+  <p class="note">预期可观察结果：用户登录后能在固定入口看到未读提醒，点击后直达对应页面；运营修改文案只需编辑模板，不需要发版。</p>
+
+  <h2>2. 与文章模块的边界</h2>
+  <table>
+    <caption>两者是「公开内容」与「用户消息」的关系，不做合并</caption>
+    <thead><tr><th>维度</th><th>文章</th><th>站内信</th></tr></thead>
+    <tbody>
+      <tr><td>面向对象</td><td>所有访客，公开可读</td><td>具体用户，只有本人可见</td></tr>
+      <tr><td>内容形态</td><td>富文本长内容、分类、频道</td><td>短标题 + 短正文 + 跳转</td></tr>
+      <tr><td>状态</td><td>草稿 / 已发布</td><td>草稿 / 已发布 / 已撤回 / 已过期，另有每人未读与已读</td></tr>
+      <tr><td>生命周期</td><td>长期存档，可反复编辑</td><td>有生效期与过期时间，事件消息需要去重</td></tr>
+      <tr><td>复用方式</td><td>作为消息跳转的目标页</td><td>通过跳转配置指向文章详情，不共享内容结构</td></tr>
+    </tbody>
+  </table>
+  <p>结论：站内信独立建模。文章详情可以作为消息的落地页，但消息不复制文章的分类、富文本与浏览量体系。</p>
+
+  <h2>3. 目标与范围</h2>
+  <div class="card">
+    <h3>目标</h3>
+    <ul>
+      <li>用户能在 Web 的固定入口看到未读消息，并能区分「未读 / 已读」。</li>
+      <li>用户不能删除消息，避免误删后无法找回；消息只在过期或撤回后从列表消失。</li>
+      <li>一条模板可以生成多条个性化消息，模板改动不影响已发出的历史消息。</li>
+      <li>运营可以独立完成「建模板 → 预览 → 发布全站 → 撤回」，不需要研发介入。</li>
+      <li>系统事件（如宠物饥饿）按规则自动生成，同一事件不重复打扰。</li>
+      <li>任何消息都不会因为变量缺失、跳转失效或权限问题而展示出原始占位符或错误页面。</li>
+    </ul>
+  </div>
+  <table>
+    <caption>P0 完成「模板 → 发布 → 接收 → 已读」的完整闭环；P1 做移动端接入与推送增强</caption>
+    <thead><tr><th>层级</th><th>内容</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag">P0</span></td><td>Web 消息中心、未读数、已读 / 全部已读、消息模板管理、变量占位符、实时预览、测试发送、全站广播、生效与过期、宠物饥饿消息、系统升级公告、后台消息列表与撤回、权限与审计</td><td>构成完整闭环</td></tr>
+      <tr><td><span class="tag">P1</span></td><td>移动端消息中心（复用同一套消息与已读状态）、定时发送、消息分类筛选、App 系统推送</td><td>扩展触达端与运营能力</td></tr>
+      <tr><td><span class="tag off">不做</span></td><td>用户删除消息、定向人群发送、英文 / 多语言模板、聊天与回复、附件与图片消息、短信 / 邮件 / 微信触达、富文本长文</td><td>与本期“中文、Web、全站广播 + 事件触发”的定位无关</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. 产品模型</h2>
+  <h3>4.1 对象定义</h3>
+  <table>
+    <thead><tr><th>对象</th><th>定义</th><th>关键约束</th></tr></thead>
+    <tbody>
+      <tr><td>消息模板</td><td>一组可复用的标题、正文与跳转配置，用变量适配不同用户和事件</td><td>编码全局唯一；被消息引用后不可删除，只能停用</td></tr>
+      <tr><td>模板变量</td><td>模板中声明的占位符，如 <code>pet_name</code>，运行时替换为真实值</td><td>必须先声明后使用；区分全局变量与用户变量</td></tr>
+      <tr><td>消息</td><td>一次发送产生的通知记录，保存渲染后的标题、正文和变量快照</td><td>发送方式为全站广播或事件触发；发布后内容不可编辑，可撤回</td></tr>
+      <tr><td>用户消息状态</td><td>某个用户对某条消息的未读、已读状态</td><td>每个用户独立，互不影响；用户不可删除</td></tr>
+      <tr><td>消息事件</td><td>触发消息生成的业务事件，如宠物饥饿、系统升级</td><td>按去重键保证同一事件只生成一次</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 消息类型</h3>
+  <table>
+    <thead><tr><th>类型</th><th>发送方式</th><th>触发源</th><th>典型场景</th><th>默认级别</th></tr></thead>
+    <tbody>
+      <tr><td>系统</td><td>全站广播</td><td>运营手动发布</td><td>版本升级、维护通知、功能上线</td><td>重要</td></tr>
+      <tr><td>宠物</td><td>事件触发</td><td>宠物状态变化</td><td>宠物饥饿、长时间未喂养</td><td>提醒</td></tr>
+      <tr><td>学习</td><td>事件触发（P1）</td><td>学习数据变化</td><td>连续未学习、目标未完成</td><td>普通</td></tr>
+      <tr><td>账号</td><td>事件触发（P1）</td><td>账号事件</td><td>资料待完善、密码变更</td><td>普通</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 模板变量</h3>
+  <p>模板变量分为两类，用于在后台校验「这条模板能不能发给全站」：</p>
+  <table>
+    <thead><tr><th>作用域</th><th>含义</th><th>示例</th><th>可用于全站广播</th></tr></thead>
+    <tbody>
+      <tr><td>全局变量</td><td>所有用户取值相同</td><td><code>site_name</code>、<code>latest_version</code>、<code>upgrade_time</code></td><td>可以</td></tr>
+      <tr><td>用户变量</td><td>每个用户取值不同</td><td><code>nickname</code>、<code>pet_name</code>、<code>pet_satiety</code></td><td>不可以，只能用于事件触发消息</td></tr>
+    </tbody>
+  </table>
+  <p>每个变量需声明：变量名、显示名、类型（文本 / 数字 / 时间）、作用域、是否必填、示例值、缺省值。变量名只允许字母、数字与下划线。</p>
+
+  <h3>4.4 状态与生命周期</h3>
+  <div class="flow">
+    <span class="step">模板：启用</span><span class="arrow">→</span>
+    <span class="step">停用（不可删除）</span>
+  </div>
+  <div class="flow">
+    <span class="step">消息：草稿</span><span class="arrow">→</span>
+    <span class="step">已发布</span><span class="arrow">→</span>
+    <span class="step">已过期 / 已撤回</span>
+  </div>
+  <div class="flow">
+    <span class="step">用户侧：未读</span><span class="arrow">→</span>
+    <span class="step">已读（不可删除）</span>
+  </div>
+  <ul>
+    <li>模板停用后不可用于新消息，已发出的历史消息不受影响。</li>
+    <li>消息发布后不可编辑标题、正文与变量；如需修正，撤回后重新发布。</li>
+    <li>撤回后所有用户不再看到该消息，已读记录保留用于审计。</li>
+    <li>过期消息不再下发、不在列表展示，后台仍可查询。</li>
+  </ul>
+
+  <h2>5. 功能需求</h2>
+
+  <div class="req">
+    <div class="id">FR-01</div>
+    <h3>消息中心入口与未读数</h3>
+    <p><strong>目的</strong>：让用户在不主动寻找的情况下知道「有事发生」。</p>
+    <table>
+      <thead><tr><th>项目</th><th>规则</th></tr></thead>
+      <tbody>
+        <tr><td>入口</td><td>两个入口指向同一页面：① Web 导航栏右上角铃铛；② 个人中心左侧导航的「消息」，位于「设置」上方。本期不提供移动端入口</td></tr>
+        <tr><td>可见性</td><td>仅登录用户可见；未登录不展示铃铛与红点，个人中心左侧导航也不展示「消息」</td></tr>
+        <tr><td>登录要求</td><td>消息列表与详情都属于个人中心页面，必须登录后访问；未登录直接打开链接时跳转登录页，登录后回到原消息</td></tr>
+        <tr><td>未读数</td><td>未读数 = 已发布 + 未过期 + 无已读记录的消息数</td></tr>
+        <tr><td>红点</td><td>未读数大于 0 时显示数字，超过 99 显示「99+」；等于 0 时不显示</td></tr>
+        <tr><td>更新时机</td><td>登录后加载一次；打开消息中心、标记已读、全部已读后刷新；页面重新获得焦点时可刷新</td></tr>
+        <tr><td>异常</td><td>未读数请求失败不阻塞页面，红点保持上一次结果，不弹错误提示</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-02</div>
+    <h3>消息列表与筛选</h3>
+    <p><strong>目的</strong>：让用户快速扫到最重要、最新的提醒。</p>
+    <ul>
+      <li>页面沿用个人中心外壳：左侧为现有导航（个人信息 / 我的教材 / 我的宠物 / 学情分析 / 我的收藏 / 错题本 / 消息 / 设置），「消息」位于「设置」上方并保持选中。</li>
+      <li>默认排序：未读优先，其次按发布时间倒序。</li>
+      <li>筛选：全部 / 未读。</li>
+      <li>列表项展示：标题、正文摘要（最多两行）、类型标签、发布时间、未读圆点、可选跳转按钮。</li>
+      <li>空态：全部为空时提示「暂无消息」；未读筛选为空时提示「没有未读消息」。</li>
+      <li>分页：Web 每页 20 条，分页加载。</li>
+      <li>消息不提供删除操作，列表项不出现删除按钮或滑动删除。</li>
+      <li>进入列表<strong>不会</strong>自动把消息标记为已读。</li>
+    </ul>
+    <div class="demo" data-demo="inbox">
+      <div class="demo-label">交互演示 · 消息列表与已读状态</div>
+      <div class="demo-head">
+        <span class="bell-wrap" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+          <span class="dot-badge" data-badge>2</span>
+        </span>
+        <div class="seg" role="group" aria-label="筛选消息">
+          <button type="button" class="on" data-filter="all">全部</button>
+          <button type="button" data-filter="unread">未读</button>
+        </div>
+        <button type="button" class="linkbtn" data-readall>全部已读</button>
+      </div>
+      <ul class="msg-list" data-list>
+        <li class="msg" data-read="false">
+          <span class="read-dot" aria-hidden="true"></span>
+          <div class="msg-body">
+            <div class="msg-title">宠物饿了</div>
+            <div class="msg-text">您的宠物小白饿了，快去喂食。</div>
+            <div class="msg-meta">宠物提醒 · 今天 09:12</div>
+          </div>
+          <span class="msg-action">去喂食</span>
+        </li>
+        <li class="msg" data-read="false">
+          <span class="read-dot" aria-hidden="true"></span>
+          <div class="msg-body">
+            <div class="msg-title">系统升级通知</div>
+            <div class="msg-text">系统将于 11 月 12 日 02:00 升级到 v2.4.0，期间可能短暂不可用。</div>
+            <div class="msg-meta">系统通知 · 昨天 18:30</div>
+          </div>
+          <span class="msg-action">查看详情</span>
+        </li>
+        <li class="msg" data-read="true">
+          <span class="read-dot" aria-hidden="true"></span>
+          <div class="msg-body">
+            <div class="msg-title">维护完成</div>
+            <div class="msg-text">系统维护已完成，感谢你的耐心等待。</div>
+            <div class="msg-meta">系统通知 · 11 月 9 日</div>
+          </div>
+        </li>
+      </ul>
+      <p class="demo-empty" data-empty hidden>没有未读消息</p>
+      <p class="note" style="margin-top:12px">点击消息试试：未读圆点消失、铃铛数字减少；切到「未读」筛选后已读消息不再出现。</p>
+    </div>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-03</div>
+    <h3>消息内容与跳转</h3>
+    <p><strong>目的</strong>：让用户在读完一句话后能立刻处理。</p>
+    <table>
+      <thead><tr><th>项目</th><th>规则</th></tr></thead>
+      <tbody>
+        <tr><td>详情形态</td><td>Web 铃铛下拉展示最近 5 条 + 「查看全部」；完整列表与详情都放在个人中心外壳内，左侧导航保持可见且「消息」选中</td></tr>
+        <tr><td>正文长度</td><td>建议不超过 200 字；超出时详情页滚动展示，列表只显示两行摘要</td></tr>
+        <tr><td>跳转类型</td><td>无跳转 / 站内页面 / 外部链接</td></tr>
+        <tr><td>跳转行为</td><td>点击「去处理」或消息主体时先标记已读，再跳转；无跳转的消息只标记已读</td></tr>
+        <tr><td>权限校验</td><td>跳转前校验目标是否对当前用户可见；目标不存在或无权限时停留在消息详情并提示「内容已失效」</td></tr>
+        <tr><td>安全</td><td>站内路径必须以 <code>/</code> 开头；外部链接只允许 <code>http</code> 或 <code>https</code>；不允许多层重定向</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-04</div>
+    <h3>已读与全部已读</h3>
+    <ul>
+      <li>单条已读：用户点击消息或进入详情时写入已读时间；重复点击不报错。</li>
+      <li>全部已读：只影响当前用户的全部未读消息；执行前不需要二次确认。</li>
+      <li>用户不能删除消息；消息只在过期或撤回后从列表消失，历史已读状态保留用于统计。</li>
+      <li>不提供「标记未读」操作，避免未读数被反复修改。</li>
+      <li>已读状态按用户隔离，同一设备切换账号后互不串数据。</li>
+    </ul>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-05</div>
+    <h3>消息模板管理</h3>
+    <p><strong>目的</strong>：让运营用一套结构管理所有通知文案，避免每次改字都发版。</p>
+    <h3 style="margin-top:16px">模板字段</h3>
+    <table>
+      <thead><tr><th>字段</th><th>必填</th><th>规则</th></tr></thead>
+      <tbody>
+        <tr><td>模板名称</td><td>是</td><td>给运营看的中文名，允许重复</td></tr>
+        <tr><td>模板编码</td><td>是</td><td>全局唯一，创建后不可修改；只允许小写字母、数字与下划线，如 <code>pet_hungry</code></td></tr>
+        <tr><td>消息类型</td><td>是</td><td>系统 / 宠物 / 学习 / 账号</td></tr>
+        <tr><td>消息级别</td><td>是</td><td>普通 / 提醒 / 重要；只影响展示样式，不改变排序</td></tr>
+        <tr><td>发送方式</td><td>是</td><td>全站广播 / 事件触发；决定可用变量范围与是否需要去重键</td></tr>
+        <tr><td>标题模板</td><td>是</td><td>纯文本，最长 40 字，允许使用变量</td></tr>
+        <tr><td>正文模板</td><td>是</td><td>纯文本，最长 500 字，允许使用变量；不支持 HTML</td></tr>
+        <tr><td>跳转配置</td><td>否</td><td>无 / 站内页面 / 外部链接；站内页面可带变量</td></tr>
+        <tr><td>去重键</td><td>条件必填</td><td>发送方式为事件触发时必填，如 <code>pet_hungry:{$pet_id}:{$date}</code>；同一去重键只生成一条消息；全站广播不配置</td></tr>
+        <tr><td>变量声明</td><td>否</td><td>声明模板中使用的全部变量及其作用域、必填与示例值</td></tr>
+        <tr><td>启用状态</td><td>是</td><td>启用 / 停用；停用后不可用于新消息</td></tr>
+      </tbody>
+    </table>
+    <h3 style="margin-top:20px">模板校验</h3>
+    <ul>
+      <li>标题与正文中出现的每个 <code>{$变量名}</code> 都必须在变量声明中存在，否则禁止保存。</li>
+      <li>声明了但未使用的变量给出警告，不阻止保存。</li>
+      <li>全站广播模板不允许使用用户级变量；保存时直接阻止，并提示删除变量或改为事件触发模板。</li>
+      <li>事件触发模板必须配置去重键，且去重键只能使用已声明变量。</li>
+      <li>模板编码被历史消息引用后不可删除，只能停用。</li>
+      <li>删除未被引用的模板需要二次确认。</li>
+    </ul>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-06</div>
+    <h3>变量语法与渲染规则</h3>
+    <p><strong>目的</strong>：让「您的宠物{$pet_name}饿了」在不同用户、不同事件下都能得到正确文案，且失败时不会露出占位符。</p>
+    <table>
+      <thead><tr><th>规则</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>占位符语法</td><td><code>{$变量名}</code>，变量名只允许字母、数字、下划线</td></tr>
+        <tr><td>取值来源</td><td>全站广播由运营填写全局变量；事件触发由系统按事件上下文自动填充用户变量</td></tr>
+        <tr><td>纯文本</td><td>变量值一律按纯文本处理，不解析 HTML 或 Markdown，避免脚本注入</td></tr>
+        <tr><td>长度限制</td><td>单个变量值最长 50 字，超出截断并标记；截断后仍保证语句通顺</td></tr>
+        <tr><td>必填缺失</td><td>不发送该条消息，在后台记录失败原因，不允许用空值发布</td></tr>
+        <tr><td>非必填缺失</td><td>使用模板中配置的缺省值；没有缺省值则替换为空字符串，并去掉因此产生的多余空格</td></tr>
+        <tr><td>未知变量</td><td>渲染阶段遇到未声明变量视为错误，整条消息不发送，绝不把 <code>{$x}</code> 原样展示给用户</td></tr>
+        <tr><td>发送快照</td><td>消息保存渲染后的标题、正文、跳转地址与变量值快照；之后修改模板不影响已发消息</td></tr>
+        <tr><td>变量回显</td><td>后台详情可查看本条消息当时的变量值，便于排查文案问题</td></tr>
+      </tbody>
+    </table>
+    <div class="demo" data-demo="template">
+      <div class="demo-label">交互演示 · 模板变量与实时预览</div>
+      <div class="field">
+        <label for="tpl-body">正文模板（试试修改文字或变量）</label>
+        <textarea id="tpl-body" data-tpl>您的宠物{$pet_name}饿了，快去喂食。</textarea>
+      </div>
+      <div class="var-strip">
+        <span class="var-chip">可用变量：{$pet_name}</span>
+        <span class="var-chip">{$pet_satiety}</span>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="var-pet">{$pet_name} 的示例值</label>
+          <input id="var-pet" data-var="pet_name" value="小白" />
+        </div>
+        <div class="field">
+          <label for="var-satiety">{$pet_satiety} 的示例值</label>
+          <input id="var-satiety" data-var="pet_satiety" value="18" />
+        </div>
+      </div>
+      <div class="preview-box">
+        <div class="pv-title">宠物饿了</div>
+        <div class="pv-body" data-preview>您的宠物小白饿了，快去喂食。</div>
+      </div>
+      <div class="warn-line" data-warn hidden></div>
+      <p class="note" style="margin-top:10px">试着输入一个未声明的变量，例如 <code>{$pet_level}</code>，预览区会提示发布前必须处理。</p>
+    </div>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-07</div>
+    <h3>模板预览与测试发送</h3>
+    <ul>
+      <li>编辑模板时提供实时预览，使用运营填写的示例值渲染标题与正文。</li>
+      <li>预览必须与真实消息使用同一套渲染规则，避免「预览正常、发出乱码」。</li>
+      <li>支持「发送测试消息」：由运营指定一个 App 测试用户账号接收，只发给该用户，不进入正式统计，不影响其他用户。管理员账号与 App 用户账号是两套体系，测试消息必须落在 App 用户侧的消息中心才能验证真实效果。</li>
+      <li>测试消息在标题前标记「测试」，有效期 1 天，过期后自动不可见。</li>
+      <li>变量缺失时预览仍展示渲染结果，同时在预览下方提示缺失项，阻止正式发布。</li>
+    </ul>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-08</div>
+    <h3>消息发布（全站广播）</h3>
+    <p><strong>目的</strong>：让运营用最少步骤把系统消息发给全站用户。</p>
+    <table>
+      <thead><tr><th>项目</th><th>规则</th></tr></thead>
+      <tbody>
+        <tr><td>发布来源</td><td>P0 必须选择一条「全站广播」类型且已启用的模板；不支持在发布页直接改文案，避免模板与消息两套内容</td></tr>
+        <tr><td>发送范围</td><td>固定为全站用户，不提供指定用户或多选用户；事件触发消息由系统生成，不在发布页手工创建</td></tr>
+        <tr><td>变量填写</td><td>只允许全局变量；存在必填变量未填写时阻止发布</td></tr>
+        <tr><td>发布时间</td><td>P0 仅支持立即发布；定时发送为 P1</td></tr>
+        <tr><td>过期时间</td><td>可选；不填则长期有效，建议系统类消息设置 7 天 [假设]</td></tr>
+        <tr><td>发布前确认</td><td>展示渲染后的标题、正文与可见范围（全站用户），运营确认后发布</td></tr>
+        <tr><td>发布结果</td><td>成功提示「已发布全站」；变量缺失或模板停用时拒绝发布并说明原因</td></tr>
+      </tbody>
+    </table>
+    <p class="note">全站消息不预先为每个用户生成一条记录，用户打开消息中心时取到消息，再用各自的已读状态渲染。</p>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-09</div>
+    <h3>宠物饥饿消息</h3>
+    <p><strong>目的</strong>：在宠物真正需要照顾时提醒一次，不制造焦虑、不反复打扰。</p>
+    <table>
+      <thead><tr><th>项目</th><th>规则</th></tr></thead>
+      <tbody>
+        <tr><td>触发</td><td>用户打开宠物页或消息中心时，系统按当前饱腹度与最近喂养时间计算宠物状态</td></tr>
+        <tr><td>发送方式</td><td>事件触发，只发给该宠物的主人，不做全站广播</td></tr>
+        <tr><td>生成条件</td><td>宠物已领养、饱腹度低于 30、最近 2 天内有喂养记录（即「饥饿」而非「沉睡」）</td></tr>
+        <tr><td>模板</td><td>固定使用 <code>pet_hungry</code> 模板：「您的宠物{$pet_name}饿了，快去喂食。」</td></tr>
+        <tr><td>去重</td><td>同一只宠物同一天最多生成 1 条；去重键包含宠物与日期</td></tr>
+        <tr><td>免打扰</td><td>仅在 08:00–22:00 生成；夜间不新增消息，次日再判断 [假设]</td></tr>
+        <tr><td>状态恢复</td><td>用户喂食后不再新增；已生成的消息保留，用户已读后自然消失</td></tr>
+        <tr><td>边界</td><td>未领养、宠物已删除、饱腹度正常时不生成；同一用户多只宠物时按宠物分别去重（P0 每人 1 只）</td></tr>
+        <tr><td>跳转</td><td>站内宠物页；跳转失败时提示「宠物信息已更新，请刷新后重试」</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-10</div>
+    <h3>系统升级公告</h3>
+    <ul>
+      <li>运营选择 <code>system_upgrade</code> 模板，填写全局变量：最新版本号、升级时间、更新说明链接。</li>
+      <li>固定为全站广播，不提供指定用户发送。</li>
+      <li>消息级别默认为「重要」，在列表中排在普通消息之前（同为未读时按发布时间倒序）。</li>
+      <li>建议设置过期时间，避免升级完成后用户仍看到旧公告 [假设：默认 7 天]。</li>
+      <li>更新说明链接可指向文章详情；消息本身不承载长文。</li>
+      <li>升级时间变更时，撤回旧消息后重新发布，不直接编辑已发消息。</li>
+    </ul>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-11</div>
+    <h3>后台消息列表与撤回</h3>
+    <table>
+      <thead><tr><th>项目</th><th>规则</th></tr></thead>
+      <tbody>
+        <tr><td>列表字段</td><td>标题、模板编码、类型、级别、发送方式、状态、发布时间、过期时间、已读人数</td></tr>
+        <tr><td>筛选</td><td>按类型、状态、发送方式、模板编码、发布时间范围、标题关键词</td></tr>
+        <tr><td>详情</td><td>查看渲染后的完整内容、变量快照、失败原因、已读人数</td></tr>
+        <tr><td>撤回</td><td>仅「已发布」可撤回；撤回需二次确认；撤回后所有用户不可见，已读记录保留</td></tr>
+        <tr><td>复制</td><td>可基于历史消息复制一条新草稿，重新填写变量与时间</td></tr>
+        <tr><td>删除</td><td>草稿可直接删除；已发布消息只能撤回，不提供物理删除</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="req">
+    <div class="id">FR-12</div>
+    <h3>权限与审计</h3>
+    <table>
+      <thead><tr><th>角色</th><th>模板管理</th><th>消息发布</th><th>消息撤回</th><th>查看统计</th></tr></thead>
+      <tbody>
+        <tr><td>超级管理员</td><td>读写</td><td>可以</td><td>可以</td><td>可以</td></tr>
+        <tr><td>内容编辑</td><td>读写</td><td>可以</td><td>可以</td><td>可以</td></tr>
+        <tr><td>只读访客</td><td>只读</td><td>不可以</td><td>不可以</td><td>可以</td></tr>
+        <tr><td>普通用户</td><td>不可见</td><td>不可见</td><td>不可见</td><td>仅自己的消息</td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li>后台新增「消息管理」权限模块，与现有模块同级；未授权用户不显示菜单入口。</li>
+      <li>所有发布、撤回、模板变更记录操作人、操作时间与操作类型。</li>
+      <li>用户侧接口只能读写当前登录用户自己的消息状态，不接受传入其他用户标识。</li>
+    </ul>
+  </div>
+
+  <h2>6. 共享规则</h2>
+
+  <h3>6.1 未读、已读与可见性</h3>
+  <table>
+    <thead><tr><th>条件</th><th>是否计入未读</th><th>是否在列表展示</th></tr></thead>
+    <tbody>
+      <tr><td>消息已发布且在生效期内</td><td>是（无已读记录时）</td><td>是</td></tr>
+      <tr><td>已过有效期</td><td>否</td><td>否</td></tr>
+      <tr><td>已撤回</td><td>否</td><td>否</td></tr>
+      <tr><td>用户已读</td><td>否</td><td>是（置灰展示）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 去重与频控</h3>
+  <ul>
+    <li>事件型消息必须配置去重键；同一去重键只生成一条消息，重复触发直接跳过。</li>
+    <li>宠物饥饿默认按「宠物 + 日期」去重，每天最多一次。</li>
+    <li>同一模板的全站消息，同一天重复发布需二次确认，避免误操作造成刷屏。</li>
+  </ul>
+
+  <h3>6.3 过期与保留</h3>
+  <ul>
+    <li>过期消息不再生成、不再下发、不在用户列表展示，后台仍可查询。</li>
+    <li>已过期或已撤回的消息保留 90 天用于审计与问题排查（已确认）。</li>
+    <li>用户的已读记录随消息保留期清理，不单独长期保存。</li>
+    <li>用户侧没有删除能力，消息记录在保留期内始终可查。</li>
+  </ul>
+
+  <h3>6.4 文案与内容规范</h3>
+  <ul>
+    <li>标题不超过 40 字，正文不超过 500 字；列表只展示正文前两行。</li>
+    <li>标题不使用「紧急」「最后通知」等制造焦虑的措辞；宠物类消息保持轻松语气。</li>
+    <li>正文不包含手机号、身份证、完整账号等敏感信息。</li>
+    <li>变量值来自用户资料或宠物资料时必须原样展示，不做二次拼接，避免语句歧义。</li>
+    <li>仅支持中文文案，暂不做英文；模板与消息字段不设语言维度。</li>
+  </ul>
+
+  <h2>7. 设计稿</h2>
+  <p>设计稿沿用现有产品的绿色体系：背景 <code>#F2F8F5</code>、卡片 <code>#FFFFFF</code>、主色 <code>#10B981</code>、承载文字用 <code>#0B7F58</code>、边线 <code>#DDE7E1</code>，圆角与移动端保持一致。Web 与移动端复用同一套消息卡片、未读圆点与类型标签。</p>
+
+  <svg style="display:none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></symbol>
+    <symbol id="i-paw" viewBox="0 0 24 24"><circle cx="7" cy="9" r="1.7"/><circle cx="12" cy="7.2" r="1.7"/><circle cx="17" cy="9" r="1.7"/><path d="M12 12.2c-3 0-5 2.2-5 4.1 0 1.2 1 2 2.2 1.7 1-.3 1.8-.4 2.8-.4s1.8.1 2.8.4c1.2.3 2.2-.5 2.2-1.7 0-1.9-2-4.1-5-4.1z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5v-5H9v5H4z"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.8 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.9l5.8-.8z"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5"/><path d="M12 16h.01"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V5M16 20v-7M22 20H2"/></symbol>
+  </svg>
+
+  <div class="mk-block" data-mock-block="web">
+    <h3>7.1 Web 用户端</h3>
+    <p class="note">Web 是本期唯一的用户侧入口，包含导航栏铃铛、消息中心与消息详情三屏。消息中心与详情复用个人中心外壳，左侧导航新增「消息」并放在「设置」上方；三屏都需要登录后才能访问。</p>
+    <div class="mk-tabs" role="tablist" aria-label="Web 设计稿">
+      <button class="mk-tab on" role="tab" aria-selected="true" data-mock="web-nav">导航栏与铃铛</button>
+      <button class="mk-tab" role="tab" aria-selected="false" data-mock="web-list">消息中心</button>
+      <button class="mk-tab" role="tab" aria-selected="false" data-mock="web-detail">消息详情</button>
+    </div>
+
+    <div class="mk-panel on" data-panel="web-nav">
+      <div class="mk-browser">
+        <div class="mk-browser-bar"><span class="mk-dot"></span><span class="mk-dot"></span><span class="mk-dot"></span><span class="mk-url">sharp.app/account</span></div>
+        <div class="mk-nav">
+          <div class="mk-brand"><i></i>Sharp</div>
+          <div class="mk-links"><span>首页</span><span>题库</span><span>练习</span><span>宠物</span><span>文章</span></div>
+          <div class="mk-nav-right">
+            <span class="mk-icon-btn">中</span>
+            <span class="mk-icon-btn">夜</span>
+            <span class="mk-bell">
+              <span class="mk-icon-btn"><svg class="mk-ico"><use href="#i-bell"/></svg></span>
+              <span class="mk-badge">2</span>
+              <div class="mk-dd">
+                <div class="mk-dd-head"><span>消息</span><span class="mk-dd-link">全部已读</span></div>
+                <div class="mk-dd-item">
+                  <span class="mk-dd-ico"><svg class="mk-ico"><use href="#i-paw"/></svg></span>
+                  <div class="mk-dd-main">
+                    <div class="mk-dd-title">宠物饿了<span class="mk-unread-dot"></span></div>
+                    <div class="mk-dd-text">您的宠物小白饿了，快去喂食。</div>
+                    <div class="mk-dd-time">今天 09:12</div>
+                  </div>
+                </div>
+                <div class="mk-dd-item">
+                  <span class="mk-dd-ico"><svg class="mk-ico"><use href="#i-bell"/></svg></span>
+                  <div class="mk-dd-main">
+                    <div class="mk-dd-title">系统升级通知<span class="mk-unread-dot"></span></div>
+                    <div class="mk-dd-text">系统将于 11 月 12 日 02:00 升级到 v2.4.0。</div>
+                    <div class="mk-dd-time">昨天 18:30</div>
+                  </div>
+                </div>
+                <div class="mk-dd-item">
+                  <span class="mk-dd-ico"><svg class="mk-ico"><use href="#i-info"/></svg></span>
+                  <div class="mk-dd-main">
+                    <div class="mk-dd-title">维护完成</div>
+                    <div class="mk-dd-text">系统维护已完成，感谢你的耐心等待。</div>
+                    <div class="mk-dd-time">11-09</div>
+                  </div>
+                </div>
+                <div class="mk-dd-foot">查看全部消息<svg class="mk-ico" style="width:14px;height:14px"><use href="#i-chev"/></svg></div>
+              </div>
+            </span>
+            <span class="mk-avatar">刘</span>
+          </div>
+        </div>
+        <div class="mk-canvas">
+          <div class="mk-hero">
+            <h4>下午好，刘同学</h4>
+            <p>今天继续完成 1 个单元练习，宠物小白在等你。</p>
+            <div class="mk-bar"></div>
+            <div class="mk-bar short"></div>
+          </div>
+        </div>
+      </div>
+      <p class="note">铃铛位于主题切换与头像之间；红点显示未读数，下拉展示最近 5 条并提供「查看全部消息」。</p>
+    </div>
+
+    <div class="mk-panel" data-panel="web-list">
+      <div class="mk-browser">
+        <div class="mk-browser-bar"><span class="mk-dot"></span><span class="mk-dot"></span><span class="mk-dot"></span><span class="mk-url">sharp.app/account/notifications</span></div>
+        <div class="mk-nav">
+          <div class="mk-brand"><i></i>Sharp</div>
+          <div class="mk-links"><span>首页</span><span>题库</span><span>练习</span><span>宠物</span><span>文章</span></div>
+          <div class="mk-nav-right">
+            <span class="mk-icon-btn">中</span>
+            <span class="mk-icon-btn">夜</span>
+            <span class="mk-bell"><span class="mk-icon-btn"><svg class="mk-ico"><use href="#i-bell"/></svg></span><span class="mk-badge">2</span></span>
+            <span class="mk-avatar">刘</span>
+          </div>
+        </div>
+        <div class="mk-web-body">
+          <div class="mk-acct">
+            <nav class="mk-side" aria-label="个人中心导航">
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-user"/></svg>个人信息</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-book"/></svg>我的教材</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-paw"/></svg>我的宠物</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-chart"/></svg>学情分析</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-star"/></svg>我的收藏</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-alert"/></svg>错题本</div>
+              <div class="mk-side-item on"><svg class="mk-ico"><use href="#i-bell"/></svg>消息<span class="mk-side-badge">2</span></div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-gear"/></svg>设置</div>
+            </nav>
+            <div>
+              <div class="mk-web-head">
+                <div>
+                  <div class="mk-web-title">消息中心</div>
+                  <div class="mk-web-sub">共 3 条消息 · 2 条未读 · 消息保留 90 天，不支持删除</div>
+                </div>
+                <span class="mk-ghost">全部已读</span>
+              </div>
+              <div class="mk-toolbar">
+                <div class="mk-seg"><span class="on">全部</span><span>未读 2</span></div>
+                <span class="mk-right">按未读优先、时间倒序</span>
+              </div>
+              <div class="mk-list">
+                <div class="mk-item">
+                  <span class="mk-item-ico"><svg class="mk-ico"><use href="#i-paw"/></svg></span>
+                  <div class="mk-item-main">
+                    <div class="mk-item-top"><span class="mk-item-title">宠物饿了</span><span class="mk-unread-dot"></span></div>
+                    <div class="mk-item-text">您的宠物小白饿了，快去喂食。</div>
+                    <div class="mk-item-meta"><span class="mk-pill">宠物提醒</span><span>今天 09:12</span></div>
+                  </div>
+                  <span class="mk-item-cta">去喂食</span>
+                </div>
+                <div class="mk-item">
+                  <span class="mk-item-ico"><svg class="mk-ico"><use href="#i-bell"/></svg></span>
+                  <div class="mk-item-main">
+                    <div class="mk-item-top"><span class="mk-item-title">系统升级通知</span><span class="mk-unread-dot"></span></div>
+                    <div class="mk-item-text">系统将于 11 月 12 日 02:00 升级到 v2.4.0，期间可能短暂不可用。</div>
+                    <div class="mk-item-meta"><span class="mk-pill">系统通知</span><span>昨天 18:30</span></div>
+                  </div>
+                  <span class="mk-item-cta">查看详情</span>
+                </div>
+                <div class="mk-item is-read">
+                  <span class="mk-item-ico"><svg class="mk-ico"><use href="#i-info"/></svg></span>
+                  <div class="mk-item-main">
+                    <div class="mk-item-top"><span class="mk-item-title">维护完成</span></div>
+                    <div class="mk-item-text">系统维护已完成，感谢你的耐心等待。</div>
+                    <div class="mk-item-meta"><span class="mk-pill gray">系统通知</span><span>11-09</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note">消息中心沿用个人中心外壳，左侧导航新增「消息」并放在「设置」上方，未读时显示角标。列表只区分全部与未读；已读消息保留并置灰，不提供删除入口。</p>
+    </div>
+
+    <div class="mk-panel" data-panel="web-detail">
+      <div class="mk-browser">
+        <div class="mk-browser-bar"><span class="mk-dot"></span><span class="mk-dot"></span><span class="mk-dot"></span><span class="mk-url">sharp.app/account/notifications/1024</span></div>
+        <div class="mk-nav">
+          <div class="mk-brand"><i></i>Sharp</div>
+          <div class="mk-links"><span>首页</span><span>题库</span><span>练习</span><span>宠物</span><span>文章</span></div>
+          <div class="mk-nav-right">
+            <span class="mk-icon-btn">中</span>
+            <span class="mk-icon-btn">夜</span>
+            <span class="mk-bell"><span class="mk-icon-btn"><svg class="mk-ico"><use href="#i-bell"/></svg></span></span>
+            <span class="mk-avatar">刘</span>
+          </div>
+        </div>
+        <div class="mk-web-body">
+          <div class="mk-acct">
+            <nav class="mk-side" aria-label="个人中心导航">
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-user"/></svg>个人信息</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-book"/></svg>我的教材</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-paw"/></svg>我的宠物</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-chart"/></svg>学情分析</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-star"/></svg>我的收藏</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-alert"/></svg>错题本</div>
+              <div class="mk-side-item on"><svg class="mk-ico"><use href="#i-bell"/></svg>消息</div>
+              <div class="mk-side-item"><svg class="mk-ico"><use href="#i-gear"/></svg>设置</div>
+            </nav>
+            <div class="mk-detail-card">
+              <div class="mk-crumb">消息中心 / 宠物提醒</div>
+              <div class="mk-detail-title">宠物饿了</div>
+              <div class="mk-detail-meta"><span class="mk-pill">宠物提醒</span><span>2026-11-11 09:12</span></div>
+              <div class="mk-detail-text">您的宠物小白饿了，快去喂食。饱腹度已经降到 18，继续等待会影响宠物的成长状态。</div>
+              <span class="mk-cta">去喂食</span>
+              <div class="mk-hint">该消息将在 90 天后清理，不能删除。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note">详情页保留同一套左侧导航，「消息」保持选中；进入详情即标记已读，跳转失败时停留在本页并提示「内容已失效」。</p>
+    </div>
+  </div>
+
+  <div class="mk-block" data-mock-block="mobile">
+    <h3>7.2 移动端（P1，不在本期范围）</h3>
+    <p class="note">本期不实现移动端。以下设计用于确认 P1 接入时的信息结构与视觉延续，复用同一套消息、模板与已读状态。</p>
+    <div class="mk-phones">
+      <div class="mk-phone">
+        <div class="mk-phone-screen">
+          <div class="mk-status"><span>9:41</span><span class="sig"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i></span></div>
+          <div class="mk-p-head">
+            <span style="width:30px;flex:0 0 auto"></span>
+            <div class="mk-p-head-title">我的</div>
+            <span class="mk-p-header-btn" aria-label="消息">
+              <svg class="mk-ico"><use href="#i-bell"/></svg>
+              <span class="mk-p-header-badge">2</span>
+            </span>
+          </div>
+          <div class="mk-p-body">
+            <div class="mk-p-profile">
+              <div class="mk-p-avatar">刘</div>
+              <div style="flex:1;min-width:0"><div class="mk-p-name">刘同学</div><div class="mk-p-sub">@liu</div></div>
+              <svg class="mk-ico mk-chev"><use href="#i-chev"/></svg>
+            </div>
+            <div class="mk-p-menu">
+              <div class="mk-p-row">
+                <span class="mk-p-row-ico"><svg class="mk-ico"><use href="#i-book"/></svg></span>
+                <span class="mk-p-row-label">我的教材</span>
+                <span class="mk-p-row-value">人教版 · 六年级上册</span>
+                <svg class="mk-ico mk-chev"><use href="#i-chev"/></svg>
+              </div>
+              <div class="mk-p-row">
+                <span class="mk-p-row-ico"><svg class="mk-ico"><use href="#i-paw"/></svg></span>
+                <span class="mk-p-row-label">我的宠物</span>
+                <svg class="mk-ico mk-chev"><use href="#i-chev"/></svg>
+              </div>
+              <div class="mk-p-row">
+                <span class="mk-p-row-ico"><svg class="mk-ico"><use href="#i-clock"/></svg></span>
+                <span class="mk-p-row-label">学情分析</span>
+                <svg class="mk-ico mk-chev"><use href="#i-chev"/></svg>
+              </div>
+              <div class="mk-p-row">
+                <span class="mk-p-row-ico"><svg class="mk-ico"><use href="#i-star"/></svg></span>
+                <span class="mk-p-row-label">我的收藏</span>
+                <svg class="mk-ico mk-chev"><use href="#i-chev"/></svg>
+              </div>
+              <div class="mk-p-row">
+                <span class="mk-p-row-ico"><svg class="mk-ico"><use href="#i-alert"/></svg></span>
+                <span class="mk-p-row-label">错题本</span>
+                <svg class="mk-ico mk-chev"><use href="#i-chev"/></svg>
+              </div>
+              <div class="mk-p-row">
+                <span class="mk-p-row-ico"><svg class="mk-ico"><use href="#i-gear"/></svg></span>
+                <span class="mk-p-row-label">设置</span>
+                <svg class="mk-ico mk-chev"><use href="#i-chev"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="mk-p-tabbar">
+            <div class="mk-p-tab"><svg class="mk-ico"><use href="#i-home"/></svg><span>首页</span></div>
+            <div class="mk-p-tab"><svg class="mk-ico"><use href="#i-book"/></svg><span>学习</span></div>
+            <div class="mk-p-tab"><svg class="mk-ico"><use href="#i-chart"/></svg><span>排行</span></div>
+            <div class="mk-p-tab on"><svg class="mk-ico"><use href="#i-user"/></svg><span>我的</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mk-phone">
+        <div class="mk-phone-screen">
+          <div class="mk-status"><span>9:41</span><span class="sig"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i></span></div>
+          <div class="mk-p-head">
+            <span class="mk-p-header-btn"><svg class="mk-ico" style="transform:rotate(180deg)"><use href="#i-chev"/></svg></span>
+            <div class="mk-p-head-title">消息</div>
+            <span class="mk-p-link">全部已读</span>
+          </div>
+          <div class="mk-p-body">
+            <div class="mk-p-seg"><span class="on">全部</span><span>未读 2</span></div>
+            <div class="mk-p-card">
+              <span class="mk-item-ico"><svg class="mk-ico"><use href="#i-paw"/></svg></span>
+              <div style="min-width:0;flex:1">
+                <div class="mk-p-card-title">宠物饿了<span class="mk-unread-dot"></span></div>
+                <div class="mk-p-card-text">您的宠物小白饿了，快去喂食。</div>
+                <div class="mk-p-card-time">今天 09:12 · 宠物提醒</div>
+              </div>
+            </div>
+            <div class="mk-p-card">
+              <span class="mk-item-ico"><svg class="mk-ico"><use href="#i-bell"/></svg></span>
+              <div style="min-width:0;flex:1">
+                <div class="mk-p-card-title">系统升级通知<span class="mk-unread-dot"></span></div>
+                <div class="mk-p-card-text">系统将于 11 月 12 日 02:00 升级到 v2.4.0。</div>
+                <div class="mk-p-card-time">昨天 18:30 · 系统通知</div>
+              </div>
+            </div>
+            <div class="mk-p-card">
+              <span class="mk-item-ico"><svg class="mk-ico"><use href="#i-info"/></svg></span>
+              <div style="min-width:0;flex:1">
+                <div class="mk-p-card-title" style="color:var(--muted)">维护完成</div>
+                <div class="mk-p-card-text">系统维护已完成，感谢你的耐心等待。</div>
+                <div class="mk-p-card-time">11-09 · 系统通知</div>
+              </div>
+            </div>
+          </div>
+          <div class="mk-p-tabbar">
+            <div class="mk-p-tab"><svg class="mk-ico"><use href="#i-home"/></svg><span>首页</span></div>
+            <div class="mk-p-tab"><svg class="mk-ico"><use href="#i-book"/></svg><span>学习</span></div>
+            <div class="mk-p-tab"><svg class="mk-ico"><use href="#i-chart"/></svg><span>排行</span></div>
+            <div class="mk-p-tab on"><svg class="mk-ico"><use href="#i-user"/></svg><span>我的</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mk-phone">
+        <div class="mk-phone-screen">
+          <div class="mk-status"><span>9:41</span><span class="sig"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i></span></div>
+          <div class="mk-p-head">
+            <span class="mk-p-header-btn"><svg class="mk-ico" style="transform:rotate(180deg)"><use href="#i-chev"/></svg></span>
+            <div class="mk-p-head-title">消息详情</div>
+            <span style="width:30px;flex:0 0 auto"></span>
+          </div>
+          <div class="mk-p-body">
+            <div class="mk-p-card" style="display:block;padding:16px">
+              <div class="mk-p-card-title" style="font-size:15px">宠物饿了</div>
+              <div class="mk-p-card-time" style="margin-top:6px">宠物提醒 · 今天 09:12</div>
+              <div style="font-size:12px;line-height:1.8;margin-top:12px">您的宠物小白饿了，快去喂食。饱腹度已经降到 18，继续等待会影响宠物的成长状态。</div>
+              <div style="margin-top:16px"><span class="mk-cta" style="font-size:12px;padding:8px 16px">去喂食</span></div>
+              <div class="mk-hint" style="font-size:10px">该消息将在 90 天后清理，不能删除。</div>
+            </div>
+          </div>
+          <div class="mk-p-tabbar">
+            <div class="mk-p-tab"><svg class="mk-ico"><use href="#i-home"/></svg><span>首页</span></div>
+            <div class="mk-p-tab"><svg class="mk-ico"><use href="#i-book"/></svg><span>学习</span></div>
+            <div class="mk-p-tab"><svg class="mk-ico"><use href="#i-chart"/></svg><span>排行</span></div>
+            <div class="mk-p-tab on"><svg class="mk-ico"><use href="#i-user"/></svg><span>我的</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul>
+      <li>入口放在「我的」页标题栏右上角的铃铛，显示未读数量；不占用底部 Tab，也不改变现有功能菜单。</li>
+      <li>「我的」页沿用现有布局：用户卡片 + 我的教材 / 我的宠物 / 学情分析 / 我的收藏 / 错题本 / 设置 列表。</li>
+      <li>消息中心是「我的」下的二级页，保留底部 Tab 且「我的」保持高亮；返回后回到原列表位置。</li>
+      <li>列表与 Web 一致：未读优先、全部 / 未读筛选、全部已读，无删除入口。</li>
+      <li>详情页点击「去喂食」跳转宠物页；跳转失效时停留本页并提示「内容已失效」。</li>
+    </ul>
+  </div>
+
+  <div class="mk-block" data-mock-block="admin">
+    <h3>7.3 管理后台</h3>
+    <p class="note">后台包含消息模板编辑与全站发布两屏；消息列表沿用现有文档管理的表格式布局。</p>
+    <div class="mk-tabs" role="tablist" aria-label="后台设计稿">
+      <button class="mk-tab on" role="tab" aria-selected="true" data-mock="admin-template">模板编辑</button>
+      <button class="mk-tab" role="tab" aria-selected="false" data-mock="admin-publish">发布全站</button>
+    </div>
+
+    <div class="mk-panel on" data-panel="admin-template">
+      <div class="mk-admin">
+        <div class="mk-admin-top"><b>Sharp Admin</b><span>消息管理 / 模板编辑</span><span style="margin-left:auto">内容编辑 · 刘</span></div>
+        <div class="mk-admin-body">
+          <div class="mk-admin-grid">
+            <div class="mk-form">
+              <div class="mk-form-title">模板信息</div>
+              <div class="mk-field"><div class="mk-label">模板名称</div><div class="mk-input">宠物饿了</div></div>
+              <div class="mk-2col">
+                <div class="mk-field"><div class="mk-label">模板编码</div><div class="mk-input muted">pet_hungry</div></div>
+                <div class="mk-field"><div class="mk-label">发送方式</div><div class="mk-input">事件触发</div></div>
+              </div>
+              <div class="mk-2col">
+                <div class="mk-field"><div class="mk-label">消息类型</div><div class="mk-input">宠物</div></div>
+                <div class="mk-field"><div class="mk-label">消息级别</div><div class="mk-input">提醒</div></div>
+              </div>
+              <div class="mk-field"><div class="mk-label">标题模板</div><div class="mk-input">宠物饿了</div></div>
+              <div class="mk-field"><div class="mk-label">正文模板</div><div class="mk-input area">您的宠物{$pet_name}饿了，快去喂食。</div></div>
+              <div class="mk-field">
+                <div class="mk-label">变量声明</div>
+                <div class="mk-chips"><span class="mk-chip"><b>{$pet_name}</b> 用户变量 · 必填</span><span class="mk-chip"><b>{$pet_satiety}</b> 用户变量 · 选填</span></div>
+              </div>
+              <div class="mk-field"><div class="mk-label">去重键</div><div class="mk-input muted">pet_hungry:{$pet_id}:{$date}</div></div>
+              <div class="mk-admin-actions"><span class="mk-btn primary">保存模板</span><span class="mk-btn">发送测试</span><span class="mk-btn">停用</span></div>
+            </div>
+            <div class="mk-preview">
+              <div class="mk-preview-title">实时预览</div>
+              <div class="mk-2col">
+                <div class="mk-field"><div class="mk-label">{$pet_name} 示例值</div><div class="mk-input">小白</div></div>
+                <div class="mk-field"><div class="mk-label">{$pet_satiety} 示例值</div><div class="mk-input">18</div></div>
+              </div>
+              <div class="mk-preview-msg">
+                <div class="t"><svg class="mk-ico" style="width:15px;height:15px;color:var(--accent)"><use href="#i-paw"/></svg>宠物饿了</div>
+                <div class="b">您的宠物小白饿了，快去喂食。</div>
+                <div class="m">宠物提醒 · 刚刚</div>
+              </div>
+              <div class="mk-ok">校验通过：变量完整，事件模板已配置去重键。</div>
+              <div class="mk-hint">全站广播模板若使用用户变量，保存时会被阻止。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mk-panel" data-panel="admin-publish">
+      <div class="mk-admin">
+        <div class="mk-admin-top"><b>Sharp Admin</b><span>消息管理 / 发布全站</span><span style="margin-left:auto">内容编辑 · 刘</span></div>
+        <div class="mk-admin-body">
+          <div class="mk-admin-grid">
+            <div class="mk-form">
+              <div class="mk-form-title">发布设置</div>
+              <div class="mk-field"><div class="mk-label">选择模板</div><div class="mk-input">system_upgrade · 系统升级通知</div></div>
+              <div class="mk-field"><div class="mk-label">发送范围</div><div class="mk-input muted">全站用户（固定，不支持指定用户）</div></div>
+              <div class="mk-field"><div class="mk-label">{$latest_version}</div><div class="mk-input">v2.4.0</div></div>
+              <div class="mk-field"><div class="mk-label">{$upgrade_time}</div><div class="mk-input">2026-11-12 02:00</div></div>
+              <div class="mk-field"><div class="mk-label">{$notes_url}</div><div class="mk-input">/articles/upgrade-v240</div></div>
+              <div class="mk-2col">
+                <div class="mk-field"><div class="mk-label">发布时间</div><div class="mk-input">立即发布</div></div>
+                <div class="mk-field"><div class="mk-label">过期时间</div><div class="mk-input">7 天后</div></div>
+              </div>
+              <div class="mk-admin-actions"><span class="mk-btn primary">确认发布</span><span class="mk-btn">保存草稿</span></div>
+            </div>
+            <div class="mk-preview">
+              <div class="mk-preview-title">发布预览</div>
+              <div class="mk-preview-msg">
+                <div class="t"><svg class="mk-ico" style="width:15px;height:15px;color:var(--accent)"><use href="#i-bell"/></svg>系统升级通知</div>
+                <div class="b">系统将于 2026-11-12 02:00 升级到 v2.4.0，期间可能短暂不可用。</div>
+                <div class="m">系统通知 · 重要</div>
+              </div>
+              <div class="mk-ok">可见范围：全站用户 · 发布后 7 天自动过期</div>
+              <div class="mk-hint">全站消息不为每个用户生成记录；用户打开消息中心时按已读状态展示。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>8. 数据表结构</h2>
+  <p>沿用现有 Prisma + Supabase Postgres 约定：主键使用 <code>BigInt</code> 自增，用户主键为 <code>String</code>，状态字段使用 <code>String</code> 而不是数据库枚举，时间统一使用 <code>DateTime</code>。新增三张表，不改动现有文章与宠物表。</p>
+
+  <h3>8.1 NotificationTemplate（消息模板）</h3>
+  <pre class="mk-code">model NotificationTemplate {
+  id                  BigInt   @id @default(autoincrement())
+  code                String   @unique @db.VarChar(60)   // pet_hungry
+  name                String   @db.VarChar(80)
+  type                String   @db.VarChar(20)            // system | pet | study | account
+  level               String   @default("info") @db.VarChar(20) // info | warning | important
+  deliveryMode        String   @db.VarChar(20)            // broadcast | event
+  titleTemplate       String   @db.VarChar(200)
+  bodyTemplate        String   @db.VarChar(1000)
+  actionType          String   @default("none") @db.VarChar(20) // none | page | url
+  actionValueTemplate String?  @db.VarChar(500)
+  dedupeKeyTemplate   String?  @db.VarChar(200)
+  variables           Json     @default("[]")             // 变量声明数组
+  enabled             Boolean  @default(true)
+  createdBy           String?  @db.VarChar(64)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  notifications       Notification[]
+
+  @@index([type, enabled])
+  @@index([deliveryMode, enabled])
+}</pre>
+  <table>
+    <thead><tr><th>字段</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>code</code></td><td>全局唯一，创建后不可改；消息发送与事件生成都按编码取模板</td></tr>
+      <tr><td><code>variables</code></td><td>JSON 数组，每项为 <code>{ key, label, type, scope, required, example, fallback }</code>，<code>scope</code> 为 <code>global</code> 或 <code>user</code></td></tr>
+      <tr><td><code>dedupeKeyTemplate</code></td><td>仅事件模板使用，渲染后写入通知的 <code>dedupeKey</code></td></tr>
+      <tr><td><code>enabled</code></td><td>停用后不可用于新消息；被通知引用时禁止删除，只能停用</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.2 Notification（消息）</h3>
+  <pre class="mk-code">model Notification {
+  id           BigInt   @id @default(autoincrement())
+  templateId   BigInt?
+  template     NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateCode String   @db.VarChar(60)   // 快照，模板删除后仍可追溯
+  type         String   @db.VarChar(20)
+  level        String   @default("info") @db.VarChar(20)
+  title        String   @db.VarChar(200)  // 渲染后的标题
+  body         String   @db.VarChar(1000) // 渲染后的正文
+  actionType   String   @default("none") @db.VarChar(20)
+  actionValue  String?  @db.VarChar(500)
+  deliveryMode String   @db.VarChar(20)   // broadcast | event
+  userId       String?                    // event 消息的收件人；broadcast 为 null
+  user         User?    @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  variables    Json?                      // 变量值快照
+  status       String   @default("draft") @db.VarChar(20) // draft | published | revoked
+  isTest       Boolean  @default(false)
+  publishedAt  DateTime?
+  expireAt     DateTime?
+  revokedAt    DateTime?
+  dedupeKey    String?  @unique @db.VarChar(200)
+  createdBy    String?  @db.VarChar(64)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reads        NotificationRead[]
+
+  @@index([status, publishedAt])
+  @@index([deliveryMode, status, publishedAt])
+  @@index([userId, status])
+  @@index([type, createdAt])
+}</pre>
+
+  <h3>8.3 NotificationRead（用户已读）</h3>
+  <pre class="mk-code">model NotificationRead {
+  id             BigInt   @id @default(autoincrement())
+  notificationId BigInt
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt         DateTime @default(now())
+
+  @@unique([notificationId, userId])
+  @@index([userId, readAt])
+}</pre>
+
+  <h3>8.4 User 关系补充</h3>
+  <pre class="mk-code">model User {
+  // ...现有字段保持不变
+  notifications     Notification[]     @relation("UserNotifications")
+  notificationReads NotificationRead[]
+}</pre>
+
+  <h3>8.5 查询与清理</h3>
+  <ul>
+    <li>用户可见消息：<code>status = published</code> 且 <code>publishedAt &lt;= now</code> 且 <code>expireAt</code> 为空或大于 now，并且满足 <code>deliveryMode = broadcast</code> 或 <code>userId = 当前用户</code>。</li>
+    <li>未读数：上述可见消息中，左连接 <code>NotificationRead</code> 后当前用户没有已读记录的数量；<code>isTest = true</code> 不计入正式统计。</li>
+    <li>全站广播不预生成收件人行；只有用户真正阅读时才写 <code>NotificationRead</code>，避免广播产生 N 行冗余。</li>
+    <li>去重依赖 <code>dedupeKey</code> 唯一索引；Postgres 允许多个 NULL，因此广播消息不受影响。</li>
+    <li><code>dedupeKey</code> 渲染规则示例：<code>pet_hungry:{petId}:{YYYY-MM-DD}</code>，保证同一宠物每天最多一条。</li>
+    <li>清理：每天删除 <code>createdAt</code> 早于 90 天且状态为 <code>revoked</code> 或已过期的消息，关联已读记录级联删除；草稿不自动清理。</li>
+    <li>分页查询走 <code>[deliveryMode, status, publishedAt]</code> 索引，已读判断走 <code>[notificationId, userId]</code> 唯一索引。</li>
+  </ul>
+
+  <h2>9. 接口设计</h2>
+  <h3>9.1 通用约定</h3>
+  <ul>
+    <li>后台接口前缀 <code>/api/admin</code>，使用 <code>requirePermission(request, "notifications")</code> 鉴权；没有权限返回 403。</li>
+    <li>用户接口前缀 <code>/api/app</code>，使用 <code>requireAppUser(request)</code> 获取当前用户；Web 通过现有 <code>/api/app/[...path]</code> 代理访问，不新增代理。</li>
+    <li>请求与响应使用 JSON，字段 camelCase；<code>BigInt</code> 统一序列化为字符串，避免前端精度丢失。</li>
+    <li>分页参数 <code>page</code> 默认 1，<code>pageSize</code> 默认 20、最大 100；响应包含 <code>items</code>、<code>total</code>、<code>page</code>、<code>pageSize</code>。</li>
+    <li>错误响应统一为 <code>{ "error": "错误说明" }</code>，使用 400（参数错误）、401（未登录）、403（无权限）、404（不存在）、409（编码冲突或不可删除）、422（模板校验失败）。</li>
+  </ul>
+
+  <h3>9.2 后台：模板管理</h3>
+  <table>
+    <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/api/admin/notification-templates</code></td><td>分页列表；支持 <code>keyword</code>、<code>type</code>、<code>deliveryMode</code>、<code>enabled</code></td></tr>
+      <tr><td>GET</td><td><code>/api/admin/notification-templates?id=</code></td><td>模板详情，含变量声明与使用次数</td></tr>
+      <tr><td>POST</td><td><code>/api/admin/notification-templates</code></td><td>新建模板；校验编码唯一、变量与发送方式匹配</td></tr>
+      <tr><td>PATCH</td><td><code>/api/admin/notification-templates?id=</code></td><td>更新模板；编码不可修改</td></tr>
+      <tr><td>DELETE</td><td><code>/api/admin/notification-templates?id=</code></td><td>仅未被消息引用时可删除，否则 409</td></tr>
+      <tr><td>POST</td><td><code>/api/admin/notification-templates/preview</code></td><td>按示例值渲染，返回标题、正文与缺失变量</td></tr>
+      <tr><td>POST</td><td><code>/api/admin/notification-templates/test-send</code></td><td>发送测试消息给指定 App 测试用户</td></tr>
+    </tbody>
+  </table>
+  <p><strong>新建模板请求示例</strong></p>
+  <pre class="mk-code">{
+  "code": "pet_hungry",
+  "name": "宠物饿了",
+  "type": "pet",
+  "level": "warning",
+  "deliveryMode": "event",
+  "titleTemplate": "宠物饿了",
+  "bodyTemplate": "您的宠物{$pet_name}饿了，快去喂食。",
+  "actionType": "page",
+  "actionValueTemplate": "/account/pet",
+  "dedupeKeyTemplate": "pet_hungry:{$pet_id}:{$date}",
+  "variables": [
+    { "key": "pet_name", "label": "宠物名", "type": "string", "scope": "user", "required": true, "example": "小白" },
+    { "key": "pet_id", "label": "宠物 ID", "type": "string", "scope": "user", "required": true, "example": "pet_01" },
+    { "key": "date", "label": "日期", "type": "string", "scope": "global", "required": true, "example": "2026-11-11" }
+  ]
+}</pre>
+  <p><strong>预览请求与响应</strong></p>
+  <pre class="mk-code">// POST /api/admin/notification-templates/preview
+{ "bodyTemplate": "您的宠物{$pet_name}饿了，快去喂食。", "variables": { "pet_name": "小白" } }
+
+// 200
+{ "title": "宠物饿了", "body": "您的宠物小白饿了，快去喂食。", "missing": [] }</pre>
+  <p><strong>测试发送</strong></p>
+  <pre class="mk-code">// POST /api/admin/notification-templates/test-send
+{ "templateCode": "pet_hungry", "userId": "user_uuid", "variables": { "pet_name": "小白", "pet_id": "pet_01", "date": "2026-11-11" } }
+
+// 201
+{ "id": "1088", "status": "published", "isTest": true }</pre>
+
+  <h3>9.3 后台：消息管理</h3>
+  <table>
+    <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/api/admin/notifications</code></td><td>分页列表；支持 <code>type</code>、<code>status</code>、<code>deliveryMode</code>、<code>keyword</code>、<code>from</code>、<code>to</code></td></tr>
+      <tr><td>GET</td><td><code>/api/admin/notifications?id=</code></td><td>消息详情，含变量快照、已读人数与失败原因</td></tr>
+      <tr><td>POST</td><td><code>/api/admin/notifications/publish</code></td><td>按模板发布全站广播消息</td></tr>
+      <tr><td>POST</td><td><code>/api/admin/notifications/revoke</code></td><td>撤回已发布消息，写 <code>revokedAt</code></td></tr>
+    </tbody>
+  </table>
+  <pre class="mk-code">// POST /api/admin/notifications/publish
+{
+  "templateCode": "system_upgrade",
+  "variables": {
+    "latest_version": "v2.4.0",
+    "upgrade_time": "2026-11-12 02:00",
+    "notes_url": "/articles/upgrade-v240"
+  },
+  "expireAt": "2026-11-19T00:00:00.000Z"
+}
+
+// 201
+{ "id": "1089", "status": "published", "deliveryMode": "broadcast", "publishedAt": "2026-11-11T10:00:00.000Z" }</pre>
+
+  <h3>9.4 用户端：消息读取</h3>
+  <table>
+    <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/api/app/notifications?filter=all|unread&amp;page=1&amp;pageSize=20</code></td><td>当前用户可见消息，未读优先、时间倒序，附带 <code>unreadCount</code></td></tr>
+      <tr><td>GET</td><td><code>/api/app/notifications/unread-count</code></td><td>仅返回 <code>{ count }</code>，用于导航栏红点轮询</td></tr>
+      <tr><td>GET</td><td><code>/api/app/notifications/detail?id=</code></td><td>消息详情；校验消息对当前用户可见</td></tr>
+      <tr><td>POST</td><td><code>/api/app/notifications/read</code></td><td>标记单条已读，幂等 upsert</td></tr>
+      <tr><td>POST</td><td><code>/api/app/notifications/read-all</code></td><td>当前用户全部可见消息标记已读</td></tr>
+    </tbody>
+  </table>
+  <p class="note">不提供用户删除接口，与 D5 决策一致。</p>
+  <pre class="mk-code">// GET /api/app/notifications?filter=all&page=1&pageSize=20
+{
+  "items": [
+    {
+      "id": "1024",
+      "type": "pet",
+      "level": "warning",
+      "title": "宠物饿了",
+      "body": "您的宠物小白饿了，快去喂食。",
+      "actionType": "page",
+      "actionValue": "/account/pet",
+      "publishedAt": "2026-11-11T01:12:00.000Z",
+      "readAt": null,
+      "isRead": false
+    }
+  ],
+  "total": 3,
+  "page": 1,
+  "pageSize": 20,
+  "unreadCount": 2
+}</pre>
+  <pre class="mk-code">// POST /api/app/notifications/read
+{ "id": "1024" }
+
+// 200
+{ "id": "1024", "readAt": "2026-11-11T02:05:00.000Z" }</pre>
+
+  <h3>9.5 事件消息生成</h3>
+  <p>不新增对外 HTTP 接口，在 <code>apps/admin/lib/notification.ts</code> 提供内部方法：</p>
+  <ul>
+    <li><code>renderNotification(template, variables)</code>：校验并替换占位符，返回标题、正文、跳转地址与缺失变量；缺失必填变量时抛错。</li>
+    <li><code>publishBroadcast({ templateCode, variables, expireAt })</code>：校验发送方式为 broadcast、变量均为 global，写入快照并发布。</li>
+    <li><code>createEventNotification({ templateCode, userId, variables })</code>：校验发送方式为 event、渲染去重键，按 <code>dedupeKey</code> 幂等写入；重复触发直接返回已有记录。</li>
+    <li><code>generatePetHungryNotification(userId)</code>：在 <code>GET /api/app/pet</code> 与 <code>GET /api/app/notifications</code> 中调用。先计算宠物状态，满足饥饿条件且当前时间在 08:00–22:00 时生成，去重键为 <code>pet_hungry:{petId}:{YYYY-MM-DD}</code>。</li>
+  </ul>
+
+  <h3>9.6 后台权限与导航</h3>
+  <ul>
+    <li>在 <code>apps/admin/lib/permissions.ts</code> 增加资源：<code>{ key: "notifications", label: "消息管理", writable: true }</code>。</li>
+    <li>超级管理员与内容编辑拥有读写权限，只读访客拥有读权限，普通用户不可见。</li>
+    <li>在后台侧边导航增加「消息管理」，包含「消息列表」与「模板管理」两个子页，沿用现有顶栏 Tab 结构。</li>
+  </ul>
+
+  <h2>10. 已确认决策</h2>
+  <table>
+    <thead><tr><th>编号</th><th>决策</th><th>对产品的影响</th></tr></thead>
+    <tbody>
+      <tr><td>D1</td><td>仅中文，暂不做英文</td><td>模板不设语言维度，文案只维护一份中文</td></tr>
+      <tr><td>D2</td><td>先做 Web + 管理后台，移动端暂不做</td><td>本期不提供移动端入口；消息模型保留给 P1 复用</td></tr>
+      <tr><td>D3</td><td>系统公告不允许用户关闭</td><td>不提供通知偏好开关；系统类消息始终展示</td></tr>
+      <tr><td>D4</td><td>消息保留 90 天</td><td>过期与撤回消息保留 90 天供审计，之后清理</td></tr>
+      <tr><td>D5</td><td>用户不能删除消息</td><td>用户侧只有未读与已读，没有删除入口与恢复流程</td></tr>
+      <tr><td>D6</td><td>不做定向人群发送</td><td>手动发布只支持全站广播；宠物饿了按事件条件只发给宠物主人</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="soft" />
+  <p class="note">文档范围：产品行为与业务规则、Web / 移动端 / 管理后台设计稿、数据表结构与接口约定。任务调度、推送通道选型、灰度与回滚方案在评审通过后另行输出技术方案。</p>
+</div>
+
+<script>
+(function () {
+  var inboxRoots = document.querySelectorAll('[data-demo="inbox"]');
+  Array.prototype.forEach.call(inboxRoots, function (root) {
+    var list = root.querySelector('[data-list]');
+    var badge = root.querySelector('[data-badge]');
+    var empty = root.querySelector('[data-empty]');
+    var filter = 'all';
+
+    function items() {
+      return Array.prototype.slice.call(list.querySelectorAll('.msg'));
+    }
+
+    function render() {
+      var unread = 0;
+      items().forEach(function (item) {
+        var isRead = item.getAttribute('data-read') === 'true';
+        if (!isRead) unread += 1;
+        item.classList.toggle('is-read', isRead);
+        item.hidden = filter === 'unread' && isRead;
+      });
+      badge.textContent = unread > 99 ? '99+' : String(unread);
+      badge.hidden = unread === 0;
+      var visible = items().filter(function (item) { return !item.hidden; }).length;
+      empty.hidden = visible !== 0;
+    }
+
+    root.querySelectorAll('[data-filter]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        filter = btn.getAttribute('data-filter');
+        root.querySelectorAll('[data-filter]').forEach(function (b) {
+          b.classList.toggle('on', b === btn);
+        });
+        render();
+      });
+    });
+
+    list.addEventListener('click', function (event) {
+      var item = event.target.closest('.msg');
+      if (!item) return;
+      item.setAttribute('data-read', 'true');
+      render();
+    });
+
+    var readAll = root.querySelector('[data-readall]');
+    readAll.addEventListener('click', function () {
+      items().forEach(function (item) { item.setAttribute('data-read', 'true'); });
+      render();
+    });
+
+    render();
+  });
+
+  var tplRoots = document.querySelectorAll('[data-demo="template"]');
+  Array.prototype.forEach.call(tplRoots, function (root) {
+    var textarea = root.querySelector('[data-tpl]');
+    var preview = root.querySelector('[data-preview]');
+    var warn = root.querySelector('[data-warn]');
+    var inputs = root.querySelectorAll('[data-var]');
+
+    function render() {
+      var values = {};
+      Array.prototype.forEach.call(inputs, function (input) {
+        values[input.getAttribute('data-var')] = input.value;
+      });
+      var unknown = [];
+      var output = textarea.value.replace(/\{\$([a-zA-Z0-9_]+)\}/g, function (match, key) {
+        if (Object.prototype.hasOwnProperty.call(values, key)) return values[key];
+        unknown.push(key);
+        return match;
+      });
+      preview.textContent = output;
+      if (unknown.length > 0) {
+        warn.hidden = false;
+        warn.textContent = '未声明变量：' + unknown.join('、') + '。发布前请补充变量声明或删除占位符。';
+      } else {
+        warn.hidden = true;
+        warn.textContent = '';
+      }
+    }
+
+    textarea.addEventListener('input', render);
+    Array.prototype.forEach.call(inputs, function (input) {
+      input.addEventListener('input', render);
+    });
+    render();
+  });
+
+  var mockBlocks = document.querySelectorAll('[data-mock-block]');
+  Array.prototype.forEach.call(mockBlocks, function (block) {
+    var tabs = block.querySelectorAll('[data-mock]');
+    var panels = block.querySelectorAll('[data-panel]');
+    if (!tabs.length || !panels.length) return;
+
+    function activate(key) {
+      Array.prototype.forEach.call(tabs, function (tab) {
+        var on = tab.getAttribute('data-mock') === key;
+        tab.classList.toggle('on', on);
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      Array.prototype.forEach.call(panels, function (panel) {
+        panel.classList.toggle('on', panel.getAttribute('data-panel') === key);
+      });
+    }
+
+    Array.prototype.forEach.call(tabs, function (tab) {
+      tab.addEventListener('click', function () {
+        activate(tab.getAttribute('data-mock'));
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

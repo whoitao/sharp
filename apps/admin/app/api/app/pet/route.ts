@@ -1,4 +1,5 @@
 import { requireAppUser } from "@/lib/middleware";
+import { generatePetHungryNotification } from "@/lib/notification";
 import {
   applySatietyDecay,
   buildBackpack,
@@ -16,6 +17,9 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   const appUser = requireAppUser(request);
   if (appUser instanceof NextResponse) return appUser;
+
+  // 打开宠物页时按当前状态补一条饥饿提醒（08:00–22:00，按宠物 + 日期去重）
+  await generatePetHungryNotification(appUser.id);
 
   const config = await getPetConfig();
   const today = todayKey();

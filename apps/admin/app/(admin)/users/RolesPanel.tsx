@@ -47,6 +47,7 @@ const PERMISSION_LABEL_KEYS: Record<PermissionResource, MessageKey> = {
   textbooks: "permissions.textbooks",
   grades: "permissions.grades",
   articles: "permissions.articles",
+  notifications: "permissions.notifications",
   pets: "permissions.pets",
   "study-records": "permissions.studyRecords",
   users: "permissions.users",
