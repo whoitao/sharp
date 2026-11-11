@@ -78,6 +78,7 @@ export default function MessagesPanel() {
   const [items, setItems] = useState<MessageItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const [keyword, setKeyword] = useState("");
@@ -97,33 +98,39 @@ export default function MessagesPanel() {
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [publishForm] = Form.useForm<PublishFormValues>();
 
-  const fetchList = async () => {
-    setLoading(true);
-    try {
-      const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-      if (keyword.trim()) query.set("keyword", keyword.trim());
-      if (type) query.set("type", type);
-      if (status) query.set("status", status);
-      if (deliveryMode) query.set("deliveryMode", deliveryMode);
-
-      const res = await fetch(`/api/admin/notifications?${query.toString()}`, {
-        headers: authHeaders(),
-      });
-      const data = await res.json();
-      setItems(Array.isArray(data?.items) ? data.items : []);
-      setTotal(Number(data?.total ?? 0));
-    } catch {
-      setItems([]);
-      setTotal(0);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // 列表只有一个刷新入口：查询条件变化或 reloadKey 自增时由该 effect 统一请求。
+  // 组件内不再直接调用 fetch，避免「先按旧分页请求一次、再由 effect 按新分页请求一次」的重复请求；
+  // AbortController 确保快速切换筛选时过期响应被丢弃，不会覆盖新数据。
   useEffect(() => {
-    fetchList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, keyword, type, status, deliveryMode]);
+    const controller = new AbortController();
+    const load = async () => {
+      setLoading(true);
+      try {
+        const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+        if (keyword.trim()) query.set("keyword", keyword.trim());
+        if (type) query.set("type", type);
+        if (status) query.set("status", status);
+        if (deliveryMode) query.set("deliveryMode", deliveryMode);
+
+        const res = await fetch(`/api/admin/notifications?${query.toString()}`, {
+          headers: authHeaders(),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        if (controller.signal.aborted) return;
+        setItems(Array.isArray(data?.items) ? data.items : []);
+        setTotal(Number(data?.total ?? 0));
+      } catch {
+        if (controller.signal.aborted) return;
+        setItems([]);
+        setTotal(0);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+    void load();
+    return () => controller.abort();
+  }, [page, pageSize, keyword, type, status, deliveryMode, reloadKey]);
 
   const openDetail = async (id: string) => {
     setDetailOpen(true);
@@ -212,7 +219,7 @@ export default function MessagesPanel() {
       message.success(t("notifications.published"));
       setPublishOpen(false);
       setPage(1);
-      fetchList();
+      setReloadKey((key) => key + 1);
     } finally {
       setPublishing(false);
     }
@@ -230,7 +237,7 @@ export default function MessagesPanel() {
       return;
     }
     message.success(t("notifications.revoked"));
-    fetchList();
+    setReloadKey((key) => key + 1);
   };
 
   const typeOptions = TYPE_OPTIONS.map((item) => ({ value: item.value, label: t(item.labelKey) }));
