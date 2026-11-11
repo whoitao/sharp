@@ -28,8 +28,8 @@ const columns: { titleKey: string; links: FooterLink[] }[] = [
     titleKey: "footer.product",
     links: [
       { labelKey: "nav.learn", href: "/learn" },
-      { labelKey: "footer.privacy", href: "/privacy" },
-      { labelKey: "footer.terms", href: "/terms" },
+      { labelKey: "footer.privacy", href: "/privacy-policy" },
+      { labelKey: "footer.terms", href: "/wiki/terms-of-service" },
     ],
   },
   {
