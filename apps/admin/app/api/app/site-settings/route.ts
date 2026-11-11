@@ -1,4 +1,4 @@
-import { getOrCreateSiteSetting, withAssetUrls } from "@/lib/site-settings";
+import { getOrCreateSiteSetting } from "@/lib/site-settings";
 import { NextResponse } from "next/server";
 
 /**
@@ -8,25 +8,21 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const row = await getOrCreateSiteSetting();
-    const data = withAssetUrls(row);
 
     return NextResponse.json(
       {
-        siteNameZh: data.siteNameZh,
-        siteNameEn: data.siteNameEn,
-        sloganZh: data.sloganZh,
-        sloganEn: data.sloganEn,
-        logoUrl: data.logoUrl,
-        faviconUrl: data.faviconUrl,
-        ogImageUrl: data.ogImageUrl,
-        siteUrl: data.siteUrl,
-        seoTitleZh: data.seoTitleZh,
-        seoTitleEn: data.seoTitleEn,
-        seoDescriptionZh: data.seoDescriptionZh,
-        seoDescriptionEn: data.seoDescriptionEn,
-        gaMeasurementId: data.gaMeasurementId,
-        analyticsProductionOnly: data.analyticsProductionOnly,
-        icpNumber: data.icpNumber,
+        siteNameZh: row.siteNameZh,
+        siteNameEn: row.siteNameEn,
+        sloganZh: row.sloganZh,
+        sloganEn: row.sloganEn,
+        siteUrl: row.siteUrl,
+        seoTitleZh: row.seoTitleZh,
+        seoTitleEn: row.seoTitleEn,
+        seoDescriptionZh: row.seoDescriptionZh,
+        seoDescriptionEn: row.seoDescriptionEn,
+        gaMeasurementId: row.gaMeasurementId,
+        analyticsProductionOnly: row.analyticsProductionOnly,
+        icpNumber: row.icpNumber,
       },
       {
         headers: {

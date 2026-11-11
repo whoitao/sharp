@@ -66,7 +66,7 @@ export default async function RootLayout({
             <LocaleProvider initialLocale={locale}>
               <StudyScopeProvider>
                 <div className="flex min-h-screen flex-col">
-                  <Navbar siteName={siteName} logoUrl={settings.logoUrl} />
+                  <Navbar siteName={siteName} />
                   <main className="container mx-auto w-full max-w-[1200px] flex-1 px-4">
                     {children}
                   </main>

@@ -8,9 +8,6 @@ export interface SiteSettings {
   siteNameEn: string;
   sloganZh: string | null;
   sloganEn: string | null;
-  logoUrl: string | null;
-  faviconUrl: string;
-  ogImageUrl: string | null;
   siteUrl: string;
   seoTitleZh: string;
   seoTitleEn: string;
@@ -32,9 +29,6 @@ export const DEFAULTS: SiteSettings = {
   siteNameEn: "Sharp",
   sloganZh: null,
   sloganEn: null,
-  logoUrl: null,
-  faviconUrl: "/favicon.svg",
-  ogImageUrl: null,
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://sharp.whoitao.top",
   seoTitleZh: "Sharp - Modern Learning Platform",
   seoTitleEn: "Sharp - Modern Learning Platform",
@@ -46,6 +40,8 @@ export const DEFAULTS: SiteSettings = {
   analyticsProductionOnly: true,
   icpNumber: null,
 };
+
+const FAVICON_PATH = "/favicon.svg";
 
 function nonEmpty(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value : null;
@@ -59,9 +55,6 @@ export function mergeSiteSettings(remote: Partial<SiteSettings> | null): SiteSet
     siteNameEn: nonEmpty(remote.siteNameEn) ?? DEFAULTS.siteNameEn,
     sloganZh: nonEmpty(remote.sloganZh),
     sloganEn: nonEmpty(remote.sloganEn),
-    logoUrl: nonEmpty(remote.logoUrl),
-    faviconUrl: nonEmpty(remote.faviconUrl) ?? DEFAULTS.faviconUrl,
-    ogImageUrl: nonEmpty(remote.ogImageUrl),
     siteUrl: nonEmpty(remote.siteUrl) ?? DEFAULTS.siteUrl,
     seoTitleZh: nonEmpty(remote.seoTitleZh) ?? DEFAULTS.seoTitleZh,
     seoTitleEn: nonEmpty(remote.seoTitleEn) ?? DEFAULTS.seoTitleEn,
@@ -139,14 +132,13 @@ export function buildSiteMetadata({
   const siteName = siteNameFor(settings, locale);
   const finalTitle = title || seoTitleFor(settings, locale);
   const finalDescription = description || seoDescriptionFor(settings, locale);
-  const images = settings.ogImageUrl ? [{ url: settings.ogImageUrl }] : undefined;
 
   return {
     metadataBase: base,
     title: finalTitle,
     description: finalDescription,
     alternates: { canonical: path },
-    icons: { icon: settings.faviconUrl || DEFAULTS.faviconUrl },
+    icons: { icon: FAVICON_PATH },
     openGraph: {
       type: "website",
       siteName,
@@ -154,13 +146,11 @@ export function buildSiteMetadata({
       description: finalDescription,
       url: new URL(path, base).toString(),
       locale: locale === "zh" ? "zh_CN" : "en_US",
-      images,
     },
     twitter: {
       card: "summary_large_image",
       title: finalTitle,
       description: finalDescription,
-      images: images?.map((image) => image.url),
     },
   };
 }

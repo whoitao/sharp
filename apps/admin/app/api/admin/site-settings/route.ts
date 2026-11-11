@@ -7,7 +7,6 @@ import {
   notifyWebRevalidate,
   toSnapshot,
   trimRevisions,
-  withAssetUrls,
 } from "@/lib/site-settings";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -45,9 +44,6 @@ const updateSchema = z.object({
   siteNameEn: z.string().trim().min(1).max(60).optional(),
   sloganZh: nullableText(200),
   sloganEn: nullableText(200),
-  logoPath: nullableText(500),
-  faviconPath: nullableText(500),
-  ogImagePath: nullableText(500),
   siteUrl: siteUrlSchema,
   seoTitleZh: nullableText(200),
   seoTitleEn: nullableText(200),
@@ -65,7 +61,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const row = await getOrCreateSiteSetting();
-    return NextResponse.json(withAssetUrls(row));
+    return NextResponse.json(row);
   } catch (err) {
     return handleRouteError(err, "site-settings GET");
   }
@@ -100,7 +96,7 @@ export async function PUT(request: NextRequest) {
     await trimRevisions(SITE_SETTING_ID);
     const revalidated = await notifyWebRevalidate();
 
-    return NextResponse.json({ ...withAssetUrls(row), revalidated });
+    return NextResponse.json({ ...row, revalidated });
   } catch (err) {
     return handleRouteError(err, "site-settings PUT");
   }

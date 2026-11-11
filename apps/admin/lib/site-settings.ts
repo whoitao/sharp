@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { siteAssetPublicUrl } from "@/lib/storage";
 import type { SiteSetting } from "@prisma/client";
 
 export const SITE_SETTING_ID = "default";
@@ -15,16 +14,6 @@ export function getOrCreateSiteSetting(): Promise<SiteSetting> {
   });
 }
 
-/** 后台页面需要的完整行 + 素材完整 URL */
-export function withAssetUrls(row: SiteSetting) {
-  return {
-    ...row,
-    logoUrl: row.logoPath ? siteAssetPublicUrl(row.logoPath) : null,
-    faviconUrl: row.faviconPath ? siteAssetPublicUrl(row.faviconPath) : null,
-    ogImageUrl: row.ogImagePath ? siteAssetPublicUrl(row.ogImagePath) : null,
-  };
-}
-
 /**
  * 快照只保留业务字段与修改信息，避免把关系字段写进 JSON。
  * 恢复时按这份结构回填，日期只做展示，不再写回。
@@ -35,9 +24,6 @@ export function toSnapshot(row: SiteSetting) {
     siteNameEn: row.siteNameEn,
     sloganZh: row.sloganZh,
     sloganEn: row.sloganEn,
-    logoPath: row.logoPath,
-    faviconPath: row.faviconPath,
-    ogImagePath: row.ogImagePath,
     siteUrl: row.siteUrl,
     seoTitleZh: row.seoTitleZh,
     seoTitleEn: row.seoTitleEn,
@@ -57,9 +43,6 @@ export interface SiteSettingSnapshot {
   siteNameEn: string;
   sloganZh: string | null;
   sloganEn: string | null;
-  logoPath: string | null;
-  faviconPath: string | null;
-  ogImagePath: string | null;
   siteUrl: string | null;
   seoTitleZh: string | null;
   seoTitleEn: string | null;
@@ -79,9 +62,6 @@ export function snapshotToUpdateData(snapshot: SiteSettingSnapshot) {
     siteNameEn: snapshot.siteNameEn,
     sloganZh: snapshot.sloganZh,
     sloganEn: snapshot.sloganEn,
-    logoPath: snapshot.logoPath,
-    faviconPath: snapshot.faviconPath,
-    ogImagePath: snapshot.ogImagePath,
     siteUrl: snapshot.siteUrl,
     seoTitleZh: snapshot.seoTitleZh,
     seoTitleEn: snapshot.seoTitleEn,

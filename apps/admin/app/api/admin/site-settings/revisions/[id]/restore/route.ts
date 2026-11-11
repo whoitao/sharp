@@ -7,7 +7,6 @@ import {
   snapshotToUpdateData,
   toSnapshot,
   trimRevisions,
-  withAssetUrls,
   type SiteSettingSnapshot,
 } from "@/lib/site-settings";
 import { NextRequest, NextResponse } from "next/server";
@@ -60,7 +59,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     await trimRevisions(SITE_SETTING_ID);
     const revalidated = await notifyWebRevalidate();
 
-    return NextResponse.json({ ...withAssetUrls(row), revalidated });
+    return NextResponse.json({ ...row, revalidated });
   } catch (err) {
     return handleRouteError(err, "site-settings restore");
   }
