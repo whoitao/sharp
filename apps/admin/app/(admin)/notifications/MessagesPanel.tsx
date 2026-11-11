@@ -247,7 +247,7 @@ export default function MessagesPanel() {
       dataIndex: "title",
       width: 260,
       render: (value: string, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Space size={6}>
             <Text strong>{value}</Text>
             {record.isTest && <Tag color="purple">{t("notifications.testBadge")}</Tag>}
@@ -419,7 +419,7 @@ export default function MessagesPanel() {
           <Text type="secondary">…</Text>
         ) : null}
         {detail && (
-          <Space direction="vertical" size={16} style={{ width: "100%" }}>
+          <Space orientation="vertical" size={16} style={{ width: "100%" }}>
             <Descriptions
               column={2}
               size="small"
@@ -555,7 +555,7 @@ export default function MessagesPanel() {
           {selectedTemplate && (
             <Card size="small" title={t("notifications.publishPreview")}>
               {preview ? (
-                <Space direction="vertical" size={6} style={{ width: "100%" }}>
+                <Space orientation="vertical" size={6} style={{ width: "100%" }}>
                   <Text strong>{preview.title || "-"}</Text>
                   <Text>{preview.body || "-"}</Text>
                   {preview.actionValue && <Text type="secondary">{preview.actionValue}</Text>}

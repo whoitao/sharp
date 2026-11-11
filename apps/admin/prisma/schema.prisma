@@ -697,6 +697,13 @@ model PetConfig {
   rareMinQuestions       Int      @default(10)
   minSecondsPerQuestion  Int      @default(3)
   maxQuestionsPerAttempt Int      @default(60)
+  // 饥饿提醒：饱腹度低于该阈值判定为 hungry，页面状态与消息判定共用
+  hungryThreshold        Int      @default(30)
+  // 允许生成提醒的北京时间整点区间 [start, end)；start >= end 表示跨夜，start === end 表示全天不限
+  notifyQuietStart       Int      @default(8)
+  notifyQuietEnd         Int      @default(22)
+  // 最近一次喂养在该天数内才算「饥饿」，否则视为「沉睡」
+  fedWindowDays          Int      @default(2)
   updatedAt              DateTime @updatedAt
   updatedBy              String?
 }

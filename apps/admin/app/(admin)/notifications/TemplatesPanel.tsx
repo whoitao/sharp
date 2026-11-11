@@ -271,7 +271,7 @@ export default function TemplatesPanel() {
         body: JSON.stringify({
           templateCode: testTarget.code,
           userId: testUserId.trim(),
-          variables: exampleValues(testTarget.variables),
+          variables: {},
         }),
       });
       const data = await res.json();
@@ -293,7 +293,7 @@ export default function TemplatesPanel() {
       dataIndex: "name",
       width: 200,
       render: (value: string, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text strong>{value}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>
             {record.code}
@@ -550,7 +550,7 @@ export default function TemplatesPanel() {
           <Form.Item label={t("notifications.variables")}>
             <Form.List name="variables">
               {(fields, { add, remove }) => (
-                <Space direction="vertical" style={{ width: "100%" }} size={8}>
+                <Space orientation="vertical" style={{ width: "100%" }} size={8}>
                   {fields.map((field) => (
                     <div
                       key={field.key}
@@ -619,7 +619,7 @@ export default function TemplatesPanel() {
 
           <Card size="small" title={t("notifications.preview")} loading={previewLoading}>
             {preview ? (
-              <Space direction="vertical" size={6} style={{ width: "100%" }}>
+              <Space orientation="vertical" size={6} style={{ width: "100%" }}>
                 <Text strong>{preview.title || "-"}</Text>
                 <Text>{preview.body || "-"}</Text>
                 {preview.actionValue && <Text type="secondary">{preview.actionValue}</Text>}
@@ -654,7 +654,7 @@ export default function TemplatesPanel() {
         okText={t("notifications.testSend")}
         cancelText={t("common.cancel")}
       >
-        <Space direction="vertical" style={{ width: "100%" }}>
+        <Space orientation="vertical" style={{ width: "100%" }}>
           <Text type="secondary">{testTarget?.name}</Text>
           <Input
             value={testUserId}

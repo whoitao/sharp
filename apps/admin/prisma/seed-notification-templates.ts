@@ -50,7 +50,8 @@ const templates: Prisma.NotificationTemplateCreateInput[] = [
         type: "string",
         scope: "user",
         required: true,
-        example: "小橘",
+        autoFill: "primaryPet.nickname",
+        example: "奶酪",
       },
       {
         key: "pet_id",
@@ -58,7 +59,8 @@ const templates: Prisma.NotificationTemplateCreateInput[] = [
         type: "string",
         scope: "user",
         required: true,
-        example: "1",
+        autoFill: "primaryPet.id",
+        example: "148",
       },
       {
         key: "pet_satiety",
@@ -66,6 +68,7 @@ const templates: Prisma.NotificationTemplateCreateInput[] = [
         type: "number",
         scope: "user",
         required: false,
+        autoFill: "primaryPet.satiety",
         fallback: "0",
       },
       {
@@ -74,7 +77,8 @@ const templates: Prisma.NotificationTemplateCreateInput[] = [
         type: "time",
         scope: "user",
         required: true,
-        example: "2026-01-01",
+        autoFill: "today",
+        example: "2026-11-11",
       },
     ],
     enabled: true,

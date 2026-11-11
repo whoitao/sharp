@@ -18,6 +18,10 @@ interface ConfigValues {
   matureLevel: number;
   satietyMax: number;
   satietyDecay: number;
+  hungryThreshold: number;
+  notifyQuietStart: number;
+  notifyQuietEnd: number;
+  fedWindowDays: number;
   premiumStreak: number;
   rareMinQuestions: number;
   minSecondsPerQuestion: number;
@@ -89,7 +93,7 @@ export default function PetConfigPanel() {
   const numberField = (name: keyof ConfigValues, label: string, max?: number) => (
     <Col xs={24} md={8} key={name}>
       <Form.Item label={label} name={name} style={{ marginBottom: 16 }}>
-        <InputNumber min={0} max={max} style={{ width: "100%" }} />
+        <InputNumber min={0} max={max} precision={0} style={{ width: "100%" }} />
       </Form.Item>
     </Col>
   );
@@ -121,6 +125,19 @@ export default function PetConfigPanel() {
           {numberField("satietyMax", t("pets.satietyMax"), 200)}
           {numberField("satietyDecay", t("pets.satietyDecay"))}
         </Row>
+
+        <Divider titlePlacement="start" plain>
+          {t("pets.groupNotify")}
+        </Divider>
+        <Row gutter={16}>
+          {numberField("hungryThreshold", t("pets.hungryThreshold"), 100)}
+          {numberField("notifyQuietStart", t("pets.notifyQuietStart"), 23)}
+          {numberField("notifyQuietEnd", t("pets.notifyQuietEnd"), 23)}
+          {numberField("fedWindowDays", t("pets.fedWindowDays"), 30)}
+        </Row>
+        <Text type="secondary" style={{ display: "block", marginTop: -8, marginBottom: 16 }}>
+          {t("pets.notifyHint")}
+        </Text>
 
         <Divider titlePlacement="start" plain>
           {t("pets.groupRules")}

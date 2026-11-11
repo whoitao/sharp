@@ -122,50 +122,42 @@ export function NotificationsPanel() {
   return (
     <div className="min-w-0 pb-2 md:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-base font-bold">{t("notifications.title")}</h1>
-          <p className="mt-0.5 text-xs text-foreground-secondary">
-            {unreadCount > 0
-              ? t("notifications.unreadCount", { n: unreadCount })
-              : t("notifications.subtitle")}
-          </p>
+        <div className="inline-flex rounded-full border border-border bg-surface p-1">
+          {(["all", "unread"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                setFilter(value);
+                setPage(1);
+              }}
+              aria-pressed={filter === value}
+              className={cn(
+                "rounded-full px-4 py-1.5 text-xs font-semibold transition-colors",
+                filter === value
+                  ? "bg-primary-light text-primary-strong"
+                  : "text-foreground-secondary hover:bg-accent",
+              )}
+            >
+              {value === "all" ? t("notifications.all") : t("notifications.unread")}
+              {value === "unread" && unreadCount > 0 ? ` (${unreadCount})` : ""}
+            </button>
+          ))}
         </div>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
+          className="text-primary-strong"
           disabled={unreadCount === 0 || markingAll}
           onClick={() => void handleReadAll()}
         >
           {markingAll ? (
-            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
+            <CheckCheck className="h-3.5 w-3.5" />
           )}
           {t("notifications.markAllRead")}
         </Button>
-      </div>
-
-      <div className="mt-3 inline-flex overflow-hidden rounded-lg border border-border bg-surface">
-        {(["all", "unread"] as const).map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => {
-              setFilter(value);
-              setPage(1);
-            }}
-            aria-pressed={filter === value}
-            className={cn(
-              "px-4 py-1.5 text-xs font-semibold transition-colors",
-              filter === value
-                ? "bg-primary-light text-primary-strong"
-                : "text-foreground-secondary hover:bg-accent",
-            )}
-          >
-            {value === "all" ? t("notifications.all") : t("notifications.unread")}
-            {value === "unread" && unreadCount > 0 ? ` (${unreadCount})` : ""}
-          </button>
-        ))}
       </div>
 
       {status === "loading" ? (

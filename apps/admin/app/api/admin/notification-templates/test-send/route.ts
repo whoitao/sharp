@@ -2,13 +2,17 @@ import { Prisma } from "@prisma/client";
 import { requirePermission } from "@/lib/middleware";
 import {
   NotificationError,
+  parseVariableDeclarations,
   renderNotification,
+  resolveAutoFillValues,
   type VariableValues,
 } from "@/lib/notification";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-/** 测试发送：只发给指定 App 用户，标记 isTest 且 1 天后自动不可见 */
+/** 测试发送：只发给指定 App 用户，标记 isTest 且 1 天后自动不可见。
+ * 变量值 = 前端显式传入 + autoFill 从真实用户数据回填（前端没填的项）。
+ */
 export async function POST(request: NextRequest) {
   const admin = await requirePermission(request, "notifications");
   if (admin instanceof NextResponse) return admin;
@@ -33,7 +37,9 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "测试用户不存在" }, { status: 404 });
 
   try {
-    const rendered = renderNotification(template, values);
+    const rendered = await renderNotification(template, values, userId);
+    const declarations = parseVariableDeclarations(template.variables);
+    const resolved = await resolveAutoFillValues(declarations, userId, values);
     const expireAt = new Date(Date.now() + 24 * 3600 * 1000);
 
     const notification = await prisma.notification.create({
@@ -48,7 +54,7 @@ export async function POST(request: NextRequest) {
         actionValue: rendered.actionValue,
         deliveryMode: "event",
         userId,
-        variables: values as unknown as Prisma.InputJsonValue,
+        variables: resolved as unknown as Prisma.InputJsonValue,
         status: "published",
         publishedAt: new Date(),
         expireAt,

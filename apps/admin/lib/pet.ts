@@ -39,12 +39,25 @@ export function stageOf(level: number, stages: PetSpeciesStage[]): PetSpeciesSta
   );
 }
 
-/** 状态实时计算：优先级 asleep > hungry > normal > active */
-export function stateOf(satiety: number, lastFedAt: Date | null, now: Date = new Date()): string {
-  if (satiety >= 70) return "active";
-  const fedWithinTwoDays =
-    lastFedAt !== null && now.getTime() - lastFedAt.getTime() <= 2 * 24 * 3600 * 1000;
-  if (satiety < 30) return fedWithinTwoDays ? "hungry" : "asleep";
+/** 饱腹度达到该值即视为活跃；饥饿阈值超过它时以饥饿阈值为准，避免两条规则互相覆盖 */
+const ACTIVE_SATIETY_THRESHOLD = 70;
+
+/**
+ * 状态实时计算：优先级 asleep > hungry > normal > active。
+ * 阈值与喂养有效窗口来自 PetConfig，页面展示与饥饿消息判定共用同一份规则。
+ */
+export function stateOf(
+  satiety: number,
+  lastFedAt: Date | null,
+  config: Pick<PetConfig, "hungryThreshold" | "fedWindowDays">,
+  now: Date = new Date(),
+): string {
+  const hungryThreshold = config.hungryThreshold;
+  if (satiety >= Math.max(ACTIVE_SATIETY_THRESHOLD, hungryThreshold)) return "active";
+  const fedWindowMs = Math.max(0, config.fedWindowDays) * 24 * 3600 * 1000;
+  const fedWithinWindow =
+    lastFedAt !== null && now.getTime() - lastFedAt.getTime() <= fedWindowMs;
+  if (satiety < hungryThreshold) return fedWithinWindow ? "hungry" : "asleep";
   return "normal";
 }
 
@@ -119,7 +132,7 @@ export function buildPetDetail(
   const stages = pet.species.stages;
   const level = levelOf(pet.experience, config);
   const stage = stageOf(level, stages);
-  const state = stateOf(pet.satiety, pet.lastFedAt);
+  const state = stateOf(pet.satiety, pet.lastFedAt, config);
 
   return {
     id: pet.id,

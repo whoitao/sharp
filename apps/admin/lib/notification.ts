@@ -22,6 +22,14 @@ export interface NotificationVariableDecl {
   required?: boolean;
   example?: string;
   fallback?: string;
+  /**
+   * 自动填充规则：后端在渲染时按此规则取值，用于测试发送和预览场景。
+   * 内置源：
+   *   primaryPet.nickname / id / satiety
+   *   user.nickname / username
+   *   today（YYYY-MM-DD）/ now（ISO 字符串）
+   */
+  autoFill?: string;
 }
 
 export interface TemplateDraft {
@@ -77,12 +85,131 @@ export function parseVariableDeclarations(value: unknown): NotificationVariableD
       required: item.required === true,
       example: item.example === undefined || item.example === null ? undefined : String(item.example),
       fallback: item.fallback === undefined || item.fallback === null ? undefined : String(item.fallback),
+      autoFill: typeof item.autoFill === "string" && item.autoFill.trim() !== "" ? item.autoFill.trim() : undefined,
     });
   }
   return result;
 }
 
-/** 提取文本中出现的全部 {$变量名}（去重、保持出现顺序） */
+export interface RenderResult {
+  title: string;
+  body: string;
+  actionValue: string | null;
+  dedupeKey: string | null;
+  missing: string[];
+  unknown: string[];
+}
+
+/**
+ * 变量自动填充源注册表。
+ * 扩展方式：新增一个字符串 key 对应一个 async resolver。
+ * resolver 签名：(userId) => Promise<unknown>
+ */
+type AutoFillResolver = (userId: string | null) => Promise<unknown>;
+const autoFillResolvers: Record<string, AutoFillResolver> = {};
+
+function registerAutoFill(key: string, resolver: AutoFillResolver) {
+  autoFillResolvers[key] = resolver;
+}
+
+// ─── 内置取值源 ──────────────────────────────────────────────────────────────
+
+registerAutoFill("today", async () => formatDateOnly(new Date()));
+registerAutoFill("now", async () => new Date().toISOString());
+
+registerAutoFill("user.nickname", async (userId) => {
+  if (!userId) return undefined;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { nickname: true } });
+  return user?.nickname ?? undefined;
+});
+
+registerAutoFill("user.username", async (userId) => {
+  if (!userId) return undefined;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+  return user?.username ?? undefined;
+});
+
+registerAutoFill("primaryPet.nickname", async (userId) => {
+  if (!userId) return undefined;
+  const link = await getPrimaryPet(userId);
+  if (!link) return undefined;
+  return link.pet.nickname || link.pet.species.name;
+});
+
+registerAutoFill("primaryPet.id", async (userId) => {
+  if (!userId) return undefined;
+  const link = await getPrimaryPet(userId);
+  return link?.pet.id ?? undefined;
+});
+
+registerAutoFill("primaryPet.satiety", async (userId) => {
+  if (!userId) return undefined;
+  const link = await getPrimaryPet(userId);
+  if (!link) return undefined;
+  const config = await getPetConfig();
+  const { satiety } = await applySatietyDecay(link.pet, config, new Date());
+  return satiety;
+});
+
+/**
+ * 合并变量值：前端显式传入 > autoFill 自动取值 > 模板声明的 example > fallback。
+ * autoFill 依赖 userId 的取值源（scope === "user"）在没传 userId 时静默跳过。
+ */
+export async function resolveAutoFillValues(
+  declarations: NotificationVariableDecl[],
+  userId: string | null,
+  explicit: VariableValues,
+): Promise<VariableValues> {
+  const merged: VariableValues = { ...explicit };
+
+  // 区分 scope，避免不必要的 DB 查询
+  const userAutoFills = declarations.filter((d) => d.autoFill && d.scope === "user" && userId);
+  const globalAutoFills = declarations.filter((d) => d.autoFill && (d.scope === "global" || !userId));
+
+  // 并发解析 user-scoped 的自动填充源
+  const userResults = await Promise.all(
+    userAutoFills.map(async (d) => {
+      const resolver = autoFillResolvers[d.autoFill!];
+      const value = resolver ? await resolver(userId) : undefined;
+      return { key: d.key, value };
+    }),
+  );
+  for (const item of userResults) {
+    if (!(item.key in merged) && item.value !== undefined) {
+      merged[item.key] = item.value;
+    }
+  }
+
+  // 全局自动填充源（today / now 等）
+  const globalResults = await Promise.all(
+    globalAutoFills.map(async (d) => {
+      const resolver = autoFillResolvers[d.autoFill!];
+      const value = resolver ? await resolver(userId) : undefined;
+      return { key: d.key, value };
+    }),
+  );
+  for (const item of globalResults) {
+    if (!(item.key in merged) && item.value !== undefined) {
+      merged[item.key] = item.value;
+    }
+  }
+
+  // 未填的回落 example / fallback（纯字符串，无 DB 依赖）
+  for (const d of declarations) {
+    if (
+      !(d.key in merged) ||
+      merged[d.key] === null ||
+      merged[d.key] === undefined ||
+      String(merged[d.key]).trim() === ""
+    ) {
+      if (d.example) merged[d.key] = d.example;
+      else if (d.fallback) merged[d.key] = d.fallback;
+    }
+  }
+
+  return merged;
+}
+
 export function extractPlaceholders(text: string | null | undefined): string[] {
   if (!text) return [];
   const seen = new Set<string>();
@@ -102,15 +229,6 @@ function stringifyValue(value: unknown): string {
   if (value === null || value === undefined) return "";
   const text = typeof value === "string" ? value : String(value);
   return text.length > MAX_VARIABLE_VALUE ? text.slice(0, MAX_VARIABLE_VALUE) : text;
-}
-
-export interface RenderResult {
-  title: string;
-  body: string;
-  actionValue: string | null;
-  dedupeKey: string | null;
-  missing: string[];
-  unknown: string[];
 }
 
 /**
@@ -147,8 +265,11 @@ export function renderText(
   return { text: normalizeText(rendered), missing, unknown };
 }
 
-/** 渲染整条模板；未知变量或必填缺失时抛错（供发布/事件生成使用） */
-export function renderNotification(
+/**
+ * 渲染整条模板；未知变量或必填缺失时抛错（供发布/事件生成/测试发送使用）。
+ * 传入 userId 时，会先用 autoFill 规则回填真实用户数据；否则回落 example / fallback。
+ */
+export async function renderNotification(
   template: Pick<
     NotificationTemplate,
     | "titleTemplate"
@@ -159,10 +280,13 @@ export function renderNotification(
     | "variables"
   >,
   values: VariableValues,
-): RenderResult {
+  userId: string | null = null,
+): Promise<RenderResult> {
   const declarations = parseVariableDeclarations(template.variables);
-  const title = renderText(template.titleTemplate, declarations, values);
-  const body = renderText(template.bodyTemplate, declarations, values);
+  const resolved = await resolveAutoFillValues(declarations, userId, values);
+
+  const title = renderText(template.titleTemplate, declarations, resolved);
+  const body = renderText(template.bodyTemplate, declarations, resolved);
   const missing = [...new Set([...title.missing, ...body.missing])];
   const unknown = [...new Set([...title.unknown, ...body.unknown])];
 
@@ -171,7 +295,7 @@ export function renderNotification(
     if (!template.actionValueTemplate) {
       throw new NotificationError("模板缺少跳转地址");
     }
-    const rendered = renderText(template.actionValueTemplate, declarations, values);
+    const rendered = renderText(template.actionValueTemplate, declarations, resolved);
     missing.push(...rendered.missing);
     unknown.push(...rendered.unknown);
     actionValue = rendered.text;
@@ -179,7 +303,7 @@ export function renderNotification(
 
   let dedupeKey: string | null = null;
   if (template.dedupeKeyTemplate) {
-    const rendered = renderText(template.dedupeKeyTemplate, declarations, values);
+    const rendered = renderText(template.dedupeKeyTemplate, declarations, resolved);
     missing.push(...rendered.missing);
     unknown.push(...rendered.unknown);
     dedupeKey = rendered.text;
@@ -335,7 +459,7 @@ export async function publishBroadcast(input: {
     );
   }
 
-  const rendered = renderNotification(template, input.variables);
+  const rendered = await renderNotification(template, input.variables, null);
   return prisma.notification.create({
     data: {
       templateId: template.id,
@@ -356,15 +480,19 @@ export async function publishBroadcast(input: {
   });
 }
 
-/** 生成事件消息：按 dedupeKey 幂等，重复触发直接返回已有记录 */
+/** 生成事件消息：按 dedupeKey 幂等，重复触发直接返回已有记录。
+ * 传入 variables 仅覆盖 autoFill 没填的项；其余从 template.variables 声明自动取值。
+ */
 export async function createEventNotification(input: {
   templateCode: string;
   userId: string;
-  variables: VariableValues;
+  variables?: VariableValues;
   createdBy?: string | null;
 }) {
   const template = await loadTemplate(input.templateCode, "event");
-  const rendered = renderNotification(template, input.variables);
+  const declarations = parseVariableDeclarations(template.variables);
+  const resolved = await resolveAutoFillValues(declarations, input.userId, input.variables ?? {});
+  const rendered = await renderNotification(template, resolved, input.userId);
   if (!rendered.dedupeKey) throw new NotificationError("事件模板缺少去重键");
 
   const existing = await prisma.notification.findUnique({ where: { dedupeKey: rendered.dedupeKey } });
@@ -383,7 +511,7 @@ export async function createEventNotification(input: {
         actionValue: rendered.actionValue,
         deliveryMode: "event",
         userId: input.userId,
-        variables: input.variables as Prisma.InputJsonValue,
+        variables: resolved as unknown as Prisma.InputJsonValue,
         status: "published",
         publishedAt: new Date(),
         dedupeKey: rendered.dedupeKey,
@@ -412,14 +540,26 @@ function beijingHour(now: Date): number {
 }
 
 /**
- * 宠物饥饿提醒：仅在 08:00–22:00、宠物处于 hungry 状态时生成，同一宠物每天最多一条。
+ * 判断当前整点是否落在允许推送的区间内（左闭右开）。
+ * start < end 为同日区间；start > end 为跨夜区间；start === end 视为全天不限。
+ */
+export function isWithinNotifyWindow(hour: number, start: number, end: number): boolean {
+  if (start === end) return true;
+  if (start < end) return hour >= start && hour < end;
+  return hour >= start || hour < end;
+}
+
+/**
+ * 宠物饥饿提醒：仅在配置的推送时段、宠物处于 hungry 状态时生成，同一宠物每天最多一条。
+ * 阈值、时段与喂养窗口全部来自 PetConfig，与页面的状态判定共用同一份规则。
  * 任何异常都不应向调用方抛出，避免影响宠物页与消息中心主流程。
  */
 export async function generatePetHungryNotification(userId: string) {
   try {
     const now = new Date();
+    const config = await getPetConfig();
     const hour = beijingHour(now);
-    if (hour < 8 || hour >= 22) return null;
+    if (!isWithinNotifyWindow(hour, config.notifyQuietStart, config.notifyQuietEnd)) return null;
 
     const template = await prisma.notificationTemplate.findUnique({ where: { code: "pet_hungry" } });
     if (!template || !template.enabled || template.deliveryMode !== "event") return null;
@@ -427,19 +567,13 @@ export async function generatePetHungryNotification(userId: string) {
     const link = await getPrimaryPet(userId);
     if (!link) return null;
 
-    const config = await getPetConfig();
     const pet = await applySatietyDecay(link.pet, config, now);
-    if (stateOf(pet.satiety, pet.lastFedAt, now) !== "hungry") return null;
+    if (stateOf(pet.satiety, pet.lastFedAt, config, now) !== "hungry") return null;
 
+    // 变量值由 createEventNotification 内部的 resolveAutoFillValues 从用户数据自动取
     return await createEventNotification({
       templateCode: "pet_hungry",
       userId,
-      variables: {
-        pet_name: pet.nickname || link.pet.species.name,
-        pet_id: pet.id,
-        pet_satiety: pet.satiety,
-        date: formatDateOnly(now),
-      },
     });
   } catch (err) {
     console.error("[notification] 生成宠物饥饿消息失败", err);
