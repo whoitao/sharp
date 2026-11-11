@@ -22,7 +22,6 @@ export const en = {
     contact: "Contact us",
     privacy: "Privacy policy",
     terms: "Terms of service",
-    docs: "Docs",
     openSource: "Open source",
     rights: "All rights reserved.",
     backToTop: "Back to top",
@@ -587,67 +586,6 @@ export const en = {
     contactButton: "Contact",
     footerA: "Made with",
     footerB: "by the Sharp team",
-  },
-  docs: {
-    title: "Guide",
-    subtitle:
-      "From choosing a textbook to reading explanations — follow the screenshots step by step.",
-    sections: [
-      {
-        title: "Quick Start",
-        description: "Create an account and pick the textbook you actually use.",
-        steps: [
-          "Create an account and sign in",
-          "Choose stage, grade, and subject in My Textbooks",
-          "Tick the edition you are using",
-        ],
-      },
-      {
-        title: "Learn by Unit",
-        description: "Move through chapters, unit by unit.",
-        steps: [
-          "Switch to “By Chapter” on the Study page",
-          "Pick the chapter and section to open the unit list",
-          "Practice a unit — progress and question count at a glance",
-        ],
-      },
-      {
-        title: "Learn by Knowledge Point",
-        description: "Follow the knowledge tree and focus on one point at a time.",
-        steps: [
-          "Switch to “By Knowledge Point”",
-          "Expand the tree level by level (e.g. Number → Real Numbers)",
-          "Open the unit list for that point and start",
-        ],
-      },
-      {
-        title: "Check Your Results",
-        description: "See how you did right after submitting.",
-        steps: [
-          "Review accuracy, correct/incorrect counts, and total time",
-          "Wrong answers are grouped by number under Review (collapsed by default)",
-          "Tap any wrong question to expand it",
-        ],
-      },
-      {
-        title: "Read Explanations",
-        description: "Compare answers and go through each step.",
-        steps: [
-          "Expand a wrong question to compare your answer with the correct one",
-          "Read the Analysis and Solution sections",
-          "Choose “Practice Again” or “Continue Learning”",
-        ],
-      },
-      {
-        title: "Read Your Stats",
-        description: "Use accuracy, time, and breakdowns to plan the next step.",
-        steps: [
-          "Review today's questions, sessions, and study time",
-          "Switch views by time, chapter, or knowledge point",
-          "Plan the next session by progress and accuracy",
-        ],
-      },
-    ],
   },
   wiki: {
     title: "Wiki",

@@ -37,7 +37,6 @@ const columns: { titleKey: string; links: FooterLink[] }[] = [
     links: [
       { labelKey: "nav.articles", href: "/articles" },
       { labelKey: "nav.wiki", href: "/wiki" },
-      { labelKey: "footer.docs", href: "/docs" },
     ],
   },
   {

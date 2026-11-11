@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
 import { connection } from "next/server";
 
 /** 公开内容页；登录后才能访问的 /learn、/account 不收录 */
-const STATIC_PATHS = ["/", "/wiki", "/articles", "/about", "/docs"];
+const STATIC_PATHS = ["/", "/wiki", "/articles", "/about"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 站点 URL 与文章列表都依赖运行时配置/接口，按请求生成
