@@ -15,16 +15,19 @@ const StreakBadge: React.FC<{ days: number }> = ({ days }) => {
     <View
       style={[
         styles.badge,
-        { backgroundColor: colors.accentLight, paddingHorizontal: 10 * spacing },
+        {
+          // 透明底：直接融在 header 的浅绿渐变上，只保留图标、文字与间距
+          paddingHorizontal: 8 * spacing,
+        },
       ]}
     >
-      <Ionicons name="flame" size={13 * font} color={colors.accentStrong} />
+      <Ionicons name="flame" size={11 * font} color={colors.accentStrong} />
       <Text
         style={{
-          color: colors.accentStrong,
-          fontSize: 12 * font,
+          color: colors.text,
+          fontSize: 11 * font,
           fontWeight: '600',
-          marginLeft: 4 * spacing,
+          marginLeft: 3 * spacing,
         }}
       >
         {t.homeStreak(days)}
@@ -37,8 +40,7 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 26,
-    borderRadius: 13,
+    height: 22,
   },
 });
 

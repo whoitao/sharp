@@ -40,6 +40,8 @@ interface ScopeSelectorProps {
   selectedSubject: Subject | null;
   onChangeGrade: (grade: Grade | null) => void;
   onChangeSubject: (subject: Subject | null) => void;
+  /** 胶囊最大宽度：导航栏里居中摆放时由外层按左右可用空间收敛，避免与左侧内容重叠 */
+  maxWidth?: number;
 }
 
 /**
@@ -55,6 +57,7 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
   selectedSubject,
   onChangeGrade,
   onChangeSubject,
+  maxWidth,
 }) => {
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
@@ -68,6 +71,8 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
   const savedTextbookId = useSelector((state: RootState) => state.settings.textbookId);
 
   const [visible, setVisible] = useState(false);
+  // Web 键盘聚焦时给一点浅色底，弥补去掉描边后的可点提示
+  const [capsuleFocused, setCapsuleFocused] = useState(false);
   const [step, setStep] = useState<Step>(1);
   const [activeStage, setActiveStage] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<TextbookCatalog | null>(null);
@@ -259,8 +264,22 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
         testID="scope-capsule"
         accessibilityRole="button"
         accessibilityLabel={t.scopeTitle}
-        style={[styles.capsule, { borderRadius: 12 * radius, paddingVertical: 6 * spacing }]}
+        style={[
+          styles.capsule,
+          {
+            // 透明底：直接融在 header 的浅绿渐变上，只保留文字、箭头与间距
+            borderRadius: 14 * radius,
+            paddingHorizontal: 12 * spacing,
+            paddingVertical: 8 * spacing,
+            // 默认上限 220；导航栏居中时外层会传入更小的值，长教材名尾部省略
+            maxWidth: maxWidth ?? 220,
+            // 聚焦态用浅色底提示可点，不恢复描边
+            backgroundColor: capsuleFocused ? colors.accentLight : 'transparent',
+          },
+        ]}
         activeOpacity={0.6}
+        onFocus={() => setCapsuleFocused(true)}
+        onBlur={() => setCapsuleFocused(false)}
         onPress={handleOpen}
       >
         <Text
@@ -756,6 +775,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 1,
+    // 透明底，不加描边；点按/聚焦反馈靠透明度与浅色底
     // 版本信息比「年级 · 科目」长，给导航栏留出空间，超出时尾部省略
     maxWidth: 220,
   },

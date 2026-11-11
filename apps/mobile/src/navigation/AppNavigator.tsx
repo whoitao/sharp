@@ -47,6 +47,8 @@ import TextbookScreen from '../screens/textbook/TextbookScreen';
 import type { SettingKey } from '../constants/settings';
 import CrashLogScreen from '../screens/profile/CrashLogScreen';
 import FavoritesScreen from '../screens/profile/FavoritesScreen';
+import NotificationDetailScreen from '../screens/profile/NotificationDetailScreen';
+import NotificationsScreen from '../screens/profile/NotificationsScreen';
 import ProfileInfoScreen from '../screens/profile/ProfileInfoScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import RecordsScreen from '../screens/profile/RecordsScreen';
@@ -139,6 +141,14 @@ export type HomeStackParamList = {
   Pet: undefined;
   PetAdopt: undefined;
   PetFeeds: undefined;
+  // 站内信：从首页铃铛进入，返回时回到首页（与错题本一样按入口所在栈记忆来源）
+  Notifications: undefined;
+  NotificationDetail: { id: string };
+  // 消息详情可能跳转的目标：首页栈也注册一份，避免从首页进入时链路断裂
+  Favorites: undefined;
+  Settings: undefined;
+  SettingOption: { key: SettingKey };
+  CrashLog: undefined;
 };
 
 export type StudyStackParamList = {
@@ -164,6 +174,11 @@ export type ProfileStackParamList = {
   Records: undefined;
   WrongQuestions: undefined;
   Favorites: undefined;
+  // 站内信：从「我的」标题栏铃铛进入，列表 → 详情
+  Notifications: undefined;
+  NotificationDetail: { id: string };
+  // 消息跳转目标：站内文章（与首页同一套文章详情）
+  ArticleDetail: { id: string; title?: string };
   CrashLog: undefined;
   // 电子宠物：从「我的」入口进入，复用首页同一套宠物页面
   Pet: undefined;
@@ -274,8 +289,9 @@ const HomeStackNavigator: React.FC = () => {
     <HomeStack.Screen
       name="Home"
       component={withGradient(withTabRootTopInset(HomeScreen))}
-      // 首页顶部栏只放「连续天数」和范围胶囊，不再显示页面标题
-      options={{ headerTitle: () => null }}
+      // 首页顶部栏只放「连续天数」、范围胶囊和铃铛，不再显示页面标题；
+      // 保留 title 供后续页面（如消息中心）的返回按钮使用
+      options={{ title: t.home, headerTitle: () => null }}
     />
     {/* 从首页快捷入口进入的错题本 / 学习记录，返回时回到首页 */}
     <HomeStack.Screen
@@ -340,6 +356,38 @@ const HomeStackNavigator: React.FC = () => {
       name="PetFeeds"
       component={withGradient(PetFeedsScreen)}
       options={{ title: t.petFeedsTitle }}
+    />
+    {/* 站内信：从首页铃铛进入，返回时回到首页 */}
+    <HomeStack.Screen
+      name="Notifications"
+      component={withGradient(NotificationsScreen)}
+      options={{ title: t.notificationsTitle }}
+    />
+    <HomeStack.Screen
+      name="NotificationDetail"
+      component={withGradient(NotificationDetailScreen)}
+      options={{ title: t.notificationsDetailTitle }}
+    />
+    {/* 消息详情可能跳转的目标：首页栈内也注册一份，保证逐级返回到来源页 */}
+    <HomeStack.Screen
+      name="Favorites"
+      component={withGradient(FavoritesScreen)}
+      options={{ headerTitle: () => null }}
+    />
+    <HomeStack.Screen
+      name="Settings"
+      component={withGradient(SettingsScreen)}
+      options={{ title: t.settings }}
+    />
+    <HomeStack.Screen
+      name="SettingOption"
+      component={withGradient(SettingOptionScreen)}
+      options={{ title: '' }}
+    />
+    <HomeStack.Screen
+      name="CrashLog"
+      component={withGradient(CrashLogScreen)}
+      options={{ title: t.crashLogTitle }}
     />
     </HomeStack.Navigator>
   );
@@ -478,6 +526,21 @@ const ProfileStackNavigator: React.FC = () => {
       name="Favorites"
       component={withGradient(FavoritesScreen)}
       options={{ headerTitle: () => null }}
+    />
+    <ProfileStack.Screen
+      name="Notifications"
+      component={withGradient(NotificationsScreen)}
+      options={{ title: t.notificationsTitle }}
+    />
+    <ProfileStack.Screen
+      name="NotificationDetail"
+      component={withGradient(NotificationDetailScreen)}
+      options={{ title: t.notificationsDetailTitle }}
+    />
+    <ProfileStack.Screen
+      name="ArticleDetail"
+      component={withGradient(ArticleDetailScreen)}
+      options={{ title: t.articles }}
     />
     <ProfileStack.Screen
       name="CrashLog"

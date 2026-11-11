@@ -1,10 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Grade, PetDetail, Subject, SubjectOverview } from '@sharp/shared';
+import type { Grade, PetDetail, QuestionTag, Subject, SubjectOverview } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import ScopeSelector from '../../components/ScopeSelector';
+import ScopeSelectorHeader from '../../components/ScopeSelectorHeader';
 import StreakBadge from '../../components/StreakBadge';
 import TagFilterBar from '../../components/TagFilterBar';
 import { useDensity } from '../../hooks/useDensity';
@@ -35,19 +44,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [subjectOptions, setSubjectOptions] = useState<Subject[]>([]);
   const [streak, setStreak] = useState(0);
+  // 左侧连续天数徽章的实际宽度：居中后的教材胶囊要避开它
+  const [streakWidth, setStreakWidth] = useState(0);
+  // 站内信未读数：首页右上角铃铛红点
+  const [unreadCount, setUnreadCount] = useState(0);
   // 首页宠物卡片：未领养时为 null
   const [pet, setPet] = useState<PetDetail | null>(null);
   const [loading, setLoading] = useState(true);
   // 有教材内容时才露出「教材同步」入口
   const [textbookAvailable, setTextbookAvailable] = useState(false);
-  // 标签筛选（目前用 mock 数据，后续接入 QuestionTag 表）
+  // 题目标签：后端 QuestionTag 表（type=source，questionCount=0 的标签自动隐藏）
+  const [tags, setTags] = useState<QuestionTag[]>([]);
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
-  const mockTags = [
-    { id: '1', name: '中考真题' },
-    { id: '2', name: '模拟题' },
-    { id: '3', name: '课后练习' },
-    { id: '4', name: '竞赛' },
-  ];
 
   // 全局「年级 + 科目」选择器：选中项从设置中还原
   const selectedGrade = useMemo(
@@ -61,9 +69,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   // 进入首页后的空余时间预拉取学习页搜索数据（科目），
   // api 内部做缓存优先 + 并发去重，与学习页同时挂载也不会产生重复请求
-  // 知识点按学科过滤，改为选中学科后再拉取，这里不预取
+  // 知识点按学科过滤，改为选中学科后再拉取，这里不预取。
+  // 标签在首页挂载时拉一次，切 tab 回来不重新拉（标签稳定）
   useEffect(() => {
     api.getSubjects().catch(() => {});
+    api.getTags().then((list) => {
+      // 只展示有题目的标签；空标签在列表里没有意义
+      setTags(list.filter((t) => (t.questionCount ?? 0) > 0));
+      setSelectedTagId(null);
+    });
   }, []);
 
   // 首页属于 HomeStack，学习/我的在另外两个 Tab：navigate 会冒泡到父级 Tab 导航器
@@ -85,7 +99,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [navigateToTab]
   );
 
-  // 连续天数画在原生 header 左侧：右侧留给「年级 + 科目」选择器
+  // 连续天数画在原生 header 左侧：中间留给「年级 + 科目」选择器
   useEffect(() => {
     if (streak <= 0) {
       navigation.setOptions({ headerLeft: undefined });
@@ -95,7 +109,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       headerLeft: () => (
         // Web 端 headerLeft 从容器 x=0 起排，需要补内容区的 16 左边距；
         // 原生 header 自带 leading inset（等于内容区 16），再加会右移
-        <View testID="home-streak" style={Platform.OS === 'web' ? { marginLeft: 16 } : undefined}>
+        <View
+          testID="home-streak"
+          onLayout={(event) => setStreakWidth(event.nativeEvent.layout.width)}
+          style={Platform.OS === 'web' ? { marginLeft: 16 } : undefined}
+        >
           <StreakBadge days={streak} />
         </View>
       ),
@@ -117,20 +135,23 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [dispatch],
   );
 
-  // 全局学习范围（年级 + 科目）画在原生 header 右侧：标题同一行，常驻可见
+  // 全局学习范围（年级 + 科目）画在原生 header 正中间：
+  // 左侧「连续 N 天」与右侧铃铛占用的宽度由选择器自己收敛，长教材名尾部省略
   useEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <View style={{ marginRight: 16 }}>
-          <ScopeSelector
-            grades={grades}
-            subjects={subjectOptions}
-            selectedGrade={selectedGrade}
-            selectedSubject={selectedSubject}
-            onChangeGrade={handleChangeGrade}
-            onChangeSubject={handleChangeSubject}
-          />
-        </View>
+      headerTitle: () => (
+        <ScopeSelectorHeader
+          grades={grades}
+          subjects={subjectOptions}
+          selectedGrade={selectedGrade}
+          selectedSubject={selectedSubject}
+          onChangeGrade={handleChangeGrade}
+          onChangeSubject={handleChangeSubject}
+          // 徽章还没量到宽度时按「连续 4 天」的典型宽度预留，避免胶囊先宽后窄的跳动
+          leftOccupiedWidth={streak > 0 ? streakWidth || 88 : 0}
+          // 铃铛图标 22 + 左右 padding 4
+          rightOccupiedWidth={30}
+        />
       ),
     });
   }, [
@@ -141,11 +162,69 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     selectedSubject,
     handleChangeGrade,
     handleChangeSubject,
+    streak,
+    streakWidth,
   ]);
+
+  // 首页重新获得焦点时刷新未读数：打开消息中心、标记已读后回来即同步
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      api.getNotificationUnreadCount().then((count) => {
+        // 请求失败返回 null，保持上一次结果
+        if (!cancelled && count !== null) setUnreadCount(count);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
+
+  // 站内信入口从「我的」页头挪到首页右上角，行为保持不变
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          // 在当前 HomeTab 栈内打开消息中心：返回（含系统返回/手势）回到首页
+          onPress={() => navigation.navigate('Notifications')}
+          style={[styles.headerIcon, { marginRight: 12 }]}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t.notificationsTitle}
+        >
+          <Ionicons name="notifications-outline" size={18 * font} color={colors.text} />
+          {unreadCount > 0 && (
+            <View
+              style={[
+                styles.unreadBadge,
+                {
+                  backgroundColor: colors.error,
+                  minWidth: 14 * font,
+                  height: 14 * font,
+                  borderRadius: 7 * font,
+                  paddingHorizontal: 3,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: colors.surface,
+                  fontSize: 9 * font,
+                  fontWeight: '700',
+                }}
+              >
+                {unreadCount > 99 ? '99+' : String(unreadCount)}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, navigateToTab, unreadCount, colors, font, t.notificationsTitle]);
 
   const loadHome = useCallback(async () => {
     const [overview, stats, availability, gradeList, subjectList, petHome] = await Promise.all([
-      api.getSubjectOverview(),
+      api.getSubjectOverview(selectedTagId ? [selectedTagId] : undefined),
       api.getStats(),
       api.getTextbookAvailability(),
       api.getGrades(),
@@ -159,9 +238,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setSubjectOptions(subjectList);
     setPet(petHome?.pet ?? null);
     setLoading(false);
-  }, []);
+  }, [selectedTagId]);
 
-  // 每次回到首页都刷新：从练习页返回时已学比例要跟着变
+  // 每次回到首页都刷新：从练习页返回时已学比例要跟着变；
+  // selectedTagId 变化时同样触发（切 tag 后列表要重算题数）
   useFocusEffect(
     useCallback(() => {
       loadHome().catch(() => setLoading(false));
@@ -252,12 +332,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               </Text>
             </View>
 
-            {/* 标签筛选条 */}
-            <TagFilterBar
-              tags={mockTags}
-              selectedTagId={selectedTagId}
-              onSelectTag={setSelectedTagId}
-            />
+            {/* 标签筛选条：空标签自动隐藏（questionCount=0 已在拉取时过滤） */}
+            {tags.length > 0 && (
+              <TagFilterBar
+                tags={tags}
+                selectedTagId={selectedTagId}
+                onSelectTag={setSelectedTagId}
+              />
+            )}
 
             {subjects.length === 0 ? (
               <Text style={{ color: colors.textSecondary, fontSize: 14 * font, marginTop: 12 * spacing }}>{t.noData}</Text>
@@ -296,6 +378,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
+  },
+  /** 右侧铃铛：透明底，保留 32×32 点击区域与角标定位 */
+  headerIcon: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

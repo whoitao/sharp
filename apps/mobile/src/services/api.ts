@@ -184,6 +184,45 @@ export interface PublisherOption {
   questionCount: number;
 }
 
+// ─── 站内信 ──────────────────────────────────────────────────────────────────
+
+export type NotificationType = 'system' | 'pet' | 'study' | 'account';
+export type NotificationLevel = 'info' | 'warning' | 'important';
+export type NotificationActionType = 'none' | 'page' | 'url';
+
+/** 与 /api/app/notifications 系列接口返回字段保持一致 */
+export interface NotificationItem {
+  id: string;
+  type: NotificationType;
+  level: NotificationLevel;
+  title: string;
+  body: string;
+  actionType: NotificationActionType;
+  actionValue: string | null;
+  publishedAt: string | null;
+  readAt: string | null;
+  isRead: boolean;
+}
+
+export interface NotificationListResult {
+  items: NotificationItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  unreadCount: number;
+}
+
+/** 站内信接口错误：保留 HTTP 状态码，页面据此区分「内容已失效（404）」与加载失败 */
+export class NotificationApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'NotificationApiError';
+  }
+}
+
 export const api = {
   // Auth
   async login(username: string, password: string): Promise<LoginResponse> {
@@ -231,11 +270,17 @@ export const api = {
     });
   },
 
-  // 首页科目概览：题目总数 + 当前用户已学比例，随作答变化，不走本地缓存
-  async getSubjectOverview(): Promise<SubjectOverview[]> {
-    return dedupeInFlight('subjectOverview', async () => {
+  // 首页科目概览：题目总数 + 当前用户已学比例，随作答变化，不走本地缓存。
+  // tagIds?: 按题目标签（如中考真题/模拟题）过滤题目与进度，多选时命中任意一个即算入。
+  async getSubjectOverview(tagIds?: string[]): Promise<SubjectOverview[]> {
+    const cacheSuffix = tagIds && tagIds.length > 0 ? tagIds.join(',') : 'all';
+    return dedupeInFlight(`subjectOverview:${cacheSuffix}`, async () => {
       try {
-        const response = await apiClient.get<SubjectOverview[]>('/api/app/subjects/overview');
+        const params: Record<string, string> = {};
+        if (tagIds && tagIds.length > 0) params.tagIds = tagIds.join(',');
+        const response = await apiClient.get<SubjectOverview[]>('/api/app/subjects/overview', {
+          params,
+        });
         return response.data;
       } catch {
         return [];
@@ -940,6 +985,62 @@ export const api = {
       return response.data;
     } catch {
       return null;
+    }
+  },
+
+  // ─── 站内信 ─────────────────────────────────────────────────────────────────
+  /** 消息列表：未读优先、发布时间倒序，附带未读总数；失败向上抛，由页面区分空态与失败态 */
+  async getNotifications(params: {
+    filter?: 'all' | 'unread';
+    page?: number;
+    pageSize?: number;
+  } = {}): Promise<NotificationListResult> {
+    const { filter = 'all', page = 1, pageSize = 20 } = params;
+    try {
+      const response = await apiClient.get<NotificationListResult>('/api/app/notifications', {
+        params: { filter, page: String(page), pageSize: String(pageSize) },
+      });
+      return response.data;
+    } catch (err) {
+      throw new Error(apiErrorMessage(err, 'notifications load failed'));
+    }
+  },
+
+  /** 导航栏红点：只取未读数；失败返回 null，调用方沿用上一次结果 */
+  async getNotificationUnreadCount(): Promise<number | null> {
+    try {
+      const response = await apiClient.get<{ count: number }>('/api/app/notifications/unread-count');
+      return typeof response.data?.count === 'number' ? response.data.count : 0;
+    } catch {
+      return null;
+    }
+  },
+
+  /** 消息详情：校验消息对当前用户可见；404 时抛 NotificationApiError 由页面提示内容已失效 */
+  async getNotificationDetail(id: string): Promise<NotificationItem> {
+    try {
+      const response = await apiClient.get<NotificationItem>('/api/app/notifications/detail', {
+        params: { id },
+      });
+      return response.data;
+    } catch (err) {
+      const status = (err as AxiosError).response?.status ?? 0;
+      throw new NotificationApiError(status, apiErrorMessage(err, 'notifications detail failed'));
+    }
+  },
+
+  /** 标记单条已读：服务端幂等 upsert */
+  async markNotificationRead(id: string): Promise<void> {
+    await apiClient.post('/api/app/notifications/read', { id });
+  },
+
+  /** 全部已读：只影响当前用户全部未读消息 */
+  async markAllNotificationsRead(): Promise<number> {
+    try {
+      const response = await apiClient.post<{ count: number }>('/api/app/notifications/read-all');
+      return response.data?.count ?? 0;
+    } catch (err) {
+      throw new Error(apiErrorMessage(err, 'notifications read-all failed'));
     }
   },
 

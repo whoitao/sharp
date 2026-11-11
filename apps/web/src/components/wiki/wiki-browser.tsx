@@ -265,11 +265,11 @@ export function WikiBrowser({
                 ))}
               </nav>
 
-              <h1 className="mt-3 text-xl font-bold leading-tight tracking-tight md:text-3xl">
+              <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight md:text-3xl">
                 {detail.title}
               </h1>
               {detail.summary && (
-                <p className="mt-3.5 max-w-[62ch] text-sm leading-[1.7] text-foreground-secondary">
+                <p className="mt-3.5 max-w-[62ch] text-base leading-7 text-foreground-secondary">
                   {detail.summary}
                 </p>
               )}

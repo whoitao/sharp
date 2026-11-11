@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import RichTextView from '../../components/RichTextView';
-import ScopeSelector from '../../components/ScopeSelector';
+import ScopeSelectorHeader from '../../components/ScopeSelectorHeader';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -265,20 +265,18 @@ const FavoritesScreen: React.FC = () => {
     [dispatch],
   );
 
-  // 选择器固定在原生 header 右侧，与错题本一致
+  // 选择器居中显示在原生 header，与错题本一致
   useEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <View style={{ marginRight: 16 }}>
-          <ScopeSelector
-            grades={grades}
-            subjects={subjects}
-            selectedGrade={selectedGrade}
-            selectedSubject={selectedSubject}
-            onChangeGrade={handleChangeGrade}
-            onChangeSubject={handleChangeSubject}
-          />
-        </View>
+      headerTitle: () => (
+        <ScopeSelectorHeader
+          grades={grades}
+          subjects={subjects}
+          selectedGrade={selectedGrade}
+          selectedSubject={selectedSubject}
+          onChangeGrade={handleChangeGrade}
+          onChangeSubject={handleChangeSubject}
+        />
       ),
     });
   }, [

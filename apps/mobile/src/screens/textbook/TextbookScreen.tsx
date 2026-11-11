@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import ScopeSelector from '../../components/ScopeSelector';
+import ScopeSelectorHeader from '../../components/ScopeSelectorHeader';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -114,20 +114,18 @@ const TextbookScreen: React.FC<TextbookScreenProps> = ({ navigation }) => {
     [dispatch],
   );
 
-  // 「年级 + 科目」选择器固定在原生 header 右侧
+  // 「年级 + 科目」选择器居中显示在原生 header
   useEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <View style={{ marginRight: 16 }}>
-          <ScopeSelector
-            grades={grades}
-            subjects={subjects}
-            selectedGrade={selectedGrade}
-            selectedSubject={selectedSubject}
-            onChangeGrade={handleChangeGrade}
-            onChangeSubject={handleChangeSubject}
-          />
-        </View>
+      headerTitle: () => (
+        <ScopeSelectorHeader
+          grades={grades}
+          subjects={subjects}
+          selectedGrade={selectedGrade}
+          selectedSubject={selectedSubject}
+          onChangeGrade={handleChangeGrade}
+          onChangeSubject={handleChangeSubject}
+        />
       ),
     });
   }, [

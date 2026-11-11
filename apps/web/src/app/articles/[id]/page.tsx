@@ -61,11 +61,11 @@ async function ArticleDetail({ params }: PageProps) {
               </span>
               <span>{formatArticleDate(article.publishedAt)}</span>
             </div>
-            <h1 className="text-3xl font-bold leading-tight tracking-tight md:text-4xl">
+            <h1 className="text-2xl font-bold leading-tight tracking-tight md:text-3xl">
               {article.title}
             </h1>
             {article.summary ? (
-              <p className="text-foreground-secondary">{article.summary}</p>
+              <p className="text-base leading-7 text-foreground-secondary">{article.summary}</p>
             ) : null}
           </div>
 

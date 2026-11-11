@@ -18,7 +18,7 @@ import {
   View
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import ScopeSelector from '../../components/ScopeSelector';
+import ScopeSelectorHeader from '../../components/ScopeSelectorHeader';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -265,20 +265,18 @@ const StudyScreen: React.FC<StudyScreenProps> = ({ navigation, route }) => {
     [dispatch]
   );
 
-  // 全局「年级 + 科目」常驻原生 header 右上角，与首页一致
+  // 全局「年级 + 科目」居中显示在原生 header，与首页一致
   useEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <View style={{ marginRight: 16 }}>
-          <ScopeSelector
-            grades={grades}
-            subjects={subjects}
-            selectedGrade={selectedGrade}
-            selectedSubject={selectedSubject}
-            onChangeGrade={handleSelectGrade}
-            onChangeSubject={handleSelectSubject}
-          />
-        </View>
+      headerTitle: () => (
+        <ScopeSelectorHeader
+          grades={grades}
+          subjects={subjects}
+          selectedGrade={selectedGrade}
+          selectedSubject={selectedSubject}
+          onChangeGrade={handleSelectGrade}
+          onChangeSubject={handleSelectSubject}
+        />
       ),
     });
   }, [

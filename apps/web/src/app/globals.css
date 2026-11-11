@@ -131,6 +131,20 @@
   color: hsl(var(--foreground));
 }
 
+/*
+ * 主体正文统一主文字色（#10231A）：编辑器写入的内联 color 会盖过令牌，
+ * 这里用 !important 把结构性文本压回主文字色，同时保留链接（primary-strong）、
+ * 引用（secondary）与 span 内联强调的语义色。
+ */
+.article-content :is(p, li, td, th, h1, h2, h3, h4, h5, h6) {
+  color: hsl(var(--foreground)) !important;
+}
+
+.article-content blockquote,
+.article-content blockquote :is(p, li, span) {
+  color: hsl(var(--foreground-secondary)) !important;
+}
+
 .article-content > :first-child {
   margin-top: 0;
 }

@@ -5,25 +5,51 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * 首页科目列表：科目基本信息 + 题目总数 + 当前用户已学比例。
  * 已学口径 = 该科目下已作答过（正确 / 错误）的去重题目数。
+ *
+ * query: tagIds? — 逗号分隔的 QuestionTag 主键，命中任意一个即算入；
+ *   不传则返回全部题目的总览。用于首页「中考真题 / 模拟题 / 课后练习 / 竞赛」筛选。
  */
 export async function GET(request: NextRequest) {
   const user = requireAppUser(request);
   if (user instanceof NextResponse) return user;
+
+  const url = new URL(request.url);
+  const tagIdsRaw = url.searchParams.get("tagIds");
+  const tagIds = tagIdsRaw
+    ? tagIdsRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map(Number)
+        .filter((n) => Number.isFinite(n) && n > 0)
+    : [];
+  const hasTagFilter = tagIds.length > 0;
 
   const [subjects, questionGroups, learnedRows] = await Promise.all([
     prisma.subject.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] }),
     prisma.question.groupBy({
       by: ["subjectId"],
       _count: { _all: true },
-      where: { subjectId: { not: null } },
+      where: hasTagFilter
+        ? {
+            subjectId: { not: null },
+            tags: { some: { tagId: { in: tagIds } } },
+          }
+        : { subjectId: { not: null } },
     }),
     // 进度记录里的 subjectId 是当时筛选条件，不代表题目所属科目，
     // 因此按题目自身的 subjectId 统计
     prisma.userQuestionProgress.findMany({
-      where: {
-        userId: user.id,
-        status: { in: ["correct", "wrong"] },
-      },
+      where: hasTagFilter
+        ? {
+            userId: user.id,
+            status: { in: ["correct", "wrong"] },
+            question: { tags: { some: { tagId: { in: tagIds } } } },
+          }
+        : {
+            userId: user.id,
+            status: { in: ["correct", "wrong"] },
+          },
       select: { question: { select: { subjectId: true } } },
     }),
   ]);
