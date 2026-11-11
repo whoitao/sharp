@@ -124,7 +124,7 @@
 
 /* 文章正文：后台富文本（标题/段落/图片/表格/代码/列表）统一排版，跟随 light/dark 令牌 */
 .article-content {
-  font-size: 1rem;
+  font-size: 0.8rem;
   line-height: 1.8;
   word-break: break-word;
 
@@ -370,8 +370,8 @@
 }
 
 /*
- * 错题本富文本：RichText 默认 1rem/1.8，列表与解析区按站点正文标准压到
- * 0.875rem / 1.5rem，宽公式在容器内横向滚动，避免撑破卡片。
+ * 错题本富文本：RichText 默认 0.8rem/1.8，错题本列表与解析区仍显式保持
+ * 0.875rem / 1.5rem，不随正文缩小；宽公式在容器内横向滚动，避免撑破卡片。
  */
 .article-content.prose-compact {
   font-size: 0.875rem;
