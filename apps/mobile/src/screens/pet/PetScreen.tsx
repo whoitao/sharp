@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,11 +45,20 @@ const STATE_TEXT_COLOR_KEYS = {
   asleep: 'textSecondary',
 } as const;
 
+/** 食物背包最多平铺 3 项，超出的在列表内部滚动 */
+const BACKPACK_VISIBLE_ROWS = 3;
+/**
+ * 弹层里除食物列表外的固定高度估算：上下内边距 + 标题行 + 列表外边距 +
+ * 喂食数量行 + 喂食按钮 + 底部安全区/结果提示
+ */
+const SHEET_RESERVED_HEIGHT = 250;
+
 const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
   const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
 
   const [data, setData] = useState<PetHomeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,6 +71,8 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
   const [feeding, setFeeding] = useState(false);
   const [feedResult, setFeedResult] = useState<PetFeedResult | null>(null);
   const [feedError, setFeedError] = useState<string | null>(null);
+  // 食物行实测高度：列表区高度 = min(项数, 3) 行，用来让 1~3 项贴合内容、超出再滚动
+  const [foodRowHeight, setFoodRowHeight] = useState(0);
 
   // Lottie：idle 循环；喂食/进化播一次后回到 idle
   const [animation, setAnimation] = useState<PetAnimationKind>('idle');
@@ -117,6 +129,19 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
     () => (data?.backpack ?? []).some((item) => item.quantity > 0),
     [data?.backpack],
   );
+
+  // 食物背包弹层高度：跟着内容走，最多 85% 屏高（小屏 / 横屏也不会超出屏幕）
+  const backpack = data?.backpack ?? [];
+  const sheetMaxHeight = Math.round(windowHeight * 0.85);
+  const visibleFoodRows = Math.min(backpack.length, BACKPACK_VISIBLE_ROWS);
+  const foodRowGap = 8 * spacing;
+  // 1~3 项时列表高度贴合内容；超过 3 项时固定 3 行高，其余在列表内部滚动
+  const foodListHeight =
+    foodRowHeight > 0 && visibleFoodRows > 0
+      ? visibleFoodRows * foodRowHeight + (visibleFoodRows - 1) * foodRowGap
+      : undefined;
+  // 小屏兜底：给标题 / 数量步进器 / 按钮 / 底部安全区留够位置，列表再高也不会把按钮顶出屏幕
+  const foodListMaxHeight = Math.max(0, sheetMaxHeight - SHEET_RESERVED_HEIGHT);
 
   const openFeed = useCallback(() => {
     setFeedError(null);
@@ -550,17 +575,16 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
       <Modal visible={feedOpen} transparent animationType="slide" onRequestClose={() => setFeedOpen(false)}>
         <View style={styles.modalMask}>
           <View
-            style={[
-              styles.modalSheet,
-              {
-                backgroundColor: colors.surface,
-                borderTopLeftRadius: 20 * radius,
-                borderTopRightRadius: 20 * radius,
-                paddingHorizontal: 16 * spacing,
-                paddingTop: 16 * spacing,
-                paddingBottom: 16 * spacing,
-              },
-            ]}
+            style={{
+              // 高度交给内容决定，只设上限：1~3 项时贴合内容，不留大片空白
+              maxHeight: sheetMaxHeight,
+              backgroundColor: colors.surface,
+              borderTopLeftRadius: 20 * radius,
+              borderTopRightRadius: 20 * radius,
+              paddingHorizontal: 16 * spacing,
+              paddingTop: 16 * spacing,
+              paddingBottom: 16 * spacing,
+            }}
           >
             <View style={styles.rowBetween}>
               <Text style={{ color: colors.text, fontSize: 16 * font, fontWeight: '700' }}>
@@ -572,8 +596,15 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             </View>
 
             <ScrollView
-              style={{ flexShrink: 1 }}
-              contentContainerStyle={{ paddingTop: 12 * spacing, paddingBottom: 4 * spacing }}
+              // 列表高度显式算出来：1~3 项贴合内容，超出 3 项固定 3 行高并内部滚动；
+              // maxHeight 保证小屏/横屏下先压缩列表，喂食数量与按钮始终可见
+              style={{
+                flexShrink: 1,
+                height: foodListHeight,
+                maxHeight: foodListMaxHeight,
+                marginTop: 12 * spacing,
+                marginBottom: 4 * spacing,
+              }}
               showsVerticalScrollIndicator={false}
             >
 
@@ -582,8 +613,8 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                 {t.petBackpackEmpty}
               </Text>
             ) : (
-              <View style={{ gap: 8 * spacing }}>
-                {(data?.backpack ?? []).map((food: PetBackpackItem) => {
+              <View style={{ gap: foodRowGap }}>
+                {(data?.backpack ?? []).map((food: PetBackpackItem, index: number) => {
                   const active = food.foodType === selectedFood;
                   const disabled = food.quantity <= 0;
                   return (
@@ -596,6 +627,15 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                         setFeedResult(null);
                         setFeedError(null);
                       }}
+                      // 用第一行实测高度推算列表区高度（各行结构一致，高度相同）
+                      onLayout={
+                        index === 0
+                          ? (event) => {
+                              const next = Math.round(event.nativeEvent.layout.height);
+                              if (next > 0 && next !== foodRowHeight) setFoodRowHeight(next);
+                            }
+                          : undefined
+                      }
                       style={[
                         styles.foodRow,
                         {
@@ -869,9 +909,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    maxHeight: '88%',
   },
   foodRow: {
     flexDirection: 'row',

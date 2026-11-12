@@ -43,6 +43,9 @@ interface HomeScreenProps {
   navigation: NavigationProp;
 }
 
+/** 首页内容区左右内边距：卡片右边界在距屏幕右边 16 处，铃铛要和它同一条右准线 */
+const PAGE_INSET = 16;
+
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { spacing, font } = useDensity();
@@ -58,6 +61,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   // 本次会话是否已经触发过，避免首页数据反复刷新导致重复弹层
   const hintAttemptedRef = useRef(false);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const bellRef = useRef<View>(null);
+  // 原生 header 的尾部留白各端不同（iOS 26 玻璃按钮更贴边），
+  // 实测铃铛容器右边缘与内容右边界差多少，用 marginRight 补回，保证不溢出不靠出血对齐
+  const [bellRightGap, setBellRightGap] = useState(0);
   const [subjects, setSubjects] = useState<SubjectOverview[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [subjectOptions, setSubjectOptions] = useState<Subject[]>([]);
@@ -165,7 +172,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           onChangeSubject={handleChangeSubject}
           // 徽章还没量到宽度时按「连续 4 天」的典型宽度预留，避免胶囊先宽后窄的跳动
           leftOccupiedWidth={streakWidth || 88}
-          // 铃铛点击区 40 + 右侧外边距 12
+          // 铃铛点击区 40（header 自带的 16 边距不计入）
           rightOccupiedWidth={40}
         />
       ),
@@ -196,24 +203,38 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }, [])
   );
 
+  // 量出铃铛容器相对屏幕的右边缘，和页面内容右边界（屏宽 - 16）对比，
+  // 差多少就用 marginRight 收回来；收敛后 delta 为 0 不再 setState
+  const handleBellLayout = useCallback(() => {
+    bellRef.current?.measureInWindow((x, _y, width) => {
+      if (!width) return;
+      const delta = Math.round(x + width - (windowWidth - PAGE_INSET));
+      if (Math.abs(delta) >= 1) setBellRightGap((gap) => gap + delta);
+    });
+  }, [windowWidth]);
+
   // 站内信入口从「我的」页头挪到首页右上角，行为保持不变
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity
+          ref={bellRef}
+          onLayout={handleBellLayout}
           // 在当前 HomeTab 栈内打开消息中心：返回（含系统返回/手势）回到首页
           onPress={() => navigation.navigate('Notifications')}
-          style={[styles.headerIcon, { marginRight: 12 }]}
+          // marginRight 由实测差值补齐：容器右边缘落在页面 16 内容边界上，
+          // 不靠负 margin / 出血对齐；有/无角标时容器与图标位置完全一致
+          style={[styles.headerIcon, bellRightGap > 0 ? { marginRight: bellRightGap } : null]}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={t.notificationsTitle}
         >
-          {/* 图标下移 4，让角标完整落在 40×40 点击区内，不再被 header 右侧容器裁掉 */}
+          {/* 图标右下对齐：右边缘压在容器右边（与角标共用同一条右准线），
+              底部留 4 的余量，角标绝对定位不参与布局 */}
           <Ionicons
             name="notifications-outline"
             size={18 * font}
             color={colors.text}
-            style={{ marginTop: 4 * spacing }}
           />
           {unreadCount > 0 && (
             <View
@@ -242,7 +263,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, navigateToTab, unreadCount, colors, font, t.notificationsTitle]);
+  }, [navigation, navigateToTab, unreadCount, colors, font, t.notificationsTitle, bellRightGap, handleBellLayout]);
 
   // 首次登录引导：没选教材 + 没处理过 + 首页真实空态，三者同时成立才弹
   const hintEligible =
@@ -509,12 +530,14 @@ const styles = StyleSheet.create({
   },
   /** 右侧铃铛：透明底，40×40 点击区内完整容纳未读角标 */
   headerIcon: {
-    // header 内容区 44 高，40 的点击区可以让角标完整落在容器内；
-    // 原来 32 且角标 top/right 为负，超出部分被 headerRight 容器裁掉
+    // 40×40 点击区：能完整容纳角标、又不超过 header 44 的内容区；
+    // 图标右下对齐，右边缘与角标右边缘共线，再随 header 自带 16 边距与卡片右边界对齐
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    // 底部留 4：角标固定占顶部 14，图标不会压到角标（字号放大时也不会）
+    paddingBottom: 4,
   },
   unreadBadge: {
     position: 'absolute',

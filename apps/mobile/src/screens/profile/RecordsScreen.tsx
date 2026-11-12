@@ -13,12 +13,13 @@ import type {
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Pressable,
   RefreshControl,
   ScrollView,
-  SectionList,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -149,7 +150,8 @@ const ChipRow: React.FC<{
               styles.chipRow,
               {
                 padding: 4 * spacing,
-                borderRadius: 999,
+                // 与页面卡片同一套圆角语言：10，不再做整条胶囊
+                borderRadius: 10 * radius,
                 backgroundColor: colors.surfaceSecondary,
               },
             ]
@@ -170,7 +172,8 @@ const ChipRow: React.FC<{
               pill ? styles.pill : styles.chip,
               {
                 paddingVertical: 6 * spacing,
-                borderRadius: pill ? 999 : 8 * radius,
+                // 内圆角比外框（10）小 3；选中段跟着外框收，避免外壳方、里面还是胶囊
+                borderRadius: 7 * radius,
                 borderColor: selected && pill ? colors.border : 'transparent',
                 backgroundColor: selected ? (pill ? colors.surface : colors.accentLight) : 'transparent',
               },
@@ -205,6 +208,7 @@ const SegmentedTabs: React.FC<{ tab: TabKey; items: { key: TabKey; label: string
     <View
       style={[
         styles.segment,
+        // 外框与卡片同语言（10）；下面选中段用 7，内圆角比外框小 3
         { padding: 3 * spacing, borderRadius: 10 * radius, backgroundColor: colors.surfaceSecondary },
       ]}
     >
@@ -220,7 +224,7 @@ const SegmentedTabs: React.FC<{ tab: TabKey; items: { key: TabKey; label: string
               styles.segmentItem,
               {
                 paddingVertical: 8 * spacing,
-                borderRadius: 8 * radius,
+                borderRadius: 7 * radius,
                 backgroundColor: active ? colors.surface : 'transparent',
               },
             ]}
@@ -377,7 +381,10 @@ const OverviewCard: React.FC<{
   );
 };
 
-/** B 近 14 天热力条：断签用虚线空框，今天用外描边，点选把时间轴定位到当天 */
+/** B 近 14 天热力条：断签用浅色实底空框，今天用外描边，点选把时间轴定位到当天 */
+const HEAT_COLS = 7;
+const HEAT_GAP = 5;
+
 const HeatStrip: React.FC<{
   series: DailySeriesPoint[];
   selectedDate: string | null;
@@ -389,10 +396,22 @@ const HeatStrip: React.FC<{
   const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
+  // 网格实测宽度：安卓上「百分比宽 + aspectRatio」在 flexWrap 里算不出尺寸，
+  // 改成实测容器宽度后算成固定像素，Web / 安卓 / iOS 表现一致
+  const [gridWidth, setGridWidth] = useState(0);
+  const { width: windowWidth } = useWindowDimensions();
 
   const maxAnswered = series.reduce((max, point) => Math.max(max, point.questionsAnswered), 0);
   const selected = series.find((point) => point.date === selectedDate) ?? null;
   const heat = isDark ? HEAT_DARK : HEAT_LIGHT;
+
+  const rows = Math.max(1, Math.ceil(series.length / HEAT_COLS));
+  // onLayout 之前先用屏幕宽度估算（页面左右 16 + 卡片左右 12），避免首帧尺寸为 0
+  const availableWidth = gridWidth || Math.max(0, windowWidth - 56 * spacing);
+  const cellSize =
+    availableWidth > 0
+      ? Math.floor((availableWidth - HEAT_GAP * (HEAT_COLS - 1)) / HEAT_COLS)
+      : 0;
 
   return (
     <View
@@ -424,33 +443,61 @@ const HeatStrip: React.FC<{
         </View>
       </View>
 
-      <View style={styles.heatGrid}>
-        {series.map((point) => {
-          const level = heatLevel(point.questionsAnswered, maxAnswered);
-          const isSelected = point.date === selectedDate;
-          const isToday = point.date === todayStr;
-          return (
-            <Pressable
-              key={point.date}
-              onPress={() => onSelect(isSelected ? null : point.date)}
-              accessibilityRole="button"
-              accessibilityLabel={t.statsHeatCellLabel(dayLabel(point.date), point.questionsAnswered)}
-              style={[
-                styles.heatCell,
-                {
-                  borderRadius: 5 * radius,
-                  backgroundColor: level === 0 ? 'transparent' : heat[level],
-                  borderWidth: isSelected ? 2 : StyleSheet.hairlineWidth,
-                  borderColor: isSelected ? colors.accent : level === 0 ? colors.border : 'transparent',
-                  borderStyle: level === 0 ? 'dashed' : 'solid',
+      <View
+        style={styles.heatGrid}
+        onLayout={(event) => {
+          const next = Math.round(event.nativeEvent.layout.width);
+          // 只在真正变化时更新，避免旋转/重排时反复 setState
+          if (next > 0 && next !== gridWidth) setGridWidth(next);
+        }}
+      >
+        {cellSize > 0 &&
+          series.map((point, index) => {
+            const level = heatLevel(point.questionsAnswered, maxAnswered);
+            const isSelected = point.date === selectedDate;
+            const isToday = point.date === todayStr;
+            const col = index % HEAT_COLS;
+            const row = Math.floor(index / HEAT_COLS);
+            return (
+              <Pressable
+                key={point.date}
+                onPress={() => onSelect(isSelected ? null : point.date)}
+                accessibilityRole="button"
+                accessibilityLabel={t.statsHeatCellLabel(dayLabel(point.date), point.questionsAnswered)}
+                style={[
+                  {
+                    // 固定像素宽高：不再依赖 % 宽 + aspectRatio，安卓也不会被压成 0
+                    width: cellSize,
+                    height: cellSize,
+                    borderRadius: 5 * radius,
+                    // 间距用显式外边距，不依赖 flexWrap 下的 gap
+                    marginRight: col === HEAT_COLS - 1 ? 0 : HEAT_GAP,
+                    marginBottom: row === rows - 1 ? 0 : HEAT_GAP,
+                  },
+                  level === 0
+                    ? {
+                        // 安卓对 dashed 边框渲染不可靠，空态改成浅底 + 实线细边
+                        backgroundColor: colors.surfaceSecondary,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        borderStyle: 'solid',
+                      }
+                    : {
+                        backgroundColor: heat[level],
+                        borderWidth: StyleSheet.hairlineWidth,
+                        borderColor: 'transparent',
+                      },
+                  isSelected && {
+                    borderWidth: 2,
+                    borderColor: colors.accent,
+                  },
                   ...(isToday && !isSelected
-                    ? { outlineWidth: 1.5, outlineColor: colors.textTertiary, outlineOffset: 1 }
-                    : null),
-                },
-              ]}
-            />
-          );
-        })}
+                    ? [{ outlineWidth: 1.5, outlineColor: colors.textTertiary, outlineOffset: 1 }]
+                    : []),
+                ]}
+              />
+            );
+          })}
       </View>
 
       {!!selected && (
@@ -1029,7 +1076,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
   }, [stats, todayStr]);
 
   /** E 按天分组：组头数字来自本页已加载的记录，保证与下面的行对得上 */
-  const sections = useMemo(() => {
+  const dayGroups = useMemo(() => {
     const groups = new Map<string, StudyRecord[]>();
     for (const record of records) {
       const key = formatDate(record.finishedAt ?? record.startedAt);
@@ -1172,10 +1219,11 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
 
   // ── E 按天分组时间轴 ────────────────────────────────────────────────
   const timeList = (
-    <SectionList
-      sections={sections}
-      keyExtractor={(item) => item.id}
-      stickySectionHeadersEnabled={false}
+    <FlatList
+      // 一天一组：组内记录数不固定，所以把「天」作为列表项，记录用 map 画进同一张卡片；
+      // 原来用 SectionList 却只写了 renderSectionHeader、没传 renderItem，真机上会直接抛 no renderItem
+      data={dayGroups}
+      keyExtractor={(group) => group.key}
       contentContainerStyle={styles.scrollContent}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
@@ -1209,7 +1257,7 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
           </View>
         ) : null
       }
-      renderSectionHeader={({ section }) => (
+      renderItem={({ item: section }) => (
         <View style={styles.dayGroup}>
           <View style={styles.rowBetween}>
             <Text style={{ color: colors.text, fontSize: 14 * font, fontWeight: '600' }}>
@@ -1375,12 +1423,7 @@ const styles = StyleSheet.create({
   heatGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 5,
-  },
-  heatCell: {
-    // 7 列 × 2 行：等分宽度适配不同屏宽
-    width: '12.857%',
-    aspectRatio: 1,
+    // 间距改由每个格子的外边距决定，不依赖 flexWrap 下的 gap 支持度
   },
   selectedDay: {
     flexDirection: 'row',
