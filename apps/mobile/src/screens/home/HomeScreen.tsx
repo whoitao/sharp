@@ -17,7 +17,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import ScopeHintOverlay from '../../components/ScopeHintOverlay';
 import type { ScopeSelectorHandle } from '../../components/ScopeSelector';
 import ScopeSelectorHeader from '../../components/ScopeSelectorHeader';
-import StreakBadge from '../../components/StreakBadge';
+import StreakBadge, { STREAK_BADGE_PAD } from '../../components/StreakBadge';
 import TagFilterBar from '../../components/TagFilterBar';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
@@ -62,14 +62,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const hintAttemptedRef = useRef(false);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const bellRef = useRef<View>(null);
-  // 原生 header 的尾部留白各端不同（iOS 26 玻璃按钮更贴边），
-  // 实测铃铛容器右边缘与内容右边界差多少，用 marginRight 补回，保证不溢出不靠出血对齐
-  const [bellRightGap, setBellRightGap] = useState(0);
+  const streakRef = useRef<View>(null);
+  // header 两端自带的留白各端不同（iOS 26 玻璃按钮更贴边），
+  // 实测铃铛左边缘、连续天数右边缘与内容准线的差值再用 margin 补回，不靠出血对齐
+  const [bellLeftGap, setBellLeftGap] = useState(0);
+  const [streakRightGap, setStreakRightGap] = useState(0);
   const [subjects, setSubjects] = useState<SubjectOverview[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [subjectOptions, setSubjectOptions] = useState<Subject[]>([]);
   const [streak, setStreak] = useState(0);
-  // 左侧连续天数徽章的实际宽度：居中后的教材胶囊要避开它
+  // 右侧连续天数徽章的实际宽度：居中后的教材胶囊要避开它
   const [streakWidth, setStreakWidth] = useState(0);
   // 站内信未读数：首页右上角铃铛红点
   const [unreadCount, setUnreadCount] = useState(0);
@@ -124,113 +126,50 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [navigateToTab]
   );
 
-  // 连续天数画在原生 header 左侧：中间留给「年级 + 科目」选择器
-  // 0 天也保留徽章：它同时是学习记录的入口，隐藏会让入口消失
+  // header 两端都要让「可见内容」落在页面 16 的准线上：实测容器边缘与准线差多少就补多少 margin，
+  // 收敛后 delta 为 0 不再 setState。容器自带的透明留白（徽章的右内边距）用 bleed 扣掉，
+  // 否则会按外沿对齐、文字反而缩进去一截
+  const measureEdgeGap = useCallback(
+    (
+      ref: React.RefObject<View | null>,
+      side: 'left' | 'right',
+      setGap: React.Dispatch<React.SetStateAction<number>>,
+      bleed = 0,
+    ) => () => {
+      ref.current?.measureInWindow((x, _y, width) => {
+        if (!width) return;
+        const delta =
+          side === 'left'
+            ? Math.round(PAGE_INSET - bleed - x)
+            : Math.round(x + width - (windowWidth - PAGE_INSET + bleed));
+        if (Math.abs(delta) >= 1) setGap((gap) => gap + delta);
+      });
+    },
+    [windowWidth],
+  );
+
+  // Web 端 headerLeft 从容器 x=0 起排，先补上内容区的 16 左边距；
+  // 原生 header 自带 leading inset（等于 16），再由实测差值微调
+  const bellLeftMargin = (Platform.OS === 'web' ? PAGE_INSET : 0) + bellLeftGap;
+
+  // 站内信入口画在原生 header 左侧：中间留给「年级 + 科目」选择器
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        // Web 端 headerLeft 从容器 x=0 起排，需要补内容区的 16 左边距；
-        // 原生 header 自带 leading inset（等于内容区 16），再加会右移
-        <View
-          testID="home-streak"
-          onLayout={(event) => setStreakWidth(event.nativeEvent.layout.width)}
-          style={Platform.OS === 'web' ? { marginLeft: 16 } : undefined}
-        >
-          <StreakBadge days={streak} onPress={() => navigation.navigate('Records')} />
-        </View>
-      ),
-    });
-  }, [navigation, streak]);
-
-  // 学习范围变更后写入用户设置，学习页/教材页/记录页共用
-  const handleChangeGrade = useCallback(
-    (grade: Grade | null) => {
-      dispatch(updateSettings({ gradeId: grade?.id ?? null }));
-    },
-    [dispatch],
-  );
-
-  const handleChangeSubject = useCallback(
-    (subject: Subject | null) => {
-      dispatch(updateSettings({ subjectId: subject?.id ?? null }));
-    },
-    [dispatch],
-  );
-
-  // 全局学习范围（年级 + 科目）画在原生 header 正中间：
-  // 左侧「连续 N 天」与右侧铃铛占用的宽度由选择器自己收敛，长教材名尾部省略
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: () => (
-        <ScopeSelectorHeader
-          ref={scopeSelectorRef}
-          grades={grades}
-          subjects={subjectOptions}
-          selectedGrade={selectedGrade}
-          selectedSubject={selectedSubject}
-          onChangeGrade={handleChangeGrade}
-          onChangeSubject={handleChangeSubject}
-          // 徽章还没量到宽度时按「连续 4 天」的典型宽度预留，避免胶囊先宽后窄的跳动
-          leftOccupiedWidth={streakWidth || 88}
-          // 铃铛点击区 40（header 自带的 16 边距不计入）
-          rightOccupiedWidth={40}
-        />
-      ),
-    });
-  }, [
-    navigation,
-    grades,
-    subjectOptions,
-    selectedGrade,
-    selectedSubject,
-    handleChangeGrade,
-    handleChangeSubject,
-    streak,
-    streakWidth,
-  ]);
-
-  // 首页重新获得焦点时刷新未读数：打开消息中心、标记已读后回来即同步
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      api.getNotificationUnreadCount().then((count) => {
-        // 请求失败返回 null，保持上一次结果
-        if (!cancelled && count !== null) setUnreadCount(count);
-      });
-      return () => {
-        cancelled = true;
-      };
-    }, [])
-  );
-
-  // 量出铃铛容器相对屏幕的右边缘，和页面内容右边界（屏宽 - 16）对比，
-  // 差多少就用 marginRight 收回来；收敛后 delta 为 0 不再 setState
-  const handleBellLayout = useCallback(() => {
-    bellRef.current?.measureInWindow((x, _y, width) => {
-      if (!width) return;
-      const delta = Math.round(x + width - (windowWidth - PAGE_INSET));
-      if (Math.abs(delta) >= 1) setBellRightGap((gap) => gap + delta);
-    });
-  }, [windowWidth]);
-
-  // 站内信入口从「我的」页头挪到首页右上角，行为保持不变
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
         <TouchableOpacity
           ref={bellRef}
-          onLayout={handleBellLayout}
+          onLayout={measureEdgeGap(bellRef, 'left', setBellLeftGap)}
           // 在当前 HomeTab 栈内打开消息中心：返回（含系统返回/手势）回到首页
           onPress={() => navigation.navigate('Notifications')}
-          // marginRight 由实测差值补齐：容器右边缘落在页面 16 内容边界上，
-          // 不靠负 margin / 出血对齐；有/无角标时容器与图标位置完全一致
-          style={[styles.headerIcon, bellRightGap > 0 ? { marginRight: bellRightGap } : null]}
+          // 容器贴着字形左缘排布，左边缘就是图标左边缘，实测准线才和下方卡片一致；
+          // 点击区不足 40 宽，用 hitSlop 补回
+          hitSlop={{ top: 4, bottom: 4, left: 6, right: 10 }}
+          style={[styles.headerIcon, bellLeftMargin !== 0 ? { marginLeft: bellLeftMargin } : null]}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={t.notificationsTitle}
         >
-          {/* 图标右下对齐：右边缘压在容器右边（与角标共用同一条右准线），
-              底部留 4 的余量，角标绝对定位不参与布局 */}
+          {/* 图标居中，与右侧连续天数徽章共用 header 的垂直中线；角标绝对定位不参与布局 */}
           <Ionicons
             name="notifications-outline"
             size={18 * font}
@@ -263,7 +202,89 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, navigateToTab, unreadCount, colors, font, t.notificationsTitle, bellRightGap, handleBellLayout]);
+  }, [navigation, unreadCount, colors, font, t.notificationsTitle, bellLeftMargin, measureEdgeGap]);
+
+  // 学习范围变更后写入用户设置，学习页/教材页/记录页共用
+  const handleChangeGrade = useCallback(
+    (grade: Grade | null) => {
+      dispatch(updateSettings({ gradeId: grade?.id ?? null }));
+    },
+    [dispatch],
+  );
+
+  const handleChangeSubject = useCallback(
+    (subject: Subject | null) => {
+      dispatch(updateSettings({ subjectId: subject?.id ?? null }));
+    },
+    [dispatch],
+  );
+
+  // 全局学习范围（年级 + 科目）画在原生 header 正中间：
+  // 左侧铃铛与右侧「连续 N 天」占用的宽度由选择器自己收敛，长教材名尾部省略
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <ScopeSelectorHeader
+          ref={scopeSelectorRef}
+          grades={grades}
+          subjects={subjectOptions}
+          selectedGrade={selectedGrade}
+          selectedSubject={selectedSubject}
+          onChangeGrade={handleChangeGrade}
+          onChangeSubject={handleChangeSubject}
+          // 铃铛容器（字形 + 角标留白）加 hitSlop 约 40，header 自带的 16 边距不计入
+          leftOccupiedWidth={40}
+          // 徽章还没量到宽度时按「连续 4 天」的典型宽度预留，避免胶囊先宽后窄的跳动
+          rightOccupiedWidth={streakWidth || 88}
+        />
+      ),
+    });
+  }, [
+    navigation,
+    grades,
+    subjectOptions,
+    selectedGrade,
+    selectedSubject,
+    handleChangeGrade,
+    handleChangeSubject,
+    streak,
+    streakWidth,
+  ]);
+
+  // 首页重新获得焦点时刷新未读数：打开消息中心、标记已读后回来即同步
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      api.getNotificationUnreadCount().then((count) => {
+        // 请求失败返回 null，保持上一次结果
+        if (!cancelled && count !== null) setUnreadCount(count);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
+
+  // 连续天数画在原生 header 右侧：0 天也保留徽章，它同时是学习记录的入口，隐藏会让入口消失
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View
+          ref={streakRef}
+          testID="home-streak"
+          onLayout={(event) => {
+            setStreakWidth(event.nativeEvent.layout.width);
+            // 徽章的 8 留白是透明的：让容器外沿越过准线同样的距离，文字右缘才正好压线
+            measureEdgeGap(streakRef, 'right', setStreakRightGap, STREAK_BADGE_PAD * spacing)();
+          }}
+          // marginRight 由实测差值补齐，可正可负：负值只是把透明留白挪出准线，字形不会溢出屏幕
+          style={streakRightGap !== 0 ? { marginRight: streakRightGap } : undefined}
+        >
+          <StreakBadge days={streak} onPress={() => navigation.navigate('Records')} />
+        </View>
+      ),
+    });
+  }, [navigation, streak, streakRightGap, spacing, measureEdgeGap]);
 
   // 首次登录引导：没选教材 + 没处理过 + 首页真实空态，三者同时成立才弹
   const hintEligible =
@@ -528,20 +549,18 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
   },
-  /** 右侧铃铛：透明底，40×40 点击区内完整容纳未读角标 */
+  /** header 左侧铃铛：容器左缘即图标左缘，与下方卡片共用同一条 16 准线 */
   headerIcon: {
-    // 40×40 点击区：能完整容纳角标、又不超过 header 44 的内容区；
-    // 图标右下对齐，右边缘与角标右边缘共线，再随 header 自带 16 边距与卡片右边界对齐
-    width: 40,
+    // 高度 40 不超过 header 44 的内容区，图标垂直居中、靠左排布；
+    // 右侧预留 12 给未读角标，角标贴着铃铛右上角但不会超出容器
     height: 40,
-    alignItems: 'flex-end',
-    justifyContent: 'flex-end',
-    // 底部留 4：角标固定占顶部 14，图标不会压到角标（字号放大时也不会）
-    paddingBottom: 4,
+    paddingRight: 12,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   unreadBadge: {
     position: 'absolute',
-    top: 0,
+    top: 4,
     right: 0,
     alignItems: 'center',
     justifyContent: 'center',

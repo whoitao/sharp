@@ -42,8 +42,16 @@ const templates: Prisma.NotificationTemplateCreateInput[] = [
     bodyTemplate: "{$pet_name} 的饱食度已经降到 {$pet_satiety}，快去喂食吧。",
     actionType: "page",
     actionValueTemplate: "/account/pet",
-    dedupeKeyTemplate: "pet_hungry:{$pet_id}:{$date}",
+    dedupeKeyTemplate: "pet_hungry:{$user_id}:{$pet_id}:{$date}",
     variables: [
+      {
+        key: "user_id",
+        label: "用户 ID",
+        type: "string",
+        scope: "user",
+        required: true,
+        autoFill: "user.id",
+      },
       {
         key: "pet_name",
         label: "宠物名称",
@@ -77,8 +85,8 @@ const templates: Prisma.NotificationTemplateCreateInput[] = [
         type: "time",
         scope: "user",
         required: true,
+        // 每次生成时取当天日期；不设静态 example，避免跨天后去重键停留在旧日期
         autoFill: "today",
-        example: "2026-11-11",
       },
     ],
     enabled: true,

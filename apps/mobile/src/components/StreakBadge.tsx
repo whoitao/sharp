@@ -5,7 +5,10 @@ import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
 
-/** 连续学习天数徽章：首页 header 左侧，点击进入学习记录；0 天也照常显示，否则入口会消失 */
+/** 徽章的水平留白：首页 header 要靠它把可见文字压到内容准线上，所以单独导出 */
+export const STREAK_BADGE_PAD = 8;
+
+/** 连续学习天数徽章：首页 header 右侧，点击进入学习记录；0 天也照常显示，否则入口会消失 */
 const StreakBadge: React.FC<{ days: number; onPress?: () => void }> = ({ days, onPress }) => {
   const { colors } = useTheme();
   const { spacing, font } = useDensity();
@@ -22,7 +25,7 @@ const StreakBadge: React.FC<{ days: number; onPress?: () => void }> = ({ days, o
         styles.badge,
         {
           // 透明底：直接融在 header 的浅绿渐变上，只保留图标、文字与间距
-          paddingHorizontal: 8 * spacing,
+          paddingHorizontal: STREAK_BADGE_PAD * spacing,
         },
       ]}
     >

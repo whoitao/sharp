@@ -117,6 +117,11 @@ function registerAutoFill(key: string, resolver: AutoFillResolver) {
 registerAutoFill("today", async () => formatDateOnly(new Date()));
 registerAutoFill("now", async () => new Date().toISOString());
 
+registerAutoFill("user.id", async (userId) => {
+  if (!userId) return undefined;
+  return userId;
+});
+
 registerAutoFill("user.nickname", async (userId) => {
   if (!userId) return undefined;
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { nickname: true } });
@@ -391,6 +396,13 @@ export function validateTemplateDraft(input: TemplateDraft): {
         if (!declMap.has(key)) errors.push(`去重键使用了未声明的变量 {$${key}}`);
       }
     }
+    // 事件模板必须能自动取到用户维度变量，避免渲染时静默回落成静态 example
+    for (const key of used) {
+      const decl = declMap.get(key);
+      if (decl?.scope === "user" && decl.required && !decl.autoFill) {
+        errors.push(`事件模板的必填用户变量 {$${key}} 必须配置自动填充规则`);
+      }
+    }
   }
 
   if (input.actionType !== "none" && !input.actionValueTemplate?.trim()) {
@@ -491,7 +503,20 @@ export async function createEventNotification(input: {
 }) {
   const template = await loadTemplate(input.templateCode, "event");
   const declarations = parseVariableDeclarations(template.variables);
-  const resolved = await resolveAutoFillValues(declarations, input.userId, input.variables ?? {});
+  const explicit = input.variables ?? {};
+
+  // 生成时兜底：必填用户变量既没有 autoFill、也没有显式传值，不允许回落 example/fallback
+  const hasValue = (key: string) =>
+    explicit[key] !== undefined && explicit[key] !== null && String(explicit[key]).trim() !== "";
+  const notResolvable = declarations.filter(
+    (d) => d.required && d.scope === "user" && !d.autoFill && !hasValue(d.key),
+  );
+  if (notResolvable.length > 0) {
+    const keys = notResolvable.map((d) => d.key);
+    throw new NotificationError(`事件模板的必填用户变量缺少自动填充规则：${keys.join("、")}`, keys);
+  }
+
+  const resolved = await resolveAutoFillValues(declarations, input.userId, explicit);
   const rendered = await renderNotification(template, resolved, input.userId);
   if (!rendered.dedupeKey) throw new NotificationError("事件模板缺少去重键");
 

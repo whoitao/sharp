@@ -685,6 +685,7 @@ export const en = {
     variableRequired: "Required",
     variableExample: "Example",
     variableFallback: "Fallback",
+    variableAutoFill: "Auto fill",
     addVariable: "Add Variable",
     enabled: "Enabled",
     preview: "Live Preview",

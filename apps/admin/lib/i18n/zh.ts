@@ -682,6 +682,7 @@ export const zh: Messages = {
     variableRequired: "必填",
     variableExample: "示例值",
     variableFallback: "缺省值",
+    variableAutoFill: "自动填充",
     addVariable: "添加变量",
     enabled: "启用",
     preview: "实时预览",

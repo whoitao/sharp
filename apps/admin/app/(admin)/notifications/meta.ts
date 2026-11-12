@@ -1,3 +1,4 @@
+import { formatDateOnly } from "@/lib/datetime";
 import type { MessageKey } from "@/lib/i18n";
 
 export interface VariableDecl {
@@ -8,6 +9,7 @@ export interface VariableDecl {
   required: boolean;
   example?: string;
   fallback?: string;
+  autoFill?: string;
 }
 
 export interface TemplateItem {
@@ -69,6 +71,18 @@ export const ACTION_OPTIONS = [
   { value: "none", labelKey: "notifications.actionNone" as MessageKey },
   { value: "page", labelKey: "notifications.actionPage" as MessageKey },
   { value: "url", labelKey: "notifications.actionUrl" as MessageKey },
+];
+
+/** 后端内置的自动填充取值源；事件模板的用户变量依赖它取真实数据 */
+export const AUTO_FILL_OPTIONS = [
+  { value: "today", label: "today（当天日期）" },
+  { value: "now", label: "now（当前时间）" },
+  { value: "user.id", label: "user.id（用户 ID）" },
+  { value: "user.nickname", label: "user.nickname（用户昵称）" },
+  { value: "user.username", label: "user.username（用户名）" },
+  { value: "primaryPet.nickname", label: "primaryPet.nickname（宠物名）" },
+  { value: "primaryPet.id", label: "primaryPet.id（宠物 ID）" },
+  { value: "primaryPet.satiety", label: "primaryPet.satiety（饱食度）" },
 ];
 
 export const STATUS_OPTIONS = [
@@ -142,11 +156,18 @@ export const STATUS_COLORS: Record<string, string> = {
   revoked: "red",
 };
 
-/** 用变量声明里的示例值/缺省值拼出预览数据 */
+/** 用变量声明里的示例值/缺省值拼出预览数据；当天日期/时间按当前时刻动态生成，避免跨天后预览停在旧值 */
 export function exampleValues(declarations: VariableDecl[]): Record<string, string> {
+  const now = new Date();
   const values: Record<string, string> = {};
   for (const item of declarations) {
-    values[item.key] = item.example || item.fallback || "";
+    if (item.autoFill === "today") {
+      values[item.key] = formatDateOnly(now);
+    } else if (item.autoFill === "now") {
+      values[item.key] = now.toISOString();
+    } else {
+      values[item.key] = item.example || item.fallback || "";
+    }
   }
   return values;
 }

@@ -34,6 +34,7 @@ import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo, useState } from "react";
 import {
   ACTION_OPTIONS,
+  AUTO_FILL_OPTIONS,
   DELIVERY_OPTIONS,
   LEVEL_COLORS,
   LEVEL_OPTIONS,
@@ -225,7 +226,13 @@ export default function TemplatesPanel() {
     const values = await form.validateFields();
     setSaving(true);
     try {
-      const payload = { ...values, variables: values.variables ?? [] };
+      // 表单只编辑了部分字段，按变量名合并编辑前的声明，避免未识别/未编辑字段被整体覆盖
+      const originalByKey = new Map((editing?.variables ?? []).map((item) => [item.key, item]));
+      const variables = (values.variables ?? []).map((item) => ({
+        ...originalByKey.get(item.key),
+        ...item,
+      }));
+      const payload = { ...values, variables };
       const url = editing
         ? `/api/admin/notification-templates?id=${editing.id}`
         : "/api/admin/notification-templates";
@@ -596,6 +603,15 @@ export default function TemplatesPanel() {
                         style={{ margin: 0, width: 64 }}
                       >
                         <Checkbox>{t("notifications.variableRequired")}</Checkbox>
+                      </Form.Item>
+                      <Form.Item name={[field.name, "autoFill"]} style={{ margin: 0, width: 170 }}>
+                        <Select
+                          allowClear
+                          showSearch
+                          optionFilterProp="value"
+                          placeholder={t("notifications.variableAutoFill")}
+                          options={AUTO_FILL_OPTIONS}
+                        />
                       </Form.Item>
                       <Form.Item name={[field.name, "example"]} style={{ margin: 0, width: 130 }}>
                         <Input placeholder={t("notifications.variableExample")} />
