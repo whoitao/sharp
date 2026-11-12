@@ -476,7 +476,24 @@ export const en = {
     importTitle: "Excel Import",
     import: "Import",
     importFormat:
-      "Fields: grade_id, subject_id, knowledge_point_ids (multiple separated by |), type, content, option_a~f, correct_keys, analysis, difficulty, score, sort_order (leave grade_id blank to use the grade selected above)",
+      "The template contains 3 sheets: Import Data / Field Guide / Dictionary. Grades, subjects, textbooks, chapters, knowledge points and tags are matched by name or path. Single choice, multiple choice and fill-in are supported; images are not.",
+    importGradeFallback: "Grade (optional, used when the file has no grade)",
+    importRules: "Import rules",
+    importRuleDuplicate:
+      "Duplicate blocking: rows are matched by plain question text + grade + subject + chapter + type. Rows duplicating the database or an earlier row in the file are blocked and not written.",
+    importRuleLimit: "Up to 1000 rows per import.",
+    importRuleImage:
+      "Images are not supported: img, data:image or image hints in content, options or analysis will be reported as errors instead of being imported silently.",
+    importRuleType:
+      "Only choice and fill-in questions are supported (single, multiple, fill-in). True/false and other types are rejected.",
+    importing: "Importing",
+    importResultTitle: "Import result",
+    importResultSummary: "Total {total}, imported {imported}, failed {failed}",
+    importResultSuccess: "All rows imported successfully",
+    importResultRow: "Row",
+    importResultColumn: "Column",
+    importResultReason: "Reason",
+    importResultClose: "Close",
     csvRequired: "Please paste CSV data",
     fileRequired: "Please select an Excel file",
     uploadHint: "Click or drag an Excel file to this area to upload",

@@ -17,11 +17,13 @@ import {
   EditOutlined,
   InboxOutlined,
   PlusOutlined,
+  QuestionCircleOutlined,
   SearchOutlined,
   UploadOutlined
 } from "@ant-design/icons";
 import {
   theme as antdTheme,
+  Alert,
   App,
   Button,
   Card,
@@ -32,6 +34,7 @@ import {
   InputNumber,
   Modal,
   Popover,
+  Progress,
   Rate,
   Row,
   Select,
@@ -105,6 +108,19 @@ interface ChapterNode {
   children?: ChapterNode[];
 }
 
+interface ImportRowError {
+  row: number;
+  column: string;
+  message: string;
+}
+
+interface ImportResult {
+  total: number;
+  imported: number;
+  failedRows: number;
+  errors: ImportRowError[];
+}
+
 interface QuestionFormValues {
   gradeId?: string;
   subjectId?: string;
@@ -162,6 +178,10 @@ export default function QuestionsPanel() {
   const [formSubjectId, setFormSubjectId] = useState<string>();
   const [formGradeId, setFormGradeId] = useState<string>();
   const [importGradeId, setImportGradeId] = useState<string>();
+  const [importHelpOpen, setImportHelpOpen] = useState(false);
+  const [importProgress, setImportProgress] = useState<number | null>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importResultOpen, setImportResultOpen] = useState(false);
 
   const typeLabel = (type: number) => {
     switch (type) {
@@ -540,10 +560,6 @@ export default function QuestionsPanel() {
   };
 
   const handleImport = async (values: { file: any }) => {
-    if (!importGradeId) {
-      message.error(t("questions.gradeRequired"));
-      return;
-    }
     const fileObj: File | undefined =
       values.file?.file?.originFileObj ??
       values.file?.[0]?.originFileObj ??
@@ -553,10 +569,11 @@ export default function QuestionsPanel() {
       return;
     }
     setSaving(true);
+    setImportProgress(0);
     try {
       const token = localStorage.getItem("admin_token");
       const fd = new FormData();
-      fd.append("gradeId", String(importGradeId));
+      if (importGradeId) fd.append("gradeId", String(importGradeId));
       fd.append("file", fileObj);
       const res = await fetch("/api/admin/questions/import", {
         method: "POST",
@@ -570,20 +587,68 @@ export default function QuestionsPanel() {
         message.error(data?.error || t("questions.importFailed"));
         return;
       }
-      const result = await res.json();
-      if (result.errors?.length > 0) {
-        message.warning(
-          `${t("questions.imported")} ${result.imported}/${result.total} (${result.errors.length} errors)`
-        );
-        console.warn("Import errors:", result.errors);
-      } else {
-        message.success(`${t("questions.imported")} ${result.imported}/${result.total}`);
+      if (!res.body) {
+        message.error(t("questions.importFailed"));
+        return;
       }
+
+      // 服务端按 NDJSON 流式返回进度，前端实时换算百分比
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      const streamState: { result: ImportResult | null; error: string | null } = {
+        result: null,
+        error: null,
+      };
+
+      const handleLine = (line: string) => {
+        if (!line.trim()) return;
+        let event: any;
+        try {
+          event = JSON.parse(line);
+        } catch {
+          return;
+        }
+        if (event?.type === "progress" && Number(event.total) > 0) {
+          const percent = Math.round((Number(event.processed) / Number(event.total)) * 100);
+          setImportProgress(Math.min(99, Math.max(0, percent)));
+        } else if (event?.type === "result") {
+          streamState.result = event as ImportResult;
+        } else if (event?.type === "error") {
+          streamState.error = event.message || t("questions.importFailed");
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) handleLine(line);
+      }
+      if (buffer) handleLine(buffer);
+
+      if (streamState.error) {
+        message.error(streamState.error);
+        return;
+      }
+      if (!streamState.result) {
+        message.error(t("questions.importFailed"));
+        return;
+      }
+
+      setImportProgress(100);
+      setImportResult(streamState.result);
+      setImportResultOpen(true);
       setImportOpen(false);
       importForm.resetFields();
       fetchQuestions();
+    } catch {
+      message.error(t("questions.importFailed"));
     } finally {
       setSaving(false);
+      setTimeout(() => setImportProgress(null), 500);
     }
   };
 
@@ -1018,12 +1083,21 @@ export default function QuestionsPanel() {
           {t("questions.downloadTemplate")}
         </Button>
         {can("questions:write") && (
-          <Button
-            icon={<UploadOutlined />}
-            onClick={() => setImportOpen(true)}
-          >
-            {t("questions.import")}
-          </Button>
+          <>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={() => setImportOpen(true)}
+            >
+              {t("questions.import")}
+            </Button>
+            <Button
+              shape="circle"
+              icon={<QuestionCircleOutlined />}
+              title={t("questions.importRules")}
+              aria-label={t("questions.importRules")}
+              onClick={() => setImportHelpOpen(true)}
+            />
+          </>
         )}
         {can("questions:write") && (
           <Button
@@ -1226,7 +1300,7 @@ export default function QuestionsPanel() {
         }}
       >
         <Form form={importForm} layout="vertical" onFinish={handleImport}>
-          <Form.Item label={t("questions.grade")} required>
+          <Form.Item label={t("questions.importGradeFallback")}>
             <Select
               showSearch={{ optionFilterProp: "label" }}
               placeholder={t("questions.gradePlaceholder")}
@@ -1258,6 +1332,90 @@ export default function QuestionsPanel() {
             </Upload.Dragger>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 导入规则说明：只写四条规则，不含进度蒙层 */}
+      <Modal
+        title={t("questions.importRules")}
+        open={importHelpOpen}
+        onCancel={() => setImportHelpOpen(false)}
+        footer={
+          <Button onClick={() => setImportHelpOpen(false)}>
+            {t("questions.importResultClose")}
+          </Button>
+        }
+      >
+        <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.9 }}>
+          <li>{t("questions.importRuleDuplicate")}</li>
+          <li>{t("questions.importRuleLimit")}</li>
+          <li>{t("questions.importRuleImage")}</li>
+          <li>{t("questions.importRuleType")}</li>
+        </ul>
+      </Modal>
+
+      {/* 导入进度蒙层：百分比由服务端流式进度事件驱动 */}
+      <Modal
+        title={t("questions.importing")}
+        open={importProgress !== null}
+        footer={null}
+        closable={false}
+        maskClosable={false}
+        keyboard={false}
+        centered
+        width={420}
+      >
+        <Progress percent={importProgress ?? 0} status="active" />
+      </Modal>
+
+      {/* 导入结果：逐行错误可滚动查看 */}
+      <Modal
+        title={t("questions.importResultTitle")}
+        open={importResultOpen}
+        onCancel={() => setImportResultOpen(false)}
+        footer={
+          <Button onClick={() => setImportResultOpen(false)}>
+            {t("questions.importResultClose")}
+          </Button>
+        }
+        width={760}
+      >
+        {importResult && (
+          <>
+            {importResult.errors.length === 0 ? (
+              <Alert
+                type="success"
+                showIcon
+                message={t("questions.importResultSuccess")}
+                description={`${t("questions.imported")} ${importResult.imported}/${importResult.total}`}
+                style={{ marginBottom: 12 }}
+              />
+            ) : (
+              <Alert
+                type="warning"
+                showIcon
+                message={t("questions.importResultSummary")
+                  .replace("{total}", String(importResult.total))
+                  .replace("{imported}", String(importResult.imported))
+                  .replace("{failed}", String(importResult.failedRows))}
+                style={{ marginBottom: 12 }}
+              />
+            )}
+            {importResult.errors.length > 0 && (
+              <Table<ImportRowError>
+                size="small"
+                rowKey={(record, index) => `${record.row}-${record.column}-${index ?? 0}`}
+                dataSource={importResult.errors}
+                pagination={false}
+                scroll={{ y: 360 }}
+                columns={[
+                  { title: t("questions.importResultRow"), dataIndex: "row", width: 80 },
+                  { title: t("questions.importResultColumn"), dataIndex: "column", width: 120 },
+                  { title: t("questions.importResultReason"), dataIndex: "message" },
+                ]}
+              />
+            )}
+          </>
+        )}
       </Modal>
     </div>
   );
