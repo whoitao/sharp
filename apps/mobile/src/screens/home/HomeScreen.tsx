@@ -175,29 +175,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             size={18 * font}
             color={colors.text}
           />
+          {/* 只提示「有未读」，不提示几条：数字留给消息页 */}
           {unreadCount > 0 && (
             <View
               style={[
                 styles.unreadBadge,
                 {
                   backgroundColor: colors.error,
-                  minWidth: 14 * font,
-                  height: 14 * font,
-                  borderRadius: 7 * font,
-                  paddingHorizontal: 3,
+                  width: 8 * font,
+                  height: 8 * font,
+                  borderRadius: 4 * font,
                 },
               ]}
-            >
-              <Text
-                style={{
-                  color: colors.surface,
-                  fontSize: 9 * font,
-                  fontWeight: '700',
-                }}
-              >
-                {unreadCount > 99 ? '99+' : String(unreadCount)}
-              </Text>
-            </View>
+            />
           )}
         </TouchableOpacity>
       ),
@@ -444,13 +434,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               onFallbackPress={() => goToStudy(selectedSubject?.id)}
             />
 
-            <View style={{ marginTop: 12 * spacing }}>
-              <PetCard
-                pet={pet}
-                onPress={() => navigation.navigate(pet ? 'Pet' : 'PetAdopt')}
-              />
-            </View>
-
             <View
               testID="home-quick-row"
               style={[styles.quickRow, { gap: 8 * spacing, marginTop: 12 * spacing }]}
@@ -476,6 +459,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 icon="newspaper-outline"
                 label={t.articles}
                 onPress={() => navigation.navigate('Articles')}
+              />
+            </View>
+
+            <View style={{ marginTop: 12 * spacing }}>
+              <PetCard
+                pet={pet}
+                onPress={() => navigation.navigate(pet ? 'Pet' : 'PetAdopt')}
               />
             </View>
 
@@ -552,9 +542,9 @@ const styles = StyleSheet.create({
   /** header 左侧铃铛：容器左缘即图标左缘，与下方卡片共用同一条 16 准线 */
   headerIcon: {
     // 高度 40 不超过 header 44 的内容区，图标垂直居中、靠左排布；
-    // 右侧预留 12 给未读角标，角标贴着铃铛右上角但不会超出容器
+    // 右侧预留 6 给未读红点，红点贴着铃铛右上角但不会超出容器
     height: 40,
-    paddingRight: 12,
+    paddingRight: 6,
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
@@ -562,8 +552,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
 
