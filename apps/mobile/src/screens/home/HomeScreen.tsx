@@ -277,6 +277,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, [navigation, streak, streakRightGap, spacing, measureEdgeGap]);
 
   // 首次登录引导：没选教材 + 没处理过 + 首页真实空态，三者同时成立才弹
+  // 「首页空态」不能用 subjects.length 判断：科目概览接口返回的是全量科目，
+  // 任何账号（包括刚注册、从未学过的新用户）都非空，原来的 `subjects.length === 0`
+  // 会让引导永远不触发。改成用户维度的信号：概览已拿到、且所有科目已学数都为 0
+  const hasNoLearning =
+    subjects.length > 0 && subjects.every((subject) => (subject.learnedCount ?? 0) === 0);
+
   const hintEligible =
     settingsInitialized &&
     // 设置没拉到服务端时不能把「textbookId 为空」当成真的没选教材
@@ -285,7 +291,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     !textbookId &&
     !scopeHintSeenAt &&
     !loading &&
-    subjects.length === 0;
+    hasNoLearning;
 
   const measureCapsule = useCallback(() => {
     const selector = scopeSelectorRef.current;
