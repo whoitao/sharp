@@ -87,6 +87,7 @@ export const zh = {
   back: '返回',
   minuteShort: '分',
   secondShort: '秒',
+  hourShort: '小时',
   monthDay: (month: number, day: number) => `${month}月${day}日`,
   clockTime: (h: string, m: string) => `${h}:${m}`,
 
@@ -277,6 +278,10 @@ export const zh = {
 
   // 全局学习范围（学段 → 科目 → 教材 三步选择）
   scopeTitle: '选择学习范围',
+  scopeHintTitle: '先选好你的教材',
+  scopeHintDesc: '选一次年级、科目和版本，首页和学习页都会按它来',
+  scopeHintSelect: '去选择',
+  scopeHintSkip: '跳过',
   scopeStepStage: '学段',
   scopeStepSubject: '科目',
   scopeStepTextbook: '教材',

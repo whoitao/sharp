@@ -25,6 +25,8 @@ export const lightColors = {
   warning: '#B45309',
   warningLight: '#FEF3C7',
   cardShadow: '#10231A',
+  // 引导蒙层的半透明遮罩
+  overlay: 'rgba(16, 35, 26, 0.55)',
   statusBar: 'dark-content' as 'dark-content' | 'light-content',
 };
 
@@ -53,5 +55,6 @@ export const darkColors: ThemeColors = {
   warning: '#FBBF24',
   warningLight: '#3A2E12',
   cardShadow: '#000000',
+  overlay: 'rgba(0, 0, 0, 0.62)',
   statusBar: 'light-content',
 };

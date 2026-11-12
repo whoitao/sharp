@@ -9,9 +9,6 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { gradients } from '../../theme/gradients';
 import { cardShadow } from '../../theme/shadows';
 
-// accentStrong 作底时需要白字才能到 4.5:1
-const ON_ACCENT_LIGHT = '#FFFFFF';
-
 interface ContinueCardProps {
   subject: SubjectOverview | null;
   onPress: () => void;
@@ -24,7 +21,6 @@ const ContinueCard: React.FC<ContinueCardProps> = ({ subject, onPress }) => {
   const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
-  const onAccent = isDark ? colors.background : ON_ACCENT_LIGHT;
   const borderRadius = 12 * radius;
 
   return (
@@ -76,20 +72,29 @@ const ContinueCard: React.FC<ContinueCardProps> = ({ subject, onPress }) => {
               style={[
                 styles.cta,
                 {
-                  backgroundColor: colors.accentStrong,
+                  // 与宠物页「喂食」同一套主按钮语言：浅绿实底 + 1px 绿描边 + 深绿文字；
+                  // 卡片本身也是浅绿渐变，靠描边和一层轻阴影拉开边界
+                  backgroundColor: colors.accentLight,
+                  borderWidth: 1,
+                  borderColor: colors.accent,
                   borderRadius: 6 * radius,
                   marginTop: 8 * spacing,
                   paddingHorizontal: 10 * spacing,
+                  shadowColor: colors.cardShadow,
+                  shadowOpacity: 0.12,
+                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 2,
                 },
               ]}
             >
-              <Text style={{ color: onAccent, fontSize: 12 * font, fontWeight: '600' }}>
+              <Text style={{ color: colors.accentStrong, fontSize: 12 * font, fontWeight: '600' }}>
                 {subject ? t.homeContinueAction : t.startLearning}
               </Text>
               <Ionicons
                 name="arrow-forward"
                 size={12 * font}
-                color={onAccent}
+                color={colors.accentStrong}
                 style={{ marginLeft: 4 * spacing }}
               />
             </View>

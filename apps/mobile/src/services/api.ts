@@ -865,6 +865,7 @@ export const api = {
         subjectId: null,
         publisherId: null,
         textbookId: null,
+        scopeHintSeenAt: null,
       };
     }
   },
@@ -884,8 +885,15 @@ export const api = {
         subjectId: settings.subjectId ?? null,
         publisherId: settings.publisherId ?? null,
         textbookId: settings.textbookId ?? null,
+        scopeHintSeenAt: settings.scopeHintSeenAt ?? null,
       };
     }
+  },
+
+  /** 标记首次登录「选择教材」引导已处理；时间由服务端写入 */
+  async ackScopeHint(): Promise<UserSettings> {
+    const response = await apiClient.put<UserSettings>('/api/app/settings', { scopeHintSeen: true });
+    return response.data;
   },
   // Avatar upload — 失败必须让调用方看到真实错误，这里不做 mock 兜底
   async uploadAvatar(file: { uri: string; name: string; type: string }): Promise<string> {

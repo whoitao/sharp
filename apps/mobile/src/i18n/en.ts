@@ -87,6 +87,7 @@ export const en: TranslationKeys = {
   back: 'Back',
   minuteShort: 'm',
   secondShort: 's',
+  hourShort: 'h',
   monthDay: (month: number, day: number) => `${month}/${day}`,
   clockTime: (h: string, m: string) => `${h}:${m}`,
 
@@ -277,6 +278,10 @@ export const en: TranslationKeys = {
 
   // Global study scope (Stage → Subject → Textbook)
   scopeTitle: 'Select Study Scope',
+  scopeHintTitle: 'Pick your textbook first',
+  scopeHintDesc: 'Choose grade, subject, and edition once — Home and Study will follow it',
+  scopeHintSelect: 'Choose now',
+  scopeHintSkip: 'Skip',
   scopeStepStage: 'Stage',
   scopeStepSubject: 'Subject',
   scopeStepTextbook: 'Textbook',

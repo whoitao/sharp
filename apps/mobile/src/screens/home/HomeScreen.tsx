@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Grade, PetDetail, QuestionTag, Subject, SubjectOverview } from '@sharp/shared';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -10,9 +10,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import ScopeHintOverlay from '../../components/ScopeHintOverlay';
+import type { ScopeSelectorHandle } from '../../components/ScopeSelector';
 import ScopeSelectorHeader from '../../components/ScopeSelectorHeader';
 import StreakBadge from '../../components/StreakBadge';
 import TagFilterBar from '../../components/TagFilterBar';
@@ -22,7 +25,13 @@ import { useTranslation } from '../../i18n/useTranslation';
 import type { HomeStackParamList } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
-import { updateSettings } from '../../stores/settingsSlice';
+import { ackScopeHint, updateSettings } from '../../stores/settingsSlice';
+import {
+  clearPendingScopeHint,
+  hasPendingScopeHint,
+  hasSeenScopeHint,
+  markScopeHintSeen,
+} from '../../utils/scopeHintStorage';
 import PetCard from './PetCard';
 import QuickEntry from './QuickEntry';
 import SubjectCarousel from './SubjectCarousel';
@@ -39,7 +48,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { spacing, font } = useDensity();
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { gradeId, subjectId } = useSelector((state: RootState) => state.settings);
+  const { gradeId, subjectId, textbookId, scopeHintSeenAt, initialized: settingsInitialized, synced: settingsSynced } =
+    useSelector((state: RootState) => state.settings);
+  const userId = useSelector((state: RootState) => state.auth.user?.id);
+  // 教材选择器实例：首次引导需要「测量胶囊位置」和「替用户打开选择器」
+  const scopeSelectorRef = useRef<ScopeSelectorHandle>(null);
+  const [hintVisible, setHintVisible] = useState(false);
+  const [hintRect, setHintRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  // 本次会话是否已经触发过，避免首页数据反复刷新导致重复弹层
+  const hintAttemptedRef = useRef(false);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [subjects, setSubjects] = useState<SubjectOverview[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [subjectOptions, setSubjectOptions] = useState<Subject[]>([]);
@@ -138,6 +156,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.setOptions({
       headerTitle: () => (
         <ScopeSelectorHeader
+          ref={scopeSelectorRef}
           grades={grades}
           subjects={subjectOptions}
           selectedGrade={selectedGrade}
@@ -146,8 +165,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           onChangeSubject={handleChangeSubject}
           // 徽章还没量到宽度时按「连续 4 天」的典型宽度预留，避免胶囊先宽后窄的跳动
           leftOccupiedWidth={streakWidth || 88}
-          // 铃铛图标 22 + 左右 padding 4
-          rightOccupiedWidth={30}
+          // 铃铛点击区 40 + 右侧外边距 12
+          rightOccupiedWidth={40}
         />
       ),
     });
@@ -189,7 +208,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           accessibilityRole="button"
           accessibilityLabel={t.notificationsTitle}
         >
-          <Ionicons name="notifications-outline" size={18 * font} color={colors.text} />
+          {/* 图标下移 4，让角标完整落在 40×40 点击区内，不再被 header 右侧容器裁掉 */}
+          <Ionicons
+            name="notifications-outline"
+            size={18 * font}
+            color={colors.text}
+            style={{ marginTop: 4 * spacing }}
+          />
           {unreadCount > 0 && (
             <View
               style={[
@@ -218,6 +243,105 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       ),
     });
   }, [navigation, navigateToTab, unreadCount, colors, font, t.notificationsTitle]);
+
+  // 首次登录引导：没选教材 + 没处理过 + 首页真实空态，三者同时成立才弹
+  const hintEligible =
+    settingsInitialized &&
+    // 设置没拉到服务端时不能把「textbookId 为空」当成真的没选教材
+    settingsSynced &&
+    !!userId &&
+    !textbookId &&
+    !scopeHintSeenAt &&
+    !loading &&
+    subjects.length === 0;
+
+  const measureCapsule = useCallback(() => {
+    const selector = scopeSelectorRef.current;
+    if (!selector) {
+      // 测不到节点时回传 null，由蒙层走屏幕中线的降级位置
+      setHintRect(null);
+      setHintVisible(true);
+      return;
+    }
+    selector.measure((rect) => {
+      setHintRect(rect);
+      setHintVisible(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!hintEligible || hintAttemptedRef.current) return;
+    const uid = userId;
+    if (!uid) return;
+    let cancelled = false;
+    // 稍等 header 完成布局再测量，避免高亮框跑偏
+    const timer = setTimeout(async () => {
+      const seenLocally = await hasSeenScopeHint(uid).catch(() => false);
+      if (cancelled || seenLocally) return;
+      hintAttemptedRef.current = true;
+      measureCapsule();
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [hintEligible, userId, measureCapsule]);
+
+  // 旋转 / 分屏后重新测量，保证挖洞和选择器位置对得上
+  useEffect(() => {
+    if (!hintVisible) return;
+    scopeSelectorRef.current?.measure((rect) => setHintRect(rect));
+  }, [windowWidth, windowHeight, hintVisible]);
+
+  // 离开首页时收起但不标记，回到首页仍可再提示
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setHintVisible(false);
+        hintAttemptedRef.current = false;
+      };
+    }, [])
+  );
+
+  // 处理引导：本地先记，服务端失败时保留待上报，下次启动补写
+  const closeScopeHint = useCallback(
+    (openSelector: boolean) => {
+      setHintVisible(false);
+      if (userId) {
+        // 先落本地标记再上报，避免上报成功清掉 pending 后又被本地写入覆盖
+        markScopeHintSeen(userId)
+          .catch(() => {})
+          .finally(() => {
+            dispatch(ackScopeHint());
+          });
+      } else {
+        dispatch(ackScopeHint());
+      }
+      if (openSelector) {
+        // 等蒙层淡出后再打开三步选择，避免两个 Modal 同时挂载互相遮挡
+        setTimeout(() => scopeSelectorRef.current?.open(), 220);
+      }
+    },
+    [dispatch, userId]
+  );
+
+  // 启动补报：服务端仍未标记但本地有待上报时静默重试
+  useEffect(() => {
+    if (!settingsInitialized || !userId) return;
+    if (scopeHintSeenAt) {
+      clearPendingScopeHint(userId).catch(() => {});
+      return;
+    }
+    let cancelled = false;
+    hasPendingScopeHint(userId)
+      .then((pending) => {
+        if (!cancelled && pending) dispatch(ackScopeHint());
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [settingsInitialized, scopeHintSeenAt, userId, dispatch]);
 
   const loadHome = useCallback(async () => {
     const [overview, stats, availability, gradeList, subjectList, petHome] = await Promise.all([
@@ -360,6 +484,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </>
         )}
       </ScrollView>
+
+      <ScopeHintOverlay
+        visible={hintVisible}
+        targetRect={hintRect}
+        onSelect={() => closeScopeHint(true)}
+        onDismiss={() => closeScopeHint(false)}
+      />
     </View>
   );
 };
@@ -376,17 +507,19 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
   },
-  /** 右侧铃铛：透明底，保留 32×32 点击区域与角标定位 */
+  /** 右侧铃铛：透明底，40×40 点击区内完整容纳未读角标 */
   headerIcon: {
-    width: 32,
-    height: 32,
+    // header 内容区 44 高，40 的点击区可以让角标完整落在容器内；
+    // 原来 32 且角标 top/right 为负，超出部分被 headerRight 容器裁掉
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   unreadBadge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: 0,
+    right: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,7 +1,7 @@
 import type { Grade, Subject } from '@sharp/shared';
-import React, { useMemo } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
-import ScopeSelector from './ScopeSelector';
+import ScopeSelector, { type ScopeSelectorHandle } from './ScopeSelector';
 
 interface ScopeSelectorHeaderProps {
   grades: Grade[];
@@ -20,11 +20,11 @@ interface ScopeSelectorHeaderProps {
  * 导航栏居中的教材选择器：胶囊宽度按屏幕中线与左右已占用空间收敛，
  * 长教材名由 ScopeSelector 内部单行尾部省略，保证不与两侧内容重叠。
  */
-const ScopeSelectorHeader: React.FC<ScopeSelectorHeaderProps> = ({
+const ScopeSelectorHeader = forwardRef<ScopeSelectorHandle, ScopeSelectorHeaderProps>(({
   leftOccupiedWidth = 0,
   rightOccupiedWidth = 0,
   ...selectorProps
-}) => {
+}, ref) => {
   const { width } = useWindowDimensions();
 
   const maxWidth = useMemo(() => {
@@ -40,7 +40,9 @@ const ScopeSelectorHeader: React.FC<ScopeSelectorHeaderProps> = ({
     return Math.max(96, Math.min(220, Math.floor((width / 2 - occupied - gap) * 2)));
   }, [width, leftOccupiedWidth, rightOccupiedWidth]);
 
-  return <ScopeSelector {...selectorProps} maxWidth={maxWidth} />;
-};
+  return <ScopeSelector ref={ref} {...selectorProps} maxWidth={maxWidth} />;
+});
+
+ScopeSelectorHeader.displayName = 'ScopeSelectorHeader';
 
 export default ScopeSelectorHeader;

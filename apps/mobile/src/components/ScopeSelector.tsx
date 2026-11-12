@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { Grade, Subject, Textbook, TextbookCatalog } from '@sharp/shared';
 import { Image } from 'expo-image';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -44,13 +52,27 @@ interface ScopeSelectorProps {
   maxWidth?: number;
 }
 
+/** 胶囊在窗口中的位置，供首次引导的高亮挖洞使用 */
+export interface ScopeCapsuleRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** 对外暴露：打开三步选择弹层、测量胶囊位置 */
+export interface ScopeSelectorHandle {
+  open: () => void;
+  measure: (callback: (rect: ScopeCapsuleRect | null) => void) => void;
+}
+
 /**
  * 全局学习范围选择器：与 Web 端一致，按「学段（含年级）→ 科目 → 教材」三步走。
  * 点年级自动进入第 2 步，点科目自动进入第 3 步，点教材即保存并关闭；
  * 顶部步骤条与「上一步」都可回退。年级/科目由外层写入设置，
  * 教材直接写账号设置的 textbookId，年级/科目/版本由服务端反推并回传 Redux。
  */
-const ScopeSelector: React.FC<ScopeSelectorProps> = ({
+const ScopeSelector = forwardRef<ScopeSelectorHandle, ScopeSelectorProps>(({
   grades,
   subjects,
   selectedGrade,
@@ -58,7 +80,7 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
   onChangeGrade,
   onChangeSubject,
   maxWidth,
-}) => {
+}, ref) => {
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
@@ -71,6 +93,8 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
   const savedTextbookId = useSelector((state: RootState) => state.settings.textbookId);
 
   const [visible, setVisible] = useState(false);
+  // 胶囊节点：首次引导需要在窗口坐标系里测量它的位置
+  const capsuleRef = useRef<View>(null);
   // Web 键盘聚焦时给一点浅色底，弥补去掉描边后的可点提示
   const [capsuleFocused, setCapsuleFocused] = useState(false);
   const [step, setStep] = useState<Step>(1);
@@ -112,6 +136,26 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
     );
     setVisible(true);
   }, [selectedGrade, selectedSubject, stageGroups]);
+
+  // 在窗口坐标系里测量胶囊，供首次引导绘制高亮挖洞；测不到时回传 null 由调用方降级
+  const measure = useCallback((callback: (rect: ScopeCapsuleRect | null) => void) => {
+    const node = capsuleRef.current;
+    if (!node) {
+      callback(null);
+      return;
+    }
+    try {
+      node.measureInWindow((x, y, width, height) => {
+        const valid =
+          Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(width) && Number.isFinite(height);
+        callback(valid && width > 0 && height > 0 ? { x, y, width, height } : null);
+      });
+    } catch {
+      callback(null);
+    }
+  }, []);
+
+  useImperativeHandle(ref, () => ({ open: handleOpen, measure }), [handleOpen, measure]);
 
   // 教材目录在每次打开时拉取一次，三步内切换年级/科目只在本地过滤
   useEffect(() => {
@@ -261,6 +305,7 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
   return (
     <>
       <TouchableOpacity
+        ref={capsuleRef}
         testID="scope-capsule"
         accessibilityRole="button"
         accessibilityLabel={t.scopeTitle}
@@ -768,7 +813,7 @@ const ScopeSelector: React.FC<ScopeSelectorProps> = ({
       </Modal>
     </>
   );
-};
+});
 
 const styles = StyleSheet.create({
   capsule: {
@@ -799,5 +844,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
 });
+
+ScopeSelector.displayName = 'ScopeSelector';
 
 export default ScopeSelector;

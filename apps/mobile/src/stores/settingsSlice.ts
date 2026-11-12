@@ -1,6 +1,8 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Density, Language, Theme } from '@sharp/shared';
 import { api } from '../services/api';
+import type { RootState } from '../stores';
+import { clearPendingScopeHint } from '../utils/scopeHintStorage';
 
 interface SettingsState {
   unitSize: number;
@@ -15,9 +17,13 @@ interface SettingsState {
   publisherId: string | null;
   /** 「我的教材」：全局单选的教材 */
   textbookId: string | null;
+  /** 首次登录教材引导的处理时间；null = 还没处理过 */
+  scopeHintSeenAt: string | null;
   isLoading: boolean;
   /** 是否已完成首次加载，用于区分冷启动门控与后续刷新 */
   initialized: boolean;
+  /** 是否成功从服务端拉到设置：拉取失败时不能据此判断「没选教材」 */
+  synced: boolean;
 }
 
 const initialState: SettingsState = {
@@ -29,8 +35,10 @@ const initialState: SettingsState = {
   subjectId: null,
   publisherId: null,
   textbookId: null,
+  scopeHintSeenAt: null,
   isLoading: false,
   initialized: false,
+  synced: false,
 };
 
 export const loadSettings = createAsyncThunk('settings/load', async () => {
@@ -55,6 +63,20 @@ export const updateSettings = createAsyncThunk(
     const task = settingsWriteChain.then(() => api.updateSettings(settings));
     settingsWriteChain = task.catch(() => undefined);
     return await task;
+  }
+);
+
+/**
+ * 首次登录引导处理完成后写服务端；成功后清掉本地「待上报」。
+ * 失败时保留本地标记，由下次启动的补报逻辑重试。
+ */
+export const ackScopeHint = createAsyncThunk(
+  'settings/ackScopeHint',
+  async (_, { getState }) => {
+    const userId = (getState() as RootState).auth.user?.id;
+    const result = await api.ackScopeHint();
+    if (userId) await clearPendingScopeHint(userId);
+    return result;
   }
 );
 
@@ -103,6 +125,8 @@ const settingsSlice = createSlice({
         state.subjectId = action.payload.subjectId ?? null;
         state.publisherId = action.payload.publisherId ?? null;
         state.textbookId = action.payload.textbookId ?? null;
+        state.scopeHintSeenAt = action.payload.scopeHintSeenAt ?? null;
+        state.synced = true;
       })
       .addCase(loadSettings.rejected, (state) => {
         state.isLoading = false;
@@ -118,6 +142,12 @@ const settingsSlice = createSlice({
         state.subjectId = action.payload.subjectId ?? null;
         state.publisherId = action.payload.publisherId ?? null;
         state.textbookId = action.payload.textbookId ?? null;
+        state.scopeHintSeenAt = action.payload.scopeHintSeenAt ?? null;
+        state.synced = true;
+      })
+      .addCase(ackScopeHint.fulfilled, (state, action) => {
+        state.scopeHintSeenAt = action.payload.scopeHintSeenAt ?? new Date().toISOString();
+        state.synced = true;
       });
   },
 });

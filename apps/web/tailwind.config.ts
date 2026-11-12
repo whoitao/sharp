@@ -48,6 +48,7 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        warning: "hsl(var(--warning))",
         border: "hsl(var(--border))",
         "border-light": "hsl(var(--border-light))",
         input: "hsl(var(--input))",

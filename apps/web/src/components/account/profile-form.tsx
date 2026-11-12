@@ -12,17 +12,25 @@ import {
   type SessionProfile,
 } from "@/lib/profile/api";
 import { cn } from "@/lib/utils";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Check, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const inputClass =
-  "h-9 w-full rounded-md border border-border bg-surface px-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none transition placeholder:text-foreground-tertiary hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-border-light disabled:text-foreground-tertiary disabled:opacity-100";
 
-/** 三组表单统一宽度，避免昵称、性别、手机号各占一种宽度 */
-const fieldClass = "sm:max-w-[20rem]";
+/** 字段统一宽度，宽屏下不把输入框拉满整块卡片 */
+const fieldClass = "sm:max-w-[24rem]";
+
+const labelClass = "block text-sm font-semibold";
+const hintClass = "mt-1.5 text-xs leading-5 text-foreground-tertiary";
+const optionBase =
+  "inline-flex min-h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30";
+const optionActive = "border-primary bg-primary-light text-primary-strong";
+const optionIdle =
+  "border-border bg-surface text-foreground-secondary hover:border-primary/40";
 
 /** 与移动端一致：上传前缩到 512px 以内的 JPEG，避免原图过大 */
 async function compressAvatar(file: File): Promise<File> {
@@ -76,6 +84,7 @@ export function ProfileForm({
   const nicknameChanged = nickname.trim() !== originalNickname;
   const phoneChanged = phone.trim() !== originalPhone;
   const genderChanged = gender !== profile.gender;
+  const dirty = nicknameChanged || phoneChanged || genderChanged;
 
   const displayName = profile.nickname || profile.username;
 
@@ -164,113 +173,138 @@ export function ProfileForm({
   }
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-5 card-shadow md:p-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <UserAvatar name={displayName} avatarUrl={profile.avatarUrl} size="lg" />
-        <div className="min-w-0">
-          <p className="truncate text-xs text-foreground-tertiary">
-            @{profile.username}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            disabled={uploading}
-            onClick={() => fileRef.current?.click()}
-          >
-            {uploading ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Camera className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            {uploading ? t("account.uploading") : t("account.changeAvatar")}
-          </Button>
-          <p className="mt-2 max-w-sm text-xs leading-5 text-foreground-tertiary">
-            {t("account.avatarHint")}
-          </p>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={handleUpload}
-          />
-        </div>
-      </div>
-
-      <div className="mt-6 space-y-5">
-        <div>
-          <label htmlFor="profile-nickname" className="block text-sm font-bold">
-            {t("account.nickname")}
-          </label>
-          <input
-            id="profile-nickname"
-            value={nickname}
-            maxLength={24}
-            placeholder={t("account.nicknamePlaceholder")}
-            onChange={(event) => setNickname(event.target.value)}
-            className={cn(inputClass, fieldClass, "mt-2")}
-          />
+    <div className="max-w-2xl space-y-4">
+      {/* 头像与昵称 */}
+      <section className="rounded-lg border border-border bg-surface card-shadow">
+        <div className="border-b border-border-light px-5 py-4 md:px-6">
+          <h2 className="text-sm font-bold">{t("account.sectionProfile")}</h2>
         </div>
 
-        <div>
-          <span className="block text-sm font-bold">{t("account.gender")}</span>
-          <div className={cn("mt-2 grid grid-cols-2 gap-2", fieldClass)}>
-            {(["male", "female"] as const).map((value) => (
-              <button
-                key={value}
+        <div className="space-y-5 px-5 py-5 md:px-6">
+          <div className="flex items-start gap-4">
+            <UserAvatar name={displayName} avatarUrl={profile.avatarUrl} size="lg" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{displayName}</p>
+              <p className="truncate text-xs text-foreground-tertiary">
+                @{profile.username}
+              </p>
+              <Button
                 type="button"
-                onClick={() => setGender(value)}
-                className={cn(
-                  "h-9 rounded-md border px-3 text-sm font-semibold transition-colors",
-                  gender === value
-                    ? "border-primary bg-primary-light text-primary-strong"
-                    : "border-border bg-surface text-foreground-secondary hover:border-primary/40",
-                )}
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
               >
-                {value === "male" ? t("account.genderMale") : t("account.genderFemale")}
-              </button>
-            ))}
+                {uploading ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Camera className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                {uploading ? t("account.uploading") : t("account.changeAvatar")}
+              </Button>
+              <p className={cn(hintClass, "max-w-[20rem]")}>{t("account.avatarHint")}</p>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleUpload}
+              />
+            </div>
           </div>
-          {!gender && (
-            <p className="mt-1.5 text-xs text-foreground-tertiary">
-              {t("account.genderUnset")}
-            </p>
-          )}
+
+          <div>
+            <label htmlFor="profile-nickname" className={labelClass}>
+              {t("account.nickname")}
+            </label>
+            <input
+              id="profile-nickname"
+              value={nickname}
+              maxLength={24}
+              placeholder={t("account.nicknamePlaceholder")}
+              onChange={(event) => setNickname(event.target.value)}
+              className={cn(inputClass, fieldClass, "mt-2")}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* 账号信息 */}
+      <section className="rounded-lg border border-border bg-surface card-shadow">
+        <div className="border-b border-border-light px-5 py-4 md:px-6">
+          <h2 className="text-sm font-bold">{t("account.sectionAccount")}</h2>
         </div>
 
-        <div>
-          <label htmlFor="profile-phone" className="block text-sm font-bold">
-            {t("account.phone")}
-          </label>
-          <input
-            id="profile-phone"
-            value={phone}
-            inputMode="numeric"
-            placeholder={t("account.phonePlaceholder")}
-            onChange={(event) => setPhone(event.target.value.replace(/[^\d]/g, "").slice(0, 11))}
-            className={cn(inputClass, fieldClass, "mt-2")}
-          />
-        </div>
-      </div>
+        <div className="space-y-5 px-5 py-5 md:px-6">
+          <div>
+            <label htmlFor="profile-phone" className={labelClass}>
+              {t("account.phone")}
+            </label>
+            <input
+              id="profile-phone"
+              value={phone}
+              inputMode="numeric"
+              placeholder={t("account.phonePlaceholder")}
+              onChange={(event) =>
+                setPhone(event.target.value.replace(/[^\d]/g, "").slice(0, 11))
+              }
+              className={cn(inputClass, fieldClass, "mt-2")}
+            />
+          </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border-light pt-5">
-        <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+          <div>
+            <span className={labelClass}>{t("account.gender")}</span>
+            <div
+              role="radiogroup"
+              aria-label={t("account.gender")}
+              className="mt-2 flex flex-wrap gap-2"
+            >
+              {(["male", "female"] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={gender === value}
+                  onClick={() => setGender(value)}
+                  className={cn(
+                    optionBase,
+                    gender === value ? optionActive : optionIdle,
+                  )}
+                >
+                  {gender === value && <Check className="h-3.5 w-3.5" />}
+                  {value === "male"
+                    ? t("account.genderMale")
+                    : t("account.genderFemale")}
+                </button>
+              ))}
+            </div>
+            {!gender && <p className={hintClass}>{t("account.genderUnset")}</p>}
+          </div>
+        </div>
+      </section>
+
+      {/* 保存区：底部右对齐，左侧显示未保存状态与操作反馈 */}
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <div className="mr-auto min-h-5 text-xs">
+          {feedback ? (
+            <span
+              className={cn(
+                "font-semibold",
+                feedback.tone === "ok" ? "text-primary-strong" : "text-destructive",
+              )}
+            >
+              {feedback.text}
+            </span>
+          ) : dirty ? (
+            <span className="text-foreground-tertiary">{t("account.unsaved")}</span>
+          ) : null}
+        </div>
+        <Button type="button" onClick={handleSave} disabled={saving}>
           {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
           {saving ? t("account.saving") : t("account.save")}
         </Button>
-        {feedback && (
-          <span
-            className={cn(
-              "text-xs font-semibold",
-              feedback.tone === "ok" ? "text-primary-strong" : "text-destructive",
-            )}
-          >
-            {feedback.text}
-          </span>
-        )}
       </div>
-    </section>
+    </div>
   );
 }

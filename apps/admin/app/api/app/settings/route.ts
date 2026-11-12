@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
     gradeId: settings?.gradeId?.toString() ?? null,
     subjectId: settings?.subjectId?.toString() ?? null,
     publisherId: settings?.publisherId?.toString() ?? null,
+    scopeHintSeenAt: settings?.scopeHintSeenAt?.toISOString() ?? null,
   });
 }
 
@@ -83,7 +84,7 @@ export async function PUT(request: NextRequest) {
   if (appUser instanceof NextResponse) return appUser;
 
   const body = await request.json();
-  const { unitSize, theme, language, density, textbookId, gradeId, subjectId, publisherId } = body;
+  const { unitSize, theme, language, density, textbookId, gradeId, subjectId, publisherId, scopeHintSeen } = body;
 
   const data: Record<string, any> = {};
 
@@ -170,6 +171,11 @@ export async function PUT(request: NextRequest) {
     data.density = density;
   }
 
+  // 首次登录引导：只接受布尔「已处理」，时间由服务端写入，避免客户端时钟不准
+  if (scopeHintSeen === true) {
+    data.scopeHintSeenAt = new Date();
+  }
+
   const settings = await prisma.userSettings.upsert({
     where: { userId: appUser.id },
     update: data,
@@ -200,5 +206,6 @@ export async function PUT(request: NextRequest) {
     gradeId: settings.gradeId?.toString() ?? null,
     subjectId: settings.subjectId?.toString() ?? null,
     publisherId: settings.publisherId?.toString() ?? null,
+    scopeHintSeenAt: settings.scopeHintSeenAt?.toISOString() ?? null,
   });
 }

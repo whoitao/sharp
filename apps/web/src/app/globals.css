@@ -43,6 +43,8 @@
     --secondary-foreground: var(--foreground-secondary);
     --surface: 0 0% 100%;            /* #FFFFFF 卡片主表面 */
     --surface-secondary: 150 33% 98%; /* #F7FBF9 次级表面 */
+    /* 正确率「需要巩固」档：移动端 colors.warning #B45309，浅底上够深才可读 */
+    --warning: 32 91% 37%;
   }
 
   .dark {
@@ -79,6 +81,8 @@
     --secondary-foreground: var(--foreground-secondary);
     --surface: 155 23% 10%;          /* #14201B */
     --surface-secondary: 152 22% 14%; /* #1B2A23 */
+    /* 深色档同移动端 colors.warning #FBBF24：深底上必须提亮才看得清 */
+    --warning: 43 96% 56%;
   }
 
   * {

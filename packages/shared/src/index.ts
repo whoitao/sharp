@@ -126,6 +126,8 @@ export interface UserSettings {
   publisherId?: string | null;
   /** 「我的教材」：全局单选的教材 */
   textbookId?: string | null;
+  /** 首次登录教材引导的处理时间；null / 缺省表示尚未引导 */
+  scopeHintSeenAt?: string | null;
 }
 
 export interface Admin {

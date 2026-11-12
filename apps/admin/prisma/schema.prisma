@@ -68,6 +68,8 @@ model UserSettings {
   // 「我的教材」：全局单选的教材；选中后年级/科目/版本都由教材反推
   textbookId  BigInt?
   textbook    Textbook?  @relation(fields: [textbookId], references: [id])
+  // 首次登录「选择教材」引导的处理时间；null 表示尚未引导
+  scopeHintSeenAt DateTime?
 }
 
 model Admin {

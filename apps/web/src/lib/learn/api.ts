@@ -141,7 +141,24 @@ export interface DailyStatDto {
   studyDuration: number;
 }
 
-/** 学习统计总览：与 /api/app/study/stats 返回结构一致 */
+export type StudyStatsRangeKey = "today" | "week" | "month" | "all";
+
+/** 口径聚合：正确率取自 StudyAttempt，其余取自 UserDailyStat 日行 */
+export interface RangeStatsDto {
+  questionsAnswered: number;
+  sessionsCompleted: number;
+  studyDuration: number;
+  activeDays: number;
+  accuracy: number;
+}
+
+/** 热力条日点：服务端固定补满近 14 个北京日，缺日补零 */
+export type DailySeriesPointDto = DailyStatDto;
+
+
+/** 学习统计总览：与 /api/app/study/stats 返回结构一致。
+ *  totalQuestions/accuracy/recentStats 是历史字段（去重题数口径，与 rangeStats 不可比），
+ *  新界面一律改用 rangeStats 与 dailySeries。 */
 export interface StudyStatsDto {
   totalDays: number;
   totalQuestions: number;
@@ -151,6 +168,12 @@ export interface StudyStatsDto {
   totalStudyDuration: number;
   accuracy: number;
   recentStats: DailyStatDto[];
+  range: StudyStatsRangeKey;
+  longestStreak: number;
+  /** YYYY-MM-DD（北京时间）；从未作答时为 null */
+  lastActiveDate: string | null;
+  rangeStats: RangeStatsDto;
+  dailySeries: DailySeriesPointDto[];
 }
 
 /** 按章节统计：顶级章，含子节题目 */
@@ -290,13 +313,16 @@ export function fetchRecords(chapterId: string): Promise<StudyRecordsResponse> {
   );
 }
 
-/** 学习记录分页列表：年级/科目筛选口径与移动端一致 */
+/** 学习记录分页列表：年级/科目/来源/单日筛选口径与移动端一致 */
 export function fetchStudyRecords(
   params: {
     page?: number;
     pageSize?: number;
     gradeId?: string | null;
     subjectId?: string | null;
+    scopeType?: StudyRecordDto["scopeType"];
+    /** YYYY-MM-DD（北京时间）：热力条点选某天后只看那一天 */
+    date?: string | null;
   } = {},
 ): Promise<StudyRecordsResponse> {
   const query = new URLSearchParams({
@@ -305,12 +331,18 @@ export function fetchStudyRecords(
   });
   if (params.gradeId) query.set("gradeId", params.gradeId);
   if (params.subjectId) query.set("subjectId", params.subjectId);
+  if (params.scopeType) query.set("scopeType", params.scopeType);
+  if (params.date) query.set("date", params.date);
   return getJson<StudyRecordsResponse>(`/study/records?${query.toString()}`);
 }
 
-/** 学习总览：今日指标、累计天数/题量/正确率与连续学习天数 */
-export function fetchStudyStats(days = 7): Promise<StudyStatsDto> {
-  return getJson<StudyStatsDto>(`/study/stats?days=${days}`);
+/** 学习总览：range 决定概览四指标口径，days 只影响 legacy recentStats */
+export function fetchStudyStats(
+  params: { range?: StudyStatsRangeKey; days?: number } = {},
+): Promise<StudyStatsDto> {
+  const query = new URLSearchParams({ days: String(params.days ?? 14) });
+  if (params.range) query.set("range", params.range);
+  return getJson<StudyStatsDto>(`/study/stats?${query.toString()}`);
 }
 
 /** 我的收藏：分页 + 年级/科目/教材筛选，口径与 Web 端范围一致 */

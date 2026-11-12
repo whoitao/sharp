@@ -132,7 +132,7 @@ const StateCard: React.FC<{
   );
 };
 
-/** 小胶囊按钮行：口径分段与来源筛选共用外观，active 用浅底 + 深字 */
+/** 小胶囊按钮行：口径分段用透明底，来源筛选铺在浅底胶囊条里 */
 const ChipRow: React.FC<{
   items: { key: string; label: string }[];
   active: string;
@@ -142,7 +142,20 @@ const ChipRow: React.FC<{
   const { colors } = useTheme();
   const { spacing, font, radius } = useDensity();
   return (
-    <View style={styles.chipRow}>
+    <View
+      style={
+        pill
+          ? [
+              styles.chipRow,
+              {
+                padding: 4 * spacing,
+                borderRadius: 999,
+                backgroundColor: colors.surfaceSecondary,
+              },
+            ]
+          : styles.chipRow
+      }
+    >
       {items.map((item) => {
         const selected = item.key === active;
         return (
@@ -156,14 +169,15 @@ const ChipRow: React.FC<{
             style={[
               pill ? styles.pill : styles.chip,
               {
-                paddingVertical: (pill ? 5 : 6) * spacing,
+                paddingVertical: 6 * spacing,
                 borderRadius: pill ? 999 : 8 * radius,
-                borderColor: selected && pill ? colors.accent : 'transparent',
-                backgroundColor: selected ? colors.accentLight : 'transparent',
+                borderColor: selected && pill ? colors.border : 'transparent',
+                backgroundColor: selected ? (pill ? colors.surface : colors.accentLight) : 'transparent',
               },
             ]}
           >
             <Text
+              numberOfLines={1}
               style={{
                 color: selected ? colors.accentStrong : colors.textSecondary,
                 fontSize: (pill ? 12.5 : 13) * font,
@@ -253,10 +267,11 @@ const OverviewCard: React.FC<{
   const summary = stats?.rangeStats;
   const metrics = summary
     ? [
-        { key: 'questions', label: t.statsMetricQuestions, value: String(summary.questionsAnswered) },
-        { key: 'sessions', label: t.statsMetricSessions, value: String(summary.sessionsCompleted) },
-        { key: 'accuracy', label: t.statsMetricAccuracy, value: `${summary.accuracy}%` },
-        { key: 'duration', label: t.statsMetricDuration, value: formatDuration(summary.studyDuration) },
+        { key: 'questions', label: t.statsMetricQuestions, value: String(summary.questionsAnswered), wide: false },
+        { key: 'sessions', label: t.statsMetricSessions, value: String(summary.sessionsCompleted), wide: false },
+        { key: 'accuracy', label: t.statsMetricAccuracy, value: `${summary.accuracy}%`, wide: false },
+        // 用时是唯一会超长的值（1小时45分），多分一格宽度，避免省略号
+        { key: 'duration', label: t.statsMetricDuration, value: formatDuration(summary.studyDuration), wide: true },
       ]
     : [];
 
@@ -301,8 +316,19 @@ const OverviewCard: React.FC<{
         <>
           <View style={styles.metricRow}>
             {metrics.map((metric) => (
-              <View key={metric.key} style={styles.metricCell}>
-                <Text style={{ color: colors.text, fontSize: 19 * font, fontWeight: '600' }}>
+              <View key={metric.key} style={[styles.metricCell, { flex: metric.wide ? 1.35 : 1 }]}>
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                  style={{
+                    color: colors.text,
+                    // 四列并排，长值（如 1小时45分）不能挤成两行：字号收小并允许自适应缩小
+                    fontSize: 17 * font,
+                    fontWeight: '600',
+                    maxWidth: '100%',
+                  }}
+                >
                   {metric.value}
                 </Text>
                 <Text style={{ color: colors.textTertiary, fontSize: 11.5 * font, marginTop: 2 * spacing }}>
@@ -969,8 +995,13 @@ const RecordsScreen: React.FC<RecordsScreenProps> = ({ navigation }) => {
 
   const durationLabel = useCallback(
     (seconds: number): string => {
-      const mins = Math.floor(seconds / 60);
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
       const secs = seconds % 60;
+      // 满一小时改说小时：105 分钟不如 1小时45分 直观，也更短
+      if (hours > 0) {
+        return mins > 0 ? `${hours}${t.hourShort}${mins}${t.minuteShort}` : `${hours}${t.hourShort}`;
+      }
       if (mins > 0) return `${mins}${t.minuteShort}${secs}${t.secondShort}`;
       return `${secs}${t.secondShort}`;
     },
@@ -1265,7 +1296,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: 24,
     gap: 9,
   },
@@ -1286,8 +1317,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pill: {
+    flex: 1,
+    alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 12,
+    paddingHorizontal: 4,
   },
   segment: {
     flexDirection: 'row',
