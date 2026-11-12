@@ -383,7 +383,7 @@ export function PetHome() {
             <div className="space-y-3 lg:sticky lg:top-[76px]">
               <section className="rounded-xl border border-border bg-surface p-4 card-shadow sm:p-5">
                 <div className="relative mx-auto w-full max-w-[280px]">
-                  {/* 舞台固定正方形，动画切换不引起布局跳动 */}
+                  {/* 舞台固定正方形，动画切换不引起布局跳动；虚线框只做视觉容器，绝对定位不参与布局 */}
                   <div className="relative aspect-square w-full p-3">
                     <PetMotion
                       kind={animKind}
@@ -396,6 +396,12 @@ export function PetHome() {
                       fallbackIcon={pet.species.icon}
                       onFinish={handleAnimationFinish}
                       className="h-full w-full"
+                    />
+                    {/* 与移动端一致：1px 虚线、主题色 45% 透明、透明底；pointer-events 不拦动画 */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 rounded-xl border border-dashed"
+                      style={{ borderColor: "hsl(var(--primary) / 0.45)" }}
                     />
                   </div>
                 </div>
@@ -458,10 +464,10 @@ export function PetHome() {
                     </p>
                   </div>
 
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
                     <Button
                       type="button"
-                      className="justify-center sm:flex-1"
+                      className="h-11 justify-center rounded-lg border border-primary bg-primary-light text-[15px] font-semibold text-primary-strong shadow-none transition-colors hover:bg-primary/15 active:bg-primary/20 disabled:border-border disabled:bg-border-light disabled:text-foreground-tertiary disabled:opacity-100 sm:flex-1"
                       disabled={!pet.canFeed}
                       onClick={() => void openFeed()}
                     >
@@ -470,7 +476,7 @@ export function PetHome() {
                     <Button
                       asChild
                       variant="outline"
-                      className="justify-center sm:flex-1"
+                      className="h-11 justify-center rounded-lg border-border bg-surface text-[15px] font-semibold text-foreground shadow-none transition-colors hover:bg-surface-secondary hover:text-foreground active:bg-surface-secondary sm:flex-1"
                     >
                       <Link href="/learn">
                         {t("pet.practice")}

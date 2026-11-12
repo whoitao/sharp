@@ -112,21 +112,69 @@ export const en: TranslationKeys = {
   statDuration: 'Time',
   statTotal: 'Total',
 
-  // Learning stats
-  statsToday: 'Today',
-  statsTodayQuestions: 'Answered today',
-  statsTodaySessions: 'Sessions',
-  statsTodayDuration: 'Time today',
+  // Learning stats: switchable overview range
+  statsRangeToday: 'Today',
+  statsRangeWeek: 'This week',
+  statsRangeMonth: 'This month',
+  statsRangeAll: 'All',
+  statsMetricQuestions: 'Answered',
+  statsMetricSessions: 'Sessions',
+  statsMetricDuration: 'Time',
+  statsMetricAccuracy: 'Accuracy',
   statsStreakDays: (days: number) => `${days}-day streak`,
-  statsTotalDays: 'Study days',
-  statsTotalQuestions: 'Questions answered',
-  statsAccuracy: 'Overall accuracy',
-  statsTabTime: 'Timeline',
+  statsStreakNone: '0-day streak',
+  statsLongestStreak: (days: number) => `longest ${days}`,
+  statsTotalDays: 'Total days',
+  statsLastActiveNone: 'No study yet',
+  statsBreakDays: (days: number) => `Paused for ${days}d`,
+  statsDayToday: 'Today',
+  statsDayYesterday: 'Yesterday',
+
+  // 14-day heatmap
+  statsHeatTitle: 'Last 14 days',
+  statsHeatLess: 'Less',
+  statsHeatMore: 'More',
+  statsHeatCellLabel: (date: string, questions: number) => `${date}: ${questions} answered`,
+  statsHeatSelectedEmpty: 'No study on this day',
+
+  // Views
+  statsTabTime: 'By day',
   statsTabChapter: 'By chapter',
   statsTabKnowledge: 'By knowledge point',
-  statsSelectTextbook: 'Select a textbook in My Textbooks to see chapter stats',
-  statsNoChapterData: 'No chapter study data yet',
-  statsNoKnowledgeData: 'No knowledge point study data yet',
+
+  // Study source
+  statsScopeAll: 'All',
+  statsScopeChapter: 'Chapter',
+  statsScopeKnowledge: 'Knowledge',
+  statsScopeBank: 'Question bank',
+
+  // Daily timeline
+  statsQuestionsUnit: (num: number) => `${num} questions`,
+  statsWrongOfDay: (num: number) => `${num} wrong answers that day`,
+  statsGoWrongBook: 'Wrong answers',
+
+  // Chapter view
+  statsNoChapterData: 'No chapter data yet',
+  statsNoKnowledgeData: 'No knowledge point data yet',
+  statsNeedTextbookTitle: 'No textbook selected',
+  statsNeedTextbookSub: 'Pick a textbook to see your progress chapter by chapter',
+  statsGoTextbook: 'Choose a textbook',
+
+  // Knowledge point view
+  statsExpandAll: 'Expand all',
+  statsCollapseAll: 'Collapse all',
+  statsLegendStrong: 'Solid',
+  statsLegendFair: 'Needs work',
+  statsLegendWeak: 'Weak',
+  statsLegendNone: 'Not started',
+
+  // Loading states
+  statsLoadFailed: 'Could not load study data',
+  statsLoadFailedSub: 'Check your network and try again',
+  statsRetry: 'Retry',
+  statsFirstUseTitle: 'No study records yet',
+  statsFirstUseSub: 'Start a subject from Home — records will be grouped by day here',
+  statsGoStudy: 'Start studying',
   statsProgress: (answered: number, total: number) => `${answered}/${total} studied`,
   statsAccuracyLabel: 'Accuracy',
   statsLastPracticed: (date: string) => `Last ${date}`,

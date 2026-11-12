@@ -1,12 +1,10 @@
 import type { Pet, PetConfig, PetSpecies, PetSpeciesStage } from "@prisma/client";
-import { formatMonthDayTime } from "@/lib/datetime";
+import { beijingDayKey, formatMonthDayTime } from "@/lib/datetime";
 import { prisma } from "@/lib/prisma";
 
-/** 服务器本地日期键：与现有 UserDailyStat 完全一致，不使用客户端时间 */
+/** 日期键：固定北京时间，与 UserDailyStat 同一套日界，不使用客户端时间 */
 export function todayKey(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return beijingDayKey();
 }
 
 /** 喂养记录展示用：MM-DD HH:mm（固定北京时间，不依赖服务器进程时区） */

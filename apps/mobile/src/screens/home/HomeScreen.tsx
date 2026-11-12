@@ -100,11 +100,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
 
   // 连续天数画在原生 header 左侧：中间留给「年级 + 科目」选择器
+  // 0 天也保留徽章：它同时是学习记录的入口，隐藏会让入口消失
   useEffect(() => {
-    if (streak <= 0) {
-      navigation.setOptions({ headerLeft: undefined });
-      return;
-    }
     navigation.setOptions({
       headerLeft: () => (
         // Web 端 headerLeft 从容器 x=0 起排，需要补内容区的 16 左边距；
@@ -114,7 +111,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           onLayout={(event) => setStreakWidth(event.nativeEvent.layout.width)}
           style={Platform.OS === 'web' ? { marginLeft: 16 } : undefined}
         >
-          <StreakBadge days={streak} />
+          <StreakBadge days={streak} onPress={() => navigation.navigate('Records')} />
         </View>
       ),
     });
@@ -148,7 +145,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           onChangeGrade={handleChangeGrade}
           onChangeSubject={handleChangeSubject}
           // 徽章还没量到宽度时按「连续 4 天」的典型宽度预留，避免胶囊先宽后窄的跳动
-          leftOccupiedWidth={streak > 0 ? streakWidth || 88 : 0}
+          leftOccupiedWidth={streakWidth || 88}
           // 铃铛图标 22 + 左右 padding 4
           rightOccupiedWidth={30}
         />
@@ -225,14 +222,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const loadHome = useCallback(async () => {
     const [overview, stats, availability, gradeList, subjectList, petHome] = await Promise.all([
       api.getSubjectOverview(selectedTagId ? [selectedTagId] : undefined),
-      api.getStats(),
+      api.getStats('all').catch(() => null),
       api.getTextbookAvailability(),
       api.getGrades(),
       api.getSubjects(),
       api.getPet().catch(() => null),
     ]);
     setSubjects(overview);
-    setStreak(stats.streak);
+    setStreak(stats?.streak ?? 0);
     setTextbookAvailable(availability.length > 0);
     setGrades(gradeList);
     setSubjectOptions(subjectList);

@@ -112,21 +112,69 @@ export const zh = {
   statDuration: '用时',
   statTotal: '总题数',
 
-  // 学习统计
-  statsToday: '今日',
-  statsTodayQuestions: '今日答题',
-  statsTodaySessions: '学习次数',
-  statsTodayDuration: '今日用时',
+  // 学习统计：可切口径概览
+  statsRangeToday: '今日',
+  statsRangeWeek: '本周',
+  statsRangeMonth: '本月',
+  statsRangeAll: '全部',
+  statsMetricQuestions: '答题',
+  statsMetricSessions: '次数',
+  statsMetricDuration: '用时',
+  statsMetricAccuracy: '正确率',
   statsStreakDays: (days: number) => `连续 ${days} 天`,
-  statsTotalDays: '累计学习天数',
-  statsTotalQuestions: '累计答题',
-  statsAccuracy: '总正确率',
-  statsTabTime: '按时间',
+  statsStreakNone: '连续 0 天',
+  statsLongestStreak: (days: number) => `最长 ${days} 天`,
+  statsTotalDays: '累计天数',
+  statsLastActiveNone: '还没有学习记录',
+  statsBreakDays: (days: number) => `已中断 ${days} 天`,
+  statsDayToday: '今天',
+  statsDayYesterday: '昨天',
+
+  // 近 14 天热力条
+  statsHeatTitle: '近 14 天',
+  statsHeatLess: '少',
+  statsHeatMore: '多',
+  statsHeatCellLabel: (date: string, questions: number) => `${date} 答题 ${questions} 题`,
+  statsHeatSelectedEmpty: '这一天没有学习',
+
+  // 三视角
+  statsTabTime: '按天',
   statsTabChapter: '按章节',
   statsTabKnowledge: '按知识点',
-  statsSelectTextbook: '请先在「我的教材」选择教材后查看章节统计',
-  statsNoChapterData: '暂无章节学习数据',
-  statsNoKnowledgeData: '暂无知识点学习数据',
+
+  // 学习来源
+  statsScopeAll: '全部',
+  statsScopeChapter: '章节',
+  statsScopeKnowledge: '知识点',
+  statsScopeBank: '题库',
+
+  // 按天时间轴
+  statsQuestionsUnit: (num: number) => `${num} 题`,
+  statsWrongOfDay: (num: number) => `当天答错 ${num} 道`,
+  statsGoWrongBook: '去错题本',
+
+  // 章节视角
+  statsNoChapterData: '暂无章节数据',
+  statsNoKnowledgeData: '暂无知识点数据',
+  statsNeedTextbookTitle: '还没有选择教材',
+  statsNeedTextbookSub: '选定教材后，这里会按章节列出你的学习进度',
+  statsGoTextbook: '去选择教材',
+
+  // 知识点视角
+  statsExpandAll: '全部展开',
+  statsCollapseAll: '全部收起',
+  statsLegendStrong: '掌握良好',
+  statsLegendFair: '需要巩固',
+  statsLegendWeak: '尚未掌握',
+  statsLegendNone: '未学习',
+
+  // 加载状态
+  statsLoadFailed: '学习数据加载失败',
+  statsLoadFailedSub: '请检查网络后重试',
+  statsRetry: '重试',
+  statsFirstUseTitle: '还没有学习记录',
+  statsFirstUseSub: '从首页选一个科目开始学习，记录会按天整理在这里',
+  statsGoStudy: '去学习',
   statsProgress: (answered: number, total: number) => `已学 ${answered}/${total}`,
   statsAccuracyLabel: '正确率',
   statsLastPracticed: (date: string) => `最近 ${date}`,

@@ -1,18 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { useDensity } from '../hooks/useDensity';
 import { useTheme } from '../hooks/useTheme';
 import { useTranslation } from '../i18n/useTranslation';
 
-/** 连续学习天数徽章：画在首页 header 右侧，数据由首页拉取后传入 */
-const StreakBadge: React.FC<{ days: number }> = ({ days }) => {
+/** 连续学习天数徽章：首页 header 左侧，点击进入学习记录；0 天也照常显示，否则入口会消失 */
+const StreakBadge: React.FC<{ days: number; onPress?: () => void }> = ({ days, onPress }) => {
   const { colors } = useTheme();
   const { spacing, font } = useDensity();
   const { t } = useTranslation();
+  const active = days > 0;
 
   return (
-    <View
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      // 视觉高度 22，补足到 44 的可点高度
+      hitSlop={{ top: 11, bottom: 11, left: 6, right: 6 }}
       style={[
         styles.badge,
         {
@@ -21,10 +26,14 @@ const StreakBadge: React.FC<{ days: number }> = ({ days }) => {
         },
       ]}
     >
-      <Ionicons name="flame" size={11 * font} color={colors.accentStrong} />
+      <Ionicons
+        name={active ? 'flame' : 'flame-outline'}
+        size={11 * font}
+        color={active ? colors.accentStrong : colors.textTertiary}
+      />
       <Text
         style={{
-          color: colors.text,
+          color: active ? colors.text : colors.textSecondary,
           fontSize: 11 * font,
           fontWeight: '600',
           marginLeft: 3 * spacing,
@@ -32,7 +41,7 @@ const StreakBadge: React.FC<{ days: number }> = ({ days }) => {
       >
         {t.homeStreak(days)}
       </Text>
-    </View>
+    </Pressable>
   );
 };
 

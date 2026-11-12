@@ -1,6 +1,9 @@
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { beijingDayRange } from "@/lib/datetime";
 import { NextRequest, NextResponse } from "next/server";
+
+const SCOPE_TYPES = ["chapter", "knowledge", "bank"] as const;
 
 export async function GET(request: NextRequest) {
   const appUser = requireAppUser(request);
@@ -15,12 +18,25 @@ export async function GET(request: NextRequest) {
   const subjectId = searchParams.get("subjectId");
   const knowledgePointId = searchParams.get("knowledgePointId");
   const chapterId = searchParams.get("chapterId");
+  // 学习来源与北京日历日：学习记录页的来源 chips 与热力条「点一天看那天」用
+  const scopeType = searchParams.get("scopeType");
+  const date = searchParams.get("date");
 
   const where: Record<string, unknown> = { userId: appUser.id };
   if (gradeId) where.gradeId = BigInt(gradeId);
   if (subjectId) where.subjectId = BigInt(subjectId);
   if (knowledgePointId) where.knowledgePointId = BigInt(knowledgePointId);
   if (chapterId) where.chapterId = BigInt(chapterId);
+  if (scopeType && (SCOPE_TYPES as readonly string[]).includes(scopeType)) {
+    where.scopeType = scopeType;
+  }
+  if (date) {
+    const range = beijingDayRange(date);
+    if (!range) {
+      return NextResponse.json({ error: "date must be YYYY-MM-DD" }, { status: 400 });
+    }
+    where.finishedAt = { gte: range.start, lt: range.end };
+  }
 
   const [total, records] = await Promise.all([
     prisma.studyAttempt.count({ where }),

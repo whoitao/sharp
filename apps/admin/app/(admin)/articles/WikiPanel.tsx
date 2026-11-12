@@ -325,7 +325,11 @@ export default function WikiPanel() {
           display: "grid",
           gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "280px minmax(0, 1fr)",
           gap: 16,
-          alignItems: "start",
+          alignItems: "stretch",
+          // 宽屏时撑满 Content 高度：左右两列各自滚动，整页不再滚动
+          height: narrow ? undefined : "100%",
+          gridTemplateRows: narrow ? undefined : "minmax(0, 1fr)",
+          minHeight: 0,
         }}
       >
         <Card
@@ -343,10 +347,18 @@ export default function WikiPanel() {
               </Button>
             )
           }
+          style={
+            narrow
+              ? undefined
+              : { display: "flex", flexDirection: "column", minHeight: 0, height: "100%" }
+          }
           styles={{
             body: {
               padding: 8,
-              maxHeight: narrow ? "30vh" : "calc(100vh - 200px)",
+              // 宽屏：卡片撑满左列，树区域自己滚动，卡片标题固定
+              ...(narrow
+                ? { maxHeight: "30vh" }
+                : { flex: 1, minHeight: 0 }),
               overflowY: "auto",
             },
           }}
@@ -361,25 +373,35 @@ export default function WikiPanel() {
           />
         </Card>
 
-        <WikiEditor
-          detail={detail}
-          loading={detailLoading}
-          canWrite={canWrite}
-          canMoveUp={currentIndex > 0}
-          canMoveDown={currentIndex >= 0 && currentIndex < siblings.length - 1}
-          onDirtyChange={setDirty}
-          onSaved={handleSaved}
-          onAddChild={() => detail && openCreate(detail.id)}
-          onRename={openRename}
-          onMove={openMove}
-          onMoveUp={() => currentIndex > 0 && moveBy(siblings[currentIndex - 1].id)}
-          onMoveDown={() =>
-            currentIndex >= 0 &&
-            currentIndex < siblings.length - 1 &&
-            moveBy(siblings[currentIndex + 2]?.id ?? null)
-          }
-          onDelete={handleDelete}
-        />
+        <div
+          style={{
+            minWidth: 0,
+            minHeight: 0,
+            // 宽屏：右侧编辑区独立垂直滚动
+            height: narrow ? undefined : "100%",
+            overflowY: narrow ? undefined : "auto",
+          }}
+        >
+          <WikiEditor
+            detail={detail}
+            loading={detailLoading}
+            canWrite={canWrite}
+            canMoveUp={currentIndex > 0}
+            canMoveDown={currentIndex >= 0 && currentIndex < siblings.length - 1}
+            onDirtyChange={setDirty}
+            onSaved={handleSaved}
+            onAddChild={() => detail && openCreate(detail.id)}
+            onRename={openRename}
+            onMove={openMove}
+            onMoveUp={() => currentIndex > 0 && moveBy(siblings[currentIndex - 1].id)}
+            onMoveDown={() =>
+              currentIndex >= 0 &&
+              currentIndex < siblings.length - 1 &&
+              moveBy(siblings[currentIndex + 2]?.id ?? null)
+            }
+            onDelete={handleDelete}
+          />
+        </div>
       </div>
 
       <Modal

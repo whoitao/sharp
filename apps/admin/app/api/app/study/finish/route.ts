@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { grantPetRewards } from "@/lib/pet";
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { beijingDayKey } from "@/lib/datetime";
 import { chapterQuestionWhere, getChapterSubtreeIds } from "@/lib/textbook";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -346,8 +347,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Update daily stats
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = beijingDayKey();
 
   await prisma.userDailyStat.upsert({
     where: {

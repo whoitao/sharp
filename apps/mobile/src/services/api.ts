@@ -25,6 +25,7 @@ import type {
   StudyRecord,
   StudyRecordSummary,
   StudyStatsOverview,
+  StudyStatsRangeKey,
   Subject,
   SubjectOverview,
   TextbookCatalog,
@@ -721,62 +722,40 @@ export const api = {
     subjectId?: string | null;
     knowledgePointId?: string | null;
     chapterId?: string | null;
+    /** 学习来源筛选 */
+    scopeType?: StudyRecord['scopeType'];
+    /** 北京时间日界 YYYY-MM-DD，按 finishedAt 落在当天筛选 */
+    date?: string;
   } = {}): Promise<PaginatedResponse<StudyRecord>> {
-    const { page = 1, pageSize = 20, gradeId, subjectId, knowledgePointId, chapterId } = params;
-    try {
-      const query: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
-      if (gradeId) query.gradeId = gradeId;
-      if (subjectId) query.subjectId = subjectId;
-      if (knowledgePointId) query.knowledgePointId = knowledgePointId;
-      if (chapterId) query.chapterId = chapterId;
-      const response = await apiClient.get<PaginatedResponse<StudyRecord>>(
-        '/api/app/study/records',
-        { params: query }
-      );
-      return response.data;
-    } catch {
-      const mockRecords: StudyRecord[] = Array.from({ length: 5 }, (_, i) => ({
-        id: `record-${i}`,
-        userId: '1',
-        gradeId: null,
-        chapterId: null,
-        subjectId: null,
-        knowledgePointId: null,
-        unitIndex: i,
-        startedAt: new Date(Date.now() - i * 86400000).toISOString(),
-        finishedAt: new Date(Date.now() - i * 86400000 + 600000).toISOString(),
-        totalQuestions: 20,
-        correctCount: 15 + i,
-        wrongCount: 5 - i,
-        durationSeconds: 600,
-      }));
-      return {
-        data: mockRecords,
-        total: 5,
-        page: 1,
-        pageSize: 20,
-        totalPages: 1,
-      };
-    }
+    const {
+      page = 1,
+      pageSize = 20,
+      gradeId,
+      subjectId,
+      knowledgePointId,
+      chapterId,
+      scopeType,
+      date,
+    } = params;
+    const query: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
+    if (gradeId) query.gradeId = gradeId;
+    if (subjectId) query.subjectId = subjectId;
+    if (knowledgePointId) query.knowledgePointId = knowledgePointId;
+    if (chapterId) query.chapterId = chapterId;
+    if (scopeType) query.scopeType = scopeType;
+    if (date) query.date = date;
+    const response = await apiClient.get<PaginatedResponse<StudyRecord>>('/api/app/study/records', {
+      params: query,
+    });
+    return response.data;
   },
 
   // Stats
-  async getStats(): Promise<StudyStatsOverview> {
-    try {
-      const response = await apiClient.get<StudyStatsOverview>('/api/app/study/stats');
-      return response.data;
-    } catch {
-      return {
-        totalDays: 15,
-        totalQuestions: 320,
-        streak: 7,
-        totalCorrect: 260,
-        totalSessions: 16,
-        totalStudyDuration: 4800,
-        accuracy: 81,
-        recentStats: [],
-      };
-    }
+  async getStats(range: StudyStatsRangeKey = 'all'): Promise<StudyStatsOverview> {
+    const response = await apiClient.get<StudyStatsOverview>('/api/app/study/stats', {
+      params: { range },
+    });
+    return response.data;
   },
 
   // 按章节统计：某本教材的顶级章（含子节题目）

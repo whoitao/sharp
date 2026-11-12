@@ -1,5 +1,6 @@
 import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
+import { beijingDayKey } from "@/lib/datetime";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -65,8 +66,7 @@ export async function POST(request: NextRequest) {
   });
 
   // Update daily stats
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = beijingDayKey();
 
   await prisma.userDailyStat.upsert({
     where: {

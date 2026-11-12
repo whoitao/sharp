@@ -178,7 +178,22 @@ export default function WikiEditor({
       }
       styles={{ body: { padding: 16 } }}
     >
-      <Space wrap size={8} style={{ marginBottom: 16 }}>
+      {/* 操作栏吸顶：跟着右栏独立滚动，始终可见；负外边距抵消 Card body 的 16px 内边距 */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 2,
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 8,
+          margin: "-16px -16px 16px",
+          padding: "12px 16px",
+          background: token.colorBgContainer,
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        }}
+      >
         <Button
           size="small"
           icon={<PlusOutlined />}
@@ -219,16 +234,43 @@ export default function WikiEditor({
         >
           {t("wiki.moveParent")}
         </Button>
+        {canWrite && (
+          <>
+            <Button size="small" onClick={() => handleSave()} loading={saving}>
+              {t("wiki.save")}
+            </Button>
+            <Button
+              size="small"
+              type="primary"
+              loading={saving}
+              onClick={() =>
+                handleSave(detail.status === "published" ? "draft" : "published")
+              }
+            >
+              {detail.status === "published" ? t("wiki.unpublish") : t("wiki.publish")}
+            </Button>
+            <Typography.Text
+              type="secondary"
+              style={{ fontSize: 12, color: token.colorTextTertiary }}
+            >
+              {t("wiki.visibility")}:{" "}
+              {detail.visibility === "public"
+                ? t("wiki.visibilityPublic")
+                : t("wiki.visibilityPrivate")}
+            </Typography.Text>
+          </>
+        )}
         <Button
           size="small"
           danger
           icon={<DeleteOutlined />}
           disabled={!canWrite}
           onClick={onDelete}
+          style={{ marginLeft: "auto" }}
         >
           {t("wiki.remove")}
         </Button>
-      </Space>
+      </div>
 
       <Form
         form={form}
@@ -288,29 +330,6 @@ export default function WikiEditor({
             imageUploadEndpoint="/api/admin/uploads/wiki-image"
           />
         </Form.Item>
-
-        {canWrite && (
-          <Space>
-            <Button onClick={() => handleSave()} loading={saving}>
-              {t("wiki.save")}
-            </Button>
-            <Button
-              type="primary"
-              loading={saving}
-              onClick={() =>
-                handleSave(detail.status === "published" ? "draft" : "published")
-              }
-            >
-              {detail.status === "published" ? t("wiki.unpublish") : t("wiki.publish")}
-            </Button>
-            <Typography.Text type="secondary" style={{ color: token.colorTextTertiary }}>
-              {t("wiki.visibility")}:{" "}
-              {detail.visibility === "public"
-                ? t("wiki.visibilityPublic")
-                : t("wiki.visibilityPrivate")}
-            </Typography.Text>
-          </Space>
-        )}
       </Form>
     </Card>
   );

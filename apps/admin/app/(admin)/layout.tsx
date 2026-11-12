@@ -9,7 +9,6 @@ import {
   BookOutlined,
   DashboardOutlined,
   GlobalOutlined,
-  HeartOutlined,
   InfoCircleOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
@@ -40,6 +39,49 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 const { Sider, Content } = Layout;
 
+/**
+ * 与 Web 端「我的宠物」一致的 lucide PawPrint 图标。
+ * Admin 用 @ant-design/icons，没有同款爪印，这里按 lucide 原始 path 手绘同形 SVG。
+ * Menu 会给图标元素合并 `.ant-menu-item-icon`，所以按 AntD 图标的结构包一层
+ * `span.anticon`（inline-flex + 正方形 1em 盒子），保证占位宽度和基线与其他图标一致。
+ */
+function PawPrintIcon() {
+  return (
+    <span
+      className="anticon"
+      role="img"
+      aria-label="paw-print"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "1em",
+        height: "1em",
+        lineHeight: 0,
+      }}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="1em"
+        height="1em"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        focusable="false"
+        style={{ display: "block" }}
+      >
+        <circle cx="11" cy="4" r="2" />
+        <circle cx="18" cy="8" r="2" />
+        <circle cx="20" cy="16" r="2" />
+        <path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z" />
+      </svg>
+    </span>
+  );
+}
+
 const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] = [
   { key: "/dashboard", icon: <DashboardOutlined />, labelKey: "nav.dashboard" },
   { key: "/users", icon: <TeamOutlined />, labelKey: "nav.userManagement" },
@@ -48,7 +90,7 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.gradeManagement" },
   { key: "/articles", icon: <ReadOutlined />, labelKey: "nav.articles" },
   { key: "/notifications", icon: <NotificationOutlined />, labelKey: "nav.notifications" },
-  { key: "/pets", icon: <HeartOutlined />, labelKey: "nav.petManagement" },
+  { key: "/pets", icon: <PawPrintIcon />, labelKey: "nav.petManagement" },
   { key: "/site-settings", icon: <SettingOutlined />, labelKey: "nav.siteSettings" },
 ];
 

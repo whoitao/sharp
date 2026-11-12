@@ -133,6 +133,8 @@ export type HomeStackParamList = {
   // 教材同步（独立入口，不改动考纲学习流程）
   Textbook: undefined;
   TextbookUnits: TextbookUnitsParams;
+  // 学习记录的知识点视角下钻
+  KnowledgeUnits: KnowledgeUnitsParams;
   Quiz: QuizParams;
   // 文章：从首页快捷入口进入，保持在 HomeTab 内
   Articles: undefined;
@@ -170,6 +172,8 @@ export type ProfileStackParamList = {
   // 「我的教材」独立页：学段/科目/教材选择 + 章节列表
   Textbook: undefined;
   TextbookUnits: TextbookUnitsParams;
+  // 学习记录的知识点视角下钻
+  KnowledgeUnits: KnowledgeUnitsParams;
   Quiz: QuizParams;
   Records: undefined;
   WrongQuestions: undefined;
@@ -321,6 +325,13 @@ const HomeStackNavigator: React.FC = () => {
       name="TextbookUnits"
       component={withGradient(ChapterUnitsScreen)}
       options={({ route }) => ({ title: route.params?.chapterName ?? t.textbookTitle })}
+    />
+    <HomeStack.Screen
+      name="KnowledgeUnits"
+      component={withGradient(KnowledgeUnitsScreen)}
+      options={({ route }) => ({
+        title: route.params?.knowledgePointName ?? t.studyByKnowledgePoint,
+      })}
     />
     <HomeStack.Screen
       name="Quiz"
@@ -502,6 +513,13 @@ const ProfileStackNavigator: React.FC = () => {
       name="TextbookUnits"
       component={withGradient(ChapterUnitsScreen)}
       options={({ route }) => ({ title: route.params?.chapterName ?? t.textbookTitle })}
+    />
+    <ProfileStack.Screen
+      name="KnowledgeUnits"
+      component={withGradient(KnowledgeUnitsScreen)}
+      options={({ route }) => ({
+        title: route.params?.knowledgePointName ?? t.studyByKnowledgePoint,
+      })}
     />
     <ProfileStack.Screen
       name="Quiz"

@@ -344,6 +344,26 @@ export interface KnowledgePointStudyStat {
   children: KnowledgePointStudyStat[];
 }
 
+/** 统计口径：今日 / 本周（北京周一起） / 本月（1 号起） / 全部 */
+export type StudyStatsRangeKey = 'today' | 'week' | 'month' | 'all';
+
+/** 单个口径的聚合值。正确率来自 StudyAttempt，其余来自 UserDailyStat */
+export interface StudyStatsRangeSummary {
+  questionsAnswered: number;
+  sessionsCompleted: number;
+  studyDuration: number;
+  activeDays: number;
+  accuracy: number;
+}
+
+/** 热力条的一天：YYYY-MM-DD（北京时间），缺日补零 */
+export interface DailySeriesPoint {
+  date: string;
+  questionsAnswered: number;
+  sessionsCompleted: number;
+  studyDuration: number;
+}
+
 /** 学习统计总览 */
 export interface StudyStatsOverview {
   totalDays: number;
@@ -354,6 +374,15 @@ export interface StudyStatsOverview {
   totalStudyDuration: number;
   accuracy: number;
   recentStats: DailyStat[];
+  /** 请求的口径，服务端原样回显 */
+  range?: StudyStatsRangeKey;
+  /** 历史最长连续天数 */
+  longestStreak?: number;
+  /** 最后一次学习的北京日期 YYYY-MM-DD；从未学习为 null */
+  lastActiveDate?: string | null;
+  rangeStats?: StudyStatsRangeSummary;
+  /** 近 14 个北京日序列，末位为今天 */
+  dailySeries?: DailySeriesPoint[];
 }
 
 export interface QuestionProgress {

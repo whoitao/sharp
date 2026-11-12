@@ -301,21 +301,8 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
           {pet.species.name} · {pet.growthStage.name} · {t.petCompanionDays(pet.companionDays)}
         </Text>
 
-        {/* 饱腹度：卡片内主指标 */}
+        {/* 经验：在小字层级展示，位于饱腹度上方 */}
         <View style={{ marginTop: 16 * spacing }}>
-          <View style={styles.rowBetween}>
-            <Text style={{ color: colors.text, fontSize: 12.5 * font }}>
-              {t.petSatiety}
-            </Text>
-            <Text style={{ color: colors.textTertiary, fontSize: 12.5 * font }}>
-              {pet.satiety} / {pet.satietyMax}
-            </Text>
-          </View>
-          {renderProgress(satietyProgress, colors.warning)}
-        </View>
-
-        {/* 经验：设计稿没有这一项，降级为饱腹度下方的小字 + 细条，不抢视线 */}
-        <View style={{ marginTop: 10 * spacing }}>
           <View style={styles.rowBetween}>
             <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font }}>
               {isMaxLevel
@@ -329,7 +316,20 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
           {renderProgress(expProgress, colors.accent)}
         </View>
 
-        {/* 主操作：等宽并列，实心绿 + 描边 */}
+        {/* 饱腹度：文字层级与经验行保持一致，放在经验条下方 */}
+        <View style={{ marginTop: 12 * spacing }}>
+          <View style={styles.rowBetween}>
+            <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font }}>
+              {t.petSatiety}
+            </Text>
+            <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font }}>
+              {pet.satiety} / {pet.satietyMax}
+            </Text>
+          </View>
+          {renderProgress(satietyProgress, colors.warning)}
+        </View>
+
+        {/* 主操作：等宽并列，喂食为浅底描边主按钮，去练习为次要描边 */}
         <View style={[styles.rowGap, { marginTop: 16 * spacing, gap: 10 * spacing }]}>
           <TouchableOpacity
             onPress={openFeed}
@@ -338,12 +338,19 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
               styles.primaryButton,
               {
                 height: 46,
-                backgroundColor: pet.canFeed ? colors.accent : colors.border,
                 borderRadius: 10 * radius,
+                borderWidth: 1,
+                backgroundColor: pet.canFeed ? colors.accentLight : colors.borderLight,
+                borderColor: pet.canFeed ? colors.accent : colors.border,
               },
             ]}
           >
-            <Text style={[styles.primaryButtonText, { color: pet.canFeed ? '#FFFFFF' : colors.textTertiary }]}>
+            <Text
+              style={[
+                styles.primaryButtonText,
+                { color: pet.canFeed ? colors.accentStrong : colors.textTertiary },
+              ]}
+            >
               {t.petFeedButton}
             </Text>
           </TouchableOpacity>
@@ -414,16 +421,8 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                   styles.routeCard,
                   active ? cardShadow(isDark) : null,
                   {
-                    backgroundColor: active
-                      ? colors.accentLight
-                      : locked
-                        ? colors.borderLight
-                        : colors.surface,
-                    borderColor: active
-                      ? colors.accent
-                      : past
-                        ? colors.border
-                        : colors.borderLight,
+                    backgroundColor: locked ? colors.borderLight : colors.surface,
+                    borderColor: active ? colors.border : past ? colors.border : colors.borderLight,
                     borderRadius: 12 * radius,
                     padding: 10 * spacing,
                     opacity: locked ? 0.6 : 1,
@@ -789,10 +788,10 @@ const styles = StyleSheet.create({
     // 与名字同一行时垂直居中，避免 chip 顶到文字上方
     alignSelf: 'center',
   },
-  // 舞台框：收紧高度的圆角区域，宠物居中，脚底与框底留白
+  // 舞台框：正方形区域，宠物居中，上下留白均衡、脚底不贴边
   stage: {
     width: '100%',
-    aspectRatio: 1.25,
+    aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -801,8 +800,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    // 主体整体略上移，保证脚底与框底留出固定间距
-    paddingBottom: 8,
   },
   stageDash: {
     borderWidth: 1,
