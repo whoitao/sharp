@@ -4,6 +4,7 @@ import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions
 
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import {
@@ -33,6 +34,8 @@ export default function PublishersPanel() {
   const { t } = useLocale();
   const { pageSize } = usePageSize();
   const { message, modal } = App.useApp();
+  const { can } = usePermissions();
+  const canWrite = can("textbooks:write");
   const [data, setData] = useState<Publisher[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -105,38 +108,41 @@ export default function PublishersPanel() {
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, row) => (
-        <Space size={4}>
-          <Button
-            variant="text"
-            color="primary"
-            size="small"
-            icon={<EditOutlined />}
-            title={t("common.edit")}
-            aria-label={t("common.edit")}
-            onClick={() => openEdit(row)}
-          />
-          <Button
-            variant="text"
-            color="danger"
-            size="small"
-            icon={<DeleteOutlined />}
-            title={t("common.delete")}
-            aria-label={t("common.delete")}
-            onClick={() => handleDelete(row)}
-          />
-        </Space>
+        canWrite ? (
+          <Space size={4}>
+            <Button
+              variant="text"
+              color="primary"
+              size="small"
+              icon={<EditOutlined />}
+              title={t("common.edit")}
+              aria-label={t("common.edit")}
+              onClick={() => openEdit(row)}
+            />
+            <Button
+              variant="text"
+              color="danger"
+              size="small"
+              icon={<DeleteOutlined />}
+              title={t("common.delete")}
+              aria-label={t("common.delete")}
+              onClick={() => handleDelete(row)}
+            />
+          </Space>
+        ) : null
       ),
     },
   ];
 
   const headerActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-        {t("publishers.addPublisher")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          {t("publishers.addPublisher")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t],
+    [canWrite, t],
   );
   usePageActions(headerActions);
 

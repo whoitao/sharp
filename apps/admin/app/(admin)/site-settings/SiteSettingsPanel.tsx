@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import { HistoryOutlined } from "@ant-design/icons";
 import {
@@ -49,6 +50,8 @@ interface RevisionItem {
 export default function SiteSettingsPanel() {
   const { message, modal } = App.useApp();
   const { t, locale } = useLocale();
+  const { can } = usePermissions();
+  const canWrite = can("settings:write");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -118,6 +121,7 @@ export default function SiteSettingsPanel() {
   }, []);
 
   const handleSave = async (values: SiteSettingsForm) => {
+    if (!canWrite) return;
     setSaving(true);
     try {
       const res = await fetch("/api/admin/site-settings", {
@@ -201,13 +205,15 @@ export default function SiteSettingsPanel() {
         <Button icon={<HistoryOutlined />} onClick={openHistory}>
           {t("siteSettings.history")}
         </Button>
-        <Button type="primary" loading={saving} onClick={() => form.submit()}>
-          {t("common.saveChanges")}
-        </Button>
+        {canWrite ? (
+          <Button type="primary" loading={saving} onClick={() => form.submit()}>
+            {t("common.saveChanges")}
+          </Button>
+        ) : null}
       </Space>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [saving, t],
+    [canWrite, saving, t],
   );
   usePageActions(headerActions);
 
@@ -218,7 +224,7 @@ export default function SiteSettingsPanel() {
           {t("siteSettings.desc")}
         </Text>
 
-        <Form form={form} layout="vertical" onFinish={handleSave}>
+        <Form form={form} layout="vertical" onFinish={handleSave} disabled={!canWrite}>
           <Card title={t("siteSettings.groupBasic")} style={{ marginBottom: 16 }}>
             <Row gutter={16}>
               <Col xs={24} md={12}>
@@ -374,16 +380,20 @@ export default function SiteSettingsPanel() {
               dataSource={revisions}
               renderItem={(item) => (
                 <List.Item
-                  actions={[
-                    <Button
-                      key="restore"
-                      type="link"
-                      loading={restoringId === item.id}
-                      onClick={() => handleRestore(item)}
-                    >
-                      {t("siteSettings.restore")}
-                    </Button>,
-                  ]}
+                  actions={
+                    canWrite
+                      ? [
+                          <Button
+                            key="restore"
+                            type="link"
+                            loading={restoringId === item.id}
+                            onClick={() => handleRestore(item)}
+                          >
+                            {t("siteSettings.restore")}
+                          </Button>,
+                        ]
+                      : []
+                  }
                 >
                   <List.Item.Meta
                     title={formatTime(item.createdAt)}

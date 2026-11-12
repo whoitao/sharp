@@ -5,6 +5,7 @@ import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions
 import IconPicker from "@/components/IconPicker";
 import IonIcon from "@/components/IonIcon";
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import {
     DeleteOutlined,
@@ -42,6 +43,8 @@ interface SubjectFormValues {
 export default function SubjectsPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
+  const { can } = usePermissions();
+  const canWrite = can("textbooks:write");
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -190,45 +193,48 @@ export default function SubjectsPanel() {
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (
-        <Space size={4}>
-          <Button
-            variant="text"
-            color="primary"
-            size="small"
-            icon={<EditOutlined />}
-            title={t("common.edit")}
-            aria-label={t("common.edit")}
-            onClick={() => openEdit(record)}
-          />
-          <Button
-            variant="text"
-            color="danger"
-            size="small"
-            icon={<DeleteOutlined />}
-            title={t("common.delete")}
-            aria-label={t("common.delete")}
-            onClick={() => {
-              setSelectedSubject(record);
-              setDeleteOpen(true);
-            }}
-          />
-        </Space>
+        canWrite ? (
+          <Space size={4}>
+            <Button
+              variant="text"
+              color="primary"
+              size="small"
+              icon={<EditOutlined />}
+              title={t("common.edit")}
+              aria-label={t("common.edit")}
+              onClick={() => openEdit(record)}
+            />
+            <Button
+              variant="text"
+              color="danger"
+              size="small"
+              icon={<DeleteOutlined />}
+              title={t("common.delete")}
+              aria-label={t("common.delete")}
+              onClick={() => {
+                setSelectedSubject(record);
+                setDeleteOpen(true);
+              }}
+            />
+          </Space>
+        ) : null
       ),
     },
   ];
 
   const headerActions = useMemo(
-    () => (
-      <Button
-        type="primary"
-        icon={<PlusOutlined />}
-        onClick={() => setCreateOpen(true)}
-      >
-        {t("subjects.addSubject")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setCreateOpen(true)}
+        >
+          {t("subjects.addSubject")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t]
+    [canWrite, t]
   );
   usePageActions(headerActions);
 

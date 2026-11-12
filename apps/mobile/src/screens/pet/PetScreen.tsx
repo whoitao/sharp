@@ -362,6 +362,8 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             style={[
               styles.primaryButton,
               {
+                // 与「去练习」等分这一行
+                flex: 1,
                 height: 46,
                 borderRadius: 10 * radius,
                 borderWidth: 1,
@@ -383,7 +385,8 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             onPress={() => (navigation as any).navigate('StudyTab', { screen: 'Study' })}
             style={[
               styles.secondaryButton,
-              { height: 46, borderColor: colors.border, borderRadius: 10 * radius },
+              // 与「喂食」等分这一行
+              { flex: 1, height: 46, borderColor: colors.border, borderRadius: 10 * radius },
             ]}
           >
             <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '600' }}>
@@ -727,11 +730,6 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                   backgroundColor: selectedFood && !feeding ? colors.accent : colors.border,
                   borderRadius: 12 * radius,
                   marginTop: 12 * spacing,
-                  // 覆盖 primaryButton 的 flex:1，避免被弹层高度压缩导致文字被裁切
-                  flexGrow: 0,
-                  flexShrink: 0,
-                  minHeight: 44,
-                  height: 44,
                   // Modal 内读不到 safe-area inset，用最小间距兜底，避免底部按钮被系统导航栏遮挡
                   marginBottom: Math.max(insets.bottom, 36 * spacing),
                 },
@@ -863,8 +861,10 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   primaryButton: {
-    flex: 1,
+    // 只负责按钮自身外观；是否等宽由使用处用 flex 决定
+    // （之前写死 flex:1，空态按钮在纵向容器里被拉成整屏高的一条）
     height: 44,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -874,8 +874,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   secondaryButton: {
-    flex: 1,
     height: 44,
+    paddingHorizontal: 16,
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     alignItems: 'center',

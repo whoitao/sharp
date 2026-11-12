@@ -3,6 +3,7 @@
 import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
 
 import { usePageSize } from "@/components/antd-providers";
+import { usePermissions } from "@/components/permissions";
 import { formatDateTime } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
@@ -56,6 +57,8 @@ export default function PetListPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
   const { pageSize } = usePageSize();
+  const { can } = usePermissions();
+  const canWrite = can("pets:write");
 
   const [items, setItems] = useState<PetItem[]>([]);
   const [species, setSpecies] = useState<SpeciesOption[]>([]);
@@ -228,32 +231,34 @@ export default function PetListPanel() {
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (
-        <Space size={4}>
-          <Button
-            variant="text"
-            color="primary"
-            size="small"
-            icon={<EditOutlined />}
-            title={t("common.edit")}
-            aria-label={t("common.edit")}
-            onClick={() => {
-              setSelected(record);
-              setEditOpen(true);
-            }}
-          />
-          <Button
-            variant="text"
-            color="danger"
-            size="small"
-            icon={<DeleteOutlined />}
-            title={t("common.delete")}
-            aria-label={t("common.delete")}
-            onClick={() => {
-              setSelected(record);
-              setDeleteOpen(true);
-            }}
-          />
-        </Space>
+        canWrite ? (
+          <Space size={4}>
+            <Button
+              variant="text"
+              color="primary"
+              size="small"
+              icon={<EditOutlined />}
+              title={t("common.edit")}
+              aria-label={t("common.edit")}
+              onClick={() => {
+                setSelected(record);
+                setEditOpen(true);
+              }}
+            />
+            <Button
+              variant="text"
+              color="danger"
+              size="small"
+              icon={<DeleteOutlined />}
+              title={t("common.delete")}
+              aria-label={t("common.delete")}
+              onClick={() => {
+                setSelected(record);
+                setDeleteOpen(true);
+              }}
+            />
+          </Space>
+        ) : null
       ),
     },
   ];

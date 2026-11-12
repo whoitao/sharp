@@ -3,9 +3,9 @@
 import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
 
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import {
-  DeleteOutlined,
   EditOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
@@ -16,7 +16,6 @@ import {
   Input,
   InputNumber,
   Modal,
-  Space,
   Switch,
   Table,
   Tag,
@@ -50,12 +49,13 @@ interface SpeciesFormValues {
 export default function PetSpeciesPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
+  const { can } = usePermissions();
+  const canWrite = can("pets:write");
 
   const [items, setItems] = useState<SpeciesItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<SpeciesItem | null>(null);
   const [saving, setSaving] = useState(false);
   const [createForm] = Form.useForm<SpeciesFormValues>();
@@ -132,28 +132,6 @@ export default function PetSpeciesPanel() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!selected) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/admin/pet-species/${selected.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token()}` },
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        message.error(data?.error || t("pets.speciesDeleteFailed"));
-        return;
-      }
-      message.success(t("pets.speciesDeleted"));
-      setDeleteOpen(false);
-      setSelected(null);
-      fetchItems();
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const columns: ColumnsType<SpeciesItem> = [
     {
       title: "ID",
@@ -223,11 +201,11 @@ export default function PetSpeciesPanel() {
     {
       title: t("common.actions"),
       key: "actions",
-      width: 90,
+      width: 64,
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
-      render: (_, record) => (
-        <Space size={4}>
+      render: (_, record) =>
+        canWrite ? (
           <Button
             variant="text"
             color="primary"
@@ -240,31 +218,19 @@ export default function PetSpeciesPanel() {
               setEditOpen(true);
             }}
           />
-          <Button
-            variant="text"
-            color="danger"
-            size="small"
-            icon={<DeleteOutlined />}
-            title={t("common.delete")}
-            aria-label={t("common.delete")}
-            onClick={() => {
-              setSelected(record);
-              setDeleteOpen(true);
-            }}
-          />
-        </Space>
-      ),
+        ) : null,
     },
   ];
 
   const headerActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-        {t("pets.addSpecies")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+          {t("pets.addSpecies")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t],
+    [canWrite, t],
   );
   usePageActions(headerActions);
 
@@ -356,21 +322,6 @@ export default function PetSpeciesPanel() {
         <Form form={editForm} layout="vertical" onFinish={handleUpdate}>
           {formFields}
         </Form>
-      </Modal>
-
-      <Modal
-        title={t("pets.speciesDeleteTitle")}
-        open={deleteOpen}
-        onCancel={() => {
-          setDeleteOpen(false);
-          setSelected(null);
-        }}
-        confirmLoading={saving}
-        okText={t("common.delete")}
-        okButtonProps={{ danger: true }}
-        onOk={handleDelete}
-      >
-        <p>{t("pets.speciesDeleteConfirm", { name: selected?.name ?? "" })}</p>
       </Modal>
     </div>
   );

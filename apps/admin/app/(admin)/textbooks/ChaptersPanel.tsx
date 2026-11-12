@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale, type MessageKey } from "@/lib/i18n";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { App, Button, Cascader, Form, Input, InputNumber, Modal, Select, Space, Tag, Tree, theme } from "antd";
@@ -45,6 +46,8 @@ export default function ChaptersPanel() {
   const { t } = useLocale();
   const { message, modal } = App.useApp();
   const { token } = theme.useToken();
+  const { can } = usePermissions();
+  const canWrite = can("textbooks:write");
   const [textbooks, setTextbooks] = useState<TextbookOption[]>([]);
   const [selectedTextbookId, setSelectedTextbookId] = useState<string | undefined>();
   const [tree, setTree] = useState<ChapterNode[]>([]);
@@ -136,13 +139,14 @@ export default function ChaptersPanel() {
   };
 
   const headerActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-        {t("chapters.addChapter")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          {t("chapters.addChapter")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedTextbookId],
+    [canWrite, selectedTextbookId],
   );
   usePageActions(headerActions);
 
@@ -319,7 +323,7 @@ export default function ChaptersPanel() {
                       </Tag>
                     )}
                     <span>{node.title as React.ReactNode}</span>
-                    {chapter && (
+                    {chapter && canWrite && (
                       <>
                         <Button
                           variant="text"

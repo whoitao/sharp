@@ -4,6 +4,7 @@ import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions
 
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import RichTextEditor from "@/components/RichTextEditor";
 import { formatDateTime } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
@@ -73,6 +74,8 @@ export default function ArticlesPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
   const { pageSize } = usePageSize();
+  const { can } = usePermissions();
+  const canWrite = can("articles:write");
 
   const [items, setItems] = useState<ArticleItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -337,50 +340,53 @@ export default function ArticlesPanel() {
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (
-        <Space size={4}>
-          <Button
-            variant="text"
-            color="primary"
-            size="small"
-            icon={<EditOutlined />}
-            title={t("common.edit")}
-            aria-label={t("common.edit")}
-            onClick={() => openEdit(record)}
-          />
-          <Button
-            variant="text"
-            color="primary"
-            size="small"
-            icon={<SyncOutlined />}
-            title={record.status === "published" ? t("articles.offline") : t("articles.publish")}
-            aria-label={record.status === "published" ? t("articles.offline") : t("articles.publish")}
-            onClick={() => handleToggleStatus(record)}
-          />
-          <Button
-            variant="text"
-            color="danger"
-            size="small"
-            icon={<DeleteOutlined />}
-            title={t("common.delete")}
-            aria-label={t("common.delete")}
-            onClick={() => {
-              setSelected(record);
-              setDeleteOpen(true);
-            }}
-          />
-        </Space>
+        canWrite ? (
+          <Space size={4}>
+            <Button
+              variant="text"
+              color="primary"
+              size="small"
+              icon={<EditOutlined />}
+              title={t("common.edit")}
+              aria-label={t("common.edit")}
+              onClick={() => openEdit(record)}
+            />
+            <Button
+              variant="text"
+              color="primary"
+              size="small"
+              icon={<SyncOutlined />}
+              title={record.status === "published" ? t("articles.offline") : t("articles.publish")}
+              aria-label={record.status === "published" ? t("articles.offline") : t("articles.publish")}
+              onClick={() => handleToggleStatus(record)}
+            />
+            <Button
+              variant="text"
+              color="danger"
+              size="small"
+              icon={<DeleteOutlined />}
+              title={t("common.delete")}
+              aria-label={t("common.delete")}
+              onClick={() => {
+                setSelected(record);
+                setDeleteOpen(true);
+              }}
+            />
+          </Space>
+        ) : null
       ),
     },
   ];
 
   const headerActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-        {t("articles.addArticle")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+          {t("articles.addArticle")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t]
+    [canWrite, t]
   );
   usePageActions(headerActions);
 

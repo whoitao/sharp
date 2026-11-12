@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import { App, Button, Col, Divider, Form, InputNumber, Row, Spin, Typography } from "antd";
 import { useEffect, useMemo, useState } from "react";
@@ -31,6 +32,8 @@ interface ConfigValues {
 export default function PetConfigPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
+  const { can } = usePermissions();
+  const canWrite = can("pets:write");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,6 +60,7 @@ export default function PetConfigPanel() {
   }, []);
 
   const handleSave = async (values: ConfigValues) => {
+    if (!canWrite) return;
     setSaving(true);
     try {
       const res = await fetch("/api/admin/pet-config", {
@@ -80,13 +84,14 @@ export default function PetConfigPanel() {
   };
 
   const headerActions = useMemo(
-    () => (
-      <Button type="primary" loading={saving} onClick={() => form.submit()}>
-        {t("common.saveChanges")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" loading={saving} onClick={() => form.submit()}>
+          {t("common.saveChanges")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [saving, t],
+    [canWrite, saving, t],
   );
   usePageActions(headerActions);
 
@@ -103,7 +108,7 @@ export default function PetConfigPanel() {
       <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
         {t("pets.configDesc")}
       </Text>
-      <Form form={form} layout="vertical" onFinish={handleSave}>
+      <Form form={form} layout="vertical" onFinish={handleSave} disabled={!canWrite}>
         <Divider titlePlacement="start" plain>
           {t("pets.groupExp")}
         </Divider>

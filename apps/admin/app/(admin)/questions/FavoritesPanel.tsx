@@ -7,6 +7,7 @@ import GroupedGradeSelect, {
 } from "@/components/GroupedGradeSelect";
 import SubjectSelect from "@/components/SubjectSelect";
 import { usePageSize } from "@/components/antd-providers";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import { DeleteOutlined } from "@ant-design/icons";
 import {
@@ -49,6 +50,8 @@ export default function FavoritesPanel() {
   const { pageSize } = usePageSize();
   const { token } = theme.useToken();
   const { message, modal } = App.useApp();
+  const { can } = usePermissions();
+  const canWrite = can("questions:write");
 
   const [items, setItems] = useState<FavoriteItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -239,17 +242,19 @@ export default function FavoritesPanel() {
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (
-        <Space size={4}>
-          <Button
-            variant="text"
-            color="danger"
-            size="small"
-            icon={<DeleteOutlined />}
-            title={t("favorites.unfavorite")}
-            aria-label={t("favorites.unfavorite")}
-            onClick={() => handleUnfavorite(record)}
-          />
-        </Space>
+        canWrite ? (
+          <Space size={4}>
+            <Button
+              variant="text"
+              color="danger"
+              size="small"
+              icon={<DeleteOutlined />}
+              title={t("favorites.unfavorite")}
+              aria-label={t("favorites.unfavorite")}
+              onClick={() => handleUnfavorite(record)}
+            />
+          </Space>
+        ) : null
       ),
     },
   ];

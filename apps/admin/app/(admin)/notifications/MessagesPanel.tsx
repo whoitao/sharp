@@ -2,6 +2,7 @@
 
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
 import { formatDateTime } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
@@ -74,6 +75,8 @@ export default function MessagesPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
   const { pageSize } = usePageSize();
+  const { can } = usePermissions();
+  const canWrite = can("notifications:write");
 
   const [items, setItems] = useState<MessageItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -322,7 +325,7 @@ export default function MessagesPanel() {
           <Button type="link" size="small" onClick={() => openDetail(record.id)}>
             {t("notifications.detail")}
           </Button>
-          {record.status === "published" && (
+          {canWrite && record.status === "published" && (
             <Popconfirm
               title={t("notifications.revokeConfirm")}
               onConfirm={() => handleRevoke(record)}
@@ -338,13 +341,14 @@ export default function MessagesPanel() {
   ];
 
   const pageActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={openPublish}>
-        {t("notifications.publish")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={openPublish}>
+          {t("notifications.publish")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t],
+    [canWrite, t],
   );
   usePageActions(pageActions);
 

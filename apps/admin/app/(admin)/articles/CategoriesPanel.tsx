@@ -3,6 +3,7 @@
 import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
 
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import {
@@ -33,6 +34,8 @@ interface CategoryFormValues {
 export default function CategoriesPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
+  const { can } = usePermissions();
+  const canWrite = can("articles:write");
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -177,41 +180,44 @@ export default function CategoriesPanel() {
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
       render: (_, record) => (
-        <Space size={4}>
-          <Button
-            variant="text"
-            color="primary"
-            size="small"
-            icon={<EditOutlined />}
-            title={t("common.edit")}
-            aria-label={t("common.edit")}
-            onClick={() => openEdit(record)}
-          />
-          <Button
-            variant="text"
-            color="danger"
-            size="small"
-            icon={<DeleteOutlined />}
-            title={t("common.delete")}
-            aria-label={t("common.delete")}
-            onClick={() => {
-              setSelected(record);
-              setDeleteOpen(true);
-            }}
-          />
-        </Space>
+        canWrite ? (
+          <Space size={4}>
+            <Button
+              variant="text"
+              color="primary"
+              size="small"
+              icon={<EditOutlined />}
+              title={t("common.edit")}
+              aria-label={t("common.edit")}
+              onClick={() => openEdit(record)}
+            />
+            <Button
+              variant="text"
+              color="danger"
+              size="small"
+              icon={<DeleteOutlined />}
+              title={t("common.delete")}
+              aria-label={t("common.delete")}
+              onClick={() => {
+                setSelected(record);
+                setDeleteOpen(true);
+              }}
+            />
+          </Space>
+        ) : null
       ),
     },
   ];
 
   const headerActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-        {t("articleCategories.addCategory")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+          {t("articleCategories.addCategory")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t]
+    [canWrite, t]
   );
   usePageActions(headerActions);
 

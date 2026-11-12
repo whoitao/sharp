@@ -791,9 +791,6 @@ export const zh: Messages = {
     addSpecies: "新建宠物分类",
     speciesCreateTitle: "新建宠物分类",
     speciesEditTitle: "编辑宠物分类",
-    speciesDeleteTitle: "删除宠物分类",
-    speciesDeleteConfirm:
-      "确定要删除\"{name}\"吗？该分类下的阶段也会一并删除，且无法撤销。",
     speciesCode: "种类编码",
     speciesCodeRequired: "请输入种类编码",
     speciesName: "种类名称",
@@ -807,17 +804,13 @@ export const zh: Messages = {
     colPetCount: "宠物数",
     speciesCreated: "宠物分类已创建",
     speciesUpdated: "宠物分类已更新",
-    speciesDeleted: "宠物分类已删除",
     speciesCreateFailed: "创建宠物分类失败",
     speciesUpdateFailed: "更新宠物分类失败",
-    speciesDeleteFailed: "删除宠物分类失败",
 
     // 宠物阶段
     addStage: "新建阶段",
     stageCreateTitle: "新建宠物阶段",
     stageEditTitle: "编辑宠物阶段",
-    stageDeleteTitle: "删除宠物阶段",
-    stageDeleteConfirm: "确定要删除\"{name}\"吗？该操作无法撤销。",
     stageKey: "阶段编码",
     stageKeyRequired: "请输入阶段编码",
     stageName: "阶段名称",
@@ -834,10 +827,8 @@ export const zh: Messages = {
     motionManifestUrl: "分层动作包地址",
     stageCreated: "阶段已创建",
     stageUpdated: "阶段已更新",
-    stageDeleted: "阶段已删除",
     stageCreateFailed: "创建阶段失败",
     stageUpdateFailed: "更新阶段失败",
-    stageDeleteFailed: "删除阶段失败",
 
     // 宠物
     petSearchPlaceholder: "按宠物昵称或用户名搜索...",

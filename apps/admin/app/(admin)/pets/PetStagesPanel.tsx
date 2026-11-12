@@ -3,9 +3,9 @@
 import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
 
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { useLocale } from "@/lib/i18n";
 import {
-  DeleteOutlined,
   EditOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
@@ -18,7 +18,6 @@ import {
   InputNumber,
   Modal,
   Select,
-  Space,
   Table,
   Tag,
   theme,
@@ -55,12 +54,6 @@ interface StageFormValues {
   name: string;
   minLevel: number;
   maxLevel: number;
-  imageUrl?: string;
-  idleLottieUrl?: string;
-  feedLottieUrl?: string;
-  evolveLottieUrl?: string;
-  sideImageUrl?: string;
-  motionManifestUrl?: string;
   sortOrder: number;
 }
 
@@ -68,6 +61,8 @@ export default function PetStagesPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
   const { token: themeToken } = theme.useToken();
+  const { can } = usePermissions();
+  const canWrite = can("pets:write");
 
   const [items, setItems] = useState<StageItem[]>([]);
   const [species, setSpecies] = useState<SpeciesOption[]>([]);
@@ -75,7 +70,6 @@ export default function PetStagesPanel() {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<StageItem | null>(null);
   const [saving, setSaving] = useState(false);
   const [createForm] = Form.useForm<StageFormValues>();
@@ -121,6 +115,16 @@ export default function PetStagesPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speciesFilter]);
 
+  // 只提交左侧可编辑字段：素材地址不随表单提交，避免编辑时误清空
+  const toStagePayload = (values: StageFormValues) => ({
+    speciesId: values.speciesId,
+    stageKey: values.stageKey,
+    name: values.name,
+    minLevel: values.minLevel,
+    maxLevel: values.maxLevel,
+    sortOrder: values.sortOrder,
+  });
+
   const handleCreate = async (values: StageFormValues) => {
     setSaving(true);
     try {
@@ -130,7 +134,7 @@ export default function PetStagesPanel() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token()}`,
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(toStagePayload(values)),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -155,7 +159,7 @@ export default function PetStagesPanel() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token()}`,
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(toStagePayload(values)),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -164,28 +168,6 @@ export default function PetStagesPanel() {
       }
       message.success(t("pets.stageUpdated"));
       setEditOpen(false);
-      setSelected(null);
-      fetchItems();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!selected) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/admin/pet-stages/${selected.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token()}` },
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        message.error(data?.error || t("pets.stageDeleteFailed"));
-        return;
-      }
-      message.success(t("pets.stageDeleted"));
-      setDeleteOpen(false);
       setSelected(null);
       fetchItems();
     } finally {
@@ -257,11 +239,11 @@ export default function PetStagesPanel() {
     {
       title: t("common.actions"),
       key: "actions",
-      width: 90,
+      width: 64,
       align: "right",
       ...FIXED_ACTIONS_COLUMN,
-      render: (_, record) => (
-        <Space size={4}>
+      render: (_, record) =>
+        canWrite ? (
           <Button
             variant="text"
             color="primary"
@@ -274,109 +256,75 @@ export default function PetStagesPanel() {
               setEditOpen(true);
             }}
           />
-          <Button
-            variant="text"
-            color="danger"
-            size="small"
-            icon={<DeleteOutlined />}
-            title={t("common.delete")}
-            aria-label={t("common.delete")}
-            onClick={() => {
-              setSelected(record);
-              setDeleteOpen(true);
-            }}
-          />
-        </Space>
-      ),
+        ) : null,
     },
   ];
 
   const speciesOptions = species.map((s) => ({ value: s.id, label: s.name }));
 
   const formFields = (
-    <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
+    <>
+      <Form.Item
+        label={t("pets.species")}
+        name="speciesId"
+        rules={[{ required: true, message: t("pets.speciesRequired") }]}
+      >
+        <Select
+          showSearch
+          optionFilterProp="label"
+          options={speciesOptions}
+          placeholder={t("pets.speciesPlaceholder")}
+        />
+      </Form.Item>
+      <Form.Item
+        label={t("pets.stageKey")}
+        name="stageKey"
+        rules={[{ required: true, message: t("pets.stageKeyRequired") }]}
+      >
+        <Input maxLength={30} placeholder="juvenile / growing / mature" />
+      </Form.Item>
+      <Form.Item
+        label={t("pets.stageName")}
+        name="name"
+        rules={[{ required: true, message: t("pets.stageNameRequired") }]}
+      >
+        <Input maxLength={30} />
+      </Form.Item>
+      <div style={{ display: "flex", gap: 16 }}>
         <Form.Item
-          label={t("pets.species")}
-          name="speciesId"
-          rules={[{ required: true, message: t("pets.speciesRequired") }]}
+          label={t("pets.minLevel")}
+          name="minLevel"
+          initialValue={1}
+          rules={[{ required: true, message: "" }]}
+          style={{ flex: 1, minWidth: 0 }}
         >
-          <Select
-            showSearch
-            optionFilterProp="label"
-            options={speciesOptions}
-            placeholder={t("pets.speciesPlaceholder")}
-          />
+          <InputNumber min={1} max={99} style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item
-          label={t("pets.stageKey")}
-          name="stageKey"
-          rules={[{ required: true, message: t("pets.stageKeyRequired") }]}
+          label={t("pets.maxLevel")}
+          name="maxLevel"
+          initialValue={9}
+          rules={[{ required: true, message: "" }]}
+          style={{ flex: 1, minWidth: 0 }}
         >
-          <Input maxLength={30} placeholder="juvenile / growing / mature" />
-        </Form.Item>
-        <Form.Item
-          label={t("pets.stageName")}
-          name="name"
-          rules={[{ required: true, message: t("pets.stageNameRequired") }]}
-        >
-          <Input maxLength={30} />
-        </Form.Item>
-        <div style={{ display: "flex", gap: 16 }}>
-          <Form.Item
-            label={t("pets.minLevel")}
-            name="minLevel"
-            initialValue={1}
-            rules={[{ required: true, message: "" }]}
-            style={{ flex: 1, minWidth: 0 }}
-          >
-            <InputNumber min={1} max={99} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            label={t("pets.maxLevel")}
-            name="maxLevel"
-            initialValue={9}
-            rules={[{ required: true, message: "" }]}
-            style={{ flex: 1, minWidth: 0 }}
-          >
-            <InputNumber min={1} max={99} style={{ width: "100%" }} />
-          </Form.Item>
-        </div>
-        <Form.Item label={t("pets.sortOrder")} name="sortOrder" initialValue={0}>
-          <InputNumber style={{ width: "100%" }} />
+          <InputNumber min={1} max={99} style={{ width: "100%" }} />
         </Form.Item>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <Form.Item label={t("pets.imageUrl")} name="imageUrl">
-          <Input placeholder="https://..." />
-        </Form.Item>
-        <Form.Item label={t("pets.idleLottieUrl")} name="idleLottieUrl">
-          <Input placeholder="https://..." />
-        </Form.Item>
-        <Form.Item label={t("pets.feedLottieUrl")} name="feedLottieUrl">
-          <Input placeholder="https://..." />
-        </Form.Item>
-        <Form.Item label={t("pets.evolveLottieUrl")} name="evolveLottieUrl">
-          <Input placeholder="https://..." />
-        </Form.Item>
-        <Form.Item label={t("pets.sideImageUrl")} name="sideImageUrl">
-          <Input placeholder="https://..." />
-        </Form.Item>
-        <Form.Item label={t("pets.motionManifestUrl")} name="motionManifestUrl">
-          <Input placeholder="https://..." />
-        </Form.Item>
-      </div>
-    </div>
+      <Form.Item label={t("pets.sortOrder")} name="sortOrder" initialValue={0}>
+        <InputNumber style={{ width: "100%" }} />
+      </Form.Item>
+    </>
   );
 
   const headerActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-        {t("pets.addStage")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+          {t("pets.addStage")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t],
+    [canWrite, t],
   );
   usePageActions(headerActions);
 
@@ -406,7 +354,7 @@ export default function PetStagesPanel() {
       <Modal
         title={t("pets.stageCreateTitle")}
         open={createOpen}
-        width={760}
+        width={520}
         onCancel={() => setCreateOpen(false)}
         confirmLoading={saving}
         okText={t("common.create")}
@@ -421,7 +369,7 @@ export default function PetStagesPanel() {
       <Modal
         title={t("pets.stageEditTitle")}
         open={editOpen}
-        width={760}
+        width={520}
         onCancel={() => {
           setEditOpen(false);
           setSelected(null);
@@ -438,12 +386,6 @@ export default function PetStagesPanel() {
               name: selected.name,
               minLevel: selected.minLevel,
               maxLevel: selected.maxLevel,
-              imageUrl: selected.imageUrl ?? undefined,
-              idleLottieUrl: selected.idleLottieUrl ?? undefined,
-              feedLottieUrl: selected.feedLottieUrl ?? undefined,
-              evolveLottieUrl: selected.evolveLottieUrl ?? undefined,
-              sideImageUrl: selected.sideImageUrl ?? undefined,
-              motionManifestUrl: selected.motionManifestUrl ?? undefined,
               sortOrder: selected.sortOrder,
             });
           }
@@ -452,21 +394,6 @@ export default function PetStagesPanel() {
         <Form form={editForm} layout="vertical" onFinish={handleUpdate}>
           {formFields}
         </Form>
-      </Modal>
-
-      <Modal
-        title={t("pets.stageDeleteTitle")}
-        open={deleteOpen}
-        onCancel={() => {
-          setDeleteOpen(false);
-          setSelected(null);
-        }}
-        confirmLoading={saving}
-        okText={t("common.delete")}
-        okButtonProps={{ danger: true }}
-        onOk={handleDelete}
-      >
-        <p>{t("pets.stageDeleteConfirm", { name: selected?.name ?? "" })}</p>
       </Modal>
     </div>
   );

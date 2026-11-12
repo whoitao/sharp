@@ -795,9 +795,6 @@ export const en = {
     addSpecies: "Add Species",
     speciesCreateTitle: "Create Species",
     speciesEditTitle: "Edit Species",
-    speciesDeleteTitle: "Delete Species",
-    speciesDeleteConfirm:
-      'Are you sure you want to delete "{name}"? Its stages will be removed too. This action cannot be undone.',
     speciesCode: "Code",
     speciesCodeRequired: "Please enter a species code",
     speciesName: "Name",
@@ -811,17 +808,13 @@ export const en = {
     colPetCount: "Pets",
     speciesCreated: "Species created",
     speciesUpdated: "Species updated",
-    speciesDeleted: "Species deleted",
     speciesCreateFailed: "Failed to create species",
     speciesUpdateFailed: "Failed to update species",
-    speciesDeleteFailed: "Failed to delete species",
 
     // 宠物阶段
     addStage: "Add Stage",
     stageCreateTitle: "Create Stage",
     stageEditTitle: "Edit Stage",
-    stageDeleteTitle: "Delete Stage",
-    stageDeleteConfirm: 'Are you sure you want to delete "{name}"? This action cannot be undone.',
     stageKey: "Stage Code",
     stageKeyRequired: "Please enter a stage code",
     stageName: "Stage Name",
@@ -838,10 +831,8 @@ export const en = {
     motionManifestUrl: "Motion Manifest URL",
     stageCreated: "Stage created",
     stageUpdated: "Stage updated",
-    stageDeleted: "Stage deleted",
     stageCreateFailed: "Failed to create stage",
     stageUpdateFailed: "Failed to update stage",
-    stageDeleteFailed: "Failed to delete stage",
 
     // 宠物
     petSearchPlaceholder: "Search by pet nickname or username...",

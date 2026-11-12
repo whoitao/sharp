@@ -2,6 +2,7 @@
 
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
+import { usePermissions } from "@/components/permissions";
 import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
 import { formatDateTime } from "@/lib/datetime";
 import { useLocale } from "@/lib/i18n";
@@ -82,6 +83,8 @@ export default function TemplatesPanel() {
   const { message } = App.useApp();
   const { t } = useLocale();
   const { pageSize } = usePageSize();
+  const { can } = usePermissions();
+  const canWrite = can("notifications:write");
 
   const [items, setItems] = useState<TemplateItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -363,42 +366,45 @@ export default function TemplatesPanel() {
       width: 170,
       ...FIXED_ACTIONS_COLUMN,
       render: (_value, record) => (
-        <Space size={4}>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
-            {t("common.edit")}
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<SendOutlined />}
-            onClick={() => {
-              setTestTarget(record);
-              setTestUserId("");
-            }}
-          >
-            {t("notifications.testSend")}
-          </Button>
-          <Popconfirm
-            title={t("notifications.deleteTemplateConfirm").replace("{name}", record.name)}
-            onConfirm={() => handleDelete(record)}
-          >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              {t("common.delete")}
+        canWrite ? (
+          <Space size={4}>
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
+              {t("common.edit")}
             </Button>
-          </Popconfirm>
-        </Space>
+            <Button
+              type="link"
+              size="small"
+              icon={<SendOutlined />}
+              onClick={() => {
+                setTestTarget(record);
+                setTestUserId("");
+              }}
+            >
+              {t("notifications.testSend")}
+            </Button>
+            <Popconfirm
+              title={t("notifications.deleteTemplateConfirm").replace("{name}", record.name)}
+              onConfirm={() => handleDelete(record)}
+            >
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                {t("common.delete")}
+              </Button>
+            </Popconfirm>
+          </Space>
+        ) : null
       ),
     },
   ];
 
   const pageActions = useMemo(
-    () => (
-      <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-        {t("notifications.addTemplate")}
-      </Button>
-    ),
+    () =>
+      canWrite ? (
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          {t("notifications.addTemplate")}
+        </Button>
+      ) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t],
+    [canWrite, t],
   );
   usePageActions(pageActions);
 
