@@ -32,6 +32,8 @@ export interface LottiePlayerOptions {
   enabled?: boolean;
   /** 当前层是否需要播放；双层常驻时用来暂停不可见层 */
   active?: boolean;
+  /** 播放倍速，默认 1；睡眠复用 idle 时传 0.45 */
+  speed?: number;
   /** 单次动画播放结束回调 */
   onComplete?: () => void;
 }
@@ -53,12 +55,14 @@ export function useLottiePlayer({
   loop = true,
   enabled = true,
   active = true,
+  speed = 1,
   onComplete,
 }: LottiePlayerOptions): LottiePlayerState {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const instanceRef = useRef<LottieInstance | null>(null);
   const activeRef = useRef(active);
   const onCompleteRef = useRef(onComplete);
+  const speedRef = useRef(speed);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -104,6 +108,7 @@ export function useLottiePlayer({
       });
       if (activeRef.current) instanceRef.current.play();
       else instanceRef.current.pause();
+      instanceRef.current.setSpeed?.(speedRef.current);
     })().catch(() => {
       if (!cancelled) setFailed(true);
     });
@@ -124,6 +129,12 @@ export function useLottiePlayer({
     if (active) instance.play();
     else instance.pause();
   }, [active, ready]);
+
+  // 倍速单独同步：不重建动画，只在值变化时打到已有实例上
+  useEffect(() => {
+    speedRef.current = speed;
+    instanceRef.current?.setSpeed?.(speed);
+  }, [speed, ready]);
 
   return { containerRef, ready, failed };
 }

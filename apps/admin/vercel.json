@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/pet-satiety",
+      "schedule": "30 20 * * *"
+    }
+  ]
+}

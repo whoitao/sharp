@@ -350,6 +350,12 @@ export const zh = {
   petStateNormal: '状态正常',
   petStateHungry: '有点饿了',
   petStateAsleep: '睡着了',
+  petSleepHint: (rare: number) => `睡着了，需要 1 个稀有食物才能唤醒（持有 ${rare} 个）`,
+  petSleepNoRare: '睡着了，需要 1 个稀有食物才能唤醒',
+  petSleepRareGuide: '完成一次 10 题以上的章节练习可获得 1 个稀有食物，每天最多 2 个。',
+  petSleepLocked: '睡着了，只有稀有食物能叫醒它',
+  petSleepLockedShort: '睡眠中不可喂',
+  petSleepGoPractice: '去练习获取',
   petFeedButton: '喂食',
   petGoPractice: '去练习',
   petBackpackTitle: '食物背包',
@@ -393,11 +399,11 @@ export const zh = {
   petRulesItems: [
     {
       title: '如何赚取食物',
-      body: '完成答题练习即可获得食物。连续答对 5 题可解锁高级食物，单次完成 10 题以上有机会获得稀有食物。',
+      body: '完成答题练习即可获得食物。连续答对 5 题可解锁高级食物，章节练习完成 10 题以上可获得稀有食物。',
     },
     {
       title: '喂食与饱腹度',
-      body: '消耗食物可提升宠物饱腹度和经验值。饱腹度上限为 200，每满 1 小时自然衰减 5，记得常回来喂食。',
+      body: '消耗食物可提升宠物饱腹度和经验值。饱腹度上限为 200，每满 1 小时自然衰减 3，记得常回来喂食。连续 3 天没喂且饱腹度降到 0，它会睡着。',
     },
     {
       title: '经验与升级',
@@ -406,6 +412,10 @@ export const zh = {
     {
       title: '进化阶段',
       body: '宠物分为三个阶段：Lv.10 进入成长期，Lv.20 进入成熟期，最高 Lv.30。每次进化都会解锁新形态。',
+    },
+    {
+      title: '睡眠与唤醒',
+      body: '连续 3 天没喂、饱腹度降到 0 时，宠物会睡着，只轻轻呼吸。普通食物叫不醒它，喂 1 个稀有食物才能唤醒；完成一次 10 题以上的章节练习可以获得稀有食物。',
     },
   ],
 

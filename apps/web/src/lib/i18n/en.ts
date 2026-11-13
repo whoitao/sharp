@@ -319,7 +319,7 @@ export const en = {
     expValue: "{current} / {next}",
     satiety: "Fullness",
     satietyValue: "{satiety} / {max}",
-    satietyHint: "Drops 5 every full hour, max {max}",
+    satietyHint: "Drops 3 every full hour, max {max}",
     feed: "Feed",
     practice: "Go practice",
     backpackEmpty: "No food yet — practice to earn some.",
@@ -352,21 +352,30 @@ export const en = {
     cappedSatiety: "Fullness is already maxed. Actual gain: {n}.",
     cappedExp: "Today's XP limit reached.",
     satietyFull: "Fullness is already maxed.",
+    sleepTitle: "It's asleep",
+    sleepHint: "Only 1 rare food can wake it up.",
+    sleepNoRare:
+      "No rare food yet. Complete a chapter practice with 10+ questions to earn one — up to 2 per day.",
+    sleepLocked: "It's asleep. Regular and premium food can't wake it — feed 1 rare food instead.",
+    sleepBanner: "Regular and premium food are locked while asleep. Feed 1 rare food to wake it up.",
     close: "Close",
     rulesTitle: "Pet care guide",
     rulesOpen: "Pet care guide",
     rule1Title: "How to earn food",
     rule1Body:
-      "Finish practice to earn food. Five correct answers in a row unlock premium food, and finishing 10+ questions in one session can grant rare food.",
+      "Finish practice to earn food. Five correct answers in a row unlock premium food, and completing a chapter practice with 10+ questions grants rare food.",
     rule2Title: "Feeding and fullness",
     rule2Body:
-      "Food raises fullness and XP. Fullness caps at 200 and drops by 5 every full hour, so come back often.",
+      "Food raises fullness and XP. Fullness caps at 200 and drops by 3 every full hour, so come back often. If it isn't fed for several days and fullness reaches 0, it falls asleep.",
     rule3Title: "XP and levels",
     rule3Body:
       "+1 XP per correct answer and +5 XP for the daily login. Every 100 XP levels up; the daily XP cap is 300.",
     rule4Title: "Evolution stages",
     rule4Body:
       "Pets have three stages: growth at Lv.10, maturity at Lv.20, up to Lv.30. Each evolution unlocks a new form.",
+    rule5Title: "Sleep and waking up",
+    rule5Body:
+      "If your pet goes several days without food and its fullness drops to 0, it falls asleep and only breathes gently. Regular food can't wake it — feed 1 rare food to wake it up. Complete a chapter practice with at least 10 questions to earn rare food.",
     adoptTitle: "Adopt a pet",
     adoptHint: "Choose a companion of your own",
     adoptNickname: "Give it a name",

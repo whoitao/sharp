@@ -9,6 +9,8 @@ export type LottieInstance = {
   destroy: () => void;
   play: () => void;
   pause: () => void;
+  /** lottie-web 原生支持，用来把 idle 降速模拟睡眠呼吸 */
+  setSpeed?: (speed: number) => void;
   addEventListener: (name: string, callback: () => void) => void;
 };
 

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const appUser = requireAppUser(request);
   if (appUser instanceof NextResponse) return appUser;
 
-  // 打开宠物页时按当前状态补一条饥饿提醒（08:00–22:00，按宠物 + 日期去重）
+  // 打开宠物页时按当前状态补一条饥饿提醒（06:00–22:00，可在宠物配置调整；按宠物 + 日期去重）
   await generatePetHungryNotification(appUser.id);
 
   const config = await getPetConfig();
@@ -71,7 +71,6 @@ export async function GET(request: NextRequest) {
   }
 
   const pet = await applySatietyDecay(link.pet, config);
-  const backpackQuantity = Object.values(backpack).reduce((sum, n) => sum + n, 0);
 
   const recentFeeds = await prisma.petFeedLog.findMany({
     where: { userId: appUser.id },
@@ -80,7 +79,7 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json({
-    pet: buildPetDetail({ ...link.pet, ...pet }, config, backpackQuantity),
+    pet: buildPetDetail({ ...link.pet, ...pet }, config, backpack),
     today: todayInfo,
     backpack: await buildBackpack(appUser.id),
     stats,

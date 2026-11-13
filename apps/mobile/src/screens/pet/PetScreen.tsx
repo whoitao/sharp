@@ -81,13 +81,23 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
   // 养宠规则说明弹窗
   const [rulesOpen, setRulesOpen] = useState(false);
 
-  const loadPet = useCallback(async () => {
+  const loadPet = useCallback(async (): Promise<PetHomeData | null> => {
     try {
       const result = await api.getPet();
       setData(result);
       setFailed(false);
+      // 按接口状态决定待机动画；正在播喂食/进化时不打断
+      setAnimation((prev) =>
+        prev === 'feed' || prev === 'evolve'
+          ? prev
+          : result.pet?.state === 'asleep'
+            ? 'sleep'
+            : 'idle',
+      );
+      return result;
     } catch {
       setFailed(true);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -100,6 +110,16 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
   );
 
   const pet = data?.pet ?? null;
+  // 睡眠由接口状态决定，前端不再重复计算；睡眠时只有稀有食物能唤醒
+  const isAsleep = pet?.state === 'asleep';
+  const rareQuantity = useMemo(
+    () => (data?.backpack ?? []).find((item) => item.foodType === 'rare')?.quantity ?? 0,
+    [data?.backpack],
+  );
+
+  const goPractice = useCallback(() => {
+    (navigation as any).navigate('StudyTab', { screen: 'Study' });
+  }, [navigation]);
 
   const stateLabel = useMemo(() => {
     if (!pet) return '';
@@ -146,16 +166,24 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
   const openFeed = useCallback(() => {
     setFeedError(null);
     setFeedResult(null);
-    const first = data?.backpack.find((item) => item.quantity > 0);
+    // 睡眠时只允许选稀有食物；普通/高级食物即使有库存也不能喂
+    const first = (data?.backpack ?? []).find((item) =>
+      isAsleep ? item.foodType === 'rare' && item.quantity > 0 : item.quantity > 0,
+    );
     setSelectedFood(first?.foodType ?? null);
     setQuantity(1);
     setFeedOpen(true);
-  }, [data?.backpack]);
+  }, [data?.backpack, isAsleep]);
 
   const handleFeed = useCallback(async () => {
     if (!selectedFood || feeding) return;
+    if (isAsleep && selectedFood !== 'rare') {
+      setFeedError(t.petSleepLocked);
+      return;
+    }
     const owned = foodQuantity[selectedFood] ?? 0;
-    const qty = Math.min(quantity, owned);
+    // 睡眠唤醒固定消耗 1 个稀有食物，避免误喂多个
+    const qty = isAsleep ? 1 : Math.min(quantity, owned);
     if (qty <= 0) {
       setFeedError(t.petFoodNotEnough);
       return;
@@ -172,13 +200,19 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
       setAnimation('feed');
     } catch (err) {
       const message = err instanceof Error ? err.message : '';
-      if (message === 'PET_FULL' || message.includes('吃饱')) setFeedError(t.petPetFull);
+      if (message === 'SLEEP_LOCKED') {
+        // 兜底：本地置灰可能基于过期状态，服务端拒绝后仍要给出睡眠提示并刷新
+        setFeedError(t.petSleepLocked);
+        const fresh = await loadPet();
+        const rare = fresh?.backpack.find((item) => item.foodType === 'rare')?.quantity ?? 0;
+        setSelectedFood(rare > 0 ? 'rare' : null);
+      } else if (message === 'PET_FULL' || message.includes('吃饱')) setFeedError(t.petPetFull);
       else if (message === 'FOOD_NOT_ENOUGH') setFeedError(t.petFoodNotEnough);
       else setFeedError(t.petFeedFailed);
     } finally {
       setFeeding(false);
     }
-  }, [foodQuantity, loadPet, quantity, selectedFood, feeding, t]);
+  }, [foodQuantity, isAsleep, loadPet, quantity, selectedFood, feeding, t]);
 
   const handleAnimationFinish = useCallback(() => {
     if (pendingEvolve.current) {
@@ -186,8 +220,14 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
       setAnimation('evolve');
       return;
     }
-    setAnimation('idle');
-  }, []);
+    setAnimation(pet?.state === 'asleep' ? 'sleep' : 'idle');
+  }, [pet?.state]);
+
+  // 睡眠时只有「稀有食物 ×1」可提交；稀有持有量为 0 直接禁用，避免提交后再报错
+  const canSubmit =
+    Boolean(selectedFood) &&
+    !feeding &&
+    (!isAsleep || (selectedFood === 'rare' && rareQuantity > 0));
 
   // 两条进度条统一：4px 高、圆角、同一条轨道底色
   const renderProgress = (progress: number, color: string) => (
@@ -326,6 +366,39 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
           {pet.species.name} · {pet.growthStage.name} · {t.petCompanionDays(pet.companionDays)}
         </Text>
 
+        {/* 睡眠说明：让用户一眼看到状态与唤醒条件，稀有食物为 0 时给获取路径 */}
+        {isAsleep && (
+          <View
+            style={{
+              marginTop: 10 * spacing,
+              backgroundColor: colors.accentLight,
+              borderRadius: 12 * radius,
+              paddingVertical: 10 * spacing,
+              paddingHorizontal: 12 * spacing,
+            }}
+          >
+            <Text style={{ color: colors.accentStrong, fontSize: 12.5 * font, fontWeight: '600' }}>
+              {rareQuantity > 0 ? t.petSleepHint(rareQuantity) : t.petSleepNoRare}
+            </Text>
+            {rareQuantity <= 0 && (
+              <>
+                <Text style={{ color: colors.textSecondary, fontSize: 11.5 * font, marginTop: 4 * spacing }}>
+                  {t.petSleepRareGuide}
+                </Text>
+                <TouchableOpacity
+                  onPress={goPractice}
+                  hitSlop={6}
+                  style={{ alignSelf: 'flex-start', marginTop: 6 * spacing }}
+                >
+                  <Text style={{ color: colors.accentStrong, fontSize: 12 * font, fontWeight: '600' }}>
+                    {t.petSleepGoPractice}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
+
         {/* 经验：在小字层级展示，位于饱腹度上方 */}
         <View style={{ marginTop: 16 * spacing }}>
           <View style={styles.rowBetween}>
@@ -358,7 +431,8 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
         <View style={[styles.rowGap, { marginTop: 16 * spacing, gap: 10 * spacing }]}>
           <TouchableOpacity
             onPress={openFeed}
-            disabled={!pet.canFeed}
+            // 睡眠时即使后端 canFeed 为 false 也允许打开弹层，用于展示唤醒条件与获取引导
+            disabled={!pet.canFeed && !isAsleep}
             style={[
               styles.primaryButton,
               {
@@ -367,22 +441,22 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                 height: 46,
                 borderRadius: 10 * radius,
                 borderWidth: 1,
-                backgroundColor: pet.canFeed ? colors.accentLight : colors.borderLight,
-                borderColor: pet.canFeed ? colors.accent : colors.border,
+                backgroundColor: pet.canFeed || isAsleep ? colors.accentLight : colors.borderLight,
+                borderColor: pet.canFeed || isAsleep ? colors.accent : colors.border,
               },
             ]}
           >
             <Text
               style={[
                 styles.primaryButtonText,
-                { color: pet.canFeed ? colors.accentStrong : colors.textTertiary },
+                { color: pet.canFeed || isAsleep ? colors.accentStrong : colors.textTertiary },
               ]}
             >
               {t.petFeedButton}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => (navigation as any).navigate('StudyTab', { screen: 'Study' })}
+            onPress={goPractice}
             style={[
               styles.secondaryButton,
               // 与「喂食」等分这一行
@@ -400,7 +474,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             />
           </TouchableOpacity>
         </View>
-        {!hasFood && (
+        {!hasFood && !isAsleep && (
           <Text
             style={{
               color: colors.textTertiary,
@@ -598,6 +672,33 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
+            {isAsleep && (
+              <View style={{ marginTop: 10 * spacing }}>
+                <Text style={{ color: colors.accentStrong, fontSize: 12.5 * font, fontWeight: '600' }}>
+                  {t.petSleepLocked}
+                </Text>
+                {rareQuantity <= 0 && (
+                  <>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11.5 * font, marginTop: 4 * spacing }}>
+                      {t.petSleepRareGuide}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setFeedOpen(false);
+                        goPractice();
+                      }}
+                      hitSlop={6}
+                      style={{ alignSelf: 'flex-start', marginTop: 6 * spacing }}
+                    >
+                      <Text style={{ color: colors.accentStrong, fontSize: 12 * font, fontWeight: '600' }}>
+                        {t.petSleepGoPractice}
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            )}
+
             <ScrollView
               // 列表高度显式算出来：1~3 项贴合内容，超出 3 项固定 3 行高并内部滚动；
               // maxHeight 保证小屏/横屏下先压缩列表，喂食数量与按钮始终可见
@@ -619,7 +720,9 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
               <View style={{ gap: foodRowGap }}>
                 {(data?.backpack ?? []).map((food: PetBackpackItem, index: number) => {
                   const active = food.foodType === selectedFood;
-                  const disabled = food.quantity <= 0;
+                  // 睡眠时普通/高级食物一律置灰，只有稀有食物可选
+                  const lockedBySleep = isAsleep && food.foodType !== 'rare';
+                  const disabled = lockedBySleep || food.quantity <= 0;
                   return (
                     <TouchableOpacity
                       key={food.foodType}
@@ -657,6 +760,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
                         </Text>
                         <Text style={{ color: colors.textTertiary, fontSize: 10.5 * font, marginTop: 2 * spacing }}>
                           {t.petGain(food.satiety, food.exp)} · {t.petFoodOwned(food.quantity)}
+                          {lockedBySleep ? ` · ${t.petSleepLockedShort}` : ''}
                         </Text>
                       </View>
                       {active && <Ionicons name="checkmark-circle" size={18 * font} color={colors.accent} />}
@@ -671,31 +775,36 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             {selectedFood && (
               <View style={[styles.rowBetween, { marginTop: 14 * spacing, flexShrink: 0 }]}>
                 <Text style={{ color: colors.textSecondary, fontSize: 13 * font }}>{t.petFeedQuantity}</Text>
-                <View style={[styles.rowGap, { gap: 10 * spacing }]}>
-                  <TouchableOpacity
-                    onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-                    style={[styles.stepButton, { borderColor: colors.border, borderRadius: 8 * radius }]}
-                  >
-                    <Ionicons name="remove" size={16 * font} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                  <Text
-                    style={{
-                      color: colors.text,
-                      fontSize: 15 * font,
-                      fontWeight: '700',
-                      minWidth: 24,
-                      textAlign: 'center',
-                    }}
-                  >
-                    {quantity}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setQuantity((q) => Math.min(10, foodQuantity[selectedFood] ?? 10, q + 1))}
-                    style={[styles.stepButton, { borderColor: colors.border, borderRadius: 8 * radius }]}
-                  >
-                    <Ionicons name="add" size={16 * font} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
+                {isAsleep ? (
+                  // 唤醒固定消耗 1 个稀有食物，不提供加减
+                  <Text style={{ color: colors.text, fontSize: 15 * font, fontWeight: '700' }}>1</Text>
+                ) : (
+                  <View style={[styles.rowGap, { gap: 10 * spacing }]}>
+                    <TouchableOpacity
+                      onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+                      style={[styles.stepButton, { borderColor: colors.border, borderRadius: 8 * radius }]}
+                    >
+                      <Ionicons name="remove" size={16 * font} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontSize: 15 * font,
+                        fontWeight: '700',
+                        minWidth: 24,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {quantity}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setQuantity((q) => Math.min(10, foodQuantity[selectedFood] ?? 10, q + 1))}
+                      style={[styles.stepButton, { borderColor: colors.border, borderRadius: 8 * radius }]}
+                    >
+                      <Ionicons name="add" size={16 * font} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             )}
 
@@ -722,12 +831,12 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
             )}
 
             <TouchableOpacity
-              disabled={!selectedFood || feeding}
+              disabled={!canSubmit}
               onPress={handleFeed}
               style={[
                 styles.primaryButton,
                 {
-                  backgroundColor: selectedFood && !feeding ? colors.accent : colors.border,
+                  backgroundColor: canSubmit ? colors.accent : colors.border,
                   borderRadius: 12 * radius,
                   marginTop: 12 * spacing,
                   // Modal 内读不到 safe-area inset，用最小间距兜底，避免底部按钮被系统导航栏遮挡
@@ -738,7 +847,7 @@ const PetScreen: React.FC<PetScreenProps> = ({ navigation }) => {
               {feeding ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text style={[styles.primaryButtonText, { color: selectedFood ? '#FFFFFF' : colors.textTertiary }]}>
+                <Text style={[styles.primaryButtonText, { color: canSubmit ? '#FFFFFF' : colors.textTertiary }]}>
                   {t.petFeedButton}
                 </Text>
               )}

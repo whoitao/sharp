@@ -351,6 +351,14 @@ export const en: TranslationKeys = {
   petStateNormal: 'Doing fine',
   petStateHungry: 'A bit hungry',
   petStateAsleep: 'Sleeping',
+  petSleepHint: (rare: number) =>
+    `Asleep — feed 1 rare food to wake it up (${rare} owned).`,
+  petSleepNoRare: 'Asleep — feed 1 rare food to wake it up.',
+  petSleepRareGuide:
+    'Complete a chapter practice with at least 10 questions to earn 1 rare food, up to 2 per day.',
+  petSleepLocked: "It's asleep — only rare food can wake it up.",
+  petSleepLockedShort: "Can't feed while asleep",
+  petSleepGoPractice: 'Practice to earn',
   petFeedButton: 'Feed',
   petGoPractice: 'Practice',
   petBackpackTitle: 'Food Bag',
@@ -394,11 +402,11 @@ export const en: TranslationKeys = {
   petRulesItems: [
     {
       title: 'How to Earn Food',
-      body: 'Complete practice sessions to earn food. A 5-question correct streak unlocks premium food; finish 10+ questions for a chance at rare food.',
+      body: 'Complete practice sessions to earn food. A 5-question correct streak unlocks premium food; complete a chapter practice with at least 10 questions to earn rare food.',
     },
     {
       title: 'Feed & Satiety',
-      body: 'Spend food to raise satiety and EXP. Satiety caps at 200 and decays by 5 every full hour — feed your pet regularly.',
+      body: 'Spend food to raise satiety and EXP. Satiety caps at 200 and decays by 3 every full hour — feed your pet regularly. If it isn’t fed for 3 days and fullness reaches 0, it falls asleep.',
     },
     {
       title: 'EXP & Leveling',
@@ -407,6 +415,10 @@ export const en: TranslationKeys = {
     {
       title: 'Evolution Stages',
       body: 'Three stages: growth at Lv.10, mature at Lv.20, max Lv.30. Each evolution unlocks a new form.',
+    },
+    {
+      title: 'Sleep & Waking',
+      body: "If your pet isn't fed for 3 days and its fullness drops to 0, it falls asleep and only breathes gently. Regular food can't wake it—feed 1 rare food to wake it up. Complete a chapter practice with at least 10 questions to earn rare food.",
     },
   ],
 

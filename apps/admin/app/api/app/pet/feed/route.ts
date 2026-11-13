@@ -6,6 +6,7 @@ import {
   getPrimaryPet,
   levelOf,
   stageOf,
+  stateOf,
   todayKey,
 } from "@/lib/pet";
 import { prisma } from "@/lib/prisma";
@@ -48,6 +49,27 @@ export async function POST(request: NextRequest) {
   }
 
   const pet = await applySatietyDecay(link.pet, config);
+
+  // 睡眠只能由稀有食物唤醒：普通 / 高级食物在入口直接拒绝。
+  // 必须放在扣库存与写 lastFedAt 之前，否则 satiety > 0 会让宠物被「喂醒」，规则失效。
+  if (stateOf(pet.satiety, pet.lastFedAt, config) === "asleep") {
+    if (foodType !== "rare") {
+      return NextResponse.json(
+        {
+          error: "SLEEP_LOCKED",
+          message: "宠物睡着了，普通和高级食物无法唤醒它，只有稀有食物可以",
+        },
+        { status: 409 },
+      );
+    }
+    if (quantity !== 1) {
+      return NextResponse.json(
+        { error: "INVALID_QUANTITY", message: "唤醒宠物需要且只需要 1 个稀有食物" },
+        { status: 400 },
+      );
+    }
+  }
+
   if (pet.satiety >= config.satietyMax) {
     return NextResponse.json({ error: "PET_FULL", message: "宠物吃饱了，明天再来喂吧" }, { status: 409 });
   }

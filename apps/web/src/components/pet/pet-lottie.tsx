@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
-export type PetAnimationKind = "idle" | "feed" | "evolve";
+export type PetAnimationKind = "idle" | "feed" | "evolve" | "sleep";
 
 /**
  * 宠物动画播放器：使用后台配置的 Lottie JSON（与移动端同一批资源）。
@@ -48,7 +48,9 @@ export function PetLottie({
 
   const { containerRef, ready, failed } = useLottiePlayer({
     url,
-    loop: kind === "idle",
+    loop: kind === "idle" || kind === "sleep",
+    // 没有专属睡眠动作时复用 idle，降速模拟呼吸
+    speed: kind === "sleep" ? 0.45 : 1,
     enabled: playable,
     onComplete: onFinish,
   });
@@ -74,11 +76,14 @@ export function PetLottie({
           <img
             src={imageUrl}
             alt=""
-            className="h-full w-full object-contain"
+            className={cn("h-full w-full object-contain", kind === "sleep" && "pet-breathe")}
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <span aria-hidden="true" className="text-[5.5rem] leading-none">
+          <span
+            aria-hidden="true"
+            className={cn("text-[5.5rem] leading-none", kind === "sleep" && "pet-breathe")}
+          >
             {fallbackIcon || "🐾"}
           </span>
         ))}

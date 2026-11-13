@@ -215,9 +215,9 @@ export function PetHome() {
     if (animKind === "evolve") setAnimKind("idle");
   }, [animKind, refreshHome]);
 
-  // 兜底：动画地址缺失 / 未触发 complete 时，最多停留 6s 必须回到 idle
+  // 兜底：动画地址缺失 / 未触发 complete 时，最多停留 6s 必须回到 idle（sleep 是常驻循环，不参与）
   useEffect(() => {
-    if (animKind === "idle") return;
+    if (animKind === "idle" || animKind === "sleep") return;
     const timer = window.setTimeout(() => {
       pendingEvolveRef.current = false;
       setAnimKind("idle");
@@ -232,6 +232,18 @@ export function PetHome() {
     [backpack],
   );
   const hasFood = backpack.some((item) => item.quantity > 0);
+  const petState = pet?.state ?? null;
+  const sleeping = petState === "asleep";
+  const rareOwned = backpack.find((item) => item.foodType === "rare")?.quantity ?? 0;
+
+  // 睡眠 / 待机互转：喂食与进化动画播放期间不打断，播完由 handleAnimationFinish 收尾
+  useEffect(() => {
+    if (!petState) return;
+    setAnimKind((current) => {
+      if (current !== "idle" && current !== "sleep") return current;
+      return petState === "asleep" ? "sleep" : "idle";
+    });
+  }, [petState]);
 
   const isMaxLevel =
     !!pet &&
@@ -253,14 +265,19 @@ export function PetHome() {
       setFoods(data.foods);
       setModalSatiety(data.satiety);
       setModalSatietyMax(data.satietyMax);
-      setSelectedFood(
-        data.foods.find((item) => item.quantity > 0)?.foodType ??
-          data.foods[0]?.foodType ??
-          null,
-      );
+      // 睡眠中只允许喂稀有食物，默认选中它；其余状态选第一个有库存的
+      const preferred =
+        pet.state === "asleep"
+          ? data.foods.find((item) => item.foodType === "rare")
+          : data.foods.find((item) => item.quantity > 0);
+      setSelectedFood(preferred?.foodType ?? data.foods[0]?.foodType ?? null);
     } catch {
       setFoods(home?.backpack ?? []);
-      setSelectedFood(home?.backpack.find((item) => item.quantity > 0)?.foodType ?? null);
+      const preferred =
+        pet.state === "asleep"
+          ? home?.backpack.find((item) => item.foodType === "rare")
+          : home?.backpack.find((item) => item.quantity > 0);
+      setSelectedFood(preferred?.foodType ?? null);
     } finally {
       setFoodsLoading(false);
     }
@@ -271,9 +288,10 @@ export function PetHome() {
 
   const selectedItem = foods?.find((item) => item.foodType === selectedFood) ?? null;
   const owned = selectedItem?.quantity ?? 0;
-  // 后端单次最多喂 10 个（与移动端步进器一致）
-  const maxQuantity = Math.min(10, owned);
+  // 后端单次最多喂 10 个（与移动端步进器一致）；睡眠中固定 1 个稀有食物
+  const maxQuantity = sleeping ? Math.min(1, owned) : Math.min(10, owned);
   const satietyFull = modalSatiety >= modalSatietyMax;
+  const drawerRareOwned = foods?.find((item) => item.foodType === "rare")?.quantity ?? 0;
 
   useEffect(() => {
     if (maxQuantity > 0) {
@@ -283,6 +301,7 @@ export function PetHome() {
 
   const handleFeed = async () => {
     if (!selectedFood || feeding) return;
+    if (sleeping && selectedFood !== "rare") return;
     const count = Math.min(quantity, maxQuantity);
     if (count < 1) return;
 
@@ -321,12 +340,16 @@ export function PetHome() {
     } catch (error) {
       const code = error instanceof PetApiError ? error.code : null;
       setFeedError(
-        code === "PET_FULL"
-          ? "petFull"
-          : code === "FOOD_NOT_ENOUGH"
-            ? "foodNotEnough"
-            : "feedFailed",
+        code === "SLEEP_LOCKED"
+          ? "sleepLocked"
+          : code === "PET_FULL"
+            ? "petFull"
+            : code === "FOOD_NOT_ENOUGH"
+              ? "foodNotEnough"
+              : "feedFailed",
       );
+      // 状态可能已在别处变化：刷新一次，避免弹层还停留在旧的睡眠/清醒判断
+      if (code === "SLEEP_LOCKED") void refreshHome();
     } finally {
       setFeeding(false);
     }
@@ -468,7 +491,7 @@ export function PetHome() {
                     <Button
                       type="button"
                       className="h-11 justify-center rounded-lg border border-primary bg-primary-light text-[15px] font-semibold text-primary-strong shadow-none transition-colors hover:bg-primary/15 active:bg-primary/20 disabled:border-border disabled:bg-border-light disabled:text-foreground-tertiary disabled:opacity-100 sm:flex-1"
-                      disabled={!pet.canFeed}
+                      disabled={!pet.canFeed && !sleeping}
                       onClick={() => void openFeed()}
                     >
                       {t("pet.feed")}
@@ -484,7 +507,12 @@ export function PetHome() {
                       </Link>
                     </Button>
                   </div>
-                  {!hasFood && (
+                  {sleeping && (
+                    <p className="mt-2 text-center text-xs text-foreground-tertiary">
+                      {rareOwned > 0 ? t("pet.sleepHint") : t("pet.sleepNoRare")}
+                    </p>
+                  )}
+                  {!hasFood && !sleeping && (
                     <p className="mt-2 text-center text-xs text-foreground-tertiary">
                       {t("pet.backpackEmpty")}
                     </p>
@@ -701,6 +729,7 @@ export function PetHome() {
               { title: t("pet.rule2Title"), body: t("pet.rule2Body") },
               { title: t("pet.rule3Title"), body: t("pet.rule3Body") },
               { title: t("pet.rule4Title"), body: t("pet.rule4Body") },
+              { title: t("pet.rule5Title"), body: t("pet.rule5Body") },
             ].map((item, index) => (
               <li key={item.title} className="flex gap-2.5">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary-strong">
@@ -737,16 +766,40 @@ export function PetHome() {
               <Loader2 className="h-4 w-4 animate-spin" />
               {t("pet.loading")}
             </div>
+          ) : sleeping && drawerRareOwned < 1 ? (
+            <div className="mt-4 rounded-lg border border-primary/25 bg-primary-light px-3 py-3">
+              <p className="text-sm font-semibold text-primary-strong">
+                {t("pet.sleepTitle")}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-foreground-secondary">
+                {t("pet.sleepNoRare")}
+              </p>
+              <Link
+                href="/learn"
+                onClick={closeFeed}
+                className="mt-2 inline-flex items-center text-xs font-semibold text-primary-strong transition-colors hover:text-primary"
+              >
+                {t("pet.practice")}
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </div>
           ) : !foods || foods.every((item) => item.quantity <= 0) ? (
             <p className="mt-4 rounded-lg bg-surface-secondary/60 px-3 py-4 text-center text-sm text-foreground-secondary">
               {t("pet.backpackEmpty")}
             </p>
           ) : (
             <>
+              {sleeping && (
+                <p className="mt-3 rounded-lg border border-primary/25 bg-primary-light px-3 py-2 text-xs leading-5 text-primary-strong">
+                  {t("pet.sleepBanner")}
+                </p>
+              )}
               <div className="mt-3 space-y-2">
                 {foods.map((item) => {
                   const active = item.foodType === selectedFood;
-                  const disabled = item.quantity <= 0;
+                  // 睡眠中普通 / 高级食物置灰，只允许选稀有食物
+                  const disabled =
+                    item.quantity <= 0 || (sleeping && item.foodType !== "rare");
                   return (
                     <button
                       key={item.foodType}
@@ -827,11 +880,13 @@ export function PetHome() {
               )}
               {feedError && (
                 <p className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                  {feedError === "petFull"
-                    ? t("pet.petFull")
-                    : feedError === "foodNotEnough"
-                      ? t("pet.foodNotEnough")
-                      : t("pet.feedFailed")}
+                  {feedError === "sleepLocked"
+                    ? t("pet.sleepLocked")
+                    : feedError === "petFull"
+                      ? t("pet.petFull")
+                      : feedError === "foodNotEnough"
+                        ? t("pet.foodNotEnough")
+                        : t("pet.feedFailed")}
                 </p>
               )}
               {feedResult && (
@@ -871,7 +926,13 @@ export function PetHome() {
               <Button
                 type="button"
                 className="mt-4 w-full justify-center"
-                disabled={feeding || !selectedFood || maxQuantity < 1 || satietyFull}
+                disabled={
+                  feeding ||
+                  !selectedFood ||
+                  maxQuantity < 1 ||
+                  satietyFull ||
+                  (sleeping && selectedFood !== "rare")
+                }
                 onClick={() => void handleFeed()}
               >
                 {feeding && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}

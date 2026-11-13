@@ -579,10 +579,14 @@ export function isWithinNotifyWindow(hour: number, start: number, end: number): 
  * 阈值、时段与喂养窗口全部来自 PetConfig，与页面的状态判定共用同一份规则。
  * 任何异常都不应向调用方抛出，避免影响宠物页与消息中心主流程。
  */
-export async function generatePetHungryNotification(userId: string) {
+export async function generatePetHungryNotification(
+  userId: string,
+  options: { throwOnError?: boolean } = {},
+) {
   try {
     const now = new Date();
     const config = await getPetConfig();
+    // 时段来自 PetConfig（当前 04:00–22:00），按北京时间小时判断；04:30 的定时任务在窗口内。
     const hour = beijingHour(now);
     if (!isWithinNotifyWindow(hour, config.notifyQuietStart, config.notifyQuietEnd)) return null;
 
@@ -602,6 +606,8 @@ export async function generatePetHungryNotification(userId: string) {
     });
   } catch (err) {
     console.error("[notification] 生成宠物饥饿消息失败", err);
+    // 定时任务需要把异常暴露到摘要里，不能被静默吞掉
+    if (options.throwOnError) throw err;
     return null;
   }
 }

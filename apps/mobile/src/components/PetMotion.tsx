@@ -2,7 +2,8 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Image } from 'expo-image';
 import LottieView, { type AnimationObject } from 'lottie-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 import PetLottie, { type PetAnimationKind, inlineImageAssets } from './PetLottie';
 
 /** 分层动作包清单：front 负责原地动作，side 负责横向走动 */
@@ -14,7 +15,7 @@ export interface PetMotionManifest {
     lid?: string;
     /** 视觉缩放，用来和侧身形象对齐身高 */
     scale?: number;
-    actions: Partial<Record<'idle' | 'happy' | 'feed' | 'evolve', string>>;
+    actions: Partial<Record<'idle' | 'happy' | 'feed' | 'evolve' | 'sleep', string>>;
   };
   side: {
     body: string;
@@ -97,6 +98,10 @@ const PetMotion: React.FC<PetMotionProps> = ({
   const [sideStanding, setSideStanding] = useState(false);
   const [facingLeft, setFacingLeft] = useState(true);
   const [happy, setHappy] = useState(false);
+  const { colors } = useTheme();
+
+  // 睡眠：正面、原地、不播 happy；有专属 sleep 动画就播，缺失时降级为 idle 降速 + 呼吸
+  const asleep = kind === 'sleep';
 
   const offset = useRef(new Animated.Value(0)).current;
   const offsetRef = useRef(0);
@@ -109,6 +114,10 @@ const PetMotion: React.FC<PetMotionProps> = ({
 
   // 0 = 正面；中间为转身过渡帧；stages = 侧身
   const turnProgress = useRef(new Animated.Value(0)).current;
+  // 睡眠呼吸 / 点击轻反馈 / Zzz 呼吸感
+  const breath = useRef(new Animated.Value(1)).current;
+  const tapScale = useRef(new Animated.Value(1)).current;
+  const zzzOpacity = useRef(new Animated.Value(1)).current;
   const frontLottieRef = useRef<React.ElementRef<typeof LottieView>>(null);
   const sideLottieRef = useRef<React.ElementRef<typeof LottieView>>(null);
 
@@ -262,14 +271,73 @@ const PetMotion: React.FC<PetMotionProps> = ({
     };
   }, [manifest, kind, layoutWidth, size, startWalk]);
 
-  // 喂食 / 进化时打断走动，回到正面
+  // 喂食 / 进化 / 睡眠时打断走动，回到正面
   useEffect(() => {
-    if (kind === 'feed' || kind === 'evolve') {
+    if (kind === 'feed' || kind === 'evolve' || kind === 'sleep') {
       cancelWalk();
       setHappy(false);
       setSideStanding(false);
     }
   }, [kind, cancelWalk]);
+
+  // 睡眠呼吸：没有专属 sleep 动画时用轻微缩放缓动补足“在呼吸”的观感
+  const hasSleepAction = Boolean(manifest?.front.actions.sleep);
+  const degradedSleep = asleep && !hasSleepAction;
+  useEffect(() => {
+    if (!degradedSleep) {
+      breath.stopAnimation();
+      breath.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breath, {
+          toValue: 1.025,
+          duration: 1600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(breath, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+      breath.setValue(1);
+    };
+  }, [degradedSleep, breath]);
+
+  // Zzz 气泡的呼吸感：睡眠时才循环，醒来立刻恢复静止
+  useEffect(() => {
+    if (!asleep) {
+      zzzOpacity.stopAnimation();
+      zzzOpacity.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(zzzOpacity, { toValue: 0.4, duration: 1200, useNativeDriver: true }),
+        Animated.timing(zzzOpacity, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+      zzzOpacity.setValue(1);
+    };
+  }, [asleep, zzzOpacity]);
+
+  const playSleepPulse = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(tapScale, { toValue: 0.985, duration: 90, useNativeDriver: true }),
+      Animated.spring(tapScale, { toValue: 1, bounciness: 4, speed: 18, useNativeDriver: true }),
+    ]).start();
+  }, [tapScale]);
 
   useEffect(
     () => () => {
@@ -318,8 +386,18 @@ const PetMotion: React.FC<PetMotionProps> = ({
         })
       : null;
 
-  const frontAction: 'idle' | 'happy' | 'feed' | 'evolve' =
-    kind === 'feed' ? 'feed' : kind === 'evolve' ? 'evolve' : happy ? 'happy' : 'idle';
+  const frontAction: 'idle' | 'happy' | 'feed' | 'evolve' | 'sleep' =
+    kind === 'feed'
+      ? 'feed'
+      : kind === 'evolve'
+        ? 'evolve'
+        : kind === 'sleep'
+          ? hasSleepAction
+            ? 'sleep'
+            : 'idle'
+          : happy
+            ? 'happy'
+            : 'idle';
   const sideAction: 'idle' | 'walk' = walking ? 'walk' : 'idle';
 
   const frontUrl = manifest?.front.actions[frontAction];
@@ -399,6 +477,11 @@ const PetMotion: React.FC<PetMotionProps> = ({
   };
 
   const handlePress = () => {
+    // 睡眠时不唤醒、不播 happy，只给一个轻微缩放反馈
+    if (kind === 'sleep') {
+      playSleepPulse();
+      return;
+    }
     if (kind !== 'idle') return;
     playHappy();
   };
@@ -406,15 +489,24 @@ const PetMotion: React.FC<PetMotionProps> = ({
   // 没有分层动作包：回落到原来的单动画实现
   if (!manifest || manifestFailed) {
     return (
-      <PetLottie
-        kind={kind}
-        idleUrl={idleUrl}
-        feedUrl={feedUrl}
-        evolveUrl={evolveUrl}
-        imageUrl={imageUrl}
-        size={size}
-        onFinish={onFinish}
-      />
+      <View style={{ width: size, height: size }}>
+        <Animated.View style={{ flex: 1, transform: [{ scale: tapScale }, { scale: breath }] }}>
+          <PetLottie
+            kind={kind}
+            idleUrl={idleUrl}
+            feedUrl={feedUrl}
+            evolveUrl={evolveUrl}
+            imageUrl={imageUrl}
+            size={size}
+            onFinish={onFinish}
+          />
+        </Animated.View>
+        {asleep && (
+          <Animated.View pointerEvents="none" style={[styles.zzz, { opacity: zzzOpacity }]}>
+            <Text style={[styles.zzzText, { color: colors.textSecondary }]}>Zzz</Text>
+          </Animated.View>
+        )}
+      </View>
     );
   }
 
@@ -435,20 +527,24 @@ const PetMotion: React.FC<PetMotionProps> = ({
           width: size,
           height: size,
           transform: turnDip
-            ? [{ translateX: offset }, { scale: turnDip }]
-            : [{ translateX: offset }],
+            ? [{ translateX: offset }, { scale: tapScale }, { scale: turnDip }]
+            : [{ translateX: offset }, { scale: tapScale }],
         }}
       >
         {/* 正面层 */}
         <Animated.View style={[styles.layer, { opacity: stageOpacity(0) }]} pointerEvents="none">
-          <View style={{ width: size, height: size, transform: [{ scale: frontScale }] }}>
+          <Animated.View
+            style={{ width: size, height: size, transform: [{ scale: frontScale }, { scale: breath }] }}
+          >
             {playing && frontAnimation ? (
               <LottieView
                 key={frontUrl}
                 ref={frontLottieRef}
                 source={frontAnimation}
                 autoPlay
-                loop={frontAction === 'idle'}
+                loop={frontAction === 'idle' || frontAction === 'sleep'}
+                // 无专属 sleep 动画时，用 idle 降速来表现“睡着”
+                speed={degradedSleep ? 0.45 : 1}
                 resizeMode="contain"
                 onAnimationFinish={handleFrontFinish}
                 onAnimationFailure={() => setLottieFailed(true)}
@@ -461,7 +557,7 @@ const PetMotion: React.FC<PetMotionProps> = ({
                 style={{ width: size, height: size }}
               />
             ) : null}
-          </View>
+          </Animated.View>
         </Animated.View>
 
         {/* 转身过渡帧 + 侧身层：共用同一套镜像/缩放 */}
@@ -509,6 +605,12 @@ const PetMotion: React.FC<PetMotionProps> = ({
         </View>
 
         <Pressable onPress={handlePress} style={StyleSheet.absoluteFill} />
+
+        {asleep && (
+          <Animated.View pointerEvents="none" style={[styles.zzz, { opacity: zzzOpacity }]}>
+            <Text style={[styles.zzzText, { color: colors.textSecondary }]}>Zzz</Text>
+          </Animated.View>
+        )}
       </Animated.View>
     </View>
   );
@@ -525,6 +627,16 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: 'transparent',
+  },
+  zzz: {
+    position: 'absolute',
+    top: 4,
+    right: 10,
+  },
+  zzzText: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });
 

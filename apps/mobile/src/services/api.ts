@@ -1066,6 +1066,11 @@ export const api = {
       const response = await apiClient.post<PetFeedResult>('/api/app/pet/feed', { foodType, quantity });
       return response.data;
     } catch (err) {
+      const data = (err as AxiosError<{ error?: string; code?: string; message?: string }>).response?.data;
+      // 睡眠期喂普通/高级食物会被服务端拒绝：保留错误码，页面据此给出睡眠提示
+      if (data?.code === 'SLEEP_LOCKED' || data?.error === 'SLEEP_LOCKED') {
+        throw new Error('SLEEP_LOCKED');
+      }
       throw new Error(petErrorMessage(err, 'Feed failed'));
     }
   },

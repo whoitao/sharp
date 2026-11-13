@@ -16,7 +16,7 @@ export interface PetMotionManifest {
     body: string;
     /** 视觉缩放，用来和侧身形象对齐身高 */
     scale?: number;
-    actions: Partial<Record<"idle" | "happy" | "feed" | "evolve", string>>;
+    actions: Partial<Record<"idle" | "happy" | "feed" | "evolve" | "sleep", string>>;
   };
   side: {
     body: string;
@@ -75,6 +75,18 @@ function isPetMotionManifest(value: unknown): value is PetMotionManifest {
     !!manifest.side &&
     typeof manifest.side === "object" &&
     !!manifest.side.actions
+  );
+}
+
+/** 睡眠标识：纯 DOM 覆盖层，不依赖 Lottie / 素材，减少动态效果时也保留 */
+function SleepZzz() {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute right-3 top-2 select-none text-sm font-bold tracking-widest text-foreground-tertiary animate-pulse motion-reduce:animate-none"
+    >
+      Zzz
+    </span>
   );
 }
 
@@ -282,15 +294,19 @@ export function PetMotion({
     [],
   );
 
-  const frontAction = kind === "feed" ? "feed" : kind === "evolve" ? "evolve" : "idle";
+  const frontAction =
+    kind === "feed" ? "feed" : kind === "evolve" ? "evolve" : kind === "sleep" ? "sleep" : "idle";
   const sideVisible = walking || sideStanding;
   const frontUrl = manifest?.front.actions[frontAction] ?? null;
   const sideUrl = manifest?.side.actions[walking ? "walk" : "idle"] ?? null;
+  // 没有专属睡眠动作时复用 idle，并降速 + 叠加 CSS 呼吸
+  const sleepFallingBackToIdle = kind === "sleep" && !manifest?.front.actions.sleep;
 
   // 两层常驻：各自一个播放器，只让可见层在播
   const front = useLottiePlayer({
     url: frontUrl,
-    loop: frontAction === "idle",
+    loop: frontAction === "idle" || frontAction === "sleep",
+    speed: sleepFallingBackToIdle ? 0.45 : 1,
     enabled: !reducedMotion,
     active: !sideVisible,
     onComplete: onFinish,
@@ -302,10 +318,10 @@ export function PetMotion({
     active: sideVisible,
   });
 
-  // Lottie 不可用时也要让喂食 / 进化流程按时回落，避免状态机卡住
+  // Lottie 不可用时也要让喂食 / 进化流程按时回落，避免状态机卡住（睡眠是循环，不需要回落）
   const lottieUnavailable = reducedMotion || !frontUrl || front.failed;
   useEffect(() => {
-    if (kind === "idle" || !manifest || !lottieUnavailable) return;
+    if (kind === "idle" || kind === "sleep" || !manifest || !lottieUnavailable) return;
     const timer = window.setTimeout(() => onFinish?.(), FALLBACK_FINISH_MS);
     return () => window.clearTimeout(timer);
   }, [kind, manifest, lottieUnavailable, onFinish]);
@@ -313,16 +329,19 @@ export function PetMotion({
   // 没有动作包（未配置 / 拉取失败）：沿用原来的单动画实现，其余阶段行为完全不变
   if (manifestFailed) {
     return (
-      <PetLottie
-        kind={kind}
-        idleUrl={idleUrl}
-        feedUrl={feedUrl}
-        evolveUrl={evolveUrl}
-        imageUrl={imageUrl}
-        fallbackIcon={fallbackIcon}
-        onFinish={onFinish}
-        className={className}
-      />
+      <div className={cn("relative", className)}>
+        <PetLottie
+          kind={kind}
+          idleUrl={idleUrl}
+          feedUrl={feedUrl}
+          evolveUrl={evolveUrl}
+          imageUrl={imageUrl}
+          fallbackIcon={fallbackIcon}
+          onFinish={onFinish}
+          className="h-full w-full"
+        />
+        {kind === "sleep" && <SleepZzz />}
+      </div>
     );
   }
 
@@ -340,6 +359,7 @@ export function PetMotion({
 
   return (
     <div ref={stageRef} className={cn("relative overflow-hidden", className)}>
+      {kind === "sleep" && <SleepZzz />}
       {/* 位移只改 x：尺寸与偏移来自实时测量，不写死 px */}
       <div
         className="absolute left-0 top-0"
@@ -355,7 +375,10 @@ export function PetMotion({
       >
         {/* 正面层：常驻，侧身可见时只暂停不卸载 */}
         <div
-          className="absolute inset-0 transition-opacity ease-linear"
+          className={cn(
+            "absolute inset-0 transition-opacity ease-linear",
+            sleepFallingBackToIdle && "pet-breathe",
+          )}
           style={{ opacity: sideVisible ? 0 : 1, transitionDuration: `${FADE_MS}ms` }}
         >
           <div

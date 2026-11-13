@@ -4,7 +4,7 @@ import LottieView, { type AnimationObject } from 'lottie-react-native';
 import React, { useEffect, useState } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 
-export type PetAnimationKind = 'idle' | 'feed' | 'evolve';
+export type PetAnimationKind = 'idle' | 'feed' | 'evolve' | 'sleep';
 
 interface PetLottieProps {
   kind: PetAnimationKind;
@@ -102,8 +102,9 @@ const PetLottie: React.FC<PetLottieProps> = ({
     <LottieView
       source={animation}
       autoPlay
-      loop={kind === 'idle'}
-      speed={1}
+      loop={kind === 'idle' || kind === 'sleep'}
+      // 没有专属 sleep 动画时复用 idle 并降速，配合呼吸缩放表现睡眠
+      speed={kind === 'sleep' ? 0.45 : 1}
       resizeMode="contain"
       onAnimationFinish={onFinish}
       onAnimationFailure={() => setFailed(true)}

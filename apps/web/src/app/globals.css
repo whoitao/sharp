@@ -458,3 +458,28 @@
   text-align: center;
   color: hsl(var(--foreground-tertiary));
 }
+
+/*
+ * 睡眠呼吸：没有专属 sleep 动作时的降级表现。
+ * 只用极轻微的缩放，配合 Zzz 传达“睡着”；减少动态效果时完全静止。
+ */
+@keyframes pet-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+.pet-breathe {
+  animation: pet-breathe 3.4s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-breathe {
+    animation: none;
+  }
+}

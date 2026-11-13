@@ -41,8 +41,9 @@ export function stageOf(level: number, stages: PetSpeciesStage[]): PetSpeciesSta
 const ACTIVE_SATIETY_THRESHOLD = 70;
 
 /**
- * 状态实时计算：优先级 asleep > hungry > normal > active。
- * 阈值与喂养有效窗口来自 PetConfig，页面展示与饥饿消息判定共用同一份规则。
+ * 状态实时计算：优先级 active > asleep > hungry > normal。
+ * 睡眠 = 超过 fedWindowDays 未喂 **且** 饱食度严格为 0；
+ * hungryThreshold 只参与 hungry 判定与 pet_hungry 站内信，不再参与睡眠判定。
  */
 export function stateOf(
   satiety: number,
@@ -55,7 +56,9 @@ export function stateOf(
   const fedWindowMs = Math.max(0, config.fedWindowDays) * 24 * 3600 * 1000;
   const fedWithinWindow =
     lastFedAt !== null && now.getTime() - lastFedAt.getTime() <= fedWindowMs;
-  if (satiety < hungryThreshold) return fedWithinWindow ? "hungry" : "asleep";
+  // 饱食度必须真正归零才睡；还有余量时即使超窗口也只算 hungry
+  if (satiety === 0 && !fedWithinWindow) return "asleep";
+  if (satiety < hungryThreshold) return "hungry";
   return "normal";
 }
 
@@ -125,12 +128,17 @@ export type PetSpeciesWithStages = PetSpecies & { stages: PetSpeciesStage[] };
 export function buildPetDetail(
   pet: Pet & { species: PetSpeciesWithStages },
   config: PetConfig,
-  backpackQuantity: number,
+  backpack: Record<string, number>,
 ) {
   const stages = pet.species.stages;
   const level = levelOf(pet.experience, config);
   const stage = stageOf(level, stages);
   const state = stateOf(pet.satiety, pet.lastFedAt, config);
+  // 睡眠中只有稀有食物能喂；其余状态保持“没吃饱且背包里有食物”
+  const canFeed =
+    state === "asleep"
+      ? (backpack.rare ?? 0) > 0
+      : pet.satiety < config.satietyMax && Object.values(backpack).some((n) => n > 0);
 
   return {
     id: pet.id,
@@ -154,7 +162,7 @@ export function buildPetDetail(
     satiety: pet.satiety,
     satietyMax: config.satietyMax,
     state,
-    canFeed: pet.satiety < config.satietyMax && backpackQuantity > 0,
+    canFeed,
     adoptedAt: pet.adoptedAt.toISOString(),
     companionDays: Math.max(1, Math.floor((Date.now() - pet.adoptedAt.getTime()) / (24 * 3600 * 1000)) + 1),
     route: stages.map((s) => ({
