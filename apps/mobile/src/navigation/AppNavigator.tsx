@@ -394,7 +394,7 @@ const HomeStackNavigator: React.FC = () => {
     <HomeStack.Screen
       name="Feedback"
       component={withGradient(FeedbackListScreen)}
-      options={{ title: t.feedbackTitle, headerTitle: () => null }}
+      options={{ title: t.feedbackTitle }}
     />
     <HomeStack.Screen
       name="FeedbackCompose"
@@ -586,7 +586,7 @@ const ProfileStackNavigator: React.FC = () => {
     <ProfileStack.Screen
       name="Feedback"
       component={withGradient(FeedbackListScreen)}
-      options={{ title: t.feedbackTitle, headerTitle: () => null }}
+      options={{ title: t.feedbackTitle }}
     />
     <ProfileStack.Screen
       name="FeedbackCompose"

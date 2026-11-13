@@ -360,7 +360,6 @@ export const zh = {
   petGoPractice: '去练习',
   petBackpackTitle: '食物背包',
   petBackpackEmpty: '背包还没有食物，去练习赚食物吧',
-  petAdoptHint: '选择一只属于你的宠物',
   petAdoptNickname: '给它起个名字',
   petAdoptNicknamePlaceholder: '1-8 个字',
   petAdoptConfirm: '确认领养',
@@ -421,7 +420,6 @@ export const zh = {
 
   // 问题反馈
   feedbackTitle: '问题反馈',
-  feedbackSubtitle: '提交问题或建议，我们会尽快回复',
   feedbackNew: '提交反馈',
   feedbackDetailTitle: '反馈详情',
   feedbackCategoryLabel: '分类',

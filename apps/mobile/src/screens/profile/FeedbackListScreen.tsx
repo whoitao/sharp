@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -96,6 +96,24 @@ const FeedbackListScreen: React.FC<FeedbackListScreenProps> = ({ navigation }) =
     },
     [],
   );
+
+  // 提交入口只保留导航栏右上角「+」，点击区域 40×40（外加 hitSlop）
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('FeedbackCompose')}
+          activeOpacity={0.6}
+          accessibilityRole="button"
+          accessibilityLabel={t.feedbackNew}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerAdd}
+        >
+          <Ionicons name="add" size={24 * font} color={colors.text} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, colors.text, font, t.feedbackNew]);
 
   // 每次回到列表都刷新：从详情返回后红点应消失（服务端已在详情接口标记已读）
   useFocusEffect(
@@ -203,46 +221,6 @@ const FeedbackListScreen: React.FC<FeedbackListScreenProps> = ({ navigation }) =
     );
   };
 
-  const header = (
-    <View style={{ marginBottom: 14 * spacing }}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerTextWrap}>
-          <Text style={{ color: colors.text, fontSize: 18 * font, fontWeight: '700' }}>
-            {t.feedbackTitle}
-          </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: 12 * font,
-              marginTop: 4 * spacing,
-            }}
-          >
-            {t.feedbackSubtitle}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('FeedbackCompose')}
-          activeOpacity={0.7}
-          style={[
-            styles.newButton,
-            {
-              backgroundColor: colors.accent,
-              borderRadius: 999,
-              paddingHorizontal: 14 * spacing,
-              paddingVertical: 8 * spacing,
-            },
-          ]}
-          accessibilityRole="button"
-        >
-          <Ionicons name="add" size={16 * font} color="#FFFFFF" />
-          <Text style={{ color: '#FFFFFF', fontSize: 13 * font, fontWeight: '600' }}>
-            {t.feedbackNew}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   if (status === 'loading' && items.length === 0) {
     return (
       <View style={styles.center}>
@@ -294,10 +272,11 @@ const FeedbackListScreen: React.FC<FeedbackListScreenProps> = ({ navigation }) =
       data={items}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
-      ListHeaderComponent={header}
       contentContainerStyle={[
         styles.content,
         { paddingHorizontal: 16 * spacing, paddingTop: 12 * spacing, paddingBottom: 24 * spacing },
+        // 空态在可视区域内垂直居中，避免只有顶部一小截内容
+        items.length === 0 && styles.contentEmpty,
       ]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
@@ -362,18 +341,15 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  contentEmpty: {
+    justifyContent: 'center',
   },
-  headerTextWrap: {
-    flex: 1,
-    marginRight: 12,
-  },
-  newButton: {
-    flexDirection: 'row',
+  headerAdd: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
-    gap: 2,
+    justifyContent: 'center',
+    marginRight: 8,
   },
   card: {
     borderWidth: StyleSheet.hairlineWidth,
@@ -413,7 +389,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     alignItems: 'center',
-    paddingVertical: 56,
+    paddingVertical: 8,
   },
   retryButton: {
     borderWidth: StyleSheet.hairlineWidth,

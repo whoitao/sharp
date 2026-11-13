@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Grade, PetDetail, QuestionTag, Subject, SubjectOverview } from '@sharp/shared';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -14,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScopeHintOverlay from '../../components/ScopeHintOverlay';
 import type { ScopeSelectorHandle } from '../../components/ScopeSelector';
 import ScopeSelectorHeader from '../../components/ScopeSelectorHeader';
@@ -61,6 +63,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   // 本次会话是否已经触发过，避免首页数据反复刷新导致重复弹层
   const hintAttemptedRef = useRef(false);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  // 教材胶囊渲染在原生 header 里：RN 的 measureInWindow 在 react-native-screens
+  // 的原生 header 节点上返回的是「屏幕内容区（header 下沿）」坐标系，y 会是负数，
+  // 必须补回 header 高度才是真正的窗口坐标
+  const headerHeight = useHeaderHeight();
   const bellRef = useRef<View>(null);
   const streakRef = useRef<View>(null);
   // header 两端自带的留白各端不同（iOS 26 玻璃按钮更贴边），
@@ -293,19 +300,53 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     !loading &&
     hasNoLearning;
 
+  // 坐标合理性：宽高不能为 0、不能被刘海/状态栏覆盖、不能越出屏幕四周
+  const isRectUsable = useCallback(
+    (rect: { x: number; y: number; width: number; height: number }) => {
+      const { x, y, width, height } = rect;
+      if (![x, y, width, height].every((value) => Number.isFinite(value))) return false;
+      if (width < 40 || height < 20) return false;
+      if (y < insets.top - 1) return false;
+      if (y + height > windowHeight) return false;
+      if (x < -1 || x + width > windowWidth + 1) return false;
+      return true;
+    },
+    [insets.top, windowHeight, windowWidth],
+  );
+
   const measureCapsule = useCallback(() => {
-    const selector = scopeSelectorRef.current;
-    if (!selector) {
-      // 测不到节点时回传 null，由蒙层走屏幕中线的降级位置
-      setHintRect(null);
-      setHintVisible(true);
-      return;
-    }
-    selector.measure((rect) => {
-      setHintRect(rect);
-      setHintVisible(true);
-    });
-  }, []);
+    const tryMeasure = (attempt: number) => {
+      const finish = (rect: { x: number; y: number; width: number; height: number } | null) => {
+        setHintRect(rect);
+        setHintVisible(true);
+      };
+      const selector = scopeSelectorRef.current;
+      if (!selector) {
+        if (attempt === 0) {
+          setTimeout(() => tryMeasure(1), 150);
+          return;
+        }
+        finish(null);
+        return;
+      }
+      selector.measure((raw) => {
+        // 原生 header 里的节点：y 是相对 header 下沿的内容区坐标，补回 header 高度
+        const rect = raw ? { ...raw, y: raw.y + headerHeight } : null;
+        if (rect && isRectUsable(rect)) {
+          finish(rect);
+          return;
+        }
+        // 布局尚未稳定时可能量到 0/负值：下一帧再测一次
+        if (attempt === 0) {
+          setTimeout(() => tryMeasure(1), 150);
+          return;
+        }
+        // 两次都不可用：不挖洞、气泡居中，绝不让高亮框落到刘海或屏幕外
+        finish(null);
+      });
+    };
+    tryMeasure(0);
+  }, [headerHeight, isRectUsable]);
 
   useEffect(() => {
     if (!hintEligible || hintAttemptedRef.current) return;
@@ -328,8 +369,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   // 旋转 / 分屏后重新测量，保证挖洞和选择器位置对得上
   useEffect(() => {
     if (!hintVisible) return;
-    scopeSelectorRef.current?.measure((rect) => setHintRect(rect));
-  }, [windowWidth, windowHeight, hintVisible]);
+    measureCapsule();
+  }, [windowWidth, windowHeight, hintVisible, measureCapsule]);
 
   // 离开首页时收起但不标记，回到首页仍可再提示
   useFocusEffect(

@@ -363,7 +363,6 @@ export const en: TranslationKeys = {
   petGoPractice: 'Practice',
   petBackpackTitle: 'Food Bag',
   petBackpackEmpty: 'No food yet. Practice to earn some.',
-  petAdoptHint: 'Pick a pet of your own',
   petAdoptNickname: 'Give it a name',
   petAdoptNicknamePlaceholder: '1-8 characters',
   petAdoptConfirm: 'Adopt',
@@ -424,7 +423,6 @@ export const en: TranslationKeys = {
 
   // Feedback
   feedbackTitle: 'Feedback',
-  feedbackSubtitle: 'Report a problem or share a suggestion — we reply as soon as we can',
   feedbackNew: 'New Feedback',
   feedbackDetailTitle: 'Feedback Detail',
   feedbackCategoryLabel: 'Category',

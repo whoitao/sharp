@@ -24,7 +24,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { ProfileStackParamList } from '../../navigation/AppNavigator';
 import type { AppDispatch, RootState } from '../../stores';
-import { updateProfile, uploadAvatar } from '../../stores/authSlice';
+import { logout, updateProfile, uploadAvatar } from '../../stores/authSlice';
 
 /** 头像统一压到 512px 方形 JPEG，远小于服务端大小上限 */
 const AVATAR_SIZE = 512;
@@ -61,6 +61,13 @@ const ProfileInfoScreen: React.FC<ProfileInfoScreenProps> = () => {
   const [genderModalVisible, setGenderModalVisible] = useState(false);
   const [genderError, setGenderError] = useState<string | null>(null);
   const [isSavingGender, setIsSavingGender] = useState(false);
+  // 退出登录确认弹窗（从设置页迁移到个人信息页）
+  const [logoutVisible, setLogoutVisible] = useState(false);
+
+  const confirmLogout = useCallback(() => {
+    setLogoutVisible(false);
+    dispatch(logout());
+  }, [dispatch]);
 
   // DB 里只存相对路径，展示层拼完整 URL；兼容历史完整 URL
   const avatarUrl = useMemo(
@@ -259,6 +266,59 @@ const ProfileInfoScreen: React.FC<ProfileInfoScreenProps> = () => {
         {/* 手机号 */}
         {renderRow(t.phone, () => openTextModal('phone'), renderRowValue(user?.phone ?? t.notSet), true)}
       </View>
+
+      {/* 退出登录（从设置页迁移）：保留原按钮效果 */}
+      <TouchableOpacity
+        style={{
+          backgroundColor: colors.dangerSurface,
+          borderRadius: 12 * radius,
+          paddingVertical: 16 * spacing,
+          marginTop: 16 * spacing,
+          alignItems: 'center',
+        }}
+        onPress={() => setLogoutVisible(true)}
+        activeOpacity={0.8}
+      >
+        <Text style={{ color: colors.error, fontSize: 16 * font, fontWeight: '600' }}>{t.logout}</Text>
+      </TouchableOpacity>
+
+      {/* 退出登录确认 */}
+      <Modal
+        visible={logoutVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setLogoutVisible(false)}
+          />
+          <View style={[styles.modalCard, { backgroundColor: colors.surface, borderRadius: 12 * radius, padding: 20 * spacing }]}>
+            <Text style={[styles.modalTitle, { color: colors.text, fontSize: 17 * font }]}>{t.logout}</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 14 * font, textAlign: 'center', marginTop: 8 * spacing, marginBottom: 20 * spacing }}>
+              {t.logoutConfirm}
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { borderRadius: 8 * radius, paddingVertical: 10 * spacing, backgroundColor: colors.background, marginRight: 10 * spacing }]}
+                onPress={() => setLogoutVisible(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: colors.textSecondary, fontSize: 15 * font }}>{t.cancel}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { borderRadius: 8 * radius, paddingVertical: 10 * spacing, backgroundColor: colors.dangerSurface }]}
+                onPress={confirmLogout}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: colors.error, fontSize: 15 * font, fontWeight: '600' }}>{t.confirm}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* 昵称/手机号输入弹窗：不用 Alert.prompt（iOS only / web 不支持），保证跨端一致 */}
       <Modal
