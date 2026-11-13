@@ -64,9 +64,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const hintAttemptedRef = useRef(false);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  // 教材胶囊渲染在原生 header 里：RN 的 measureInWindow 在 react-native-screens
-  // 的原生 header 节点上返回的是「屏幕内容区（header 下沿）」坐标系，y 会是负数，
-  // 必须补回 header 高度才是真正的窗口坐标
+  // 教材胶囊渲染在原生 header 里。测量原点是平台相关的：
+  // iOS 的 header 在独立视图层级里，measureInWindow 量到的是「header 下沿内容视图」
+  // 坐标系（y 为负）；Android 的 header 在同一个 ReactRootView 内，y 已是窗口坐标。
+  // 这里不用 Platform 硬分支，而是把「原值」和「原值 + headerHeight」都作为候选，
+  // 取落在 header 带内的那个（见 resolveHeaderY），两端语义都能覆盖。
   const headerHeight = useHeaderHeight();
   const bellRef = useRef<View>(null);
   const streakRef = useRef<View>(null);
@@ -314,6 +316,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [insets.top, windowHeight, windowWidth],
   );
 
+  // 原生 header 里节点的测量原点两端不同，逐个候选验证，不按平台硬编码：
+  // - iOS：header 在独立视图层级，量到的是 header 下沿内容视图坐标（y 为负），要加 headerHeight
+  // - Android：header 在同一个 ReactRootView 内，量到即窗口坐标，原样使用
+  // - 兜底候选：内容视图从状态栏下沿起算时，补 insets.top
+  // 胶囊必然落在 [状态栏下沿, header 下沿] 之间，谁落进这条带谁就是正确值。
+  const resolveHeaderY = useCallback(
+    (rawY: number, height: number): number | null => {
+      const bandTop = insets.top - 4;
+      const bandBottom = headerHeight + 12;
+      const inBand = (y: number) => y >= bandTop && y + height <= bandBottom;
+      const candidates = [rawY, rawY + headerHeight, rawY + insets.top];
+      for (const y of candidates) {
+        if (inBand(y)) return y;
+      }
+      return null;
+    },
+    [headerHeight, insets.top],
+  );
+
   const measureCapsule = useCallback(() => {
     const tryMeasure = (attempt: number) => {
       const finish = (rect: { x: number; y: number; width: number; height: number } | null) => {
@@ -330,8 +351,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         return;
       }
       selector.measure((raw) => {
-        // 原生 header 里的节点：y 是相对 header 下沿的内容区坐标，补回 header 高度
-        const rect = raw ? { ...raw, y: raw.y + headerHeight } : null;
+        const y = raw ? resolveHeaderY(raw.y, raw.height) : null;
+        // 横向不走测量原点：所有栈都设了 headerTitleAlign: 'center'，胶囊在 header 内水平居中，
+        // 用屏幕宽度减实测宽度反推 x，避免 Android 上容器原点不同造成的左右偏移。
+        const rect =
+          raw && y !== null
+            ? { x: (windowWidth - raw.width) / 2, y, width: raw.width, height: raw.height }
+            : null;
         if (rect && isRectUsable(rect)) {
           finish(rect);
           return;
@@ -346,7 +372,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       });
     };
     tryMeasure(0);
-  }, [headerHeight, isRectUsable]);
+  }, [isRectUsable, resolveHeaderY, windowWidth]);
 
   useEffect(() => {
     if (!hintEligible || hintAttemptedRef.current) return;

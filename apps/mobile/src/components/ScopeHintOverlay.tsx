@@ -24,7 +24,9 @@ interface ScopeHintOverlayProps {
   onDismiss: () => void;
 }
 
-const RING_GAP = 8;
+const RING_GAP_X = 10;
+// 纵向外扩比横向小：再大就会越过 header 下沿，压到首页第一张卡片
+const RING_GAP_Y = 6;
 const RING_RADIUS = 18;
 
 /**
@@ -48,20 +50,25 @@ const ScopeHintOverlay: React.FC<ScopeHintOverlayProps> = ({
     if (!targetRect) return null;
     const rectWidth = Math.min(Math.max(targetRect.width, 40), Math.max(40, width - 16));
     const rectHeight = Math.min(Math.max(targetRect.height, 20), Math.max(20, height - 16));
-    const x = Math.max(8, Math.min(targetRect.x, width - rectWidth - 8));
-    const y = Math.max(
-      insets.top,
-      Math.min(targetRect.y, height - rectHeight - insets.bottom - 8),
+    const ringWidth = Math.min(width, rectWidth + RING_GAP_X * 2);
+    const ringX = Math.max(0, Math.min(targetRect.x - RING_GAP_X, width - ringWidth));
+    // 纵向先把上下沿各自 clamp 在安全区内，再算高度：框不会被刘海切掉，也不会顶到屏幕外
+    const top = Math.max(insets.top, targetRect.y - RING_GAP_Y);
+    const bottom = Math.min(
+      height - insets.bottom - 8,
+      targetRect.y + rectHeight + RING_GAP_Y,
     );
     return {
-      x: x - RING_GAP,
-      y: y - RING_GAP,
-      width: rectWidth + RING_GAP * 2,
-      height: rectHeight + RING_GAP * 2,
+      x: ringX,
+      y: top,
+      width: ringWidth,
+      height: Math.max(rectHeight, bottom - top),
     };
   }, [targetRect, width, height, insets.top, insets.bottom]);
 
   const ringBottom = ring ? ring.y + ring.height : 0;
+  // 圆角随框高收敛，避免矮框出现「胶囊化」的圆弧失真
+  const ringRadius = ring ? Math.min(RING_RADIUS, ring.height / 2) : RING_RADIUS;
   // 气泡优先放高亮框下方；横屏/小屏放不下时翻到上方，避免超出屏幕
   const showBelow = ring ? ringBottom + 200 <= height - insets.bottom : false;
   const bubbleSpace = ring
@@ -209,7 +216,7 @@ const ScopeHintOverlay: React.FC<ScopeHintOverlayProps> = ({
                 height: ring.height,
                 borderWidth: 2,
                 borderColor: colors.accent,
-                borderRadius: RING_RADIUS,
+                borderRadius: ringRadius,
                 backgroundColor: 'transparent',
               }}
             />

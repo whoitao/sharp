@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -15,8 +16,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -36,6 +39,21 @@ const PetAdoptScreen: React.FC<PetAdoptScreenProps> = ({ navigation }) => {
   const { colors, isDark } = useTheme();
   const { spacing, font, radius } = useDensity();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+
+  // Modal 在 Android 上是独立窗口，但 insets 走 React context，navigation 的
+  // SafeAreaProviderCompat 已经把值传进来了（本文件外层的 PetScreen 也在用 insets）。
+  // 仍保留兜底：若 Modal 内拿到 0，用「屏幕高 - 窗口高」推算系统栏高度。
+  // 上限 96 是防御：键盘弹起时窗口会变矮，避免把键盘高度误算成底部安全区。
+  const fallbackBottomInset =
+    insets.bottom > 0
+      ? 0
+      : Math.min(
+          Math.max(0, Math.round(Dimensions.get('screen').height - windowHeight)),
+          96
+        );
+  const bottomInset = Math.max(insets.bottom, fallbackBottomInset);
 
   const [species, setSpecies] = useState<PetSpeciesInfo[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -206,6 +224,8 @@ const PetAdoptScreen: React.FC<PetAdoptScreenProps> = ({ navigation }) => {
       >
         <KeyboardAvoidingView
           style={styles.overlay}
+          // iOS 用 padding 顶起弹层；Android 的 Modal 窗口由 RN 设为 ADJUST_RESIZE，
+          // 键盘弹起时窗口自身变矮，再叠加 height/padding 会二次收缩，故不设 behavior。
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <TouchableOpacity
@@ -222,7 +242,8 @@ const PetAdoptScreen: React.FC<PetAdoptScreenProps> = ({ navigation }) => {
                 borderTopRightRadius: 20 * radius,
                 paddingHorizontal: 20 * spacing,
                 paddingTop: 18 * spacing,
-                paddingBottom: 28 * spacing,
+                // 基础留白 + 底部安全区：Android 手势条 / 三键导航不再压住按钮
+                paddingBottom: 16 * spacing + bottomInset,
               },
             ]}
           >
