@@ -2,7 +2,7 @@
 
 import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { BarChart3, Bell, BookOpen, NotebookPen, PawPrint, Settings, Star, UserRound } from "lucide-react";
+import { BarChart3, Bell, BookOpen, MessageSquare, NotebookPen, PawPrint, Settings, Star, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -23,6 +23,7 @@ export default function AccountLayout({
   const onFavorites = pathname.startsWith("/account/favorites");
   const onSettings = pathname.startsWith("/account/settings");
   const onNotifications = pathname.startsWith("/account/notifications");
+  const onFeedback = pathname.startsWith("/account/feedback");
   const onTextbook = pathname.startsWith("/account/textbook");
   const onPet = pathname.startsWith("/account/pet");
   const onProfile =
@@ -31,6 +32,7 @@ export default function AccountLayout({
     !onFavorites &&
     !onSettings &&
     !onNotifications &&
+    !onFeedback &&
     !onTextbook &&
     !onPet;
 
@@ -76,6 +78,12 @@ export default function AccountLayout({
       label: t("account.notifications"),
       icon: Bell,
       active: onNotifications,
+    },
+    {
+      href: "/account/feedback",
+      label: t("account.feedback"),
+      icon: MessageSquare,
+      active: onFeedback,
     },
     {
       href: "/account/settings",

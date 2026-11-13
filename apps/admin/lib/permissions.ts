@@ -1,4 +1,4 @@
-// 后台权限模型：14 个模块 × read/write，共 28 项。
+// 后台权限模型：15 个模块 × read/write，共 30 项。
 // 数据库只存「角色 → 权限」的分配，权限清单一律以本文件为准，避免两边漂移。
 
 export type PermissionAction = "read" | "write";
@@ -15,6 +15,7 @@ export type PermissionResource =
   | "grades"
   | "articles"
   | "notifications"
+  | "feedback"
   | "pets"
   | "study-records"
   | "settings";
@@ -41,6 +42,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   { key: "grades", label: "年级管理", writable: true },
   { key: "articles", label: "文档管理", writable: true },
   { key: "notifications", label: "消息管理", writable: true },
+  { key: "feedback", label: "问题反馈", writable: true },
   { key: "pets", label: "宠物管理", writable: true },
   { key: "study-records", label: "学习记录", writable: false },
   { key: "users", label: "学员管理", writable: true },
@@ -112,6 +114,8 @@ export const ROLE_PRESETS: RolePreset[] = [
       "textbooks:read",
       "grades:read",
       "study-records:read",
+      "feedback:read",
+      "feedback:write",
     ],
   },
   {
@@ -126,6 +130,7 @@ export const ROLE_PRESETS: RolePreset[] = [
       "articles:write",
       "notifications:read",
       "notifications:write",
+      "feedback:read",
       "textbooks:read",
       "textbooks:write",
       "questions:read",
@@ -149,6 +154,7 @@ export const ROLE_PRESETS: RolePreset[] = [
       "grades:read",
       "articles:read",
       "notifications:read",
+      "feedback:read",
       "pets:read",
       "study-records:read",
       "users:read",
@@ -165,6 +171,7 @@ export const NAV_PERMISSIONS: Record<string, Permission[]> = {
   "/grades": ["grades:read"],
   "/articles": ["articles:read"],
   "/notifications": ["notifications:read"],
+  "/feedback": ["feedback:read"],
   "/pets": ["pets:read"],
   "/site-settings": ["settings:read"],
 };

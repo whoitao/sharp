@@ -43,6 +43,7 @@ const columns: { titleKey: string; links: FooterLink[] }[] = [
     titleKey: "footer.about",
     links: [
       { labelKey: "footer.aboutUs", href: "/about" },
+      { labelKey: "footer.feedback", href: "/account/feedback" },
       { labelKey: "footer.contact", href: "/about#contact" },
       { labelKey: "nav.github", href: GITHUB_URL, external: true, badgeKey: "footer.openSource" },
     ],

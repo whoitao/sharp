@@ -91,6 +91,52 @@ const templates: Prisma.NotificationTemplateCreateInput[] = [
     ],
     enabled: true,
   },
+  {
+    code: "feedback_reply",
+    name: "反馈回复通知",
+    type: "system",
+    level: "info",
+    deliveryMode: "event",
+    titleTemplate: "你的反馈有新回复",
+    bodyTemplate: "反馈「{$feedbackTitle}」收到回复：{$replyPreview}",
+    actionType: "page",
+    actionValueTemplate: "/account/feedback/{$feedbackId}",
+    // 按回复维度去重：每条回复都通知，重复调用同一回复接口时天然幂等
+    dedupeKeyTemplate: "feedback_reply:{$feedbackId}:{$replyId}",
+    variables: [
+      {
+        key: "feedbackId",
+        label: "反馈 ID",
+        type: "string",
+        scope: "global",
+        required: true,
+      },
+      {
+        key: "feedbackTitle",
+        label: "反馈摘要",
+        type: "string",
+        scope: "global",
+        required: true,
+        example: "页面打不开",
+      },
+      {
+        key: "replyPreview",
+        label: "回复预览",
+        type: "string",
+        scope: "global",
+        required: true,
+        example: "已修复，请刷新后重试",
+      },
+      {
+        key: "replyId",
+        label: "回复 ID",
+        type: "string",
+        scope: "global",
+        required: true,
+      },
+    ],
+    enabled: true,
+  },
 ];
 
 async function main() {

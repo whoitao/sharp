@@ -13,6 +13,7 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  MessageOutlined,
   MoonOutlined,
   NotificationOutlined,
   OrderedListOutlined,
@@ -90,6 +91,7 @@ const NAV_ITEMS: { key: string; icon: React.ReactNode; labelKey: MessageKey }[] 
   { key: "/grades", icon: <UnorderedListOutlined />, labelKey: "nav.gradeManagement" },
   { key: "/articles", icon: <ReadOutlined />, labelKey: "nav.articles" },
   { key: "/notifications", icon: <NotificationOutlined />, labelKey: "nav.notifications" },
+  { key: "/feedback", icon: <MessageOutlined />, labelKey: "nav.feedback" },
   { key: "/pets", icon: <PawPrintIcon />, labelKey: "nav.petManagement" },
   { key: "/site-settings", icon: <SettingOutlined />, labelKey: "nav.siteSettings" },
 ];

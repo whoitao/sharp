@@ -48,6 +48,9 @@ model User {
   // 站内信
   notifications     Notification[]     @relation("UserNotifications")
   notificationReads NotificationRead[]
+
+  // 问题反馈
+  feedbacks Feedback[] @relation("UserFeedbacks")
 }
 
 model UserSettings {
@@ -822,4 +825,59 @@ model SiteSettingRevision {
   setting   SiteSetting @relation(fields: [settingId], references: [id], onDelete: Cascade)
 
   @@index([settingId, createdAt])
+}
+
+// —— 问题反馈 ——
+
+// 用户提交的问题反馈；正文为服务端清洗后的富文本 HTML
+model Feedback {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation("UserFeedbacks", fields: [userId], references: [id], onDelete: Cascade)
+
+  // 清洗后的富文本 HTML（唯一渲染来源）
+  content String @db.Text
+  // 从 content 提取的纯文本：摘要、关键词筛选、长度校验
+  contentText String @db.Text
+  // 正文内嵌图片清单（从清洗后 HTML 按文档顺序提取的 URL，派生字段）
+  images String[] @default([])
+
+  category      String  @default("other") @db.VarChar(20) // bug | suggestion | content | account | other
+  status        String  @default("pending") @db.VarChar(20) // pending | replied | closed
+  source        String  @db.VarChar(20) // web | app
+  pageContext   String? @db.VarChar(300)
+  clientVersion String? @db.VarChar(50)
+  contact       String? @db.VarChar(120)
+
+  // 只统计管理员对外回复
+  replyCount  Int       @default(0)
+  lastReplyAt DateTime?
+  // 用户端「新回复」红点：lastReplyAt > userReadAt
+  userReadAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  replies FeedbackReply[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([userId, status])
+}
+
+// 反馈时间线：管理员回复 / 用户追问 / 内部备注
+model FeedbackReply {
+  id         String   @id @default(uuid())
+  feedbackId String
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  authorType String  @db.VarChar(10) // admin | user
+  adminId    String? @db.VarChar(64)
+  // 回复与追问为纯文本（保留换行）
+  content    String  @db.Text
+  isInternal Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([feedbackId, createdAt])
 }

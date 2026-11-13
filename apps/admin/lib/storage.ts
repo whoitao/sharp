@@ -11,6 +11,9 @@ export const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 /** 题目图片单次上传上限 5MB */
 export const MAX_QUESTION_IMAGE_BYTES = 5 * 1024 * 1024;
 
+/** 反馈正文图片单次上传上限 5MB */
+export const MAX_FEEDBACK_IMAGE_BYTES = 5 * 1024 * 1024;
+
 /** 教材封面单次上传上限 10MB */
 export const MAX_TEXTBOOK_COVER_BYTES = 10 * 1024 * 1024;
 
@@ -190,6 +193,33 @@ export async function uploadWikiImage(
   const path = wikiImagePath(contentType);
   await putObject(path, bytes, contentType);
   return { objectPath: path, url: wikiImagePublicUrl(path) };
+}
+
+/** 反馈正文图片：feedback/{userId}/{随机UUID}.{ext}，按用户分目录便于校验归属 */
+export function feedbackImagePath(userId: string, contentType: ImageContentType): string {
+  return `feedback/${sanitizeUserId(userId)}/${randomId()}.${CONTENT_TYPE_TO_EXT[contentType]}`;
+}
+
+/** 反馈正文图片的完整 URL */
+export function feedbackImagePublicUrl(path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+}
+
+/** 用户反馈图片的 URL 前缀：提交时用它校验正文里的 <img> 只能来自本人目录 */
+export function feedbackImageUrlPrefix(userId: string): string {
+  return feedbackImagePublicUrl(`feedback/${sanitizeUserId(userId)}/`);
+}
+
+/** 上传反馈正文图片，返回相对路径与完整 URL */
+export async function uploadFeedbackImage(
+  userId: string,
+  bytes: Uint8Array,
+  contentType: ImageContentType,
+): Promise<{ objectPath: string; url: string }> {
+  const path = feedbackImagePath(userId, contentType);
+  await putObject(path, bytes, contentType);
+  return { objectPath: path, url: feedbackImagePublicUrl(path) };
 }
 
 /** 教材封面：textbooks/covers/{随机UUID}.{ext} */
