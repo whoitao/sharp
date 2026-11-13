@@ -104,19 +104,33 @@ export async function trimRevisions(settingId: string): Promise<void> {
   });
 }
 
-/** 保存成功后通知 Web 刷新 site-settings 缓存；未配置或失败时静默降级 */
+/**
+ * 保存成功后通知 Web 刷新 site-settings 缓存。
+ * 失败不会阻断保存，但会写日志，便于从 Vercel Logs 判断「保存了却没生效」是不是这里的问题。
+ */
 export async function notifyWebRevalidate(): Promise<boolean> {
   const base = process.env.WEB_REVALIDATE_URL?.replace(/\/+$/, "");
   const secret = process.env.REVALIDATE_SECRET;
-  if (!base || !secret) return false;
+  if (!base || !secret) {
+    console.warn(
+      "[site-settings] WEB_REVALIDATE_URL 或 REVALIDATE_SECRET 未配置，跳过 Web 缓存失效（最多 5 分钟自然过期）",
+    );
+    return false;
+  }
   try {
     const res = await fetch(`${base}/api/revalidate?tag=site-settings`, {
       method: "POST",
       headers: { "x-revalidate-secret": secret },
       signal: AbortSignal.timeout(3000),
     });
+    if (!res.ok) {
+      console.warn(
+        `[site-settings] Web 缓存失效失败：${base}/api/revalidate 返回 ${res.status}`,
+      );
+    }
     return res.ok;
-  } catch {
+  } catch (err) {
+    console.warn(`[site-settings] Web 缓存失效请求异常：${base}/api/revalidate`, err);
     return false;
   }
 }

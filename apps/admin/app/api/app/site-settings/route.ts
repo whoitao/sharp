@@ -31,7 +31,10 @@ export async function GET() {
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          // 不做 CDN 缓存：否则即使 Web 端 tag 失效，重新拉取仍可能命中旧 JSON，
+          // 导致「后台保存了但站点没变化」最多再延迟 5 分钟。
+          // 性能由 Web 端 getSiteSettings 的 5 分钟数据缓存 + tag 失效兜住。
+          "Cache-Control": "no-store",
         },
       },
     );
