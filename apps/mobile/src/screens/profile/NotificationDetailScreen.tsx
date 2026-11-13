@@ -29,9 +29,17 @@ type LoadStatus = 'loading' | 'ready' | 'missing' | 'error';
 
 type PageTarget =
   | {
-      screen: 'Pet' | 'Favorites' | 'WrongQuestions' | 'Records' | 'Textbook' | 'Settings';
+      screen:
+        | 'Pet'
+        | 'Favorites'
+        | 'WrongQuestions'
+        | 'Records'
+        | 'Textbook'
+        | 'Settings'
+        | 'Feedback';
     }
-  | { screen: 'ArticleDetail'; params: { id: string } };
+  | { screen: 'ArticleDetail'; params: { id: string } }
+  | { screen: 'FeedbackDetail'; params: { id: string } };
 
 interface NotificationDetailScreenProps {
   navigation: NativeStackNavigationProp<ProfileStackParamList, 'NotificationDetail'>;
@@ -63,6 +71,9 @@ function resolvePageTarget(value: string | null): PageTarget | null {
     case '/account/settings':
     case '/settings':
       return { screen: 'Settings' };
+    case '/account/feedback':
+    case '/feedback':
+      return { screen: 'Feedback' };
     default:
       break;
   }
@@ -70,6 +81,11 @@ function resolvePageTarget(value: string | null): PageTarget | null {
   if (normalized.startsWith('/articles/')) {
     const id = normalized.slice('/articles/'.length);
     if (id) return { screen: 'ArticleDetail', params: { id } };
+  }
+  // 反馈回复通知：/account/feedback/{feedbackId}
+  if (normalized.startsWith('/account/feedback/')) {
+    const id = normalized.slice('/account/feedback/'.length);
+    if (id) return { screen: 'FeedbackDetail', params: { id } };
   }
   return null;
 }
@@ -120,6 +136,8 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({
       }
       if (target.screen === 'ArticleDetail') {
         navigation.navigate('ArticleDetail', target.params);
+      } else if (target.screen === 'FeedbackDetail') {
+        navigation.navigate('FeedbackDetail', target.params);
       } else {
         navigation.navigate(target.screen);
       }

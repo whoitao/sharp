@@ -12,7 +12,7 @@ export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number];
 export const FEEDBACK_STATUSES = ["pending", "replied", "closed"] as const;
 export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
 
-export const FEEDBACK_MIN_TEXT = 10;
+export const FEEDBACK_MIN_TEXT = 5;
 export const FEEDBACK_MAX_TEXT = 2000;
 /** 富文本 HTML 原文上限：正文纯文本 2000 字，带排版标签后留出余量 */
 export const FEEDBACK_MAX_HTML = 20000;

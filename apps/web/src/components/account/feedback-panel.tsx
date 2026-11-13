@@ -2,7 +2,15 @@
 
 import { FeedbackEditor } from "@/components/account/feedback-editor";
 import { Button } from "@/components/ui/button";
-import { createFeedback, listFeedback, type FeedbackCategory, type FeedbackListItem, type FeedbackStatus } from "@/lib/feedback/api";
+import {
+  FEEDBACK_MAX_TEXT,
+  FEEDBACK_MIN_TEXT,
+  createFeedback,
+  listFeedback,
+  type FeedbackCategory,
+  type FeedbackListItem,
+  type FeedbackStatus,
+} from "@/lib/feedback/api";
 import { useLocale } from "@/lib/i18n";
 import { relativeTime } from "@/lib/notifications/format";
 import { cn } from "@/lib/utils";
@@ -58,6 +66,9 @@ export function FeedbackPanel() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // 与服务端同一口径：去掉标签后的纯文本长度
+  const contentLength = plainTextLength(html);
+
   const load = useCallback(async (targetPage: number, append: boolean) => {
     if (append) setLoadingMore(true);
     else setStatus("loading");
@@ -91,12 +102,11 @@ export function FeedbackPanel() {
   };
 
   const submit = async () => {
-    const length = plainTextLength(html);
-    if (length < 10) {
-      setFormError(t("feedback.contentTooShort"));
+    if (contentLength < FEEDBACK_MIN_TEXT) {
+      setFormError(t("feedback.contentTooShort", { n: FEEDBACK_MIN_TEXT - contentLength, min: FEEDBACK_MIN_TEXT }));
       return;
     }
-    if (length > 2000) {
+    if (contentLength > FEEDBACK_MAX_TEXT) {
       setFormError(t("feedback.contentTooLong"));
       return;
     }
@@ -240,7 +250,14 @@ export function FeedbackPanel() {
             </label>
             <div className="mt-1.5">
               <FeedbackEditor key={editorKey} onChange={setHtml} />
-              <p className="mt-1 text-[11px] text-foreground-tertiary">{t("feedback.contentPlaceholder")}</p>
+              <p className="mt-1 text-[11px] text-foreground-tertiary">
+                {contentLength > 0 && contentLength < FEEDBACK_MIN_TEXT
+                  ? t("feedback.contentTooShort", {
+                      n: FEEDBACK_MIN_TEXT - contentLength,
+                      min: FEEDBACK_MIN_TEXT,
+                    })
+                  : t("feedback.contentPlaceholder")}
+              </p>
             </div>
 
             <label className="mt-4 block text-xs font-semibold text-foreground-secondary">

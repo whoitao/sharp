@@ -3,6 +3,10 @@
 export type FeedbackCategory = "bug" | "suggestion" | "content" | "account" | "other";
 export type FeedbackStatus = "pending" | "replied" | "closed";
 
+/** 与后端 FEEDBACK_MIN_TEXT / FEEDBACK_MAX_TEXT 保持一致（按纯文本长度计算） */
+export const FEEDBACK_MIN_TEXT = 5;
+export const FEEDBACK_MAX_TEXT = 2000;
+
 export interface FeedbackListItem {
   id: string;
   summary: string;

@@ -224,6 +224,71 @@ export class NotificationApiError extends Error {
   }
 }
 
+// ─── 问题反馈（契约与 web/后端保持一致） ────────────────────────────────────────
+
+export type FeedbackCategory = 'bug' | 'suggestion' | 'content' | 'account' | 'other';
+export type FeedbackStatus = 'pending' | 'replied' | 'closed';
+
+export interface FeedbackListItem {
+  id: string;
+  summary: string;
+  category: FeedbackCategory;
+  status: FeedbackStatus;
+  replyCount: number;
+  lastReplyAt: string | null;
+  hasUnreadReply: boolean;
+  createdAt: string;
+}
+
+export interface FeedbackReplyItem {
+  id: string;
+  authorType: 'user' | 'admin';
+  content: string;
+  createdAt: string;
+}
+
+export interface FeedbackDetail {
+  id: string;
+  content: string;
+  category: FeedbackCategory;
+  status: FeedbackStatus;
+  source: string;
+  pageContext: string | null;
+  contact: string | null;
+  replyCount: number;
+  createdAt: string;
+  lastReplyAt: string | null;
+  replies: FeedbackReplyItem[];
+}
+
+export interface FeedbackListResult {
+  items: FeedbackListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** 保留 HTTP 状态码与后端错误码（如 CONTENT_TOO_SHORT / FEEDBACK_CLOSED），页面直接透出服务端文案 */
+export class FeedbackApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+    public readonly code?: string,
+  ) {
+    super(message);
+    this.name = 'FeedbackApiError';
+  }
+}
+
+const toFeedbackError = (err: unknown, fallback: string): FeedbackApiError => {
+  const response = (err as AxiosError<{ error?: string; code?: string }>).response;
+  return new FeedbackApiError(
+    response?.status ?? 0,
+    response?.data?.error ?? fallback,
+    response?.data?.code,
+  );
+};
+
 export const api = {
   // Auth
   async login(username: string, password: string): Promise<LoginResponse> {
@@ -1094,6 +1159,121 @@ export const api = {
       params: { type: 'pet', period },
     });
     return response.data;
+  },
+
+  // ─── 问题反馈 ───────────────────────────────────────────────────────────────
+  /** 我的反馈列表（倒序分页）；失败向上抛，由页面区分空态与失败态 */
+  async listFeedback(page = 1, pageSize = 20): Promise<FeedbackListResult> {
+    try {
+      const response = await apiClient.get<FeedbackListResult>('/api/app/feedback', {
+        params: { page, pageSize },
+      });
+      return response.data;
+    } catch (err) {
+      throw toFeedbackError(err, 'Feedback load failed');
+    }
+  },
+
+  /** 反馈详情：服务端会在有未读回复时顺便标记已读 */
+  async getFeedback(id: string): Promise<FeedbackDetail> {
+    try {
+      const response = await apiClient.get<FeedbackDetail>(
+        `/api/app/feedback/${encodeURIComponent(id)}`,
+      );
+      return response.data;
+    } catch (err) {
+      throw toFeedbackError(err, 'Feedback load failed');
+    }
+  },
+
+  /** 提交反馈：content 为富文本 HTML，服务端清洗并校验正文图片归属 */
+  async createFeedback(payload: {
+    content: string;
+    category: FeedbackCategory;
+    contact?: string;
+    pageContext?: string;
+    clientVersion?: string;
+  }): Promise<{ id: string; status: FeedbackStatus; createdAt: string }> {
+    try {
+      const response = await apiClient.post<{ id: string; status: FeedbackStatus; createdAt: string }>(
+        '/api/app/feedback',
+        payload,
+        // 服务端据此把 source 记为 app，不信任 body
+        { headers: { 'x-client-source': 'mobile' } },
+      );
+      return response.data;
+    } catch (err) {
+      throw toFeedbackError(err, 'Feedback submit failed');
+    }
+  },
+
+  /** 用户追问（纯文本，保留换行）；反馈已关闭时服务端返回 409 FEEDBACK_CLOSED */
+  async replyFeedback(id: string, content: string): Promise<FeedbackReplyItem> {
+    try {
+      const response = await apiClient.post<FeedbackReplyItem>(
+        `/api/app/feedback/${encodeURIComponent(id)}`,
+        { content },
+      );
+      return response.data;
+    } catch (err) {
+      throw toFeedbackError(err, 'Feedback reply failed');
+    }
+  },
+
+  /**
+   * 反馈正文图片上传：复用后端 /api/app/feedback/upload（multipart 字段 file），
+   * 与头像上传同一套原生 FormData 写法，不新增第二条上传通道。
+   */
+  async uploadFeedbackImage(file: {
+    uri: string;
+    name: string;
+    type: string;
+  }): Promise<{ url: string; path: string }> {
+    const form = new FormData();
+
+    if (Platform.OS === 'web') {
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
+      form.append('file', blob, file.name);
+    } else {
+      form.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
+    }
+
+    const token = await storage.getToken();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL.replace(/\/+$/, '')}/api/app/feedback/upload`,
+        {
+          method: 'POST',
+          // 不要手动设置 Content-Type：RN/浏览器会自动补 boundary
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            'x-client-source': 'mobile',
+          },
+          body: form,
+          signal: controller.signal,
+        },
+      );
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        let message = `HTTP ${response.status}`;
+        try {
+          const body = JSON.parse(text) as { error?: string };
+          if (body.error) message = body.error;
+        } catch {
+          // 非 JSON 响应保留状态码
+        }
+        throw new FeedbackApiError(response.status, message);
+      }
+
+      return (await response.json()) as { url: string; path: string };
+    } finally {
+      clearTimeout(timer);
+    }
   },
 };
 

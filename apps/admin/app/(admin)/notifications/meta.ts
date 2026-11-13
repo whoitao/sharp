@@ -85,6 +85,20 @@ export const AUTO_FILL_OPTIONS = [
   { value: "primaryPet.satiety", label: "primaryPet.satiety（饱食度）" },
 ];
 
+/** 不依赖用户上下文的取值源：全站广播发布时没有 userId，只能用这两种 */
+const CONTEXT_AUTO_FILL_VALUES = new Set(["today", "now"]);
+
+/**
+ * 按发送方式收敛 autoFill 可选项。
+ * 广播是在后台发布时显式填值，没有 userId，user.* / primaryPet.* 解析必然为空，
+ * 属于无效配置，因此只保留 today / now；事件模板才需要全部取值源。
+ */
+export function autoFillOptionsFor(deliveryMode: string) {
+  return deliveryMode === "event"
+    ? AUTO_FILL_OPTIONS
+    : AUTO_FILL_OPTIONS.filter((option) => CONTEXT_AUTO_FILL_VALUES.has(option.value));
+}
+
 export const STATUS_OPTIONS = [
   { value: "published", labelKey: "notifications.statusPublished" as MessageKey },
   { value: "draft", labelKey: "notifications.statusDraft" as MessageKey },

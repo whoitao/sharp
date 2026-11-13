@@ -47,6 +47,9 @@ import TextbookScreen from '../screens/textbook/TextbookScreen';
 import type { SettingKey } from '../constants/settings';
 import CrashLogScreen from '../screens/profile/CrashLogScreen';
 import FavoritesScreen from '../screens/profile/FavoritesScreen';
+import FeedbackComposeScreen from '../screens/profile/FeedbackComposeScreen';
+import FeedbackDetailScreen from '../screens/profile/FeedbackDetailScreen';
+import FeedbackListScreen from '../screens/profile/FeedbackListScreen';
 import NotificationDetailScreen from '../screens/profile/NotificationDetailScreen';
 import NotificationsScreen from '../screens/profile/NotificationsScreen';
 import ProfileInfoScreen from '../screens/profile/ProfileInfoScreen';
@@ -146,6 +149,10 @@ export type HomeStackParamList = {
   // 站内信：从首页铃铛进入，返回时回到首页（与错题本一样按入口所在栈记忆来源）
   Notifications: undefined;
   NotificationDetail: { id: string };
+  // 问题反馈：入口在「我的」，首页栈也注册一份，供站内信 /account/feedback/:id 跳转
+  Feedback: undefined;
+  FeedbackCompose: undefined;
+  FeedbackDetail: { id: string };
   // 消息详情可能跳转的目标：首页栈也注册一份，避免从首页进入时链路断裂
   Favorites: undefined;
   Settings: undefined;
@@ -181,6 +188,10 @@ export type ProfileStackParamList = {
   // 站内信：从「我的」标题栏铃铛进入，列表 → 详情
   Notifications: undefined;
   NotificationDetail: { id: string };
+  // 问题反馈：列表 → 提交 → 详情
+  Feedback: undefined;
+  FeedbackCompose: undefined;
+  FeedbackDetail: { id: string };
   // 消息跳转目标：站内文章（与首页同一套文章详情）
   ArticleDetail: { id: string; title?: string };
   CrashLog: undefined;
@@ -379,6 +390,22 @@ const HomeStackNavigator: React.FC = () => {
       component={withGradient(NotificationDetailScreen)}
       options={{ title: t.notificationsDetailTitle }}
     />
+    {/* 问题反馈：站内信 actionValue 为 /account/feedback/:id，首页栈也要能承接 */}
+    <HomeStack.Screen
+      name="Feedback"
+      component={withGradient(FeedbackListScreen)}
+      options={{ title: t.feedbackTitle, headerTitle: () => null }}
+    />
+    <HomeStack.Screen
+      name="FeedbackCompose"
+      component={withGradient(FeedbackComposeScreen)}
+      options={{ title: t.feedbackNew }}
+    />
+    <HomeStack.Screen
+      name="FeedbackDetail"
+      component={withGradient(FeedbackDetailScreen)}
+      options={{ title: t.feedbackDetailTitle }}
+    />
     {/* 消息详情可能跳转的目标：首页栈内也注册一份，保证逐级返回到来源页 */}
     <HomeStack.Screen
       name="Favorites"
@@ -554,6 +581,22 @@ const ProfileStackNavigator: React.FC = () => {
       name="NotificationDetail"
       component={withGradient(NotificationDetailScreen)}
       options={{ title: t.notificationsDetailTitle }}
+    />
+    {/* 问题反馈：入口在「我的」菜单 */}
+    <ProfileStack.Screen
+      name="Feedback"
+      component={withGradient(FeedbackListScreen)}
+      options={{ title: t.feedbackTitle, headerTitle: () => null }}
+    />
+    <ProfileStack.Screen
+      name="FeedbackCompose"
+      component={withGradient(FeedbackComposeScreen)}
+      options={{ title: t.feedbackNew }}
+    />
+    <ProfileStack.Screen
+      name="FeedbackDetail"
+      component={withGradient(FeedbackDetailScreen)}
+      options={{ title: t.feedbackDetailTitle }}
     />
     <ProfileStack.Screen
       name="ArticleDetail"

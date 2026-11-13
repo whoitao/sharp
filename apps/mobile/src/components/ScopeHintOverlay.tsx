@@ -67,8 +67,8 @@ const ScopeHintOverlay: React.FC<ScopeHintOverlayProps> = ({
   // 气泡优先放高亮框下方；横屏/小屏放不下时翻到上方，避免超出屏幕
   const showBelow = ringBottom + 200 <= height - insets.bottom;
   const bubbleSpace = showBelow
-    ? { top: ringBottom + 12 }
-    : { bottom: height - box.y + 12 };
+    ? { top: ringBottom + 28 }
+    : { bottom: height - box.y + 28 };
 
   if (!visible) return null;
 
@@ -243,13 +243,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButton: {
-    flex: 1,
-    height: 42,
+    height: 36,
+    paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
   skipButton: {
-    height: 42,
+    height: 36,
     paddingHorizontal: 10,
     alignItems: 'center',
     justifyContent: 'center',

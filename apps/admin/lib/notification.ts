@@ -396,12 +396,14 @@ export function validateTemplateDraft(input: TemplateDraft): {
         if (!declMap.has(key)) errors.push(`去重键使用了未声明的变量 {$${key}}`);
       }
     }
-    // 事件模板必须能自动取到用户维度变量，避免渲染时静默回落成静态 example
-    for (const key of used) {
-      const decl = declMap.get(key);
-      if (decl?.scope === "user" && decl.required && !decl.autoFill) {
-        errors.push(`事件模板的必填用户变量 {$${key}} 必须配置自动填充规则`);
-      }
+  }
+
+  // 必填变量若既不能自动取值、又没有示例值，后台预览必然误报「缺少必填变量」，
+  // 并由 exampleValues 传入空串；这里统一拦截（广播在发布时显式填值，同样需要示例）
+  for (const key of used) {
+    const decl = declMap.get(key);
+    if (decl?.required && !decl.autoFill && !decl.example) {
+      errors.push(`必填变量 {$${key}} 必须配置自动填充规则或示例值`);
     }
   }
 
@@ -505,15 +507,23 @@ export async function createEventNotification(input: {
   const declarations = parseVariableDeclarations(template.variables);
   const explicit = input.variables ?? {};
 
-  // 生成时兜底：必填用户变量既没有 autoFill、也没有显式传值，不允许回落 example/fallback
+  // 生成时兜底：必填变量既没有 autoFill、也没有显式传值，不允许回落 example/fallback。
+  // 这里不能只看 scope === "user"：global 作用域的必填变量同样由调用方传入，
+  // 漏传时若静默回落 example，线上用户会看到模板里的示例文案。
+  const used = new Set([
+    ...extractPlaceholders(template.titleTemplate),
+    ...extractPlaceholders(template.bodyTemplate),
+    ...extractPlaceholders(template.actionValueTemplate),
+    ...extractPlaceholders(template.dedupeKeyTemplate),
+  ]);
   const hasValue = (key: string) =>
     explicit[key] !== undefined && explicit[key] !== null && String(explicit[key]).trim() !== "";
   const notResolvable = declarations.filter(
-    (d) => d.required && d.scope === "user" && !d.autoFill && !hasValue(d.key),
+    (d) => d.required && used.has(d.key) && !d.autoFill && !hasValue(d.key),
   );
   if (notResolvable.length > 0) {
     const keys = notResolvable.map((d) => d.key);
-    throw new NotificationError(`事件模板的必填用户变量缺少自动填充规则：${keys.join("、")}`, keys);
+    throw new NotificationError(`事件模板的必填变量缺少取值：${keys.join("、")}`, keys);
   }
 
   const resolved = await resolveAutoFillValues(declarations, input.userId, explicit);

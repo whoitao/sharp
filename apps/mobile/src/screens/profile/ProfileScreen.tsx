@@ -117,6 +117,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       onPress: () => navigation.navigate('WrongQuestions'),
     },
     {
+      label: t.feedbackTitle,
+      icon: 'chatbubble-ellipses-outline',
+      onPress: () => navigation.navigate('Feedback'),
+    },
+    {
       label: t.settings,
       icon: 'settings-outline',
       onPress: () => navigation.navigate('Settings'),

@@ -110,6 +110,8 @@ const templates: Prisma.NotificationTemplateCreateInput[] = [
         type: "string",
         scope: "global",
         required: true,
+        // 生成时由调用方传入；示例值只用于后台预览与文档
+        example: "9f3c1a72-4d5e-4b8a-9c21-7e64b0f5d3a8",
       },
       {
         key: "feedbackTitle",
@@ -133,6 +135,8 @@ const templates: Prisma.NotificationTemplateCreateInput[] = [
         type: "string",
         scope: "global",
         required: true,
+        // 生成时由调用方传入；示例值只用于后台预览与文档
+        example: "5b2d8e41-6c7f-4a0d-8f93-1c2e7b9a4d56",
       },
     ],
     enabled: true,

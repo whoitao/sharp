@@ -35,12 +35,12 @@ import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo, useState } from "react";
 import {
   ACTION_OPTIONS,
-  AUTO_FILL_OPTIONS,
   DELIVERY_OPTIONS,
   LEVEL_COLORS,
   LEVEL_OPTIONS,
   TYPE_OPTIONS,
   actionLabelKey,
+  autoFillOptionsFor,
   deliveryLabelKey,
   exampleValues,
   levelLabelKey,
@@ -193,6 +193,8 @@ export default function TemplatesPanel() {
   };
 
   const watched = Form.useWatch([], form) as TemplateFormValues | undefined;
+  // 广播没有用户上下文，user.* / primaryPet.* 的 autoFill 是无效配置，这里按发送方式收敛选项
+  const autoFillOptions = autoFillOptionsFor(watched?.deliveryMode ?? "broadcast");
 
   useEffect(() => {
     if (!modalOpen || !watched?.titleTemplate || !watched?.bodyTemplate) {
@@ -616,7 +618,7 @@ export default function TemplatesPanel() {
                           showSearch
                           optionFilterProp="value"
                           placeholder={t("notifications.variableAutoFill")}
-                          options={AUTO_FILL_OPTIONS}
+                          options={autoFillOptions}
                         />
                       </Form.Item>
                       <Form.Item name={[field.name, "example"]} style={{ margin: 0, width: 130 }}>
