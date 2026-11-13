@@ -54,6 +54,9 @@ const updateSchema = z.object({
   gaMeasurementId: gaSchema,
   analyticsProductionOnly: z.boolean().optional(),
   icpNumber: nullableText(100),
+  maintenanceEnabled: z.boolean().optional(),
+  maintenanceMessageZh: nullableText(500),
+  maintenanceMessageEn: nullableText(500),
 });
 
 /** 读取站点设置，不存在时按默认值创建 */

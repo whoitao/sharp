@@ -927,7 +927,15 @@ export const en = {
   },
   siteSettings: {
     title: "Site Settings",
-    desc: "Brand, SEO and analytics settings shared by the Web site. Changes take effect within 5 minutes (or immediately after cache invalidation).",
+    desc: "Brand, SEO, analytics and maintenance settings shared by the Web site. Changes take effect within 5 minutes (or immediately after cache invalidation).",
+    groupMaintenance: "Site Maintenance",
+    maintenanceEnabled: "Enable site maintenance",
+    maintenanceEnabledHint:
+      "When enabled, every Web page shows the maintenance notice. The admin console and /api/app are not affected. Only applies in production; development/preview environments are unaffected.",
+    maintenanceMessageZh: "Maintenance Notice (Chinese)",
+    maintenanceMessageEn: "Maintenance Notice (English)",
+    maintenanceMessageHint:
+      "Line breaks supported, up to 500 characters. Leave empty to use the default copy. English falls back to Chinese when empty.",
     groupBasic: "Basic Information",
     siteNameZh: "Site Name (Chinese)",
     siteNameEn: "Site Name (English)",

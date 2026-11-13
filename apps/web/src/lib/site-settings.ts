@@ -18,6 +18,9 @@ export interface SiteSettings {
   gaMeasurementId: string | null;
   analyticsProductionOnly: boolean;
   icpNumber: string | null;
+  maintenanceEnabled: boolean;
+  maintenanceMessageZh: string | null;
+  maintenanceMessageEn: string | null;
 }
 
 export const SITE_SETTINGS_TAG = "site-settings";
@@ -43,6 +46,9 @@ export const DEFAULTS: SiteSettings = {
   gaMeasurementId: null,
   analyticsProductionOnly: true,
   icpNumber: null,
+  maintenanceEnabled: false,
+  maintenanceMessageZh: null,
+  maintenanceMessageEn: null,
 };
 
 const FAVICON_PATH = "/favicon.svg";
@@ -72,6 +78,12 @@ export function mergeSiteSettings(remote: Partial<SiteSettings> | null): SiteSet
         ? remote.analyticsProductionOnly
         : DEFAULTS.analyticsProductionOnly,
     icpNumber: nonEmpty(remote.icpNumber),
+    maintenanceEnabled:
+      typeof remote.maintenanceEnabled === "boolean"
+        ? remote.maintenanceEnabled
+        : DEFAULTS.maintenanceEnabled,
+    maintenanceMessageZh: nonEmpty(remote.maintenanceMessageZh),
+    maintenanceMessageEn: nonEmpty(remote.maintenanceMessageEn),
   };
 }
 
@@ -117,6 +129,39 @@ export function seoKeywordsFor(settings: SiteSettings, locale: Locale): string[]
     .split(/[,，]/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+/** 维护页默认文案：后台通知内容留空时使用 */
+export const MAINTENANCE_DEFAULT_MESSAGE: Record<Locale, string> = {
+  zh: "站点正在进行维护，请稍后访问。",
+  en: "The site is under maintenance. Please check back later.",
+};
+
+/** 维护页顶部状态文案 */
+export const MAINTENANCE_LABEL: Record<Locale, string> = {
+  zh: "站点维护中",
+  en: "Under maintenance",
+};
+
+/**
+ * 维护通知内容：优先当前语言，缺失时回退中文；两者都为空时用内置默认文案。
+ */
+export function maintenanceMessageFor(settings: SiteSettings, locale: Locale): string {
+  const zh = settings.maintenanceMessageZh?.trim() || null;
+  const en = settings.maintenanceMessageEn?.trim() || null;
+  return (locale === "zh" ? zh || en : en || zh) ?? MAINTENANCE_DEFAULT_MESSAGE[locale];
+}
+
+/**
+ * 维护开关在当前环境是否生效。
+ * - 仅生产构建生效：本地 `next dev`（NODE_ENV=development）与 Vercel Preview 不受线上开关影响
+ * - 本地用 `next build && next start`（production 且无 VERCEL_ENV）可完整验证
+ */
+export function isMaintenanceActive(settings: SiteSettings): boolean {
+  if (!settings.maintenanceEnabled) return false;
+  if (process.env.NODE_ENV !== "production") return false;
+  const vercelEnv = process.env.VERCEL_ENV;
+  return vercelEnv !== "preview" && vercelEnv !== "development";
 }
 
 function safeBaseUrl(siteUrl: string): URL {

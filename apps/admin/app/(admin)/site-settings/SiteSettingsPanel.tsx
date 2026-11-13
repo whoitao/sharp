@@ -39,6 +39,9 @@ interface SiteSettingsForm {
   gaMeasurementId?: string;
   analyticsProductionOnly: boolean;
   icpNumber?: string;
+  maintenanceEnabled: boolean;
+  maintenanceMessageZh?: string;
+  maintenanceMessageEn?: string;
 }
 
 interface RevisionItem {
@@ -93,6 +96,9 @@ export default function SiteSettingsPanel() {
       gaMeasurementId: (data.gaMeasurementId as string | null) ?? undefined,
       analyticsProductionOnly: data.analyticsProductionOnly !== false,
       icpNumber: (data.icpNumber as string | null) ?? undefined,
+      maintenanceEnabled: data.maintenanceEnabled === true,
+      maintenanceMessageZh: (data.maintenanceMessageZh as string | null) ?? undefined,
+      maintenanceMessageEn: (data.maintenanceMessageEn as string | null) ?? undefined,
     });
     setUpdatedBy((data.updatedBy as string | null) ?? null);
     setUpdatedAt((data.updatedAt as string | null) ?? null);
@@ -225,6 +231,40 @@ export default function SiteSettingsPanel() {
         </Text>
 
         <Form form={form} layout="vertical" onFinish={handleSave} disabled={!canWrite}>
+          <Card title={t("siteSettings.groupMaintenance")} style={{ marginBottom: 16 }}>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label={t("siteSettings.maintenanceEnabled")}
+                  name="maintenanceEnabled"
+                  valuePropName="checked"
+                  extra={t("siteSettings.maintenanceEnabledHint")}
+                >
+                  <Switch />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label={t("siteSettings.maintenanceMessageZh")}
+                  name="maintenanceMessageZh"
+                  extra={t("siteSettings.maintenanceMessageHint")}
+                >
+                  <Input.TextArea rows={4} maxLength={500} showCount />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label={t("siteSettings.maintenanceMessageEn")}
+                  name="maintenanceMessageEn"
+                >
+                  <Input.TextArea rows={4} maxLength={500} showCount />
+                </Form.Item>
+              </Col>
+            </Row>
+          </Card>
+
           <Card title={t("siteSettings.groupBasic")} style={{ marginBottom: 16 }}>
             <Row gutter={16}>
               <Col xs={24} md={12}>

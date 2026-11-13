@@ -1,9 +1,15 @@
 import { ClientStoreProvider } from "@/components/client-store-provider";
 import { Footer } from "@/components/footer";
+import { MaintenanceNotice } from "@/components/maintenance-notice";
 import { Navbar } from "@/components/navbar";
 import { LocaleProvider } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n/get-request-locale";
-import { buildSiteMetadata, getSiteSettings, siteNameFor } from "@/lib/site-settings";
+import {
+  buildSiteMetadata,
+  getSiteSettings,
+  isMaintenanceActive,
+  siteNameFor,
+} from "@/lib/site-settings";
 import { StudyScopeProvider } from "@/lib/study-scope";
 import { ThemeProvider } from "@/lib/theme";
 import { themeInitScript } from "@/lib/theme-init";
@@ -15,7 +21,12 @@ import "./globals.css";
 /** metadata 依赖站点设置与请求语言，按请求生成（项目已关闭 static shell） */
 export async function generateMetadata(): Promise<Metadata> {
   const [settings, locale] = await Promise.all([getSiteSettings(), getRequestLocale()]);
-  return buildSiteMetadata({ settings, locale });
+  const metadata = buildSiteMetadata({ settings, locale });
+  // 维护期间所有 Web 页面都不允许被搜索引擎收录
+  if (isMaintenanceActive(settings)) {
+    return { ...metadata, robots: { index: false, follow: false } };
+  }
+  return metadata;
 }
 
 /**
@@ -39,6 +50,8 @@ export default async function RootLayout({
     !!settings.gaMeasurementId &&
     (!settings.analyticsProductionOnly || process.env.NODE_ENV === "production");
   const gaId = JSON.stringify(settings.gaMeasurementId ?? "");
+  // 维护开关生效时，整站页面内容替换为维护通知；/api/** 与 robots/sitemap 不走布局，不受影响
+  const maintenance = isMaintenanceActive(settings);
 
   return (
     <html lang={htmlLang} suppressHydrationWarning>
@@ -61,25 +74,29 @@ export default async function RootLayout({
             />
           </>
         )}
-        <ClientStoreProvider>
-          <ThemeProvider>
-            <LocaleProvider initialLocale={locale}>
-              <StudyScopeProvider>
-                <div className="flex min-h-screen flex-col">
-                  <Navbar siteName={siteName} />
-                  <main className="container mx-auto w-full max-w-[1200px] flex-1 px-4">
-                    {children}
-                  </main>
-                  <Footer
-                    siteName={siteName}
-                    siteUrl={settings.siteUrl}
-                    icpNumber={settings.icpNumber}
-                  />
-                </div>
-              </StudyScopeProvider>
-            </LocaleProvider>
-          </ThemeProvider>
-        </ClientStoreProvider>
+        {maintenance ? (
+          <MaintenanceNotice settings={settings} locale={locale} />
+        ) : (
+          <ClientStoreProvider>
+            <ThemeProvider>
+              <LocaleProvider initialLocale={locale}>
+                <StudyScopeProvider>
+                  <div className="flex min-h-screen flex-col">
+                    <Navbar siteName={siteName} />
+                    <main className="container mx-auto w-full max-w-[1200px] flex-1 px-4">
+                      {children}
+                    </main>
+                    <Footer
+                      siteName={siteName}
+                      siteUrl={settings.siteUrl}
+                      icpNumber={settings.icpNumber}
+                    />
+                  </div>
+                </StudyScopeProvider>
+              </LocaleProvider>
+            </ThemeProvider>
+          </ClientStoreProvider>
+        )}
         {/* Vercel Web Analytics：仅生产环境上报，与站点「仅生产环境生效」开关语义一致 */}
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>

@@ -34,6 +34,9 @@ export function toSnapshot(row: SiteSetting) {
     gaMeasurementId: row.gaMeasurementId,
     analyticsProductionOnly: row.analyticsProductionOnly,
     icpNumber: row.icpNumber,
+    maintenanceEnabled: row.maintenanceEnabled,
+    maintenanceMessageZh: row.maintenanceMessageZh,
+    maintenanceMessageEn: row.maintenanceMessageEn,
     updatedAt: row.updatedAt.toISOString(),
     updatedBy: row.updatedBy,
   };
@@ -56,6 +59,10 @@ export interface SiteSettingSnapshot {
   gaMeasurementId: string | null;
   analyticsProductionOnly: boolean;
   icpNumber: string | null;
+  /** 旧快照没有这三个字段；恢复时 undefined 会被 Prisma 忽略，保留当前值 */
+  maintenanceEnabled?: boolean;
+  maintenanceMessageZh?: string | null;
+  maintenanceMessageEn?: string | null;
   updatedAt: string;
   updatedBy: string | null;
 }
@@ -77,6 +84,9 @@ export function snapshotToUpdateData(snapshot: SiteSettingSnapshot) {
     gaMeasurementId: snapshot.gaMeasurementId,
     analyticsProductionOnly: snapshot.analyticsProductionOnly,
     icpNumber: snapshot.icpNumber,
+    maintenanceEnabled: snapshot.maintenanceEnabled,
+    maintenanceMessageZh: snapshot.maintenanceMessageZh,
+    maintenanceMessageEn: snapshot.maintenanceMessageEn,
   };
 }
 

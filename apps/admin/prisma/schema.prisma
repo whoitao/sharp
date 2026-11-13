@@ -729,6 +729,10 @@ model SiteSetting {
   gaMeasurementId         String?
   analyticsProductionOnly Boolean               @default(true)
   icpNumber               String?
+  // 站点维护（仅 Web 页面生效，后台与 /api/app 不受影响）
+  maintenanceEnabled      Boolean               @default(false)
+  maintenanceMessageZh    String?
+  maintenanceMessageEn    String?
   updatedAt               DateTime              @updatedAt
   updatedBy               String?
   revisions               SiteSettingRevision[]

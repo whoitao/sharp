@@ -7,6 +7,7 @@
     "android": "expo run:android --device Pixel_API_34_x64",
     "android:x64": "expo run:android --device Pixel_API_34_x64",
     "buildAndroidLocal": "eas build --platform android --local --profile preview",
+    "buildAndroidLocalProduction": "eas build --platform android --local --profile production",
     "ios": "expo run:ios",
     "ioss": "expo start --ios --go",
     "web": "expo start --web"

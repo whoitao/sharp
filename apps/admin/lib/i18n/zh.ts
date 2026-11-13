@@ -923,7 +923,14 @@ export const zh: Messages = {
   },
   siteSettings: {
     title: "站点设置",
-    desc: "站点品牌、SEO 与统计配置，Web 端共用。保存后 5 分钟内生效（缓存失效成功时立即生效）。",
+    desc: "站点品牌、SEO、统计与维护配置，Web 端共用。保存后 5 分钟内生效（缓存失效成功时立即生效）。",
+    groupMaintenance: "站点维护",
+    maintenanceEnabled: "启用站点维护",
+    maintenanceEnabledHint:
+      "开启后 Web 站点所有页面展示维护通知；admin 后台与 /api/app 接口不受影响。仅正式环境生效，开发/预览环境不受影响。",
+    maintenanceMessageZh: "维护通知（中文）",
+    maintenanceMessageEn: "维护通知（英文）",
+    maintenanceMessageHint: "支持换行，最多 500 字；留空时使用默认文案。英文留空时回退中文。",
     groupBasic: "基本信息",
     siteNameZh: "站点名（中文）",
     siteNameEn: "站点名（英文）",

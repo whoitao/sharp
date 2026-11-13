@@ -25,6 +25,9 @@ export async function GET() {
         gaMeasurementId: row.gaMeasurementId,
         analyticsProductionOnly: row.analyticsProductionOnly,
         icpNumber: row.icpNumber,
+        maintenanceEnabled: row.maintenanceEnabled,
+        maintenanceMessageZh: row.maintenanceMessageZh,
+        maintenanceMessageEn: row.maintenanceMessageEn,
       },
       {
         headers: {
