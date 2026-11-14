@@ -1,11 +1,11 @@
 "use client";
 
-import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
+import { TABLE_SCROLL_X } from "@/components/table-actions";
 
 import { usePermissions } from "@/components/permissions";
 import { useLocale, type MessageKey } from "@/lib/i18n";
 import { PERMISSION_GROUPS, WILDCARD, type PermissionResource } from "@/lib/permissions";
-import { DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
+import { PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import {
   App,
   Button,
@@ -58,7 +58,7 @@ const PERMISSION_LABEL_KEYS: Record<PermissionResource, MessageKey> = {
 };
 
 export default function RolesPanel() {
-  const { message, modal } = App.useApp();
+  const { message } = App.useApp();
   const { t } = useLocale();
   const { can } = usePermissions();
   const canWrite = can("roles:write");
@@ -167,28 +167,6 @@ export default function RolesPanel() {
     }
   };
 
-  const handleDelete = (role: RoleItem) => {
-    modal.confirm({
-      title: t("roles.deleteTitle", { name: roleName(role) }),
-      content: t("roles.deleteConfirm"),
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        const res = await fetch(`/api/admin/roles/${role.id}`, {
-          method: "DELETE",
-          headers: authHeaders(),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          message.success(t("common.deleted"));
-          if (selectedId === role.id) setSelectedId(null);
-          await load();
-        } else {
-          message.error(data.error ?? t("common.deleteFailed"));
-        }
-      },
-    });
-  };
-
   const handleCreate = async () => {
     const values = await createForm.validateFields();
     const res = await fetch("/api/admin/roles", {
@@ -227,24 +205,6 @@ export default function RolesPanel() {
       key: "adminCount",
       width: 90,
       render: (n: number) => n,
-    },
-    {
-      title: t("common.actions"),
-      key: "actions",
-      width: 80,
-      ...FIXED_ACTIONS_COLUMN,
-      render: (_: unknown, row) =>
-        canWrite && !row.isSystem ? (
-          <Button
-            size="small"
-            variant="text"
-            color="danger"
-            icon={<DeleteOutlined />}
-            title={t("common.delete")}
-            aria-label={t("common.delete")}
-            onClick={() => handleDelete(row)}
-          />
-        ) : null,
     },
   ];
 
