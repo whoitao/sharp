@@ -185,6 +185,7 @@ export const en: TranslationKeys = {
   wrongEmpty: 'No wrong questions',
   wrongEmptySub: 'Keep it up, mistakes will show here',
   analysis: 'Analysis',
+  noAnalysis: 'No analysis available',
   difficultyLabel: 'Difficulty: ',
   singleChoice: 'Single choice',
   multipleChoice: 'Multiple choice',

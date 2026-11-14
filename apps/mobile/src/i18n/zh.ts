@@ -185,6 +185,7 @@ export const zh = {
   wrongEmpty: '暂无错题',
   wrongEmptySub: '继续保持，错题会显示在这里',
   analysis: '解析',
+  noAnalysis: '暂无解析',
   difficultyLabel: '难度：',
   singleChoice: '单选题',
   multipleChoice: '多选题',

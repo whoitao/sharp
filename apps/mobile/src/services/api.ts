@@ -815,6 +815,16 @@ export const api = {
     return response.data;
   },
 
+  /** 学习记录详情：该次练习的错题回顾（含完整题目/选项/解析；历史记录未存所选选项，故无 selectedKeys） */
+  async getStudyRecordWrongAnswers(
+    recordId: string,
+  ): Promise<{ question: Question; correctKeys: string[] }[]> {
+    const response = await apiClient.get<{
+      wrongAnswers: { question: Question; correctKeys: string[] }[];
+    }>(`/api/app/study/records/${recordId}`);
+    return response.data.wrongAnswers;
+  },
+
   // Stats
   async getStats(range: StudyStatsRangeKey = 'all'): Promise<StudyStatsOverview> {
     const response = await apiClient.get<StudyStatsOverview>('/api/app/study/stats', {

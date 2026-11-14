@@ -2,7 +2,7 @@ import { StackActions } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { StudyRecordSummary } from '@sharp/shared';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     ScrollView,
     StyleSheet,
@@ -12,13 +12,14 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import RichTextView from '../../components/RichTextView';
+import QuizOption from '../../components/QuizOption';
 import { useDensity } from '../../hooks/useDensity';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../i18n/useTranslation';
 import type { QuizParams, QuizResultParams } from '../../navigation/AppNavigator';
 import { api } from '../../services/api';
 import type { AppDispatch, RootState } from '../../stores';
-import { fetchQuestions, resetStudy } from '../../stores/studySlice';
+import { fetchQuestions, resetStudy, type WrongAnswer } from '../../stores/studySlice';
 import { htmlToText } from '../../utils/richText';
 
 type QuizResultParamList = { Quiz: QuizParams; QuizResult: QuizResultParams };
@@ -51,15 +52,35 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
   const { result: liveResult } = useSelector((state: RootState) => state.study);
 
   const [expandedWrong, setExpandedWrong] = useState<Record<string, boolean>>({});
+  // 历史学习记录的错题回顾：进入页面后按记录 id 拉取（列表接口不含答题明细）
+  const [recordWrongAnswers, setRecordWrongAnswers] = useState<WrongAnswer[]>([]);
 
-  // 查看历史学习记录时，使用记录中的汇总数据（不含错题详情）
+  useEffect(() => {
+    if (!record?.id) return;
+    let cancelled = false;
+    api
+      .getStudyRecordWrongAnswers(record.id)
+      .then((items) => {
+        if (cancelled) return;
+        // 历史记录未落库用户所选选项，selectedKeys 置空，UI 隐藏「你的答案」行
+        setRecordWrongAnswers(items.map((item) => ({ ...item, selectedKeys: [] })));
+      })
+      .catch(() => {
+        // 拉取失败时保持空列表，仅展示汇总
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [record?.id]);
+
+  // 查看历史学习记录时，汇总来自记录本身，错题明细来自记录详情接口
   const recordResult = record
     ? {
         totalQuestions: record.totalQuestions,
         correctCount: record.correctCount,
         wrongCount: record.wrongCount,
         durationSeconds: record.durationSeconds,
-        wrongAnswers: [] as { question: any; selectedKeys: string[]; correctKeys: string[] }[],
+        wrongAnswers: recordWrongAnswers,
       }
     : null;
 
@@ -241,16 +262,49 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
                 </View>
                 {isExpanded && (
                   <View style={[styles.wrongDetail, { borderTopColor: colors.borderLight, paddingHorizontal: 14 * spacing, paddingBottom: 14 * spacing, paddingTop: 12 * spacing }]}>
-                    <View style={[styles.wrongRow, { marginBottom: 6 * spacing }]}>
-                      <Text style={[styles.wrongLabel, { color: colors.textSecondary, fontSize: 13 * font, width: 75 * font }]}>{t.yourAnswer}</Text>
-                      <Text style={[styles.wrongAnswer, { color: colors.error, fontSize: 13 * font }]}>{wa.selectedKeys.join(', ')}</Text>
-                    </View>
+                    {/* 完整题干 */}
+                    <RichTextView
+                      html={wa.question.content}
+                      fontSize={14 * font}
+                      lineHeight={22 * font}
+                      color={colors.text}
+                      style={{ marginBottom: 12 * spacing }}
+                    />
+                    {/* 完整选项：正确绿色、错选红色 */}
+                    {[...wa.question.options]
+                      .sort((a, b) => a.sortNo - b.sortNo)
+                      .map((option) => {
+                        const status = option.isCorrect
+                          ? 'correct'
+                          : wa.selectedKeys.includes(option.optionKey)
+                            ? 'wrong'
+                            : 'default';
+                        return (
+                          <QuizOption
+                            key={option.id}
+                            optionKey={option.optionKey}
+                            content={option.content}
+                            status={status}
+                            disabled
+                            onPress={() => {}}
+                          />
+                        );
+                      })}
+                    {wa.selectedKeys.length > 0 && (
+                      <View style={[styles.wrongRow, { marginTop: 4 * spacing, marginBottom: 6 * spacing }]}>
+                        <Text style={[styles.wrongLabel, { color: colors.textSecondary, fontSize: 13 * font, width: 75 * font }]}>{t.yourAnswer}</Text>
+                        <Text style={[styles.wrongAnswer, { color: colors.error, fontSize: 13 * font }]}>{wa.selectedKeys.join(', ')}</Text>
+                      </View>
+                    )}
                     <View style={[styles.wrongRow, { marginBottom: 6 * spacing }]}>
                       <Text style={[styles.wrongLabel, { color: colors.textSecondary, fontSize: 13 * font, width: 75 * font }]}>{t.correctAnswerLabel}</Text>
                       <Text style={[styles.correctAnswer, { color: colors.success, fontSize: 13 * font }]}>{wa.correctKeys.join(', ')}</Text>
                     </View>
-                    {!!wa.question.analysis && (
-                      <View style={[styles.analysisBox, { backgroundColor: colors.background, marginTop: 8 * spacing, padding: 10 * spacing, borderRadius: 8 * radius }]}>
+                    <View style={[styles.analysisBox, { backgroundColor: colors.background, marginTop: 8 * spacing, padding: 10 * spacing, borderRadius: 8 * radius }]}>
+                      <Text style={{ color: colors.textSecondary, fontSize: 13 * font, fontWeight: '600', marginBottom: 4 * spacing }}>
+                        {t.analysis}
+                      </Text>
+                      {wa.question.analysis ? (
                         <RichTextView
                           html={wa.question.analysis}
                           fontSize={13 * font}
@@ -258,8 +312,10 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({ navigation, route }
                           color={colors.text}
                           style={styles.analysisText}
                         />
-                      </View>
-                    )}
+                      ) : (
+                        <Text style={{ color: colors.textTertiary, fontSize: 13 * font }}>{t.noAnalysis}</Text>
+                      )}
+                    </View>
                   </View>
                 )}
               </TouchableOpacity>
