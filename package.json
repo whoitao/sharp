@@ -9,19 +9,6 @@
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
-  "pnpm": {
-    "overrides": {
-      "react": "19.3.0",
-      "react-dom": "19.3.0",
-      "electron-to-chromium": "1.5.458"
-    },
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "esbuild",
-      "prisma"
-    ]
-  },
   "scripts": {
     "admin:dev": "npm run dev --workspace=apps/admin",
     "admin:build": "npm run build --workspace=apps/admin",
