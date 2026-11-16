@@ -8,7 +8,8 @@ import Link from "next/link";
 
 const GITHUB_URL = "https://github.com/whoitao/sharp";
 
-const linkClass = "text-xs text-foreground-secondary transition-colors hover:text-foreground";
+const linkClass =
+  "inline-flex min-h-5 items-center text-xs leading-4 text-foreground-secondary transition-colors hover:text-foreground";
 const pillClass =
   "inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-foreground-secondary transition-colors hover:text-foreground";
 const iconButtonClass =
@@ -73,7 +74,7 @@ export function Footer({
   return (
     <footer className="border-t border-border bg-background">
       <div className="container mx-auto max-w-[1200px] px-4 pb-6 pt-10">
-        <div className="grid grid-cols-2 gap-8 md:gap-6 lg:grid-cols-[2.2fr_1fr_1fr_1fr]">
+        <div className="grid grid-cols-2 gap-6 md:gap-5 lg:grid-cols-[2.2fr_1fr_1fr_1fr]">
           <div className="col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-2.5">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
@@ -99,10 +100,10 @@ export function Footer({
 
           {columns.map((column) => (
             <div key={column.titleKey}>
-              <h4 className="mb-3.5 text-xs font-semibold uppercase tracking-wider text-foreground-tertiary">
+              <h4 className="mb-2 flex h-5 items-center text-xs font-semibold uppercase leading-4 tracking-wider text-foreground-tertiary">
                 {t(column.titleKey)}
               </h4>
-              <ul className="flex flex-col gap-2.5">
+              <ul className="flex flex-col gap-1">
                 {column.links.map((link) => (
                   <li key={link.href}>
                     {link.external ? (
@@ -110,7 +111,7 @@ export function Footer({
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={cn(linkClass, "inline-flex items-center gap-1.5")}
+                        className={cn(linkClass, "gap-1.5")}
                       >
                         {t(link.labelKey)}
                         {link.badgeKey ? (
