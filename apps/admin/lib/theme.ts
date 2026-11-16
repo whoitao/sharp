@@ -104,7 +104,7 @@ export const buildAdminTheme = (isDark: boolean) => {
         headerBg: palette.surfaceSecondary,
         headerColor: palette.textSecondary,
         headerSplitColor: "transparent",
-        rowHoverBg: palette.accentLight,
+        rowHoverBg: isDark ? "#1B4D3A" : "#B7E4D0",
         borderColor: palette.borderLight,
         cellPaddingBlock: 8,
         cellPaddingInline: 12,
