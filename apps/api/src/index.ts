@@ -1,6 +1,6 @@
 // Koa + Prisma 最小验证服务
 // 启动：npm run dev（先 prisma generate 再 tsx watch）
-// 端口：3002（避开 admin:3001）
+// 端口：PORT_API（未配置时回退 PORT 或 3002）
 // 路由：GET /         → 健康检查
 //       GET /questions → 取 question 列表（含 options）
 
@@ -10,7 +10,7 @@ import Koa from "koa";
 
 const app = new Koa();
 const prisma = new PrismaClient();
-const PORT = Number(process.env.PORT ?? 3002);
+const PORT = Number(process.env.PORT_API ?? process.env.PORT ?? 3002);
 
 // 显式错误兜底，防止 Prisma 异常直接崩掉进程
 app.on("error", (err) => {

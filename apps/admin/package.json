@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate && next dev -p 3001",
+    "dev": "sh -c 'set -a; [ ! -f ../../.env ] || . ../../.env; set +a; prisma generate && next dev -p \"${PORT_ADMIN:-3001}\"'",
     "build": "prisma generate && next build",
-    "start": "next start -p 3001",
+    "start": "sh -c 'set -a; [ ! -f ../../.env ] || . ../../.env; set +a; next start -p \"${PORT_ADMIN:-3001}\"'",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",

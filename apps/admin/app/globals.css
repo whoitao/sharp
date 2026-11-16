@@ -385,3 +385,8 @@ html[data-theme='dark'] .sharp-rich-text blockquote {
 .ant-table-wrapper .ant-table {
   min-width: 100%;
 }
+
+/* 表格正文与标签共用主题字号，避免同一行出现多套文字规格。 */
+.ant-table-wrapper .ant-table-tbody > tr > td .ant-tag {
+  font-size: inherit;
+}

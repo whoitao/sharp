@@ -694,9 +694,6 @@ export default function QuestionsPanel() {
       dataIndex: "id",
       key: "id",
       width: 80,
-      render: (value: string) => (
-        <span style={{ fontFamily: "monospace", fontSize: 12 }}>{value}</span>
-      ),
     },
     {
       title: t("questions.subject"),
@@ -731,7 +728,6 @@ export default function QuestionsPanel() {
               <Tag
                 key={tag.id}
                 color={tag.type === "exam" ? "red" : tag.type === "difficulty" ? "orange" : "blue"}
-                style={{ fontSize: 11 }}
               >
                 {tag.name}
               </Tag>
@@ -749,7 +745,7 @@ export default function QuestionsPanel() {
         record.knowledgePoints?.length ? (
           <Space size={2} wrap>
             {record.knowledgePoints.map((kp) => (
-              <Tag key={kp.id} color="green" style={{ fontSize: 11 }}>
+              <Tag key={kp.id} color="green">
                 {kp.name}
               </Tag>
             ))}
@@ -1359,7 +1355,7 @@ export default function QuestionsPanel() {
         open={importProgress !== null}
         footer={null}
         closable={false}
-        maskClosable={false}
+        mask={{ closable: false }}
         keyboard={false}
         centered
         width={420}

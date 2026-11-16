@@ -1,11 +1,12 @@
 "use client";
 
+import { FIXED_ACTIONS_COLUMN, TABLE_SCROLL_X } from "@/components/table-actions";
 import { usePageSize } from "@/components/antd-providers";
 import { usePageActions } from "@/components/page-actions";
 import { usePermissions } from "@/components/permissions";
 import { formatDateTime } from "@/lib/datetime";
 import { useLocale, type MessageKey } from "@/lib/i18n";
-import { PlusOutlined } from "@ant-design/icons";
+import { KeyOutlined, PlusOutlined } from "@ant-design/icons";
 import { App, Button, Form, Input, Modal, Select, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
@@ -48,6 +49,9 @@ export default function AdminsPanel() {
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createForm] = Form.useForm();
+  const [resetTarget, setResetTarget] = useState<AdminItem | null>(null);
+  const [resetForm] = Form.useForm();
+  const [resetting, setResetting] = useState(false);
 
   const handleCreate = async () => {
     const values = await createForm.validateFields();
@@ -74,6 +78,34 @@ export default function AdminsPanel() {
       message.error(t("admins.createFailed"));
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetTarget) return;
+    const values = await resetForm.validateFields();
+    setResetting(true);
+    try {
+      const res = await fetch(`/api/admin/admins/${resetTarget.id}/password`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password: values.password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        message.success(t("admins.passwordReset"));
+        setResetTarget(null);
+        resetForm.resetFields();
+      } else {
+        message.error(data.error ?? t("admins.resetFailed"));
+      }
+    } catch {
+      message.error(t("admins.resetFailed"));
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -204,6 +236,25 @@ export default function AdminsPanel() {
       key: "createdAt",
       render: (value: string) => formatDateTime(value),
     },
+    {
+      title: t("admins.colActions"),
+      key: "actions",
+      width: 100,
+      align: "right",
+      ...FIXED_ACTIONS_COLUMN,
+      render: (_, record) =>
+        canWrite ? (
+          <Button
+            variant="text"
+            color="primary"
+            size="small"
+            icon={<KeyOutlined />}
+            title={t("admins.resetPassword")}
+            aria-label={t("admins.resetPassword")}
+            onClick={() => setResetTarget(record)}
+          />
+        ) : null,
+    },
   ];
 
   usePageActions(
@@ -227,6 +278,7 @@ export default function AdminsPanel() {
         rowKey="id"
         loading={loading}
         columns={columns}
+        scroll={{ x: TABLE_SCROLL_X }}
         dataSource={admins}
         pagination={{
           current: page,
@@ -237,6 +289,33 @@ export default function AdminsPanel() {
           onChange: (p) => fetchAdmins(p, search, pageSize),
         }}
       />
+
+      <Modal
+        title={`${t("admins.resetTitle")}${resetTarget ? ` · ${resetTarget.username}` : ""}`}
+        open={!!resetTarget}
+        onCancel={() => setResetTarget(null)}
+        onOk={handleResetPassword}
+        confirmLoading={resetting}
+        okText={t("common.reset")}
+        cancelText={t("common.cancel")}
+        destroyOnHidden
+        afterOpenChange={(open) => {
+          if (open) resetForm.resetFields();
+        }}
+      >
+        <Form form={resetForm} layout="vertical" style={{ marginTop: 12 }}>
+          <Form.Item
+            label={t("admins.newPassword")}
+            name="password"
+            rules={[
+              { required: true, message: t("admins.newPasswordRequired") },
+              { min: 6, message: t("admins.passwordMin") },
+            ]}
+          >
+            <Input.Password placeholder={t("admins.passwordPlaceholder")} autoComplete="new-password" />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         title={t("admins.createTitle")}

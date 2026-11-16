@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "expo start --go",
-    "android": "expo run:android",
-    "android:x64": "expo run:android --device Pixel_API_34_x64",
+    "dev": "sh -c 'set -a; [ ! -f ../../.env ] || . ../../.env; set +a; expo start --go --port \"${PORT_MOBILE:-8081}\"'",
+    "android": "sh -c 'set -a; [ ! -f ../../.env ] || . ../../.env; set +a; expo run:android --port \"${PORT_MOBILE:-8081}\"'",
+    "android:x64": "sh -c 'set -a; [ ! -f ../../.env ] || . ../../.env; set +a; expo run:android --device Pixel_API_34_x64 --port \"${PORT_MOBILE:-8081}\"'",
     "buildAndroidLocal": "eas build --platform android --local --profile preview",
     "buildAndroidLocalProduction": "eas build --platform android --local --profile production",
-    "ios": "expo run:ios --device \"iPhone 17\"",
-    "ioss": "expo start --ios --go",
-    "web": "expo start --web"
+    "ios": "sh -c 'set -a; [ ! -f ../../.env ] || . ../../.env; set +a; expo run:ios --device \"iPhone 17\" --port \"${PORT_MOBILE:-8081}\"'",
+    "ioss": "sh -c 'set -a; [ ! -f ../../.env ] || . ../../.env; set +a; expo start --ios --go --port \"${PORT_MOBILE:-8081}\"'",
+    "web": "sh -c 'set -a; [ ! -f ../../.env ] || . ../../.env; set +a; expo start --web --port \"${PORT_MOBILE:-8081}\"'"
   },
   "dependencies": {
     "@expo/metro-runtime": "~58.0.17",
