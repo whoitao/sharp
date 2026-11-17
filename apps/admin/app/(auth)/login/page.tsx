@@ -138,7 +138,7 @@ export default function LoginPage() {
               colorPrimary: "#34D399",
               colorPrimaryHover: "#6EE7B7",
               colorPrimaryActive: "#10B981",
-              colorTextLightSolid: "#06261B",
+              colorTextLightSolid: "#FFFFFF",
               colorText: "#F8FAFC",
               colorTextPlaceholder: "rgba(248, 250, 252, 0.58)",
               colorIcon: "rgba(248, 250, 252, 0.62)",
