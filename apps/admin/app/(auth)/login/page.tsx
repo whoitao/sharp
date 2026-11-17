@@ -3,7 +3,7 @@
 import { useLocale } from "@/lib/i18n";
 import { primeIdentity } from "@/components/permissions";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Alert, Button, ConfigProvider, Form, Input } from "antd";
+import { Alert, Button, ConfigProvider, Form, Input, theme as antdTheme } from "antd";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -62,7 +62,9 @@ export default function LoginPage() {
 
   return (
     <div
+      className="admin-login-page"
       style={{
+        colorScheme: "dark",
         minHeight: "100svh",
         display: "flex",
         alignItems: "center",
@@ -134,6 +136,7 @@ export default function LoginPage() {
 
         <ConfigProvider
           theme={{
+            algorithm: antdTheme.darkAlgorithm,
             token: {
               colorPrimary: "#34D399",
               colorPrimaryHover: "#6EE7B7",

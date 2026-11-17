@@ -14,6 +14,29 @@ html[data-theme='dark'] {
   background-color: #0B1512;
 }
 
+/* 登录页始终使用暗色原生控件，且不受后台主题偏好影响 */
+html:has(.admin-login-page),
+body:has(.admin-login-page) {
+  background-color: #0B1724;
+}
+
+.admin-login-page {
+  color-scheme: dark;
+}
+
+/* Chrome/Safari 自动填充会绕过 antd token，强制保持与登录页一致的暗色 */
+.admin-login-page .ant-input-affix-wrapper:has(input:-webkit-autofill) {
+  background-color: #1B2834;
+}
+
+.admin-login-page input:-webkit-autofill,
+.admin-login-page input:-webkit-autofill:hover,
+.admin-login-page input:-webkit-autofill:focus {
+  caret-color: #F8FAFC;
+  -webkit-text-fill-color: #F8FAFC;
+  -webkit-box-shadow: 0 0 0 1000px #1B2834 inset;
+}
+
 * {
   box-sizing: border-box;
 }
