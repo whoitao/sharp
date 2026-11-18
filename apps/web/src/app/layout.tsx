@@ -16,6 +16,7 @@ import { themeInitScript } from "@/lib/theme-init";
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 /** metadata 依赖站点设置与请求语言，按请求生成（项目已关闭 static shell） */
@@ -97,8 +98,13 @@ export default async function RootLayout({
             </ThemeProvider>
           </ClientStoreProvider>
         )}
-        {/* Vercel Web Analytics：仅生产环境上报，与站点「仅生产环境生效」开关语义一致 */}
-        {process.env.NODE_ENV === "production" && <Analytics />}
+        {/* Vercel Analytics 与 Speed Insights：仅生产环境上报 */}
+        {process.env.NODE_ENV === "production" && (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
       </body>
     </html>
   );
