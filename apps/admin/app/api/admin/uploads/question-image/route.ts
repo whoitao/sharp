@@ -10,28 +10,32 @@ import {
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 
-/** 服务端压缩：宽度超过 800px 的题图等比缩到 800 并统一转 webp；
- *  移动端题目展示区域不足 400px 宽，800 已留足 2x 屏余量 */
-const MAX_IMAGE_WIDTH = 800;
+/** 题图最长边最大 800px，最终文件不得超过 10KB。 */
+const MAX_IMAGE_BYTES = 10 * 1024;
 
+class QuestionImageCompressionError extends Error {}
+
+/** 统一输出 WebP，逐级降低尺寸和质量，确保题图不超过 10KB。 */
 async function shrinkImage(
-  bytes: Uint8Array,
-  contentType: ImageContentType
+  bytes: Uint8Array
 ): Promise<{ bytes: Uint8Array; contentType: ImageContentType }> {
   try {
-    const image = sharp(bytes);
-    const { width } = await image.metadata();
-    if (!width || width <= MAX_IMAGE_WIDTH) return { bytes, contentType };
-    const shrunk = await image
-      .resize({ width: MAX_IMAGE_WIDTH })
-      .webp({ quality: 85 })
-      .toBuffer();
-    return { bytes: new Uint8Array(shrunk), contentType: "image/webp" };
+    for (const dimension of [800, 512, 320, 192, 128, 64, 32]) {
+      for (const quality of [72, 52, 32, 16]) {
+        const output = await sharp(bytes, { limitInputPixels: 40_000_000 })
+          .rotate()
+          .resize({ width: dimension, height: dimension, fit: "inside", withoutEnlargement: true })
+          .webp({ quality, effort: 6 })
+          .toBuffer();
+        if (output.byteLength <= MAX_IMAGE_BYTES) {
+          return { bytes: new Uint8Array(output), contentType: "image/webp" };
+        }
+      }
+    }
   } catch (err) {
-    // 压缩失败不阻塞上传，退回原图
-    console.warn("[question-image] shrink failed, fallback to original", err);
-    return { bytes, contentType };
+    throw new QuestionImageCompressionError(err instanceof Error ? err.message : "image decoding failed");
   }
+  throw new QuestionImageCompressionError("image cannot be compressed to 10KB");
 }
 
 /**
@@ -78,10 +82,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const shrunk = await shrinkImage(bytes, contentType);
+    const shrunk = await shrinkImage(bytes);
     const result = await uploadQuestionImage(shrunk.bytes, shrunk.contentType);
     return NextResponse.json({ path: result.objectPath, url: result.url });
   } catch (err) {
+    if (err instanceof QuestionImageCompressionError) {
+      console.error("[question-image] compression error", err.message);
+      return NextResponse.json({ error: "image must be compressible to 10KB" }, { status: 422 });
+    }
     if (err instanceof StorageConfigError) {
       console.error("[question-image]", err.message);
       return NextResponse.json({ error: "storage is not configured" }, { status: 500 });

@@ -439,7 +439,7 @@ export const en: TranslationKeys = {
   feedbackContactPlaceholder: 'Email, WeChat, etc. so we can reach you',
   feedbackInsertImage: 'Image',
   feedbackUploadFailed: 'Image upload failed, please try again',
-  feedbackImageTooLarge: 'Image must be smaller than 5MB',
+  feedbackImageTooLarge: 'Image must be smaller than 4MB',
   feedbackImageTooMany: 'Up to 6 images in the description',
   feedbackContentTooShort: 'Please enter at least 5 characters',
   feedbackMinLengthTip: 'At least 5 characters',

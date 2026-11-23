@@ -24,7 +24,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { api } from '../services/api';
 
 const MAX_IMAGES = 6;
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 export interface FeedbackRichEditorHandle {
   /** 取当前正文 HTML（提交前调用） */

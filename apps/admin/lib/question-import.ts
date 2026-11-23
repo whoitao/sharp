@@ -9,7 +9,7 @@ export const DICT_SHEET_NAME = "字典参考";
 /** 单次导入上限（行） */
 export const IMPORT_MAX_ROWS = 1000;
 /** 文件大小上限 */
-export const IMPORT_MAX_FILE_BYTES = 5 * 1024 * 1024;
+export const IMPORT_MAX_FILE_BYTES = 4 * 1024 * 1024;
 /** 写库分批大小 */
 export const IMPORT_BATCH_SIZE = 50;
 

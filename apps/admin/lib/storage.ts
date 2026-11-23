@@ -1,26 +1,30 @@
 // Supabase Storage 封装：头像走服务端中转，service role key 只在服务端持有。
 // 直接用 Storage 的 REST 接口，避免为此再引入 @supabase/supabase-js。
+import sharp from "sharp";
 
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, "");
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const STORAGE_BUCKET = process.env.SUPABASE_AVATAR_BUCKET ?? "sharpbucket";
 
-/** 头像单次上传上限 5MB */
-export const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+/** 头像单次上传上限 4MB */
+export const MAX_AVATAR_BYTES = 4 * 1024 * 1024;
 
-/** 题目图片单次上传上限 5MB */
-export const MAX_QUESTION_IMAGE_BYTES = 5 * 1024 * 1024;
+/** 压缩后的头像上限 10KB */
+export const MAX_COMPRESSED_AVATAR_BYTES = 10 * 1024;
 
-/** 反馈正文图片单次上传上限 5MB */
-export const MAX_FEEDBACK_IMAGE_BYTES = 5 * 1024 * 1024;
+/** 题目图片单次上传上限 4MB */
+export const MAX_QUESTION_IMAGE_BYTES = 4 * 1024 * 1024;
+
+/** 反馈正文图片单次上传上限 4MB */
+export const MAX_FEEDBACK_IMAGE_BYTES = 4 * 1024 * 1024;
 
 /** 教材封面单次上传上限 10MB */
 export const MAX_TEXTBOOK_COVER_BYTES = 10 * 1024 * 1024;
 
-/** 站点素材：logo 2MB / favicon 1MB / 分享图 5MB */
+/** 站点素材：logo 2MB / favicon 1MB / 分享图 4MB */
 export const MAX_SITE_LOGO_BYTES = 2 * 1024 * 1024;
 export const MAX_SITE_FAVICON_BYTES = 1 * 1024 * 1024;
-export const MAX_SITE_OG_BYTES = 5 * 1024 * 1024;
+export const MAX_SITE_OG_BYTES = 4 * 1024 * 1024;
 
 export type SiteAssetKind = "logo" | "favicon" | "og";
 
@@ -31,6 +35,9 @@ export class StorageConfigError extends Error {}
 
 /** 上传失败（Storage 返回非 2xx 或网络异常） */
 export class StorageUploadError extends Error {}
+
+/** 图片无法解码或无法压缩到头像大小限制 */
+export class AvatarCompressionError extends Error {}
 
 /**
  * 只认文件头，不认客户端声明的 Content-Type。
@@ -62,13 +69,34 @@ function sanitizeUserId(userId: string): string {
 }
 
 /**
- * 每个用户独立目录：{userId}/avatars/{随机UUID}.{ext}。
+ * 统一输出 WebP，并逐级降低尺寸和质量，确保头像不超过 10KB。
+ * 输入仍是 JPEG/PNG/WebP；sharp 会按 EXIF 方向旋转并去除元数据。
+ */
+export async function compressAvatar(bytes: Uint8Array): Promise<Uint8Array> {
+  try {
+    for (const dimension of [256, 192, 128, 96, 64, 48, 32]) {
+      for (const quality of [72, 52, 32, 16]) {
+        const output = await sharp(bytes, { limitInputPixels: 40_000_000 })
+          .rotate()
+          .resize({ width: dimension, height: dimension, fit: "inside", withoutEnlargement: true })
+          .webp({ quality, effort: 6 })
+          .toBuffer();
+        if (output.byteLength <= MAX_COMPRESSED_AVATAR_BYTES) return output;
+      }
+    }
+  } catch (err) {
+    throw new AvatarCompressionError(err instanceof Error ? err.message : "image decoding failed");
+  }
+  throw new AvatarCompressionError("avatar cannot be compressed to 10KB");
+}
+
+/**
+ * 头像统一存入 avatars/{随机UUID}.{ext}，与 pets、questions 一样使用固定根目录。
  * 每次上传生成新文件名，避免覆盖旧图的同时天然绕过 CDN 缓存（路径变化 = 新 URL）。
  * 旧头像由调用方在 DB 更新成功后主动删除（见 route.ts）。
  */
-export function avatarPath(userId: string, contentType: ImageContentType): string {
-  const safeId = sanitizeUserId(userId);
-  return `${safeId}/avatars/${randomId()}.${CONTENT_TYPE_TO_EXT[contentType]}`;
+export function avatarPath(contentType: ImageContentType): string {
+  return `avatars/${randomId()}.${CONTENT_TYPE_TO_EXT[contentType]}`;
 }
 
 function randomId(): string {
@@ -80,7 +108,7 @@ function randomId(): string {
 /**
  * 根据相对路径拼接公开 URL。
  * path 允许：
- *   - 相对路径：{userId}/avatars/avatar.jpg  →  拼上 Supabase Storage 域名
+ *   - 相对路径：avatars/avatar.jpg  →  拼上 Supabase Storage 域名
  *   - 已带完整协议：https://...  →  原样返回（兼容历史已存完整 URL 的用户头像）
  */
 export function avatarPublicUrl(path: string, version?: number): string {
@@ -90,17 +118,14 @@ export function avatarPublicUrl(path: string, version?: number): string {
 }
 
 /**
- * 头像只存相对路径在 DB：{userId}/avatars/avatar.jpg
+ * 头像只存相对路径在 DB：avatars/avatar.jpg
  * 这样 Supabase project 迁移 / 换 CDN 时不用批量改 DB。
  * 调用 avatarPublicUrl(path) 在展示层拼完整 URL。
  */
-export async function uploadAvatar(
-  userId: string,
-  bytes: Uint8Array,
-  contentType: ImageContentType,
-): Promise<{ objectPath: string }> {
-  const path = avatarPath(userId, contentType);
-  await putObject(path, bytes, contentType);
+export async function uploadAvatar(bytes: Uint8Array): Promise<{ objectPath: string }> {
+  const compressed = await compressAvatar(bytes);
+  const path = avatarPath("image/webp");
+  await putObject(path, compressed, "image/webp");
   // 只返回相对路径，不拼域名
   return { objectPath: path };
 }

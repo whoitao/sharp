@@ -549,7 +549,7 @@ export const DEFAULT_SUPABASE_AVATAR_BUCKET = 'sharpbucket';
 /**
  * 头像 URL 拼接 helper。
  *
- * DB 里只存相对路径：{userId}/avatars/avatar.jpg
+ * DB 里只存相对路径：avatars/avatar.jpg
  * 展示层用它拼完整 URL，Supabase project 迁移 / 换 CDN 不用改 DB。
  *
  * 兼容历史：如果 avatarPath 已经是 https://... 完整 URL，原样返回。

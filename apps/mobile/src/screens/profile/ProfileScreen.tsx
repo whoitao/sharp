@@ -66,7 +66,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const textbookValue = textbookLabel ?? t.textbookNotSet;
 
-  // DB 里只存相对路径 {userId}/avatars/avatar.{ext}，展示层拼完整 URL
+  // DB 里只存相对路径 avatars/avatar.{ext}，展示层拼完整 URL
   // 兼容历史：如果 user.avatar 已是完整 https:// URL，buildAvatarUrl 原样返回
   const avatarUrl = useMemo(
     () => buildAvatarUrl(user?.avatar ?? null, SUPABASE_URL),

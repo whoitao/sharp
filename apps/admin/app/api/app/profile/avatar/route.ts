@@ -2,6 +2,7 @@ import { requireAppUser } from "@/lib/middleware";
 import { prisma } from "@/lib/prisma";
 import {
   MAX_AVATAR_BYTES,
+  AvatarCompressionError,
   StorageConfigError,
   StorageUploadError,
   deleteAvatar,
@@ -12,7 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * 上传头像：multipart/form-data，字段名 file。
- * 校验通过后写入 Supabase Storage 的 sharpbucket，并把公开地址存进 User.avatar。
+ * 校验通过后写入 Supabase Storage 的 sharpbucket/avatars，并把相对路径存进 User.avatar。
  * 若 Storage 成功但 prisma update 失败，会补偿删除刚上传的 object，避免留下孤儿文件。
  */
 export async function POST(request: NextRequest) {
@@ -55,9 +56,13 @@ export async function POST(request: NextRequest) {
 
   let objectPath: string;
   try {
-    const result = await uploadAvatar(appUser.id, bytes, contentType);
+    const result = await uploadAvatar(bytes);
     objectPath = result.objectPath;
   } catch (err) {
+    if (err instanceof AvatarCompressionError) {
+      console.error("[avatar] compression error", err.message);
+      return NextResponse.json({ error: "avatar must be compressible to 10KB" }, { status: 422 });
+    }
     if (err instanceof StorageConfigError) {
       console.error("[avatar]", err.message);
       return NextResponse.json({ error: "storage is not configured" }, { status: 500 });

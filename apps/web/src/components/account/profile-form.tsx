@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { Camera, Check, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const MAX_AVATAR_BYTES = 4 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const inputClass =

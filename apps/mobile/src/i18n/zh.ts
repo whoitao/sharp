@@ -435,7 +435,7 @@ export const zh = {
   feedbackContactPlaceholder: '邮箱、微信等，便于我们联系你',
   feedbackInsertImage: '插图片',
   feedbackUploadFailed: '图片上传失败，请重试',
-  feedbackImageTooLarge: '图片不能超过 5MB',
+  feedbackImageTooLarge: '图片不能超过 4MB',
   feedbackImageTooMany: '正文最多插入 6 张图片',
   feedbackContentTooShort: '反馈内容至少 5 个字',
   feedbackMinLengthTip: '至少 5 个字',

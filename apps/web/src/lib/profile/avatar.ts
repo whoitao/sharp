@@ -1,5 +1,5 @@
 /**
- * 头像展示地址：DB 里只存相对路径（{userId}/avatars/avatar.jpg），
+ * 头像展示地址：DB 里只存相对路径（avatars/avatar.jpg），
  * 与移动端 buildAvatarUrl 的口径一致，服务端拼完整 URL 后返回给浏览器。
  * 未配置环境变量时使用与移动端相同的公共项目地址兜底。
  */
