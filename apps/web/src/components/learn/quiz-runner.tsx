@@ -358,7 +358,7 @@ export function QuizRunner({
         className="sticky top-14 z-30 -mx-4 mb-4 bg-background/95 px-4 pb-3 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/80"
       >
         {/* 顶部：单元信息 + 题型/计时/结算 */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5">
+        <div className="flex flex-col gap-3 items-center sm:flex-row sm:justify-between sm:gap-5">
           <div className="min-w-0">
             {/* 章节名/知识点名与单元同行展示，如「列强侵略与民族危机：第 1 单元」 */}
             <h1 className="text-xl font-bold leading-tight tracking-[-0.035em]">

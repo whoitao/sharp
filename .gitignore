@@ -4,6 +4,7 @@ node_modules/
 .trae/
 .trae-html-share-packages/
 dist/
+bkp/
 .env
 .env.local
 *.log
