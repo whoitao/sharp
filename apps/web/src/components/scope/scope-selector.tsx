@@ -71,7 +71,7 @@ export function ScopeSelector() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={label || t("scope.placeholder")}
-        className="h-8 gap-1.5 rounded-full border-border-light bg-surface px-2.5 text-sm font-semibold"
+        className="h-7 gap-1.5 rounded-full border-border-light bg-surface px-2.5 text-xs font-semibold"
       >
         <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-foreground-tertiary" />
         <span

@@ -1,17 +1,19 @@
 "use client";
 
+import { LanguageToggle } from "@/components/language-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
 import { fetchSettings, updateSettings, type AppSettings } from "@/lib/profile/api";
 import { useTheme, type Density, type ThemeMode } from "@/lib/theme";
 import { cn } from "@/lib/utils";
-import { Loader2, Monitor, Moon, Sun } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 type Status = "loading" | "error" | "ready";
 
 const optionBase =
-  "inline-flex min-h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition-colors disabled:opacity-60";
+  "inline-flex h-7 items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition-colors disabled:opacity-60";
 const optionActive = "border-primary bg-primary-light text-primary-strong";
 const optionIdle = "border-border bg-surface text-foreground-secondary hover:border-primary/40";
 
@@ -21,8 +23,8 @@ const optionIdle = "border-border bg-surface text-foreground-secondary hover:bor
  * 每组题量只存在于账号设置，用于 App 与 Web 划分练习单元。
  */
 export function SettingsForm() {
-  const { t, locale, setLocale } = useLocale();
-  const { theme, density, setTheme, setDensity } = useTheme();
+  const { t, setLocale } = useLocale();
+  const { density, setTheme, setDensity } = useTheme();
 
   const [status, setStatus] = useState<Status>("loading");
   const [unitSize, setUnitSize] = useState(20);
@@ -105,23 +107,8 @@ export function SettingsForm() {
                 {t("account.languageDesc")}
               </p>
             </div>
-            <div className="mt-3 flex gap-2 sm:mt-0">
-              {(["zh", "en"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={locale === value}
-                  onClick={() => handleLocale(value)}
-                  className={cn(
-                    optionBase,
-                    locale === value ? optionActive : optionIdle,
-                  )}
-                >
-                  {value === "zh"
-                    ? t("account.languageZh")
-                    : t("account.languageEn")}
-                </button>
-              ))}
+            <div className="mt-3 sm:mt-0">
+              <LanguageToggle onChange={handleLocale} />
             </div>
           </div>
         </div>
@@ -134,28 +121,8 @@ export function SettingsForm() {
                 {t("account.themeDesc")}
               </p>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 sm:mt-0">
-              {(
-                [
-                  { value: "light", label: t("account.themeLight"), icon: Sun },
-                  { value: "dark", label: t("account.themeDark"), icon: Moon },
-                  { value: "system", label: t("account.themeSystem"), icon: Monitor },
-                ] as const
-              ).map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={theme === value}
-                  onClick={() => handleTheme(value)}
-                  className={cn(
-                    optionBase,
-                    theme === value ? optionActive : optionIdle,
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </button>
-              ))}
+            <div className="mt-3 sm:mt-0">
+              <ThemeToggle onChange={handleTheme} />
             </div>
           </div>
         </div>

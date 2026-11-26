@@ -22,7 +22,7 @@ export default function About() {
   const { t, dict } = useLocale();
 
   return (
-    <div className="py-8 md:py-12 lg:py-18">
+    <div className="py-4 md:py-6 lg:py-6">
       <div className="mx-auto flex max-w-[58rem] flex-col items-center gap-4 text-center">
         <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl">
           {t("about.title")}

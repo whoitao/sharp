@@ -12,22 +12,19 @@ import {
   type SessionProfile,
 } from "@/lib/profile/api";
 import { cn } from "@/lib/utils";
-import { Camera, Check, Loader2 } from "lucide-react";
+import { Camera, Check, CircleHelp, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 const MAX_AVATAR_BYTES = 4 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const inputClass =
-  "h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none transition placeholder:text-foreground-tertiary hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-border-light disabled:text-foreground-tertiary disabled:opacity-100";
-
-/** 字段统一宽度，宽屏下不把输入框拉满整块卡片 */
-const fieldClass = "sm:max-w-[24rem]";
+  "h-7 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none transition placeholder:text-foreground-tertiary hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-border-light disabled:text-foreground-tertiary disabled:opacity-100";
 
 const labelClass = "block text-sm font-semibold";
 const hintClass = "mt-1.5 text-xs leading-5 text-foreground-tertiary";
 const optionBase =
-  "inline-flex min-h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30";
+  "inline-flex h-7 items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30";
 const optionActive = "border-primary bg-primary-light text-primary-strong";
 const optionIdle =
   "border-border bg-surface text-foreground-secondary hover:border-primary/40";
@@ -176,8 +173,12 @@ export function ProfileForm({
     <div className="max-w-2xl space-y-4">
       {/* 头像与昵称 */}
       <section className="rounded-lg border border-border bg-surface card-shadow">
-        <div className="border-b border-border-light px-5 py-4 md:px-6">
+        <div className="flex items-center justify-between gap-4 border-b border-border-light px-5 py-4 md:px-6">
           <h2 className="text-sm font-bold">{t("account.sectionProfile")}</h2>
+          <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+            {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            {saving ? t("account.saving") : t("account.save")}
+          </Button>
         </div>
 
         <div className="space-y-5 px-5 py-5 md:px-6">
@@ -188,22 +189,39 @@ export function ProfileForm({
               <p className="truncate text-xs text-foreground-tertiary">
                 @{profile.username}
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                disabled={uploading}
-                onClick={() => fileRef.current?.click()}
-              >
-                {uploading ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Camera className="mr-1.5 h-3.5 w-3.5" />
-                )}
-                {uploading ? t("account.uploading") : t("account.changeAvatar")}
-              </Button>
-              <p className={cn(hintClass, "max-w-[20rem]")}>{t("account.avatarHint")}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {uploading ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Camera className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  {uploading ? t("account.uploading") : t("account.changeAvatar")}
+                </Button>
+                <div className="group relative">
+                  <button
+                    type="button"
+                    aria-label={t("account.avatarHint")}
+                    aria-describedby="avatar-upload-hint"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-foreground-tertiary transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  >
+                    <CircleHelp className="h-4 w-4" />
+                  </button>
+                  <div
+                    id="avatar-upload-hint"
+                    role="tooltip"
+                    className="invisible absolute left-0 top-full z-20 mt-2 w-64 rounded-md border border-border bg-popover px-3 py-2 text-xs leading-5 text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+                  >
+                    {t("account.avatarHint")}
+                  </div>
+                </div>
+              </div>
               <input
                 ref={fileRef}
                 type="file"
@@ -214,77 +232,70 @@ export function ProfileForm({
             </div>
           </div>
 
-          <div>
-            <label htmlFor="profile-nickname" className={labelClass}>
-              {t("account.nickname")}
-            </label>
-            <input
-              id="profile-nickname"
-              value={nickname}
-              maxLength={24}
-              placeholder={t("account.nicknamePlaceholder")}
-              onChange={(event) => setNickname(event.target.value)}
-              className={cn(inputClass, fieldClass, "mt-2")}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 账号信息 */}
-      <section className="rounded-lg border border-border bg-surface card-shadow">
-        <div className="border-b border-border-light px-5 py-4 md:px-6">
-          <h2 className="text-sm font-bold">{t("account.sectionAccount")}</h2>
-        </div>
-
-        <div className="space-y-5 px-5 py-5 md:px-6">
-          <div>
-            <label htmlFor="profile-phone" className={labelClass}>
-              {t("account.phone")}
-            </label>
-            <input
-              id="profile-phone"
-              value={phone}
-              inputMode="numeric"
-              placeholder={t("account.phonePlaceholder")}
-              onChange={(event) =>
-                setPhone(event.target.value.replace(/[^\d]/g, "").slice(0, 11))
-              }
-              className={cn(inputClass, fieldClass, "mt-2")}
-            />
-          </div>
-
-          <div>
-            <span className={labelClass}>{t("account.gender")}</span>
-            <div
-              role="radiogroup"
-              aria-label={t("account.gender")}
-              className="mt-2 flex flex-wrap gap-2"
-            >
-              {(["male", "female"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={gender === value}
-                  onClick={() => setGender(value)}
-                  className={cn(
-                    optionBase,
-                    gender === value ? optionActive : optionIdle,
-                  )}
-                >
-                  {gender === value && <Check className="h-3.5 w-3.5" />}
-                  {value === "male"
-                    ? t("account.genderMale")
-                    : t("account.genderFemale")}
-                </button>
-              ))}
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <div>
+              <label htmlFor="profile-nickname" className={labelClass}>
+                {t("account.nickname")}
+              </label>
+              <input
+                id="profile-nickname"
+                value={nickname}
+                maxLength={24}
+                placeholder={t("account.nicknamePlaceholder")}
+                onChange={(event) => setNickname(event.target.value)}
+                className={cn(inputClass, "mt-2")}
+              />
             </div>
-            {!gender && <p className={hintClass}>{t("account.genderUnset")}</p>}
+
+            <div>
+              <label htmlFor="profile-phone" className={labelClass}>
+                {t("account.phone")}
+              </label>
+              <input
+                id="profile-phone"
+                value={phone}
+                inputMode="numeric"
+                placeholder={t("account.phonePlaceholder")}
+                onChange={(event) =>
+                  setPhone(event.target.value.replace(/[^\d]/g, "").slice(0, 11))
+                }
+                className={cn(inputClass, "mt-2")}
+              />
+            </div>
+
+            <div>
+              <span className={labelClass}>{t("account.gender")}</span>
+              <div
+                role="radiogroup"
+                aria-label={t("account.gender")}
+                className="mt-2 flex flex-wrap gap-2"
+              >
+                {(["male", "female"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={gender === value}
+                    onClick={() => setGender(value)}
+                    className={cn(
+                      optionBase,
+                      gender === value ? optionActive : optionIdle,
+                    )}
+                  >
+                    {gender === value && <Check className="h-3.5 w-3.5" />}
+                    {value === "male"
+                      ? t("account.genderMale")
+                      : t("account.genderFemale")}
+                  </button>
+                ))}
+              </div>
+              {!gender && <p className={hintClass}>{t("account.genderUnset")}</p>}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 保存区：底部右对齐，左侧显示未保存状态与操作反馈 */}
+      {/* 保存按钮位于卡片右上角，这里仅保留未保存状态与操作反馈 */}
       <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="mr-auto min-h-5 text-xs">
           {feedback ? (
@@ -300,10 +311,6 @@ export function ProfileForm({
             <span className="text-foreground-tertiary">{t("account.unsaved")}</span>
           ) : null}
         </div>
-        <Button type="button" onClick={handleSave} disabled={saving}>
-          {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-          {saving ? t("account.saving") : t("account.save")}
-        </Button>
       </div>
     </div>
   );

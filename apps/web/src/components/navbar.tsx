@@ -1,5 +1,6 @@
 "use client";
 
+import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/auth/user-menu";
 import { NotificationBell } from "@/components/notifications/notification-bell";
@@ -11,13 +12,13 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useLocale, type Locale } from "@/lib/i18n";
+import { useLocale } from "@/lib/i18n";
 import { subscribeSession } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
-import { Check, Globe, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 const navItems = [
   { href: "/learn", labelKey: "nav.learn", requiresAuth: true },
@@ -25,11 +26,6 @@ const navItems = [
   { href: "/articles", labelKey: "nav.articles" },
   { href: "/wiki", labelKey: "nav.wiki" },
   { href: "/about", labelKey: "nav.about" },
-];
-
-const languageOptions: { value: Locale; label: string }[] = [
-  { value: "zh", label: "中文" },
-  { value: "en", label: "English" },
 ];
 
 /** 登录态：学习与宠物入口仅登录后展示，未登录时不出现，避免点了才被拦 */
@@ -136,34 +132,9 @@ function ActiveNavMenu() {
 }
 
 export function Navbar({ siteName = "Sharp" }: { siteName?: string }) {
-  const { locale, setLocale } = useLocale();
-
-  // 语言切换：悬停展开，移出后延迟关闭，避免 trigger 与 content 之间移动时闪烁
-  const [langOpen, setLangOpen] = useState(false);
-  const langCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const openLangMenu = () => {
-    if (langCloseTimer.current) {
-      clearTimeout(langCloseTimer.current);
-      langCloseTimer.current = null;
-    }
-    setLangOpen(true);
-  };
-
-  const scheduleCloseLangMenu = () => {
-    if (langCloseTimer.current) clearTimeout(langCloseTimer.current);
-    langCloseTimer.current = setTimeout(() => setLangOpen(false), 150);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (langCloseTimer.current) clearTimeout(langCloseTimer.current);
-    };
-  }, []);
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border-light bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-14 max-w-[1200px] items-center px-4">
+      <div className="container mx-auto flex h-12 max-w-[1200px] items-center px-4">
         <div className="flex min-w-0 items-center md:mr-4">
           <Link href="/" className="mr-3 flex shrink-0 items-center space-x-2 md:mr-6">
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
@@ -186,52 +157,7 @@ export function Navbar({ siteName = "Sharp" }: { siteName?: string }) {
         <div className="flex flex-1 shrink-0 items-center justify-end space-x-1 pl-2">
           <ScopeSelector />
           <ThemeToggle />
-          {/* 语言切换：自定义悬停下拉，避免 Radix DropdownMenu 受控状态与 hover 事件打架导致闪烁 */}
-          <div
-            className="relative"
-            onMouseEnter={openLangMenu}
-            onMouseLeave={scheduleCloseLangMenu}
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLangOpen((v) => !v)}
-              aria-haspopup="menu"
-              aria-expanded={langOpen}
-            >
-              <Globe className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">
-                {languageOptions.find((o) => o.value === locale)?.label}
-              </span>
-            </Button>
-            {langOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 top-full z-50 mt-1 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-              >
-                {languageOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    role="menuitem"
-                    type="button"
-                    onClick={() => {
-                      setLocale(option.value);
-                      setLangOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                      locale === option.value && "font-medium"
-                    )}
-                  >
-                    <span className="flex-1 text-left">{option.label}</span>
-                    {locale === option.value && (
-                      <Check className="ml-2 h-4 w-4" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <LanguageToggle />
           <NotificationBell />
           <UserMenu />
         </div>

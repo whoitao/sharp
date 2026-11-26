@@ -1,9 +1,10 @@
 "use client";
 
+import { LanguageToggle } from "@/components/language-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useLocale } from "@/lib/i18n";
-import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
-import { ArrowUp, Github, Globe, Monitor, Moon, Sun } from "lucide-react";
+import { ArrowUp, Github } from "lucide-react";
 import Link from "next/link";
 
 const GITHUB_URL = "https://github.com/whoitao/sharp";
@@ -46,7 +47,6 @@ const columns: { titleKey: string; links: FooterLink[] }[] = [
       { labelKey: "footer.aboutUs", href: "/about" },
       { labelKey: "footer.feedback", href: "/account/feedback" },
       { labelKey: "footer.contact", href: "/about#contact" },
-      { labelKey: "nav.github", href: GITHUB_URL, external: true, badgeKey: "footer.openSource" },
     ],
   },
 ];
@@ -60,16 +60,7 @@ export function Footer({
   siteUrl?: string;
   icpNumber?: string | null;
 }) {
-  const { t, locale, setLocale } = useLocale();
-  const { theme, resolvedTheme, setTheme } = useTheme();
-
-  const ThemeIcon = theme === "system" ? Monitor : resolvedTheme === "dark" ? Sun : Moon;
-  const themeLabel =
-    theme === "system"
-      ? t("footer.themeSystem")
-      : theme === "dark"
-        ? t("footer.themeDark")
-        : t("footer.themeLight");
+  const { t } = useLocale();
 
   return (
     <footer className="border-t border-border bg-background">
@@ -103,7 +94,7 @@ export function Footer({
               <h4 className="mb-2 flex h-5 items-center text-xs font-semibold uppercase leading-4 tracking-wider text-foreground-tertiary">
                 {t(column.titleKey)}
               </h4>
-              <ul className="flex flex-col gap-1">
+              <ul className="flex flex-col gap-0">
                 {column.links.map((link) => (
                   <li key={link.href}>
                     {link.external ? (
@@ -159,25 +150,8 @@ export function Footer({
           </p>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-              aria-label={themeLabel}
-              className={pillClass}
-            >
-              <ThemeIcon className="h-3.5 w-3.5" />
-              {themeLabel}
-            </button>
-            <button
-              type="button"
-              onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
-              className={pillClass}
-            >
-              <Globe className="h-3.5 w-3.5" />
-              <span className={cn(locale === "zh" && "font-semibold text-foreground")}>中文</span>
-              <span aria-hidden="true">/</span>
-              <span className={cn(locale === "en" && "font-semibold text-foreground")}>EN</span>
-            </button>
+            <ThemeToggle />
+            <LanguageToggle side="top" />
             <button
               type="button"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
