@@ -129,7 +129,7 @@
 /* 文章正文：后台富文本（标题/段落/图片/表格/代码/列表）统一排版，跟随 light/dark 令牌 */
 .article-content {
   font-size: 0.8rem;
-  line-height: 1.8;
+  line-height: 1.6;
   word-break: break-word;
 
   color: hsl(var(--foreground));
@@ -200,7 +200,7 @@
 
 /* 编辑器里 li 内的 p 是紧贴的；Web 也要去掉段间距，否则列表项会被撑成大段 */
 .article-content li > p {
-  margin: 0;
+  margin: 0.15rem;
 }
 
 .article-content a {
@@ -245,9 +245,9 @@
 }
 
 .article-content blockquote {
-  margin: 1em 0;
+  margin: .5em 0;
   border-left: 3px solid hsl(var(--primary));
-  padding: .25rem 0 .25rem 1rem;
+  padding: 0 0 0 .5rem;
 
   color: hsl(var(--foreground-secondary));
 }
