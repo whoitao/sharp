@@ -70,7 +70,7 @@ async function ArticleDetail({ params }: PageProps) {
           </div>
 
           <article
-            className="article-content rounded-lg border border-border bg-surface p-6 card-shadow md:p-10"
+            className="article-content rounded-lg border border-border bg-surface p-6 card-shadow md:p-6"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content) }}
           />
         </div>
