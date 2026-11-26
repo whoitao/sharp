@@ -110,7 +110,7 @@ export default function WikiEditor({
     return data as WikiPageDetailDto;
   };
 
-  const handleSave = async (nextStatus?: "draft" | "published") => {
+  const handleSave = async (publish = false) => {
     if (!detail) return;
     const values = await form.validateFields();
     setSaving(true);
@@ -121,12 +121,11 @@ export default function WikiEditor({
         summary: values.summary ?? "",
         visibility: values.visibility,
         content: values.content ?? "",
-        ...(nextStatus ? { status: nextStatus } : {}),
+        ...(publish ? { status: "published" } : {}),
       });
       onSaved(updated);
       onDirtyChange(false);
-      if (nextStatus === "published") message.success(t("wiki.published"));
-      else if (nextStatus === "draft") message.success(t("wiki.unpublished"));
+      if (publish) message.success(t("wiki.published"));
       else message.success(t("wiki.updated"));
     } catch (err) {
       message.error(err instanceof Error ? err.message : t("wiki.saveFailed"));
@@ -236,19 +235,14 @@ export default function WikiEditor({
         </Button>
         {canWrite && (
           <>
-            <Button size="small" onClick={() => handleSave()} loading={saving}>
+            <Button size="small" type="primary" onClick={() => handleSave()} loading={saving}>
               {t("wiki.save")}
             </Button>
-            <Button
-              size="small"
-              type="primary"
-              loading={saving}
-              onClick={() =>
-                handleSave(detail.status === "published" ? "draft" : "published")
-              }
-            >
-              {detail.status === "published" ? t("wiki.unpublish") : t("wiki.publish")}
-            </Button>
+            {detail.status !== "published" && (
+              <Button size="small" loading={saving} onClick={() => handleSave(true)}>
+                {t("wiki.publish")}
+              </Button>
+            )}
             <Typography.Text
               type="secondary"
               style={{ fontSize: 12, color: token.colorTextTertiary }}
