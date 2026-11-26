@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     const [items, total] = await Promise.all([
       prisma.notificationTemplate.findMany({
         where,
-        orderBy: [{ id: "desc" }],
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: { _count: { select: { notifications: true } } },

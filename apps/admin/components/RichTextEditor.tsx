@@ -5,6 +5,7 @@ import {
   AlignLeftOutlined,
   AlignRightOutlined,
   BoldOutlined,
+  CodeOutlined,
   FunctionOutlined,
   ItalicOutlined,
   LinkOutlined,
@@ -91,7 +92,7 @@ export function mountDollarMath(html?: string | null): string {
   const targets: Text[] = [];
   while (walker.nextNode()) {
     const node = walker.currentNode as Text;
-    if (node.parentElement?.closest('[data-type="inline-math"], [data-type="block-math"]')) continue;
+    if (node.parentElement?.closest('pre, code, [data-type="inline-math"], [data-type="block-math"]')) continue;
     if (/\$[^$\n]+\$/.test(node.nodeValue || "")) targets.push(node);
   }
   for (const node of targets) {
@@ -334,7 +335,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     () => [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        codeBlock: false,
         horizontalRule: false,
         link: {
           openOnClick: false,
@@ -948,6 +948,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             editor.isActive("blockquote"),
             () => editor.chain().focus().toggleBlockquote().run(),
             t("editor.blockquote")
+          )}
+        {!compact &&
+          toolbarButton(
+            <CodeOutlined />,
+            editor.isActive("codeBlock"),
+            () => editor.chain().focus().toggleCodeBlock().run(),
+            t("editor.codeBlock")
           )}
         {!compact && divider}
         {!compact && (

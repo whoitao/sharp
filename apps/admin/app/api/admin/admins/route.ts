@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
           adminRole: { select: { code: true, name: true, isSystem: true } },
           createdAt: true,
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),

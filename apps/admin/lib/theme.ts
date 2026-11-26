@@ -2,11 +2,11 @@ import { theme as antdTheme } from "antd";
 
 /**
  * 管理后台统一视觉规范（以 Dashboard 页为基准）。
- * 色值与 apps/mobile/src/theme/colors.ts 保持一致：浅色绿调白底、深色墨绿底，
+ * 浅色使用银灰底、深色使用墨绿底，卡片与表单保持独立的表面色，
  * 避免后台各页面与移动端主题观感割裂。
  */
 export const ADMIN_LIGHT_PALETTE = {
-  background: "#F2F8F5",
+  background: "#E5E7EB",
   surface: "#FFFFFF",
   surfaceSecondary: "#F7FBF9",
   text: "#10231A",

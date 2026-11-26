@@ -1068,6 +1068,7 @@ export const zh: Messages = {
     bulletList: "无序列表",
     orderedList: "有序列表",
     blockquote: "引用",
+    codeBlock: "代码块",
     align: "对齐",
     alignLeft: "左对齐",
     alignCenter: "居中",

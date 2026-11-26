@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         },
         tags: { include: { tag: true } },
       },
-      orderBy: { sortOrder: "asc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),

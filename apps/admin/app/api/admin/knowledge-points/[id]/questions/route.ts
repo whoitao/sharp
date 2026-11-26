@@ -52,10 +52,15 @@ export async function GET(
         WHERE "knowledgePointId" IN (${Prisma.join(allKpIds)})
       `),
       prisma.$queryRaw<Array<{ questionId: bigint }>>(Prisma.sql`
-        SELECT DISTINCT "questionId"
-        FROM "QuestionKnowledgePoint"
-        WHERE "knowledgePointId" IN (${Prisma.join(allKpIds)})
-        ORDER BY "questionId"
+        SELECT q."id" AS "questionId"
+        FROM "Question" q
+        WHERE EXISTS (
+          SELECT 1
+          FROM "QuestionKnowledgePoint" qkp
+          WHERE qkp."questionId" = q."id"
+            AND qkp."knowledgePointId" IN (${Prisma.join(allKpIds)})
+        )
+        ORDER BY q."createdAt" DESC, q."id" DESC
         LIMIT ${pageSize} OFFSET ${skip}
       `),
     ]);

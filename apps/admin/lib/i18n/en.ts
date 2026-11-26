@@ -1073,6 +1073,7 @@ export const en = {
     bulletList: "Bullet List",
     orderedList: "Numbered List",
     blockquote: "Quote",
+    codeBlock: "Code Block",
     align: "Alignment",
     alignLeft: "Align Left",
     alignCenter: "Align Center",

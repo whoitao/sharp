@@ -7,7 +7,7 @@ html, body {
 /* 根节点颜色随主题走：overscroll 区域、登录页这类不铺 antd Layout 的页面不会露出白底；
    色值与 lib/theme.ts 中的 palette.background 一致 */
 html {
-  background-color: #F2F8F5;
+  background-color: #E5E7EB;
 }
 
 html[data-theme='dark'] {
@@ -58,7 +58,7 @@ html, body {
 }
 
 .theme-veil--light {
-  background-color: #F2F8F5;
+  background-color: #E5E7EB;
 }
 
 .theme-veil--dark {
@@ -192,6 +192,36 @@ html[data-theme='dark'] .sharp-rich-text blockquote {
   border-radius: 3px;
 
   outline: 2px solid rgba(16, 185, 129, .4);
+}
+
+.sharp-rich-text pre {
+  overflow-x: auto;
+
+  margin: 6px 0;
+  border: 1px solid rgba(5, 5, 5, .1);
+  border-radius: 6px;
+  padding: 10px 12px;
+
+  background: rgba(5, 5, 5, .04);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: .9em;
+  line-height: 1.6;
+  tab-size: 2;
+  white-space: pre;
+}
+
+.sharp-rich-text pre code {
+  padding: 0;
+
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+html[data-theme='dark'] .sharp-rich-text pre {
+  border-color: rgba(255, 255, 255, .12);
+
+  background: rgba(255, 255, 255, .06);
 }
 
 /* 图片：设置了 width 的按尺寸显示，最长不超过容器宽度；

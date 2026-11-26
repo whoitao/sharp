@@ -5,7 +5,7 @@
  */
 
 /** 需要原生渲染无法表达的结构：图片、公式、表格、加粗等 */
-const STRUCTURED_TAG_RE = /<(img|table|strong|em|u|s|sub|sup|ol|ul|li|h[1-6]|blockquote)[\s>/]/i;
+const STRUCTURED_TAG_RE = /<(img|table|strong|em|u|s|sub|sup|ol|ul|li|h[1-6]|blockquote|pre)[\s>/]/i;
 
 /** 数学节点：<span data-type="inline-math" data-latex="x^2"></span> */
 const MATH_NODE_RE = /<(span|div)[^>]*data-type="(?:inline|block)-math"[^>]*data-latex="([^"]*)"[^>]*>\s*<\/\1>/g;

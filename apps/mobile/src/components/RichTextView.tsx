@@ -56,6 +56,17 @@ function buildDocument(html: string, fontSize: number, color: string, lineHeight
   }
   p { margin: 0 0 10px; }
   p:last-child { margin-bottom: 0; }
+  pre {
+    margin: 6px 0;
+    padding: 8px 10px;
+    overflow-x: auto;
+    border-radius: 4px;
+    background: ${color}0D;
+    font-size: 0.9em;
+    line-height: 1.6;
+    white-space: pre;
+  }
+  pre code { padding: 0; background: transparent; font: inherit; }
   img { display: block; max-width: 100%; height: auto; margin: 4px 0; border-radius: 4px; }
   /* 图文左右布局：float 由后台编辑器写入 inline style，手机上文字继续环绕 */
   img[style*="float: left"], img[style*="float:left"] { float: left; margin: 4px 10px 8px 0; }

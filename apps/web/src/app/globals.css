@@ -180,6 +180,11 @@
   margin: .85em 0;
 }
 
+/* TipTap 空行保存为 <p></p>；补一个空白字符生成行框，避免 Web 把连续空行压成 0 高度 */
+.article-content p:empty::before {
+  content: "\00a0";
+}
+
 .article-content ul, .article-content ol {
   margin: .85em 0;
   padding-left: 1.6rem;

@@ -110,7 +110,7 @@ export default function WikiEditor({
     return data as WikiPageDetailDto;
   };
 
-  const handleSave = async (publish = false) => {
+  const handleSave = async (nextStatus?: "draft" | "published") => {
     if (!detail) return;
     const values = await form.validateFields();
     setSaving(true);
@@ -121,11 +121,12 @@ export default function WikiEditor({
         summary: values.summary ?? "",
         visibility: values.visibility,
         content: values.content ?? "",
-        ...(publish ? { status: "published" } : {}),
+        ...(nextStatus ? { status: nextStatus } : {}),
       });
       onSaved(updated);
       onDirtyChange(false);
-      if (publish) message.success(t("wiki.published"));
+      if (nextStatus === "published") message.success(t("wiki.published"));
+      else if (nextStatus === "draft") message.success(t("wiki.unpublished"));
       else message.success(t("wiki.updated"));
     } catch (err) {
       message.error(err instanceof Error ? err.message : t("wiki.saveFailed"));
@@ -238,11 +239,15 @@ export default function WikiEditor({
             <Button size="small" type="primary" onClick={() => handleSave()} loading={saving}>
               {t("wiki.save")}
             </Button>
-            {detail.status !== "published" && (
-              <Button size="small" loading={saving} onClick={() => handleSave(true)}>
-                {t("wiki.publish")}
-              </Button>
-            )}
+            <Button
+              size="small"
+              loading={saving}
+              onClick={() =>
+                handleSave(detail.status === "published" ? "draft" : "published")
+              }
+            >
+              {detail.status === "published" ? t("wiki.unpublish") : t("wiki.publish")}
+            </Button>
             <Typography.Text
               type="secondary"
               style={{ fontSize: 12, color: token.colorTextTertiary }}

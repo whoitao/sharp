@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
   const [items, total] = await Promise.all([
     prisma.article.findMany({
       where,
-      orderBy: [{ sortOrder: "desc" }, { id: "desc" }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
       // 列表不返回正文，避免富文本把响应体撑大
