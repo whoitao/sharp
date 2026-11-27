@@ -128,11 +128,11 @@
 
 /* 文章正文：后台富文本（标题/段落/图片/表格/代码/列表）统一排版，跟随 light/dark 令牌 */
 .article-content {
+  color: hsl(var(--foreground));
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
   font-size: 0.8rem;
   line-height: 1.6;
   word-break: break-word;
-
-  color: hsl(var(--foreground));
 }
 
 /*
@@ -198,9 +198,9 @@
   list-style: decimal;
 }
 
-/* 编辑器里 li 内的 p 是紧贴的；Web 也要去掉段间距，否则列表项会被撑成大段 */
+/* 列表项内部段落与 Admin 编辑器一致，不叠加段落外边距 */
 .article-content li > p {
-  margin: 0.15rem;
+  margin: 0;
 }
 
 .article-content a {
@@ -326,9 +326,9 @@
   width: 100%;
 }
 
-/* 两栏块内的段落不带外边距：全局 .article-content p 的 .85em 会把两栏行高撑开 */
-.article-content table.sharp-two-col td p,
-.article-content table.sharp-two-col th p {
+/* 单元格内部段落与 Admin 编辑器一致，不叠加段落外边距 */
+.article-content th p,
+.article-content td p {
   margin: 0;
 }
 
@@ -348,28 +348,33 @@
 }
 
 .article-content code {
-  border-radius: .25rem;
-  padding: .1rem .3rem;
-
-  font-size: .9em;
+  border-radius: 5px;
+  padding: 2px 6px;
 
   background-color: hsl(var(--surface-secondary));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: .9em;
 }
 
 .article-content pre {
   overflow-x: auto;
 
   margin: 1em 0;
-  border-radius: .5rem;
-  padding: 1rem;
+  border-radius: 10px;
+  padding: 16px;
 
   background-color: hsl(var(--surface-secondary));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  line-height: 1.6;
+  tab-size: 2;
+  white-space: pre;
 }
 
 .article-content pre code {
   padding: 0;
 
   background: transparent;
+  color: inherit;
 }
 
 .article-content hr {
@@ -379,7 +384,7 @@
 }
 
 /*
- * 错题本富文本：RichText 默认 0.8rem/1.8，错题本列表与解析区仍显式保持
+ * 错题本富文本：RichText 默认 0.8rem/1.6，错题本列表与解析区仍显式保持
  * 0.875rem / 1.5rem，不随正文缩小；宽公式在容器内横向滚动，避免撑破卡片。
  */
 .article-content.prose-compact {

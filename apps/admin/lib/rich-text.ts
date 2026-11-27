@@ -1,3 +1,4 @@
+import { Marked } from "marked";
 import sanitizeHtml from "sanitize-html";
 
 /**
@@ -97,4 +98,26 @@ export function sanitizeRichHtml(html: string): string {
     allowProtocolRelative: false,
     allowedStyles: ALLOWED_STYLES,
   });
+}
+
+const markdown = new Marked({ gfm: true, breaks: false, async: false });
+
+/** 仅在出现明确 Markdown 结构时接管纯文本粘贴，避免影响普通句子 */
+export function looksLikeMarkdown(text: string): boolean {
+  if (!text.trim()) return false;
+  return [
+    /^#{1,6}\s+\S/m,
+    /^\s{0,3}(?:[-+*]|\d+[.)])\s+\S/m,
+    /^\s{0,3}>\s?\S/m,
+    /^\s*(?:```|~~~)/m,
+    /\*\*[^*\n]+\*\*/,
+    /__[^_\n]+__/,
+    /\[[^\]\n]+\]\([^)\n]+\)/,
+    /^\s*\|.+\|\s*$/m,
+  ].some((pattern) => pattern.test(text));
+}
+
+/** Markdown 仅在输入边界转换成 HTML，统一经过现有白名单清理后再进入编辑器 */
+export function markdownToHtml(text: string): string {
+  return sanitizeRichHtml(markdown.parse(text) as string);
 }

@@ -6,6 +6,8 @@ import {
   AlignRightOutlined,
   BoldOutlined,
   CodeOutlined,
+  EyeOutlined,
+  FileTextOutlined,
   FunctionOutlined,
   ItalicOutlined,
   LinkOutlined,
@@ -19,6 +21,7 @@ import {
   UnorderedListOutlined
 } from "@ant-design/icons";
 import { useLocale } from "@/lib/i18n";
+import { looksLikeMarkdown, markdownToHtml, sanitizeRichHtml } from "@/lib/rich-text";
 import Image from "@tiptap/extension-image";
 import Mathematics from "@tiptap/extension-mathematics";
 import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table";
@@ -321,6 +324,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [uploading, setUploading] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [sourceMode, setSourceMode] = useState(false);
+  const [sourceValue, setSourceValue] = useState("");
   const lastValueRef = useRef(value || "");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   /** 上传中的图片数量：多图同时上传时，全部完成才解除 loading */
@@ -374,12 +379,26 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         class: "sharp-rich-text",
         style: `min-height:${minHeight}px`,
       },
-      // 截图粘贴：剪贴板里带图片文件时接管，走统一上传
+      // 图片优先走统一上传；纯文本中出现明确 Markdown 结构时自动转换
       handlePaste: (_view, event) => {
         const files = Array.from(event.clipboardData?.files ?? []).filter(isAcceptedImage);
-        if (files.length === 0) return false;
+        if (files.length > 0) {
+          event.preventDefault();
+          files.forEach((file) => insertImageRef.current(file));
+          return true;
+        }
+        // 从网页复制时优先使用浏览器提供的 HTML，保留原有富文本格式
+        if (event.clipboardData?.getData("text/html")) return false;
+        const text = event.clipboardData?.getData("text/plain") || "";
+        if (!looksLikeMarkdown(text)) return false;
+        const instance = editorRef.current;
+        if (!instance) return false;
         event.preventDefault();
-        files.forEach((file) => insertImageRef.current(file));
+        instance
+          .chain()
+          .focus()
+          .insertContent(mountDollarMath(markdownToHtml(text)))
+          .run();
         return true;
       },
       // 拖拽图片进编辑器同样接管，先占住落点再上传
@@ -451,7 +470,31 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (next !== current) {
       editor.commands.setContent(mountDollarMath(next), { emitUpdate: false });
     }
-  }, [value, editor]);
+    if (sourceMode) setSourceValue(next);
+  }, [value, editor, sourceMode]);
+
+  const updateSourceValue = (next: string) => {
+    setSourceValue(next);
+    const html = sanitizeRichHtml(next);
+    // 即使停留在源码模式直接保存，外层表单拿到的也是清理后的 HTML
+    lastValueRef.current = html;
+    onChange?.(html);
+  };
+
+  const toggleSourceMode = () => {
+    if (!editor) return;
+    if (!sourceMode) {
+      setSourceValue(editor.isEmpty ? "" : editor.getHTML());
+      setSourceMode(true);
+      return;
+    }
+    const html = sanitizeRichHtml(sourceValue);
+    lastValueRef.current = html;
+    editor.commands.setContent(mountDollarMath(html), { emitUpdate: false });
+    setSourceValue(html);
+    setSourceMode(false);
+    onChange?.(html);
+  };
 
   useEffect(() => {
     editor?.setEditable(!disabled);
@@ -871,6 +914,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           background: token.colorFillQuaternary,
         }}
       >
+        {!sourceMode && (
+          <>
         {!compact && (
           <Dropdown
             menu={{ items: headingItems, onClick: ({ key }) => handleHeading(key) }}
@@ -1044,6 +1089,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             </Tooltip>
           </Dropdown>
         )}
+          </>
+        )}
+        <Tooltip title={sourceMode ? t("editor.previewTooltip") : t("editor.sourceTooltip")}>
+          <Button
+            size="small"
+            type={sourceMode ? "primary" : "text"}
+            icon={sourceMode ? <EyeOutlined /> : <FileTextOutlined />}
+            onClick={toggleSourceMode}
+          >
+            {sourceMode ? t("editor.preview") : t("editor.source")}
+          </Button>
+        </Tooltip>
       </div>
       {imageMenuPos && (
         <div
@@ -1097,13 +1154,34 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       )}
       <div
         style={{
-          padding: compact ? "4px 8px" : "8px 10px",
+          padding: compact ? "4px 8px" : "16px 20px",
           maxHeight,
           overflowY: maxHeight ? "auto" : undefined,
           overflowX: "auto",
         }}
       >
-        <EditorContent editor={editor} />
+        {sourceMode ? (
+          <Input.TextArea
+            aria-label={t("editor.sourceTooltip")}
+            value={sourceValue}
+            onChange={(event) => updateSourceValue(event.target.value)}
+            placeholder={t("editor.sourcePlaceholder")}
+            disabled={disabled}
+            spellCheck={false}
+            style={{
+              minHeight,
+              maxHeight,
+              overflowY: "auto",
+              resize: maxHeight ? "none" : "vertical",
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+              fontSize: 12,
+              lineHeight: 1.6,
+              tabSize: 2,
+            }}
+          />
+        ) : (
+          <EditorContent editor={editor} />
+        )}
       </div>
       <Modal
         title={t("editor.mathTitle")}
