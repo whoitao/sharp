@@ -332,7 +332,7 @@ export default function FeedbackPage() {
       />
 
       <Drawer
-        width={760}
+        size={760}
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
         title={t("feedback.detailTitle")}
