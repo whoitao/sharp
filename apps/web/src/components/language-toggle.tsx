@@ -51,7 +51,7 @@ export function LanguageToggle({
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          "inline-flex h-7 items-center justify-center gap-1.5 rounded-lg border border-primary/70 px-2.5 text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+          "inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-primary/70 px-2 text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
           className,
         )}
       >

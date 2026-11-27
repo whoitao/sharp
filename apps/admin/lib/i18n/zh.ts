@@ -477,6 +477,8 @@ export const zh: Messages = {
     addOption: "添加选项",
     createTitle: "新建题目",
     editTitle: "编辑题目",
+    tabBasic: "基本信息",
+    tabContent: "题目信息",
     deleteTitle: "删除题目",
     createQuestion: "创建题目",
     deleteConfirm: "确定要删除该题目吗？此操作无法撤销。",

@@ -29,6 +29,7 @@ import {
   Card,
   Checkbox,
   Col,
+  Drawer,
   Form,
   Input,
   InputNumber,
@@ -40,6 +41,7 @@ import {
   Select,
   Space,
   Table,
+  Tabs,
   Tag,
   TreeSelect,
   Upload
@@ -169,6 +171,8 @@ export default function QuestionsPanel() {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  // 新增默认落在基本信息，编辑默认落在题目信息（与正文编辑为主的使用习惯一致）
+  const [formTab, setFormTab] = useState<"basic" | "content">("basic");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionItem | null>(null);
@@ -511,6 +515,7 @@ export default function QuestionsPanel() {
 
   const openEdit = (q: QuestionItem) => {
     setSelectedQuestion(q);
+    setFormTab("content");
     setEditOpen(true);
   };
 
@@ -854,221 +859,270 @@ export default function QuestionsPanel() {
       // 初始值放在 Form 上，避免新建/编辑两个弹窗同时挂载时对同名字段重复声明 initialValue
       initialValues={{ type: "1", difficulty: 1, score: 1, sortOrder: 0 }}
       onFinish={isEdit ? handleUpdate : handleCreate}
+      onFinishFailed={({ errorFields }) => {
+        // 校验失败时自动切到出错字段所在页签，避免提示藏在另一个页签里看不见
+        const firstError = errorFields[0]?.name?.[0];
+        if (firstError === undefined) return;
+        const contentFields = new Set(["content", "options", "analysis"]);
+        setFormTab(contentFields.has(String(firstError)) ? "content" : "basic");
+        requestAnimationFrame(() => {
+          questionForm.scrollToField(errorFields[0].name, { block: "center" });
+        });
+      }}
     >
-      {/* 左右布局各占 50%：左侧基础属性 / 右侧题目内容、选项、解析 */}
-      <Row gutter={[24, 0]}>
-        <Col xs={24} md={12}>
-          {/* 第一行：科目 + 类型 */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label={t("questions.subject")} name="subjectId">
-                <SubjectSelect
-                  subjects={subjects}
-                  placeholder={t("questions.subjectPlaceholder")}
-                  onChange={(v) => setFormSubjectId(v)}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label={t("questions.type")} name="type">
-                <Select
-                  options={[
-                    { value: "1", label: t("questions.typeSingle") },
-                    { value: "2", label: t("questions.typeMultiple") },
-                    { value: "3", label: t("questions.typeTrueFalse") },
-                    { value: "4", label: t("questions.typeFillBlank") },
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+      <Tabs
+        activeKey={formTab}
+        onChange={(key) => setFormTab(key as "basic" | "content")}
+        items={[
+          {
+            key: "basic",
+            label: t("questions.tabBasic"),
+            // 两个页签都保持挂载，提交时才能校验到隐藏页签里的字段
+            forceRender: true,
+            children: (
+              <>
+                {/* 第一行：科目 + 类型 */}
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item label={t("questions.subject")} name="subjectId">
+                      <SubjectSelect
+                        subjects={subjects}
+                        placeholder={t("questions.subjectPlaceholder")}
+                        onChange={(v) => setFormSubjectId(v)}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item label={t("questions.type")} name="type">
+                      <Select
+                        options={[
+                          { value: "1", label: t("questions.typeSingle") },
+                          { value: "2", label: t("questions.typeMultiple") },
+                          { value: "3", label: t("questions.typeTrueFalse") },
+                          { value: "4", label: t("questions.typeFillBlank") },
+                        ]}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-          {/* 第二行：年级 + 教材章节 */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label={t("questions.grade")}
-                name="gradeId"
-                rules={[{ required: true, message: t("questions.gradeRequired") }]}
-              >
-                {/* 年级按学段分组，选一次即可：分类由年级推导，不再单独选择 */}
-                <Select
-                  showSearch={{ optionFilterProp: "label" }}
-                  placeholder={t("questions.gradePlaceholder")}
-                  options={groupGradesByStage(grades)}
-                  onChange={(v) => setFormGradeId(v)}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label={t("questions.chapter")} name="chapterId">
-                <TreeSelect
-                  allowClear
-                  treeData={chapterTree.map(function convert(node: ChapterNode): any {
-                    return {
-                      value: node.id,
-                      title: `${node.name}${node.level === 1 ? t("questions.chapterSuffix") : ""}`,
-                      key: node.id,
-                      children: node.children?.map(convert) || [],
-                    };
-                  })}
-                  showSearch={{ treeNodeFilterProp: "title" }}
-                  placeholder={
-                    formGradeId && formSubjectId
-                      ? t("questions.chapterPlaceholder")
-                      : t("questions.selectGradeFirst")
-                  }
-                  disabled={!formGradeId || !formSubjectId}
-                  treeDefaultExpandAll
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item label={t("questions.tags")} name="tagIds">
-            <Select
-              mode="multiple"
-              allowClear
-              placeholder={t("questions.tagsPlaceholder")}
-              options={["exam", "source", "difficulty"].map((type) => ({
-                label:
-                  type === "exam"
-                    ? t("tags.typeExam")
-                    : type === "source"
-                      ? t("tags.typeSource")
-                      : t("tags.typeDifficulty"),
-                options: tags
-                  .filter((tag) => tag.type === type)
-                  .map((tag) => ({ value: tag.id, label: tag.name })),
-              }))}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={t("questions.knowledgePointsLabel")}
-            name="knowledgePointIds"
-            getValueFromEvent={(value: any) =>
-              Array.isArray(value) ? value.map((v) => (typeof v === "object" ? v.value : v)) : []
-            }
-            getValueProps={(value: string[] | undefined) => ({
-              value: Array.isArray(value)
-                ? value.map((id) => ({ value: id, label: kpNameMap.get(id) ?? id }))
-                : [],
-            })}
-          >
-            <TreeSelect
-              treeData={kpTree.map(function convert(node: KPNode): any {
-                return {
-                  value: node.id,
-                  title: node.name,
-                  key: node.id,
-                  disabled: !formSubjectId,
-                  children: node.children?.map(convert) || [],
-                };
-              })}
-              treeCheckable
-              treeCheckStrictly
-              multiple
-              // antd v6：搜索配置收敛到 showSearch 对象，按标题过滤
-              showSearch={{ treeNodeFilterProp: "title" }}
-              placeholder={
-                formSubjectId
-                  ? t("questions.knowledgePointsPlaceholder")
-                  : t("questions.selectSubjectFirst")
-              }
-              disabled={!formSubjectId}
-              treeDefaultExpandAll
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label={t("questions.score")} name="score">
-                <InputNumber min={1} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label={t("questions.difficultyLabel")} name="difficulty">
-                {/* 五颗星对应难度 1-5，不允许半星、不允许清零 */}
-                <Rate count={5} allowClear={false} allowHalf={false} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item label={t("questions.sortOrder")} name="sortOrder">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-        </Col>
-
-        <Col xs={24} md={12}>
-          <Form.Item
-            label={t("questions.content")}
-            name="content"
-            rules={[{ required: true, message: t("questions.contentRequired") }]}
-          >
-            <RichTextEditor minHeight={72} maxHeight={300} />
-          </Form.Item>
-
-          <Form.List name="options">
-            {(fields, { add, remove }) => (
-              <Form.Item label={t("questions.options")}>
-                <Space orientation="vertical" style={{ width: "100%" }} size={8}>
-                  {fields.map((field) => (
-                    <div
-                      key={field.key}
-                      style={{ display: "flex", alignItems: "flex-start", gap: 8, width: "100%" }}
+                {/* 第二行：年级 + 教材章节 */}
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      label={t("questions.grade")}
+                      name="gradeId"
+                      rules={[{ required: true, message: t("questions.gradeRequired") }]}
                     >
-                      <Form.Item name={[field.name, "optionKey"]} noStyle>
-                        <Input style={{ width: 48, flexShrink: 0 }} maxLength={1} />
-                      </Form.Item>
-                      <Form.Item name={[field.name, "content"]} noStyle>
-                        {/* 宽度自适应：随左右 50% 布局收缩，不再固定 380px 造成溢出 */}
-                        <RichTextEditor compact minHeight={28} style={{ flex: 1, minWidth: 0 }} />
-                      </Form.Item>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          flexShrink: 0,
-                          paddingTop: 6,
-                        }}
-                      >
-                        <Form.Item name={[field.name, "isCorrect"]} valuePropName="checked" noStyle>
-                          <Checkbox>{t("questions.correct")}</Checkbox>
-                        </Form.Item>
-                        <Button type="text" danger size="small" onClick={() => remove(field.name)}>
-                          {t("questions.remove")}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  <Button
-                    type="dashed"
-                    block
-                    onClick={() => {
-                      const count = questionForm.getFieldValue("options")?.length ?? 0;
-                      add({
-                        optionKey: String.fromCharCode(65 + count),
-                        content: "",
-                        isCorrect: false,
-                      });
-                    }}
-                  >
-                    {t("questions.addOption")}
-                  </Button>
-                </Space>
-              </Form.Item>
-            )}
-          </Form.List>
+                      {/* 年级按学段分组，选一次即可：分类由年级推导，不再单独选择 */}
+                      <Select
+                        showSearch={{ optionFilterProp: "label" }}
+                        placeholder={t("questions.gradePlaceholder")}
+                        options={groupGradesByStage(grades)}
+                        onChange={(v) => setFormGradeId(v)}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item label={t("questions.chapter")} name="chapterId">
+                      <TreeSelect
+                        allowClear
+                        treeData={chapterTree.map(function convert(node: ChapterNode): any {
+                          return {
+                            value: node.id,
+                            title: `${node.name}${node.level === 1 ? t("questions.chapterSuffix") : ""}`,
+                            key: node.id,
+                            children: node.children?.map(convert) || [],
+                          };
+                        })}
+                        showSearch={{ treeNodeFilterProp: "title" }}
+                        placeholder={
+                          formGradeId && formSubjectId
+                            ? t("questions.chapterPlaceholder")
+                            : t("questions.selectGradeFirst")
+                        }
+                        disabled={!formGradeId || !formSubjectId}
+                        treeDefaultExpandAll
+                        style={{ width: "100%" }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
-          <Form.Item label={t("questions.analysisOptional")} name="analysis">
-            <RichTextEditor minHeight={56} />
-          </Form.Item>
-        </Col>
-      </Row>
+                {/* 第三行：标签 + 知识点 */}
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item label={t("questions.tags")} name="tagIds">
+                      <Select
+                        mode="multiple"
+                        allowClear
+                        placeholder={t("questions.tagsPlaceholder")}
+                        options={["exam", "source", "difficulty"].map((type) => ({
+                          label:
+                            type === "exam"
+                              ? t("tags.typeExam")
+                              : type === "source"
+                                ? t("tags.typeSource")
+                                : t("tags.typeDifficulty"),
+                          options: tags
+                            .filter((tag) => tag.type === type)
+                            .map((tag) => ({ value: tag.id, label: tag.name })),
+                        }))}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      label={t("questions.knowledgePointsLabel")}
+                      name="knowledgePointIds"
+                      getValueFromEvent={(value: any) =>
+                        Array.isArray(value)
+                          ? value.map((v) => (typeof v === "object" ? v.value : v))
+                          : []
+                      }
+                      getValueProps={(value: string[] | undefined) => ({
+                        value: Array.isArray(value)
+                          ? value.map((id) => ({ value: id, label: kpNameMap.get(id) ?? id }))
+                          : [],
+                      })}
+                    >
+                      <TreeSelect
+                        treeData={kpTree.map(function convert(node: KPNode): any {
+                          return {
+                            value: node.id,
+                            title: node.name,
+                            key: node.id,
+                            disabled: !formSubjectId,
+                            children: node.children?.map(convert) || [],
+                          };
+                        })}
+                        treeCheckable
+                        treeCheckStrictly
+                        multiple
+                        // antd v6：搜索配置收敛到 showSearch 对象，按标题过滤
+                        showSearch={{ treeNodeFilterProp: "title" }}
+                        placeholder={
+                          formSubjectId
+                            ? t("questions.knowledgePointsPlaceholder")
+                            : t("questions.selectSubjectFirst")
+                        }
+                        disabled={!formSubjectId}
+                        treeDefaultExpandAll
+                        style={{ width: "100%" }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                {/* 第四行：分值 + 难度 */}
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item label={t("questions.score")} name="score">
+                      <InputNumber min={1} style={{ width: "100%" }} />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item label={t("questions.difficultyLabel")} name="difficulty">
+                      {/* 五颗星对应难度 1-5，不允许半星、不允许清零 */}
+                      <Rate count={5} allowClear={false} allowHalf={false} />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                {/* 第五行：排序 */}
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item label={t("questions.sortOrder")} name="sortOrder">
+                      <InputNumber style={{ width: "100%" }} />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </>
+            ),
+          },
+          {
+            key: "content",
+            label: t("questions.tabContent"),
+            forceRender: true,
+            children: (
+              <>
+                <Row gutter={16}>
+                  {/* 左侧：题目内容 + 选项 */}
+                  <Col span={12}>
+                    <Form.Item
+                      label={t("questions.content")}
+                      name="content"
+                      rules={[{ required: true, message: t("questions.contentRequired") }]}
+                    >
+                      <RichTextEditor minHeight={120} maxHeight={320} />
+                    </Form.Item>
+
+                    <Form.List name="options">
+                      {(fields, { add, remove }) => (
+                        <Form.Item label={t("questions.options")}>
+                          <Space orientation="vertical" style={{ width: "100%" }} size={8}>
+                            {fields.map((field) => (
+                              <div
+                                key={field.key}
+                                style={{ display: "flex", alignItems: "flex-start", gap: 8, width: "100%" }}
+                              >
+                                <Form.Item name={[field.name, "optionKey"]} noStyle>
+                                  <Input style={{ width: 48, flexShrink: 0 }} maxLength={1} />
+                                </Form.Item>
+                                <Form.Item name={[field.name, "content"]} noStyle>
+                                  {/* 宽度自适应：占满左列剩余宽度 */}
+                                  <RichTextEditor compact minHeight={28} style={{ flex: 1, minWidth: 0 }} />
+                                </Form.Item>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    flexShrink: 0,
+                                    paddingTop: 6,
+                                  }}
+                                >
+                                  <Form.Item name={[field.name, "isCorrect"]} valuePropName="checked" noStyle>
+                                    <Checkbox>{t("questions.correct")}</Checkbox>
+                                  </Form.Item>
+                                  <Button type="text" danger size="small" onClick={() => remove(field.name)}>
+                                    {t("questions.remove")}
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                            <Button
+                              type="dashed"
+                              block
+                              onClick={() => {
+                                const count = questionForm.getFieldValue("options")?.length ?? 0;
+                                add({
+                                  optionKey: String.fromCharCode(65 + count),
+                                  content: "",
+                                  isCorrect: false,
+                                });
+                              }}
+                            >
+                              {t("questions.addOption")}
+                            </Button>
+                          </Space>
+                        </Form.Item>
+                      )}
+                    </Form.List>
+                  </Col>
+
+                  {/* 右侧：解析 */}
+                  <Col span={12}>
+                    <Form.Item label={t("questions.analysisOptional")} name="analysis">
+                      <RichTextEditor minHeight={120} />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </>
+            ),
+          },
+        ]}
+      />
     </Form>
   );
 
@@ -1099,7 +1153,10 @@ export default function QuestionsPanel() {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => setCreateOpen(true)}
+            onClick={() => {
+              setFormTab("basic");
+              setCreateOpen(true);
+            }}
           >
             {t("questions.addQuestion")}
           </Button>
@@ -1223,44 +1280,62 @@ export default function QuestionsPanel() {
         }}
       />
 
-      {/* Create Modal */}
+      {/* 新建 / 编辑题目：Drawer + 页签，新建默认基本信息，编辑默认题目信息 */}
       {/* 不使用 forceRender：SSR 阶段预渲染弹窗 DOM 会导致 antd css-var 类名与客户端不一致，
           触发 hydration mismatch；首次打开后再填充表单，避免未挂载时调用 form 方法的告警 */}
-      <Modal
+      <Drawer
         title={t("questions.createTitle")}
         open={createOpen}
-        width={1080}
-        onCancel={() => setCreateOpen(false)}
-        confirmLoading={saving}
-        okText={t("questions.createQuestion")}
-        onOk={() => questionForm.submit()}
+        size="min(1000px, 100vw)"
+        styles={{ body: { paddingTop: 0 } }}
+        onClose={() => setCreateOpen(false)}
         destroyOnHidden={false}
         afterOpenChange={(open) => {
           if (open) resetForm();
         }}
+        footer={
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            <Button onClick={() => setCreateOpen(false)}>{t("common.cancel")}</Button>
+            <Button type="primary" loading={saving} onClick={() => questionForm.submit()}>
+              {t("questions.createQuestion")}
+            </Button>
+          </div>
+        }
       >
         {renderQuestionForm(false)}
-      </Modal>
+      </Drawer>
 
-      {/* Edit Modal */}
-      <Modal
+      <Drawer
         title={t("questions.editTitle")}
         open={editOpen}
-        width={1080}
-        onCancel={() => {
+        size="min(1000px, 100vw)"
+        styles={{ body: { paddingTop: 0 } }}
+        onClose={() => {
           setEditOpen(false);
           setSelectedQuestion(null);
         }}
-        confirmLoading={saving}
-        okText={t("common.saveChanges")}
-        onOk={() => questionForm.submit()}
         destroyOnHidden={false}
         afterOpenChange={(open) => {
           if (open && selectedQuestion) populateEditForm(selectedQuestion);
         }}
+        footer={
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            <Button
+              onClick={() => {
+                setEditOpen(false);
+                setSelectedQuestion(null);
+              }}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button type="primary" loading={saving} onClick={() => questionForm.submit()}>
+              {t("common.saveChanges")}
+            </Button>
+          </div>
+        }
       >
         {renderQuestionForm(true)}
-      </Modal>
+      </Drawer>
 
       {/* Delete Modal */}
       <Modal

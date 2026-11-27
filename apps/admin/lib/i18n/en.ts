@@ -479,6 +479,8 @@ export const en = {
     addOption: "Add Option",
     createTitle: "Create Question",
     editTitle: "Edit Question",
+    tabBasic: "Basic Info",
+    tabContent: "Question Info",
     deleteTitle: "Delete Question",
     createQuestion: "Create Question",
     deleteConfirm:

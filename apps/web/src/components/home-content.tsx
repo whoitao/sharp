@@ -38,7 +38,7 @@ export function HomeContent() {
       </section>
 
       {/* Learning Paths Section */}
-      <section id="paths" className="space-y-6 bg-surface-secondary py-8 md:py-12 lg:py-24">
+      <section id="paths" className="space-y-6 py-8 md:py-12 lg:py-24">
         <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
           <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
             {t("home.pathsTitle")}

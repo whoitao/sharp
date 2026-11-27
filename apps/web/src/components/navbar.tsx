@@ -25,7 +25,6 @@ const navItems = [
   { href: "/leaderboard", labelKey: "nav.leaderboard", requiresAuth: true },
   { href: "/articles", labelKey: "nav.articles" },
   { href: "/wiki", labelKey: "nav.wiki" },
-  { href: "/about", labelKey: "nav.about" },
 ];
 
 /** 登录态：学习与宠物入口仅登录后展示，未登录时不出现，避免点了才被拦 */

@@ -292,7 +292,7 @@ export default function AdminLayout({
             height: 50,
             display: "flex",
             alignItems: "center",
-            padding: "0 12px",
+            padding: "0 20px",
             marginLeft: 12,
             borderBottom: `1px solid ${colorBorderSecondary}`,
             gap: 8,

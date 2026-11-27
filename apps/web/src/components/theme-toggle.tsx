@@ -25,7 +25,7 @@ export function ThemeToggle({
   if (!mounted) {
     return (
       <button
-        className={cn("h-7 w-14 rounded-full bg-surface-secondary", className)}
+        className={cn("h-7 w-12 rounded-full bg-surface-secondary", className)}
         aria-label="toggle theme"
       />
     );
@@ -42,7 +42,7 @@ export function ThemeToggle({
       title={theme === "system" ? "system" : theme}
       onClick={() => (onChange ?? setTheme)(next)}
       className={cn(
-        "relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border border-border-light bg-surface-secondary shadow-inner transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+        "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border border-border-light bg-surface-secondary shadow-inner transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         className,
       )}
     >
@@ -50,7 +50,7 @@ export function ThemeToggle({
         aria-hidden
         className={cn(
           "absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200",
-          isDark ? "translate-x-7" : "translate-x-0",
+          isDark ? "translate-x-5" : "translate-x-0",
         )}
       />
       <Sun

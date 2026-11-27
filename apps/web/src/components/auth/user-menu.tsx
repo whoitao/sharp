@@ -96,7 +96,12 @@ export function UserMenu() {
           title={displayName}
           className="flex items-center rounded-full p-0.5 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
-          <UserAvatar name={displayName} avatarUrl={user.avatarUrl} size="sm" />
+          <UserAvatar
+            name={displayName}
+            avatarUrl={user.avatarUrl}
+            size="sm"
+            className="h-6 w-6 text-[11px]"
+          />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
